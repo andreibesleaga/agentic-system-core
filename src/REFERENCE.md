@@ -688,6 +688,7 @@ drive them, `init` and `ci`.
 | `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
 | `distribution/architecture-brief.js` | Distribution | AGSC-07-25, AGSC-07-24 — the brief on the item page of a saved architecture, written by the build over the listed items: the summary, the dependency order, the gaps, the checklist (each list at most 50 entries) and the link to `/compose/?from=<slug>` |
 | `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
+| `distribution/domain-view.js` | Distribution | AGSC-06-38 (the domain sentences), AGSC-08-32 — on a node with a site vocabulary, the item's domain type, role, context and warrant in a definition list under the relations table, each with its label, and the columns "Domain type" and "Domain context" where a row's item has one; and whether the two page scripts carry the domain parts (only when a listed item states a key of AGSC-02-25) |
 | `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
 | `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
 | `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
@@ -756,7 +757,7 @@ diagramFigure(item, source, options); inlineDiagram(source, {slug, item, file, a
 // distribution/graph-view.js (pure; the caller passes the listed items, AGSC-06-30)
 index(items, hrefOf) -> { bySlug, incoming, hrefOf }
 relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   // outgoing first, keys in AGSC-03-01 order
-itemSection(item, views, { svgViolations?, columns? }) -> { html, findings }   // '' without a relation, or for a retired item; heading `#links` unless the body's own heading has that anchor
+itemSection(item, views, { svgViolations?, columns?, after? }) -> { html, findings }   // '' without a relation, or for a retired item; heading `#links` unless the body's own heading has that anchor; `after` right under the table
 clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another, or for a retired cluster; heading `#member_links`
 // (a symmetric key both items state is one row, one arc and one overview count)
 relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); membersOfCluster(cluster, views)
@@ -764,6 +765,11 @@ overviewRows(clusters, views) -> [{source, key, target, count}]   // Links betwe
 overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters; says how many clusters the figure left out
 legendSection() -> string                         // the fourteen keys, the key read backwards, the meaning
 ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER_LINKS_DRAWN = 24
+
+// distribution/domain-view.js (pure; AGSC-06-38, the domain layer)
+pages({ bundle, config, items, model, routeOf }) -> { views, itemSection(item) -> { html, findings }, scripts }   // views = graph-view index(items, routeOf); the domain parts only when bundle.domain.vocabulary is present
+scripts(items, config) -> { contexts: [cluster slug] } | undefined   // the `domain` option of the two page-script bundles
+ROLE_WORDS   // the five roles of AGSC-02-25, as words
 
 // distribution/clusters-page.js (pure)
 view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
@@ -872,7 +878,7 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
 | `composition/architecture.js` | Composition | AGSC-02-97, AGSC-07-24 — the saved composition: the `yaml agsc-selection` block, `compose --from`, the stale `verdict_digest` warning; `isArchitecture`, which decides whether `compose --from <slug> --brief` writes the blueprint outputs (AGSC-07-29) |
 | `composition/harness.js` | Composition | AGSC-07-12, AGSC-07-13, AGSC-07-15…07-17 — the seven file kinds of a Harness and their bytes — and the two AGSC-07-23 renderings |
 | `composition/context-map.js` | Composition | AGSC-07-30 (with AGSC-08-32, AGSC-11-24) — the context map of a composition: `context-map.json` in the companion directory `<harness dir>.companion/`, beside the Harness and never in it, only for a node that declares contexts; nothing in `harness.js` reads it (`tests/arch/context-map.test.js`) |
-| `composition/brief.js` | Composition | AGSC-07-25…07-27 (with AGSC-00-05, AGSC-05-33) — the brief of a composition, valid or not: `brief.json` (JCS), `BRIEF.md`, `context.md` (at most 65,536 bytes) and `brief.mmd`, in the companion directory `<harness dir>.companion/`; the dependency order, the gaps and the checklist; only listed items are named. PORTABLE: `composition/browser.js` carries it in the page bundle when asked (`bundle({ brief: true })`), so the page and the command line write the same bytes; nothing in `harness.js` reads it (`tests/arch/brief.test.js`). It writes no narration (AGSC-07-28). Above an engine bound of 1,000,000 steps in the paths of `derived` (`derivedBound`; the rule sets none, and the member grows with the cube of a chain's length) it refuses with `AGSC-E904` before it builds the paths |
+| `composition/brief.js` | Composition | AGSC-07-25…07-27 (with AGSC-00-05, AGSC-05-33, AGSC-08-32 for the domain paragraph) — the brief of a composition, valid or not: `brief.json` (JCS), `BRIEF.md`, `context.md` (at most 65,536 bytes) and `brief.mmd`, in the companion directory `<harness dir>.companion/`; the dependency order, the gaps and the checklist; only listed items are named. PORTABLE: `composition/browser.js` carries it in the page bundle when asked (`bundle({ brief: true })`), so the page and the command line write the same bytes; nothing in `harness.js` reads it (`tests/arch/brief.test.js`). It writes no narration (AGSC-07-28). Above an engine bound of 1,000,000 steps in the paths of `derived` (`derivedBound`; the rule sets none, and the member grows with the cube of a chain's length) it refuses with `AGSC-E904` before it builds the paths |
 | `composition/blueprint.js` | Composition | AGSC-07-29 (with AGSC-00-05, AGSC-07-26) — the blueprint outputs of a saved architecture, in `blueprint/` of the directory beside the Harness: `c4-context.mmd`, `c4-containers.mmd`, `c4-components.mmd` (the first three C4 levels as Mermaid), `decisions/NNNN-<slug>.md` (one MADR record per distinct `decided-by` target of a member) and `build-plan.md` (one step per member in dependency order); read from the brief's own parts, so only listed items are named; JSON Schema, OpenAPI and test scaffolds are not outputs at 1.1; the architecture's title is a Mermaid label (`mermaidLabel`: a quote is `#quot;`). PORTABLE: the page bundle carries it with the brief; nothing in `harness.js` reads it (`tests/arch/brief.test.js`) |
 | `composition/skills.js` | Composition | AGSC-07-19…22 — the published skill packs, one per Cluster, and their lockfile |
 | `composition/conform.js` | Composition | AGSC-09-01…09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15 — the claim, the Level's area set, the divergence verdicts, the report |
@@ -911,10 +917,14 @@ briefOf(result, {items, listed?, bundleVersion, instant, licenseProse, selection
 briefFiles(result, options) -> [['BRIEF.md', text], ['brief.json', text], ['brief.mmd', text], ['context.md', text]]
 dependencyOrder(selection, edges); chainReadings(edges, members, bound?); briefEdges(listedIndex(options))   // listed: slugs; absent = every item
 derivedBound() -> 1000000   // briefOf, briefFiles and chainReadings throw an Error with code 'AGSC-E904' (briefTooLarge) when `derived` would hold more steps
+// the domain paragraph of AGSC-07-25 (DOMAIN_PORTABLE; options.contexts = the clusters domain.contexts declares)
+briefDomainOf(result, options); briefDomainFiles(result, options)   // = briefOf / briefFiles when no member has a domain part
+domainOf(item, contexts?) -> { context?, role?, type?, warrant? } | null   // null when the item states none of the four keys of AGSC-02-25
+briefDomainParts(result, options) -> { edges, members, record, domains: Map }; briefDomainMd(parts, options); contextDomainMd(parts, options)
 // composition/blueprint.js — AGSC-07-29
 blueprintFiles(result, {architecture, ...the options of briefOf}) -> [['blueprint/build-plan.md', text], ['blueprint/c4-components.mmd', text], ['blueprint/c4-containers.mmd', text], ['blueprint/c4-context.mmd', text], ['blueprint/decisions/NNNN-<slug>.md', text]…] | []   // [] when the architecture is not listed
 // composition/browser.js
-bundle({ specVersion, brief? }) -> the page script; exportedNames({ brief? })   // brief: carry brief.js and blueprint.js too (default false)
+bundle({ specVersion, brief?, domain? }) -> the page script; exportedNames({ brief?, domain? })   // brief: carry brief.js and blueprint.js too (default false); domain = { contexts }: with brief, the domain paragraph too, and AGSC_CORE.briefOf / briefFiles are the domain paragraph's over those contexts
 // distribution/architecture-brief.js — AGSC-07-25 on an architecture's page
 section(item, {instant, items, route}) -> html | ''   // '' unless item is a saved architecture whose selection block reads; a brief above derivedBound gives a section that says so
 // composition/conform.js
@@ -955,7 +965,7 @@ memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTE
 // distribution/webmcp.js
 script({manifest}) -> the page script;  LOCAL_ONLY_TOOLS
 // distribution/page-tools.js — the page half of AGSC-09-16
-bundle({bundleId, licenseProse, specVersion}) -> the page-tool script;  PORTABLE
+bundle({bundleId, licenseProse, specVersion, domain?}) -> the page-tool script;  PORTABLE   // domain = { contexts }: search and read carry the domain parts (API.DOMAIN_CONTEXTS)
 pageCorpus(sources, {bundleId, licenseProse}) -> { base, bundleId, bySlug, chunks, claimed, host, index, items, licenseProse }
 pageToolset(corpus, core, hash?) -> { call(name, args) -> envelope }   // core = AGSC_CORE; `brief` -> a promise with the page's Web Crypto
 // distribution/tool-answers.js — the portable answers of the tools of 1.1
@@ -963,6 +973,8 @@ toolBounded(hits) -> {hits, total?}; toolHost(map) -> {bundleVersion, instant, s
 toolChunkIndex(map) -> {bySlug, incomplete, missing}; toolCitationRecord(line, bundleVersion)
 toolExplanation(edges, key, source, target); toolLinkWarnings(edges, itemOf)
 toolBrief(core, facts, selection, hash) -> {body} | {fault: {code, message}} (or a promise of it)   // AGSC-E901 without a build instant, AGSC-E904 above derivedBound
+toolDomainAnswer(name, answer, domainOf) -> answer   // AGSC-09-13: `domain` on search hits and the read body of an item with a part; DOMAIN_PORTABLE
+toolWithDomain(record, domain); toolDomainToolset(toolset, corpus, core, contexts) -> { call }   // the page's toolset through toolDomainAnswer, parts from core.domainOf
 pageSplitFrontmatter(text); pageParseFrontmatter(yamlText); pageApplyTypes(value, key)
 pageEdges(items); pageAnchors(body); pageInlineTargets(body); pageTokenize(text)
 // application/bundle.js — `ports` is the port bag {fs, clock, proc, network}

@@ -230,13 +230,38 @@ const SUPPORT = Object.freeze({
  * `/compose/` page shows it and offers both for download (`distribution/site.js`); the bundle
  * without them is the 1.0 set, for a caller that needs the algebra alone.
  *
+ * The domain paragraph of the brief (`brief.js#DOMAIN_PORTABLE`, AGSC-07-25) joins them only
+ * when `options.domain` is given too, which a build does for a node whose listed items state a
+ * key of AGSC-02-25 (`distribution/domain-view.js#scripts`); every other node's bundle keeps
+ * its bytes.
+ *
  * @param {object} [options]
  * @param {boolean} [options.brief] carry the functions of the brief and the blueprint too.
+ * @param {{contexts: Array<string>}} [options.domain] carry the domain paragraph as well.
  */
 function exportedNames(options) {
   const withBrief = Boolean(options && options.brief === true);
+  const withDomain = withBrief && Boolean(options.domain);
   return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE,
-    ...(withBrief ? [...brief.PORTABLE, ...blueprint.PORTABLE] : []), ...PAGE_SUPPORT];
+    ...(withBrief ? [...brief.PORTABLE, ...blueprint.PORTABLE] : []),
+    ...(withDomain ? brief.DOMAIN_PORTABLE : []), ...PAGE_SUPPORT];
+}
+
+/**
+ * The entries of `globalThis.AGSC_CORE`. With the domain paragraph, `briefOf` and `briefFiles`
+ * are `briefDomainOf` and `briefDomainFiles` given the node's declared contexts (AGSC-08-32),
+ * so the `/compose/` controller and the page tool `brief`, which call those two names, write
+ * the brief `agsc compose --brief` writes (AGSC-07-13) without a change of their own.
+ */
+function exportMap(options) {
+  const domain = options.brief === true && options.domain ? options.domain : null;
+  const contexts = domain === null ? '' : JSON.stringify(Array.isArray(domain.contexts) ? domain.contexts : []);
+  const bound = (name) => `function (result, options) { return ${name}(result, Object.assign({}, options, { contexts: ${contexts} })); }`;
+  return exportedNames(options).map((name) => {
+    if (domain !== null && name === 'briefOf') return `    briefOf: ${bound('briefDomainOf')}`;
+    if (domain !== null && name === 'briefFiles') return `    briefFiles: ${bound('briefDomainFiles')}`;
+    return `    ${name}: ${name}`;
+  }).join(',\n');
 }
 
 /**
@@ -246,6 +271,8 @@ function exportedNames(options) {
  * @param {string} [options.specVersion] recorded in the banner comment only.
  * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) and of the
  *   blueprint outputs (AGSC-07-29) too.
+ * @param {{contexts: Array<string>}} [options.domain] with `brief`, the domain paragraph of the
+ *   brief and the slugs of the clusters `domain.contexts` declares (AGSC-07-25, AGSC-08-32).
  * @returns {string} a classic script, LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
@@ -263,10 +290,10 @@ function bundle(options) {
   if (opts.brief === true) {
     for (const name of brief.PORTABLE) parts.push(String(brief[name]));
     for (const name of blueprint.PORTABLE) parts.push(String(blueprint[name]));
+    if (opts.domain) for (const name of brief.DOMAIN_PORTABLE) parts.push(String(brief[name]));
   }
   for (const name of PAGE_SUPPORT) parts.push(String(SUPPORT[name]));
-  const map = exportedNames(opts).map((name) => `    ${name}: ${name}`).join(',\n');
-  parts.push('  globalThis.AGSC_CORE = {', `${map}`, '  };', '}());');
+  parts.push('  globalThis.AGSC_CORE = {', exportMap(opts), '  };', '}());');
   return `${parts.join('\n')}\n`;
 }
 

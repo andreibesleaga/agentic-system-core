@@ -23,9 +23,10 @@ const DIR = path.resolve(__dirname, '..', '..', 'src', 'distribution');
 /** Each emitted module and its own portable list, in emission order. */
 const MODULES = [
   { file: path.join(DIR, 'page-tools.js'), portable: pageTools.PORTABLE },
-  { file: path.join(DIR, 'tool-answers.js'), portable: answers.PORTABLE },
+  { file: path.join(DIR, 'tool-answers.js'), portable: [...answers.PORTABLE, ...answers.DOMAIN_PORTABLE] },
 ];
-const EMITTED = [...pageTools.PORTABLE, ...answers.PORTABLE];
+/** Every name the script of a node with the domain parts emits (AGSC-09-13); the others omit `DOMAIN_PORTABLE`. */
+const EMITTED = [...pageTools.PORTABLE, ...answers.PORTABLE, ...answers.DOMAIN_PORTABLE];
 
 /** Every name a module binds at MODULE SCOPE — the set a page has no binding for. */
 function moduleScopeNames(file) {
@@ -49,7 +50,9 @@ test('every portable page-tool name is a function whose own source text is emitt
   assert.ok(Array.isArray(pageTools.PORTABLE) && pageTools.PORTABLE.length > 0);
   assert.ok(Array.isArray(answers.PORTABLE) && answers.PORTABLE.length > 0);
   assert.strictEqual(new Set(EMITTED).size, EMITTED.length, 'a name is on both portable lists');
-  const emitted = pageTools.bundle({ bundleId: 'x' });
+  const emitted = pageTools.bundle({ bundleId: 'x', domain: { contexts: [] } });
+  const plain = pageTools.bundle({ bundleId: 'x' });
+  for (const name of answers.DOMAIN_PORTABLE) assert.ok(!plain.includes(`function ${name}(`), `${name} is emitted for a node without the domain parts`);
   for (const name of EMITTED) {
     const source = String(pageTools[name] === undefined ? (answers[name] === undefined ? '' : answers[name]) : pageTools[name]);
     // Not every portable function is exported from the module (only the ones a Node
@@ -99,6 +102,21 @@ test('the emitted script evaluates in a context that holds only the language', (
   // With no `document` the bootstrap stands down and installs nothing at all.
   assert.strictEqual(vm.runInContext('typeof globalThis.AGSC_TOOLS', context), 'undefined');
   assert.strictEqual(api.ready, null);
+});
+
+test('the emitted script with the domain parts evaluates in a context that holds only the language', () => {
+  // AGSC-09-13: the wrapper over the toolset runs in the page; `install` hands it the algebra.
+  const context = vm.createContext({ TextEncoder });
+  vm.runInContext(pageTools.bundle({ bundleId: 'x', domain: { contexts: ['c'] }, specVersion: '1.0.0' }), context,
+    { filename: 'agsc-page-tools.js' });
+  const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
+  assert.deepStrictEqual([...api.DOMAIN_CONTEXTS], ['c']);
+  const corpus = { base: 'https://x.example/', bySlug: { a: { body: 'A.\n', frontmatter: { clusters: ['c'], domain_role: 'entity', title: 'A' }, slug: 'a', type: 'concept' } },
+    index: null, items: [] };
+  const core = { domainOf: (item, contexts) => ({ context: contexts[0], role: item.frontmatter.domain_role }) };
+  const answer = api.install(corpus, core).call('read', { slug: 'a' });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(answer.body.domain)), { context: 'c', role: 'entity' });
+  assert.deepStrictEqual(Object.keys(answer.body), ['body', 'chunks', 'domain', 'frontmatter', 'iri', 'slug']);
 });
 
 test('the emitted script reaches no third-party origin and evaluates no text', () => {

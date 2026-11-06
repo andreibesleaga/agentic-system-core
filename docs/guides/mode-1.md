@@ -467,6 +467,33 @@ node -e 'const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"
 ["handoff"]
 ```
 
+Readers and agents see these parts too. On a node with a vocabulary file, a note's page lists
+its domain type, role, context and warrant under its relations table, each with its label: the
+`rdfs:label` the file gives the class, the role in words, the title of the context's cluster and
+the warrant's kind and source. Where a related note has a domain type or a context, the
+relations table shows them in two more columns. For a note that states any of `domain_type`,
+`domain_role`, `domain_context` and `warrant`, the tools `search` and `read` add a member
+`domain` with its parts, on the local server and in the page tools alike, and a brief
+(`agsc compose --brief`) lists them under `## Domain` in `BRIEF.md`, on the note's entry in
+`brief.json` and in its section of `context.md`. A note that states none of them looks as it did
+before.
+
+```bash demo
+agsc build > /dev/null 2>&1
+grep -o '<dt>Domain [a-z]*</dt><dd>[^<]*</dd>' www/concepts/handoff/index.html
+agsc compose handoff supervisor --brief > /dev/null 2>&1
+grep -A3 '^## Domain' "$(ls -d dist/harness/*.companion)/BRIEF.md"
+```
+
+```text expect
+<dt>Domain type</dt><dd>Engine</dd>
+<dt>Domain role</dt><dd>aggregate root</dd>
+## Domain
+
+- `handoff`: type Engine; role aggregate-root
+- `supervisor`: context coordination
+```
+
 A peer can say how its model relates to yours. Instead of the address alone, write the entry
 of `peers` as `{"url": "<address>", "relationship": "<kind>", "crosswalk": "<file>"}`: the kind
 is `shared-kernel` (the two nodes own part of the model together), `conformist` (this node

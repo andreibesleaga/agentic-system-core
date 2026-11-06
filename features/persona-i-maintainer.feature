@@ -185,6 +185,20 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And "www/graph.jsonld", expanded with "www/ns/context.jsonld" and compacted again, is the same document (AGSC-06-32)
     And no network call was attempted
 
+  @PRD-022 @human
+  Scenario: A note's page, its page tool answer and its brief show its domain type, role and warrant
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And the page "www/concepts/handoff/index.html" lists under its relations table the domain type "Engine", the role "aggregate root" and the warrant "literary: https://example.org/glossary" (AGSC-06-38)
+    And the page tool "read" of "handoff", run from the published scripts, carries the domain type "Engine", the role "aggregate-root" and that warrant (AGSC-09-13)
+    When the maintainer runs "agsc compose handoff --brief" under the network trap
+    Then the command exits 0
+    And the brief's "BRIEF.md" has, after "## Members", the line "- `handoff`: type Engine; role aggregate-root; warrant literary — https://example.org/glossary" under "## Domain" (AGSC-07-25)
+    And no network call was attempted
+
   @NFR-01 @PRD-049 @human
   Scenario: A TypeScript part ships as its compiled CommonJS, and neither an install nor a run needs TypeScript
     When the maintainer checks the TypeScript parts with "node tools/build-ts --check"

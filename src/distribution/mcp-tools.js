@@ -28,8 +28,10 @@
  * The build instant, the content version and the chunk lines are read from the route map of
  * the build the `mcp` verb made (`options.artifacts`), the routes a page reads; without one,
  * `read` carries no chunk and `brief` answers `AGSC-E901`, so no byte is invented. The
- * domain parts of AGSC-09-13 (vector `cli-0037`, not written yet) join a `search` hit, the
- * `read` body and the `brief` items, as the header of `tool-answers.js` says.
+ * domain parts of AGSC-09-13 (vector `cli-0037`) join a `search` hit and the `read` body
+ * through `tool-answers.js#toolDomainAnswer`, the function the page applies too, and the
+ * `brief` items through `composition/brief.js#briefDomainOf`; both read `domainOf` over the
+ * contexts that `domain.contexts` declares (AGSC-08-32).
  *
  * PURE over a loaded Bundle: no clock, no network, no process. The Proposal
  * SIDE EFFECT (AGSC-08-04's `dist/proposal/<n>.patch` and `.md`) is NOT taken
@@ -47,7 +49,7 @@
 
 const { createHash } = require('node:crypto');
 const { compose } = require('../composition/compose.js');
-const { briefOf } = require('../composition/brief.js');
+const { briefDomainOf, domainOf } = require('../composition/brief.js');
 const { selectionDigestInput, terms } = require('../composition/harness.js');
 const chunks = require('../knowledge/chunks.js');
 const links = require('../knowledge/links.js');
@@ -222,6 +224,12 @@ function tools(bundle, options) {
     const fm = item.frontmatter || {};
     return { kind: fm.kind, status: fm.status, type: item.type };
   };
+  // AGSC-09-13, the domain parts, over the clusters `domain.contexts` declares (AGSC-08-32). Read
+  // here rather than through `knowledge/contexts.js`, which the compose page, reaching this module
+  // for the manifest, must not reach (`tests/arch/context-map.test.js`).
+  const contexts = (Array.isArray((config.domain || {}).contexts) ? config.domain.contexts : [])
+    .map((entry) => entry && entry.cluster).filter((cluster) => typeof cluster === 'string');
+  const domainOfSlug = (slug) => (byslug.has(slug) ? domainOf(byslug.get(slug), contexts) : null);
 
   implementations.search = (args) => {
     const query = typeof args.query === 'string' ? args.query : '';
@@ -260,7 +268,7 @@ function tools(bundle, options) {
       return errorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
     }
     const facts = listedFacts(listed());
-    const core = { briefOf, compose, selectionDigestInput };
+    const core = { briefOf: (result, options) => briefDomainOf(result, { ...options, contexts }), compose, selectionDigestInput };
     const answer = answers.toolBrief(core, facts, args.selection, (text) => createHash('sha256').update(text, 'utf8').digest('hex'));
     return answer.fault === undefined ? envelope('brief', 'brief', answer.body)
       : errorEnvelope('brief', answer.fault.code, answer.fault.message);
@@ -507,7 +515,7 @@ function tools(bundle, options) {
         : 'no item with that IRI in this Bundle');
     }
     try {
-      return implementations[name](aliased.args);
+      return answers.toolDomainAnswer(name, implementations[name](aliased.args), domainOfSlug);
     } catch (e) {
       // AGSC-09-13a: a fault the engine reports under a registered code — the
       // canonical writer refusing a frontmatter it cannot hold (AGSC-E105) — is the

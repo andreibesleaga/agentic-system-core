@@ -59,7 +59,7 @@ test('every portable name is a function whose own source text is emitted', () =>
   for (const [label, module] of [['compose.js', compose], ['harness.js', harness],
     ['archive.js', archive], ['brief.js', brief], ['blueprint.js', blueprint]]) {
     assert.ok(Array.isArray(module.PORTABLE), `${label} declares no PORTABLE list`);
-    for (const name of module.PORTABLE) {
+    for (const name of [...module.PORTABLE, ...(module.DOMAIN_PORTABLE || [])]) {
       assert.strictEqual(typeof module[name], 'function', `${label}#${name} is not an exported function`);
       const source = String(module[name]);
       assert.ok(source.startsWith(`function ${name}(`) || source.startsWith(`function ${name} (`),
@@ -78,10 +78,10 @@ test('no portable function closes over a module-scope binding', () => {
     // A module-scope binding is harmless when it is itself one of the names the
     // bundle emits — `harness.js` destructures `compareCodePoint` from
     // `compose.js`, and the bundle carries that function's own declaration.
-    const emitted = new Set(browser.exportedNames({ brief: true }));
+    const emitted = new Set(browser.exportedNames({ brief: true, domain: { contexts: [] } }));
     const bound = moduleScopeNames(file).filter((n) => !emitted.has(n));
     assert.ok(bound.length > 0, `no module-scope binding was found in ${file}; the scan is broken`);
-    const portable = module.PORTABLE || module.PAGE_SUPPORT;
+    const portable = [...(module.PORTABLE || module.PAGE_SUPPORT), ...(module.DOMAIN_PORTABLE || [])];
     for (const name of portable) {
       const source = String(module[name] || (file === 'browser.js' && browser[name]));
       for (const binding of bound) {
@@ -115,7 +115,7 @@ test('no portable function reads a MEMBER of a required module (the hole that le
     // destructured require binds the functions themselves, which the bundle emits.
     const required = [...text.matchAll(/^const ([A-Za-z_$][A-Za-z0-9_$]*) = require\(/gmu)].map((m) => m[1]);
     scanned += required.length;
-    const portable = module.PORTABLE || module.PAGE_SUPPORT;
+    const portable = [...(module.PORTABLE || module.PAGE_SUPPORT), ...(module.DOMAIN_PORTABLE || [])];
     for (const name of portable) {
       const source = String(module[name] || browser[name]);
       for (const binding of required) {
@@ -207,6 +207,33 @@ test('the bundle with the brief and the blueprint evaluates and answers in a con
       assert.ok(!text.includes('[object Object]'), `${file} carries "[object Object]"`);
     }
   }
+});
+
+test('the bundle with the domain paragraph evaluates in a context that holds only the language and writes the command line\'s brief', () => {
+  // AGSC-07-13 with AGSC-07-25: on a node whose items state a domain key the page's `briefFiles`
+  // and `briefOf` are the domain paragraph's, given the node's contexts, so the page writes the
+  // bytes of `agsc compose --brief`; the bundle of every other node keeps its bytes.
+  const contexts = ['billing'];
+  const text = browser.bundle({ brief: true, domain: { contexts }, specVersion: '1.0.0' });
+  assert.ok(text.length > browser.bundle({ brief: true, specVersion: '1.0.0' }).length);
+  const context = vm.createContext({});
+  vm.runInContext(text, context, { filename: 'agsc-core.js' });
+  const core = vm.runInContext('globalThis.AGSC_CORE', context);
+  const items = [
+    { slug: 'inv', type: 'concept', title: 'Invoice', description: 'I.', requires: ['mon'], domain_type: 'Invoice', domain_role: 'aggregate-root',
+      warrant: { source: 'https://x.example/i', type: 'literary' } },
+    { slug: 'mon', type: 'concept', title: 'Money', description: 'M.', clusters: ['billing'], domain_role: 'value-object' },
+    { slug: 'note', type: 'concept', title: 'Note', description: 'N.' },
+    { slug: 'billing', type: 'cluster', title: 'Billing', description: 'B.' },
+  ];
+  const options = { base: 'https://x.example/', instant: '2026-01-01T00:00:00Z', items, licenseProse: 'CC0-1.0', selectionDigest: 'deadbeef', specVersion: '1.0.0' };
+  const verdict = compose.compose(items, ['inv', 'note']);
+  const page = JSON.parse(JSON.stringify(core.briefFiles(core.compose(items, ['inv', 'note']), options)));
+  assert.deepStrictEqual(page, brief.briefDomainFiles(verdict, { ...options, contexts }));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(core.briefOf(core.compose(items, ['inv', 'note']), options))),
+    brief.briefDomainOf(verdict, { ...options, contexts }));
+  assert.match(page[0][1], /## Domain\n\n- `mon`: role value-object; context billing\n- `inv`: type Invoice; role aggregate-root; warrant literary — https:\/\/x\.example\/i\n/u);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(core.domainOf(items[1], contexts))), { context: 'billing', role: 'value-object' });
 });
 
 test('src/composition requires nothing a browser cannot give it', () => {

@@ -46,7 +46,9 @@
 //
 // Extension. The table's columns are a list (`ITEM_COLUMNS`, `CLUSTER_COLUMNS`), so the
 // domain layer adds the other item's domain type and context as further columns on a
-// node that uses it (AGSC-06-38, last sentences) without changing this writer.
+// node that uses it (AGSC-06-38, last sentences), and its definition list of the item's
+// own domain parts goes under the table (`options.after`), without changing this writer
+// for any other node (`domain-view.js`).
 //
 // Requirements: PRD-002 (the fourteen Links and their inverses, shown to a reader) and
 // PRD-013 (the figure is compiled like a diagram, inline, with its accessible name).
@@ -288,7 +290,8 @@ function leftOut(sentences) {
  *
  * @param {object} item the flat item whose page is written.
  * @param {ReturnType<typeof index>} views
- * @param {{svgViolations?:Function, columns?:Array<object>}} [options]
+ * @param {{svgViolations?:Function, columns?:Array<object>, after?:string}} [options] `after`
+ *   is written right under the table.
  * @returns {{html:string, findings:Array<object>}}
  */
 function itemSection(item, views, options = {}) {
@@ -307,7 +310,7 @@ function itemSection(item, views, options = {}) {
   }, options);
   const parts = [taken ? '<h2>Relations</h2>' : '<h2 id="links">Relations</h2>',
     '<p>An outgoing relation is stated by this item; an incoming one is a backlink, stated by the other item. Each meaning reads from the item that states the relation towards its target.</p>',
-    figure.html, relationsTable(shown, options.columns || ITEM_COLUMNS, views)];
+    figure.html, relationsTable(shown, options.columns || ITEM_COLUMNS, views), options.after || ''];
   if (rows.length > shown.length) {
     parts.push(`<p class="relations-more">${more(rows.length - shown.length, 'relation of this item', 'relations of this item')} not drawn or listed here; every relation is in ${GRAPH_LINK}.</p>`);
   }

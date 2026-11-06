@@ -35,14 +35,15 @@
 #              files themselves: the release binary of version 1.7.12, fetched from
 #              its GitHub release and refused unless its SHA-256 is the one recorded
 #              below (read from the release's checksums file on 2026-09-25).
-#   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the four
+#   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the seven
 #              browser test files, none of which may skip, and the acceptance
 #              scenarios, none of which may skip for want of the browser. playwright-core 1.61.1 comes from the
 #              npm registry and chrome-headless-shell 149.0.7827.55 from Chrome for
 #              Testing, each refused unless its SHA-256 is the one recorded below
 #              (read on 2026-10-10; the registry's sha512 integrity of the same
 #              tarball agrees); axe-core 4.13.0, which the explorer's browser test
-#              runs over /clusters/ in both colour schemes, comes from the npm
+#              runs over /clusters/ in both colour schemes (and the query, compose
+#              and domain-parts browser tests over their pages), comes from the npm
 #              registry the same way (read on 2026-11-03; the registry's sha512
 #              integrity agrees). The job is not a check context branch protection
 #              requires.
@@ -235,7 +236,7 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: |
           set -euo pipefail
-          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js tests/distribution/explorer-browser.test.js tests/distribution/query-browser.test.js tests/distribution/compose-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
+          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js tests/distribution/explorer-browser.test.js tests/distribution/query-browser.test.js tests/distribution/compose-browser.test.js tests/distribution/domain-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
           # A browser that failed to start would make these tests skip, not fail.
           grep -qx '# skipped 0' "$RUNNER_TEMP/browser.tap" || { echo "a browser test skipped: the browser lane did not run"; exit 1; }
       - name: the acceptance scenarios, with the browser present

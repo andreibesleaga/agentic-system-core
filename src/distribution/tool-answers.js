@@ -32,11 +32,15 @@
  * kinds), the readings of `knowledge/derive.js` and the Link warnings of `knowledge/links.js`;
  * and the citation record of `knowledge/chunks.js#citationRecord`.
  *
- * THE DOMAIN LAYER (vector `cli-0037`, not written yet). For an item that states a key of
- * AGSC-02-25, a `search` hit and the `read` body gain a member `domain` and the `items`
- * entries of `brief` carry it as AGSC-07-25 says; an item that states none gets no member.
- * Nothing here writes it yet; the places are `toolBounded`'s hits (one `domain` per hit,
- * added before the bound is applied), the `read` bodies of both toolsets, and `briefOf`.
+ * THE DOMAIN LAYER (vector `cli-0037`). For an item that states a key of AGSC-02-25, a `search`
+ * hit and the `read` body gain a member `domain` (`toolDomainAnswer`, which both transports
+ * apply to the answer they computed), and the `items` entries of `brief` carry it as AGSC-07-25
+ * says (`composition/brief.js#briefDomainOf`, the `briefOf` the algebra hands in); an item that
+ * states none gets no member, so its answer keeps its bytes. The parts are those of
+ * `composition/brief.js#domainOf`, the one reader of the rule; a page reads it from the algebra
+ * (`AGSC_CORE.domainOf`). The functions of `DOMAIN_PORTABLE` are emitted into the page only for
+ * a node whose listed items state a domain key, so every other node's page script keeps its
+ * bytes (AGSC-01-41).
  *
  * PURE: no fs, no clock, no network, no process. `toolSha256Hex` is Web Crypto, the one
  * hasher a page has; the local server hands in Node's own instead (`mcp-tools.js`).
@@ -422,6 +426,73 @@ function toolSha256Hex(text) {
   });
 }
 
+/* ------------------------------------------------------------ the domain parts */
+
+/**
+ * AGSC-09-13: a copy of `record` that carries `domain` among its members, all in code-point
+ * order of their names, as the members of a hit and of a `read` body already are; `record`
+ * itself when there is no part.
+ */
+function toolWithDomain(record, domain) {
+  if (domain === null || domain === undefined) return record;
+  const out = {};
+  const names = Object.keys(record).concat(['domain']).sort();
+  for (let i = 0; i < names.length; i += 1) out[names[i]] = names[i] === 'domain' ? domain : record[names[i]];
+  return out;
+}
+
+/**
+ * AGSC-09-13, the domain parts: the answer of `name` with `domain` on each `search` hit and on
+ * the `read` body of an item that has a domain part; every other answer, and every answer about
+ * an item with none, unchanged. `domainOf(slug)` gives the parts, or `null`.
+ *
+ * @param {string} name the tool.
+ * @param {object} answer the envelope the tool returned.
+ * @param {function(string): (object|null)} domainOf
+ * @returns {object}
+ */
+function toolDomainAnswer(name, answer, domainOf) {
+  const body = answer && answer.body;
+  if (body === null || typeof body !== 'object') return answer;
+  if (name === 'search' && answer.type === 'items' && Array.isArray(body.hits)) {
+    const hits = body.hits.map((hit) => toolWithDomain(hit, domainOf(hit.slug)));
+    return hits.every((hit, i) => hit === body.hits[i]) ? answer : Object.assign({}, answer, { body: Object.assign({}, body, { hits }) });
+  }
+  if (name === 'read' && answer.type === 'item') {
+    const read = toolWithDomain(body, domainOf(body.slug));
+    return read === body ? answer : Object.assign({}, answer, { body: read });
+  }
+  return answer;
+}
+
+/**
+ * The page toolset with the domain parts: each answer of `toolset` through `toolDomainAnswer`,
+ * a promise of one through it when it settles. The parts are the algebra's (`core.domainOf`,
+ * emitted with the domain paragraph of the brief), over the corpus the toolset reads and the
+ * declared contexts of the node; a page without that algebra has no brief either, and keeps
+ * the toolset as it is.
+ *
+ * @param {{call: Function}} toolset what `page-tools.js#pageToolset` returned.
+ * @param {object} corpus the corpus it reads (`bySlug`).
+ * @param {object} core the algebra (`globalThis.AGSC_CORE`).
+ * @param {Array<string>} contexts the slugs of the clusters `domain.contexts` declares.
+ * @returns {{call: Function}}
+ */
+function toolDomainToolset(toolset, corpus, core, contexts) {
+  if (core === null || typeof core !== 'object' || typeof core.domainOf !== 'function') return toolset;
+  const bySlug = (corpus && corpus.bySlug) || {};
+  const domainOf = (slug) => (Object.prototype.hasOwnProperty.call(bySlug, slug) ? core.domainOf(bySlug[slug], contexts) : null);
+  return {
+    call: function (name, args) {
+      const answer = toolset.call(name, args);
+      if (answer !== null && typeof answer === 'object' && typeof answer.then === 'function') {
+        return answer.then((value) => toolDomainAnswer(name, value, domainOf));
+      }
+      return toolDomainAnswer(name, answer, domainOf);
+    },
+  };
+}
+
 /**
  * Every name whose source text `page-tools.js#bundle` emits into the page after its own, in
  * emission order.
@@ -431,7 +502,11 @@ const PORTABLE = Object.freeze(['toolHitBound', 'toolBounded', 'toolParse', 'too
   'toolChain', 'toolExplanation', 'toolIsKind', 'toolTargetMatches', 'toolLinkWarnings', 'toolBrief',
   'toolSha256Hex']);
 
+/** The domain parts' functions, emitted after `PORTABLE` only on a node whose listed items state a domain key. */
+const DOMAIN_PORTABLE = Object.freeze(['toolWithDomain', 'toolDomainAnswer', 'toolDomainToolset']);
+
 module.exports = {
+  DOMAIN_PORTABLE,
   PORTABLE,
   toolBounded,
   toolBrief,
@@ -440,6 +515,8 @@ module.exports = {
   toolChunkShardRoutes,
   toolCitationRecord,
   toolDescribed,
+  toolDomainAnswer,
+  toolDomainToolset,
   toolExplanation,
   toolHitBound,
   toolHost,
@@ -450,4 +527,5 @@ module.exports = {
   toolRelations,
   toolSha256Hex,
   toolTargetMatches,
+  toolWithDomain,
 };

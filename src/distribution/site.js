@@ -45,6 +45,7 @@ const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
 const pageGraph = require('./graph-view.js');
+const domainView = require('./domain-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
@@ -1643,8 +1644,8 @@ function buildSite(bundle, ports, options, findings) {
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
     const publishedBySlug = new Map();
     for (const i of pageItems) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
-    // AGSC-06-38: the graph view reads the listed items only (AGSC-06-30).
-    const views = pageGraph.index(items, routeOf);
+    // AGSC-06-38: the graph view reads the listed items only (AGSC-06-30); `domain-view.js` adds the domain parts.
+    const { views, ...domainPages } = domainView.pages({ bundle, config, items, model: siteVocabulary, routeOf });
     const membersOf = (cluster) => linkGraph.membersOf(cluster, items).map(entryOf);
     const clusterMembers = (all) => ({ members: all.slice(0, CLUSTER_MEMBERS_SHOWN), membersTotal: all.length });
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
@@ -1683,7 +1684,7 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
-      const relations = pageGraph.itemSection(item, views);
+      const relations = domainPages.itemSection(item);
       const clusterMap = item.type === 'cluster' ? pageGraph.clusterSection(item, views) : { findings: [], html: '' };
       findings.push(...relations.findings, ...clusterMap.findings);
       // AGSC-06-01: every attachment the item names is a route of its own.
@@ -1809,9 +1810,9 @@ function buildSite(bundle, ports, options, findings) {
     // three scripts are same-origin assets of this one route, because AGSC-06-17's
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
-    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence.
-    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, specVersion })));
-    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, licenseProse, specVersion })));
+    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence; both scripts carry the domain parts only on a node whose listed items state a domain key.
+    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, domain: domainPages.scripts, specVersion })));
+    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, domain: domainPages.scripts, licenseProse, specVersion })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
     // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).

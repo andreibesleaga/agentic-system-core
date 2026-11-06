@@ -1,7 +1,8 @@
 'use strict';
 // Not a test — a small Bundle built in a scratch folder, shared by the tests of the graph
-// view (`graph-view.test.js`) and of the explorer's reading of `/graph.jsonld`
-// (`explorer/graph-data.test.js`): the minimal fixture's configuration and front page,
+// view (`graph-view.test.js`), of the explorer's reading of `/graph.jsonld`
+// (`explorer/graph-data.test.js`) and of the domain parts in a browser
+// (`domain-browser.test.js`): the minimal fixture's configuration and front page,
 // the given items, their diagram sources and, when asked, a site vocabulary (AGSC-01-41).
 // Deterministic: fixed build instant, no network; the folder is removed after the build.
 
@@ -29,20 +30,20 @@ function yamlLines(key, value) {
  * Build a Bundle of the minimal fixture's configuration and front page and the given
  * items (each `{slug, type, body?, ...frontmatter}`); `diagrams` maps a slug to its
  * `.diagram` source; `vocabulary`, when given, is written as `domain/vocabulary.ttl` and
- * named in the configuration, so the node uses the domain layer. Returns the built files
- * and the findings.
+ * named in the configuration, so the node uses the domain layer, and `contexts` is its
+ * `domain.contexts` (AGSC-01-41). Returns the built files and the findings.
  *
  * @param {Array<object>} items
- * @param {{releases?:object, diagrams?:object, vocabulary?:string}} [options]
+ * @param {{releases?:object, diagrams?:object, vocabulary?:string, contexts?:Array<object>}} [options]
  * @returns {{files:Map<string,*>, findings:Array<object>}}
  */
-function buildNode(items, { releases, diagrams = {}, vocabulary } = {}) {
+function buildNode(items, { releases, diagrams = {}, vocabulary, contexts } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-scratch-node-'));
   try {
     const config = JSON.parse(fs.readFileSync(path.join(FIXTURE, 'agsc.config.json'), 'utf8'));
     if (releases) config.releases = releases;
     if (vocabulary !== undefined) {
-      config.domain = { vocabulary: 'domain/vocabulary.ttl' };
+      config.domain = { vocabulary: 'domain/vocabulary.ttl', ...(contexts === undefined ? {} : { contexts }) };
       fs.mkdirSync(path.join(dir, 'domain'));
       fs.writeFileSync(path.join(dir, 'domain', 'vocabulary.ttl'), vocabulary);
     }

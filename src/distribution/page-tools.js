@@ -1727,13 +1727,21 @@ const SOURCE = Object.freeze({
  * @param {string} [options.licenseProse] `bundle.license_prose`, which the brief states
  *   (AGSC-07-25) and no published route carries; the Content Use Terms when absent.
  * @param {string} [options.specVersion] recorded in the banner comment only.
+ * @param {{contexts: Array<string>}} [options.domain] for a node whose listed items state a key
+ *   of AGSC-02-25: the domain parts on `search` and `read` (AGSC-09-13,
+ *   `tool-answers.js#toolDomainToolset`) over the declared contexts; absent, the script keeps
+ *   the bytes it had before the domain layer (AGSC-01-41).
  * @returns {string} LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
   const opts = options || {};
   const bundleId = opts.bundleId === undefined || opts.bundleId === null ? '' : String(opts.bundleId);
   const licenseProse = opts.licenseProse === undefined || opts.licenseProse === null ? pageTerms() : String(opts.licenseProse);
-  const names = [...PORTABLE, ...toolAnswers.PORTABLE];
+  const domain = opts.domain ? toolAnswers.DOMAIN_PORTABLE : [];
+  const names = [...PORTABLE, ...toolAnswers.PORTABLE, ...domain];
+  // The toolset over a corpus: with the domain parts on a node that has them, else as in 1.0.
+  const toolsetOf = (core, hash) => (domain.length === 0 ? `pageToolset(corpus, ${core}${hash})`
+    : `toolDomainToolset(pageToolset(corpus, ${core}${hash}), corpus, ${core}, API.DOMAIN_CONTEXTS)`);
   const parts = ['\'use strict\';',
     '// SPDX-License-Identifier: Apache-2.0 (the engine\'s code; the prose it carries keeps its own terms)',
     '// AgenticSystemCore page tools (AGSC-09-13, AGSC-09-16). GENERATED — every',
@@ -1744,6 +1752,7 @@ function bundle(options) {
     '(function () {'];
   for (let i = 0; i < PORTABLE.length; i += 1) parts.push(String(SOURCE[PORTABLE[i]]));
   for (let i = 0; i < toolAnswers.PORTABLE.length; i += 1) parts.push(String(toolAnswers[toolAnswers.PORTABLE[i]]));
+  for (let i = 0; i < domain.length; i += 1) parts.push(String(toolAnswers[domain[i]]));
   parts.push(`  var API = {
 ${names.map((name) => `    ${name}: ${name}`).join(',\n')}
   };
@@ -1754,7 +1763,11 @@ ${names.map((name) => `    ${name}: ${name}`).join(',\n')}
   // brief states the prose licence (AGSC-07-25), which no published route carries either.
   API.BUNDLE_ID = ${JSON.stringify(bundleId)};
   API.LICENSE_PROSE = ${JSON.stringify(licenseProse)};
-
+${domain.length === 0 ? '' : `
+  // AGSC-08-32: the clusters \`domain.contexts\` declares, which no published route carries, for
+  // the context of an item that names none but whose primary cluster is one (AGSC-09-13).
+  API.DOMAIN_CONTEXTS = ${JSON.stringify(opts.domain.contexts || [])};
+`}
   // AGSC-06-01: the routes a page reads, and no others. Every one is same-origin.
   API.ROUTES = ['/.well-known/knowledge-linkset', '/search.json', '/chunks.jsonl'];
 
@@ -1806,7 +1819,7 @@ ${names.map((name) => `    ${name}: ${name}`).join(',\n')}
   };
 
   API.install = function (corpus, core, hash) {
-    var toolset = pageToolset(corpus, core, hash);
+    var toolset = ${toolsetOf('core', ', hash')};
     globalThis.AGSC_TOOLS = toolset;
     return toolset;
   };
@@ -1831,7 +1844,7 @@ ${names.map((name) => `    ${name}: ${name}`).join(',\n')}
     // The corpus stays readable as \`API.corpus\` once it is in: the /compose/ page writes the
     // brief and the blueprint over the same items the page tool \`brief\` reads (AGSC-07-25).
     var pending = API.load(function (route) { return fetch(route); })
-      .then(function (corpus) { API.corpus = corpus; return pageToolset(corpus, globalThis.AGSC_CORE); });
+      .then(function (corpus) { API.corpus = corpus; return ${toolsetOf('globalThis.AGSC_CORE', '')}; });
     // Once the corpus is in, the SYNCHRONOUS toolset replaces the promise wrapper, so
     // a tool call costs no round trip and executeTool resolves immediately.
     API.ready = pending.then(function (toolset) {

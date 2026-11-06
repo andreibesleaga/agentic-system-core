@@ -128,6 +128,12 @@ To add a module:
    `tests/arch/explorer-portable.test.js` for the explorer of `/clusters/`, which also
    depends on nothing outside its own folder, and `tests/arch/query-portable.test.js` for
    the `/query/` page and its worker, which reuse the explorer's layout and scene writer).
+   A part a page carries only for some nodes has a second list, `DOMAIN_PORTABLE`: the
+   domain paragraph of the brief (`composition/brief.js`) and the domain parts of the tool
+   answers (`distribution/tool-answers.js`) are emitted only for a node whose listed items
+   state a domain key, so every other node's page scripts keep their bytes; each function
+   on it is built on the function of `PORTABLE` it extends and gives that function's
+   result when there is no domain part, and the two tests above check both lists.
    Code from another project that a page runs is vendored, never hand-copied: the query
    engine of `/query/` is one release of Oxigraph under `src/distribution/vendor/`, byte
    for byte, with its licence texts, its SHA-256 pinned by

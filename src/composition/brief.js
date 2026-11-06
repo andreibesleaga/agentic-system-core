@@ -35,11 +35,14 @@
  * `knowledge/derive.js` (AGSC-05-33, `tests/composition/brief.test.js`).
  *
  * THE DOMAIN LAYER. The domain paragraph of AGSC-07-25 (a `domain` member on an `items` entry,
- * a `## Domain` section after `## Members`, the domain lines of `context.md`) applies only to a
- * node whose members state a key of AGSC-02-25; it is not written by this module yet, and the
- * bytes below are those of a node without the layer, which that paragraph keeps unchanged. It
- * belongs in `briefOf` (the `items` entries), `briefMd` (after `## Members`) and
- * `contextSection` (after the reason line).
+ * a `## Domain` section after `## Members`, the domain lines of `context.md`) applies only when
+ * a member states a key of AGSC-02-25. It is written by the functions of `DOMAIN_PORTABLE`
+ * (`briefDomainFiles`, `briefDomainOf`), each built on the function of `PORTABLE` it extends and
+ * giving that function's bytes when no member has a domain part. The command line, the local
+ * tool server and the vectors call them; a page carries them only on a node whose listed items
+ * state a domain key, so the page script of every other node keeps its bytes (AGSC-01-41: a
+ * Bundle with no domain layer emits what it emitted before). The blueprint of AGSC-07-29 names
+ * no domain part and reads `briefParts`.
  *
  * THE NARRATION of AGSC-07-28 is never written here: a brief carries no model-written text, and
  * the reference engine ships no adapter through which an agent lane could call a model
@@ -570,6 +573,168 @@ function briefFiles(result, options) {
   ];
 }
 
+// ------------------------------------------------------ the domain paragraph
+
+/**
+ * AGSC-02-25: the four domain keys of an item. An item that states none of them has no domain
+ * part in any answer (AGSC-07-25, AGSC-09-13); `domain_links` (AGSC-03-27) is a Link of its
+ * own and appears in `relations` like any other key.
+ */
+function domainKeys() {
+  return ['domain_context', 'domain_role', 'domain_type', 'warrant'];
+}
+
+/**
+ * The domain parts of an item, as AGSC-07-25 and AGSC-09-13 name them: `context` (AGSC-08-32:
+ * the context its `domain_context` names, else that of its primary cluster when `contexts`
+ * declares that cluster), `role` (`domain_role`), `type` (`domain_type`) and `warrant` (the
+ * `{source, type}` of AGSC-05-40, `knowledge/warrants.js#warrantOf` restated), only those it
+ * has; `null` for an item that states none of the four keys, or has no part. On a node that
+ * lints clean a stated `domain_context` is always a declared context (`AGSC-E418` otherwise),
+ * so the context is that of `knowledge/contexts.js#contextOf`; `tests/composition/brief-domain.test.js`
+ * compares the two, and the warrant with `warrantOf`.
+ *
+ * @param {object} item a flat item or `{frontmatter}`
+ * @param {Array<string>} [contexts] the slugs of the clusters `domain.contexts` declares
+ * @returns {{context?: string, role?: string, type?: string, warrant?: {source: string, type: string}}|null}
+ */
+function domainOf(item, contexts) {
+  const fm = frontmatterOf(item);
+  if (!domainKeys().some((key) => fm[key] !== undefined)) return null;
+  const primary = Array.isArray(fm.clusters) ? fm.clusters[0] : undefined;
+  const declared = Array.isArray(contexts) && typeof primary === 'string' && contexts.indexOf(primary) !== -1;
+  const context = typeof fm.domain_context === 'string' ? fm.domain_context : (declared ? primary : undefined);
+  const w = fm.warrant;
+  const shaped = w !== null && typeof w === 'object' && !Array.isArray(w) && typeof w.source === 'string' && w.source !== ''
+    && singleLine(w.source) === w.source && ['literary', 'user', 'organisational'].indexOf(w.type) !== -1;
+  const out = {};
+  if (context !== undefined) out.context = context;
+  if (typeof fm.domain_role === 'string') out.role = fm.domain_role;
+  if (typeof fm.domain_type === 'string') out.type = fm.domain_type;
+  if (shaped) out.warrant = { source: w.source, type: w.type };
+  return Object.keys(out).length === 0 ? null : out;
+}
+
+/**
+ * `briefParts` with the domain paragraph of AGSC-07-25: each `items` entry of a member that
+ * has a domain part gains the member `domain`, and `domains` maps each such member to it. When
+ * no member has one the parts are those of `briefParts` and `domains` is empty, so every file
+ * keeps the bytes of a node without the layer. `options.contexts` names the declared contexts.
+ */
+function briefDomainParts(result, options) {
+  const parts = briefParts(result, options);
+  const listed = listedIndex(options);
+  const domains = new Map();
+  for (const m of parts.members) {
+    const domain = domainOf(listed.get(m.slug), options.contexts);
+    if (domain !== null) domains.set(m.slug, domain);
+  }
+  if (domains.size === 0) return { ...parts, domains };
+  const items = parts.record.items.map((entry) => (domains.has(entry.slug)
+    ? { domain: domains.get(entry.slug), reason: entry.reason, slug: entry.slug, title: entry.title, type: entry.type }
+    : entry));
+  return { ...parts, domains, record: { ...parts.record, items } };
+}
+
+/** AGSC-07-25: the `brief.json` object with the domain paragraph (`briefOf` when no member has a part). */
+function briefDomainOf(result, options) {
+  return briefDomainParts(result, options).record;
+}
+
+/** One line of the `## Domain` section: `` - `<slug>`: type …; role …; context …; warrant <type> — <source> ``. */
+function briefDomainLine(slug, domain) {
+  const said = [];
+  if (domain.type !== undefined) said.push(`type ${singleLine(domain.type)}`);
+  if (domain.role !== undefined) said.push(`role ${singleLine(domain.role)}`);
+  if (domain.context !== undefined) said.push(`context ${singleLine(domain.context)}`);
+  if (domain.warrant !== undefined) said.push(`warrant ${domain.warrant.type} — ${domain.warrant.source}`);
+  return `- \`${slug}\`: ${said.join('; ')}`;
+}
+
+/**
+ * `BRIEF.md` with the section `## Domain` after `## Members`, one line per member that has a
+ * part, in dependency order. It is written into the text of `briefMd`, whose `## Members`
+ * block is one line per member (every value through `singleLine`), so the first blank line
+ * after its heading is where that block ends.
+ */
+function briefDomainMd(parts, options) {
+  const md = briefMd(parts, options);
+  if (parts.domains.size === 0) return md;
+  const lines = parts.record.order.filter((slug) => parts.domains.has(slug))
+    .map((slug) => briefDomainLine(slug, parts.domains.get(slug)));
+  const heading = '\n\n## Members\n\n';
+  const end = md.indexOf('\n\n', md.indexOf(heading) + heading.length);
+  return `${md.slice(0, end)}\n\n## Domain\n\n${lines.join('\n')}${md.slice(end)}`;
+}
+
+/** The domain lines of a member's section of `context.md` (AGSC-07-25), in the rule's order. */
+function contextDomainLines(domain) {
+  const lines = [];
+  if (domain.type !== undefined) lines.push(`- domain_type: ${singleLine(domain.type)}`);
+  if (domain.role !== undefined) lines.push(`- domain_role: ${singleLine(domain.role)}`);
+  if (domain.context !== undefined) lines.push(`- domain_context: ${singleLine(domain.context)}`);
+  if (domain.warrant !== undefined) lines.push(`- warrant: ${domain.warrant.type} — ${domain.warrant.source}`);
+  return lines;
+}
+
+/**
+ * A member's section of `context.md` with its domain lines after its Link lines. The section of
+ * `contextSection` is a one-line heading, a blank line, its lines (no blank line among them), a
+ * blank line and the fenced prose, so its lines end at its second blank line.
+ */
+function contextDomainSection(member, authored, domain) {
+  const text = contextSection(member, authored);
+  if (domain === undefined) return text;
+  const end = text.indexOf('\n\n', text.indexOf('\n\n') + 2);
+  return `${text.slice(0, end)}\n${contextDomainLines(domain).join('\n')}${text.slice(end)}`;
+}
+
+/**
+ * `context.md` with the domain lines of AGSC-07-25: the opening blocks of `contextMd` (written
+ * by it for an empty order, then given the order), and the sections with their domain lines,
+ * cut at the same bounds (`contextBounds`), so a longer section can move the truncation line.
+ */
+function contextDomainMd(parts, options) {
+  if (parts.domains.size === 0) return contextMd(parts, options);
+  const { edges, members, record } = parts;
+  const bySlug = new Map(members.map((m) => [m.slug, m]));
+  const authored = new Map();
+  for (const e of edges) {
+    if (e.origin !== 'authored' || !bySlug.has(e.source)) continue;
+    if (!authored.has(e.source)) authored.set(e.source, []);
+    authored.get(e.source).push(e);
+  }
+  const bound = contextBounds();
+  let text = contextMd({ edges: [], members, record: { ...record, order: [] } }, options).slice(0, -1) + record.order.join(', ');
+  let omitted = 0;
+  for (const slug of record.order) {
+    const next = `${text}\n\n${contextDomainSection(bySlug.get(slug), authored, parts.domains.get(slug))}`;
+    if (omitted > 0 || utf8Length(next) + 1 > bound.sections) omitted += 1;
+    else text = next;
+  }
+  if (omitted > 0) text += `\n\n<!-- truncated: ${omitted} of ${members.length} items omitted -->`;
+  return `${text}\n`;
+}
+
+/**
+ * AGSC-07-25: the four files of the brief with the domain paragraph — the bytes of
+ * `briefFiles` when no member has a domain part. The command line writes these; a page carries
+ * them only on a node whose listed items state a domain key (`composition/browser.js`).
+ *
+ * @param {object} result a verdict from `compose.js#compose`.
+ * @param {object} options as for `briefOf`, and `contexts`, the declared contexts (AGSC-08-32).
+ * @returns {Array<[string, string]>} file name and text.
+ */
+function briefDomainFiles(result, options) {
+  const parts = briefDomainParts(result, options);
+  return [
+    ['BRIEF.md', briefDomainMd(parts, options)],
+    ['brief.json', `${canonicalJson(parts.record)}\n`],
+    ['brief.mmd', briefMmd(parts, options)],
+    ['context.md', contextDomainMd(parts, options)],
+  ];
+}
+
 /**
  * The portable surface, in dependency order: what `composition/browser.js` emits for a page
  * that shows the brief (AGSC-07-13).
@@ -580,8 +745,23 @@ const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds', 'de
   'checklistOf', 'summaryOf', 'briefParts', 'briefOf', 'listBlock', 'openingBlocks', 'briefMd',
   'contextSection', 'utf8Length', 'contextMd', 'briefMmd', 'briefFiles']);
 
+/**
+ * The domain paragraph's portable functions, in dependency order: emitted after `PORTABLE` only
+ * for a node whose listed items state a domain key, so that every other node's page script
+ * keeps its bytes (AGSC-01-41, AGSC-07-25).
+ */
+const DOMAIN_PORTABLE = Object.freeze(['domainKeys', 'domainOf', 'briefDomainParts', 'briefDomainOf',
+  'briefDomainLine', 'briefDomainMd', 'contextDomainLines', 'contextDomainSection', 'contextDomainMd',
+  'briefDomainFiles']);
+
 module.exports = {
+  DOMAIN_PORTABLE,
   PORTABLE,
+  briefDomainFiles,
+  briefDomainLine,
+  briefDomainMd,
+  briefDomainOf,
+  briefDomainParts,
   briefEdges,
   briefFiles,
   briefMd,
@@ -597,11 +777,16 @@ module.exports = {
   compareEdges,
   compareTriples,
   contextBounds,
+  contextDomainLines,
+  contextDomainMd,
+  contextDomainSection,
   contextMd,
   contextSection,
   contradictionGaps,
   dependencyOrder,
   derivedBound,
+  domainKeys,
+  domainOf,
   entryOf,
   gapsOf,
   inverseKeys,

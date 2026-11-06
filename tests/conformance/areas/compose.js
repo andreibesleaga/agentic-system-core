@@ -321,9 +321,12 @@ function runContextMap(vector) {
 }
 
 /**
- * The brief of one case of compose-0024 to compose-0026 (AGSC-07-25): the composition, its
- * selection digest hashed here as the command line hashes it, and the listed items of AGSC-00-05
- * (no draft, no retired item; the vectors hold back nothing by the switchboard).
+ * The brief of one case of compose-0024 to compose-0026 and compose-0034 (AGSC-07-25): the
+ * composition, its selection digest hashed here as the command line hashes it, and the listed
+ * items of AGSC-00-05 (no draft, no retired item; the vectors hold back nothing by the
+ * switchboard). It is written as the command line writes it, with the domain paragraph
+ * (`briefDomainFiles`), which gives the bytes of `briefFiles` when no member states a domain
+ * key; the vectors declare no context (AGSC-08-32).
  */
 function briefCase(entry, fixed = {}) {
   const result = compose(entry.items, entry.selection);
@@ -336,18 +339,24 @@ function briefCase(entry, fixed = {}) {
     listed: entry.items.filter((item) => isPublished(item, undefined)).map((item) => item.slug),
     selectionDigest: sha256(selectionDigestInput(result)),
     specVersion: fixed.spec_version,
+    contexts: [],
   };
-  return { files: new Map(brief.briefFiles(result, options)), record: brief.briefOf(result, options), result };
+  return { files: new Map(brief.briefDomainFiles(result, options)), record: brief.briefDomainOf(result, options), result };
 }
 
-/** compose-0024 — AGSC-07-25: the bytes of the four files of the brief, and no Harness for an invalid case. */
+/**
+ * compose-0024 — AGSC-07-25: the bytes of the four files of the brief, and no Harness for an
+ * invalid case; compose-0034 — the same files with the domain paragraph (it states no Harness).
+ */
 function runCompose0024(vector) {
   const list = [];
   vector.input.cases.forEach((entry, i) => {
     const expected = vector.expected.cases[i] || {};
     const { files, result } = briefCase(entry, vector.input.fixed);
     list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
-    list.push([`${entry.name} harness_emitted`, isEmitted(result) === expected.harness_emitted, String(isEmitted(result))]);
+    if (expected.harness_emitted !== undefined) {
+      list.push([`${entry.name} harness_emitted`, isEmitted(result) === expected.harness_emitted, String(isEmitted(result))]);
+    }
     list.push([`${entry.name} file names`, deepEqual(Object.keys(expected.file_bytes), [...files.keys()]), JSON.stringify([...files.keys()])]);
     for (const [name, bytes] of Object.entries(expected.file_bytes)) {
       list.push([`${entry.name} ${name}`, files.get(name) === bytes, String(files.get(name))]);
@@ -438,6 +447,7 @@ const HANDLERS = {
   'compose-0030': runBlueprint,
   'compose-0032': runContextMap,
   'compose-0033': runContextMap,
+  'compose-0034': runCompose0024,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

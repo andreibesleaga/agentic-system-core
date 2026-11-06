@@ -6,7 +6,10 @@
 //            the bound; an `ask` answer cites at most 100 item IRIs; the page tools agree;
 //   cli-0028 the citation record: `read` carries one record per chunk of the item, with
 //            exactly the members of the rule and the values of the chunk lines, and `[]`
-//            for a draft, which the local server answers and the page tools cannot see.
+//            for a draft, which the local server answers and the page tools cannot see;
+//   cli-0037 the domain parts: a `search` hit, the `read` body and the `brief` items of an
+//            item that states a key of AGSC-02-25 carry `domain`; an item that states none
+//            has no such member; the page tools give the same answers.
 //
 // The local server is `mcp-tools.js#tools` over the Bundle with the route map of its build,
 // as the `mcp` verb starts it; the page tools are the scripts that build emits, evaluated
@@ -91,4 +94,42 @@ function runCli0028(vector, ctx, evaluateWebmcp) {
   return checks(list);
 }
 
-module.exports = { runCli0027, runCli0028 };
+/** The `domain` member of each entry of `list` that has one, by slug; the slugs of every entry. */
+function domainsBySlug(list) {
+  const out = {};
+  for (const entry of list) if (Object.prototype.hasOwnProperty.call(entry, 'domain')) out[entry.slug] = entry.domain;
+  return out;
+}
+
+/** One expected result of cli-0037 against the local server's answer. */
+function domainCheck(i, want, answer) {
+  const body = answer.body || {};
+  if (want.domain_of_hits !== undefined) {
+    return [`${i} search hits carry the domain parts`, deepEqual(domainsBySlug(body.hits || []), want.domain_of_hits), JSON.stringify(body.hits)];
+  }
+  if (want.brief_items_domain !== undefined) {
+    return [`${i} brief items carry the domain parts`, deepEqual(domainsBySlug(body.items || []), want.brief_items_domain), JSON.stringify(body.items)];
+  }
+  if (want.domain_absent === true) {
+    return [`${i} read has no domain member`, answer.type === 'item' && !Object.prototype.hasOwnProperty.call(body, 'domain'), JSON.stringify(body)];
+  }
+  return [`${i} read carries the domain parts`, answer.type === 'item' && deepEqual(body.domain, want.domain), JSON.stringify(body.domain)];
+}
+
+/** cli-0037 — AGSC-09-13, the domain parts of `search`, `read` and `brief`, equal on both transports. */
+function runCli0037(vector, ctx, evaluateWebmcp) {
+  const { local, page } = hosts(vector, vector.input.items, evaluateWebmcp);
+  const list = [];
+  let equal = true;
+  vector.input.calls.forEach((call, i) => {
+    const want = vector.expected.results[i];
+    const answer = local.call(call.tool, call.arguments);
+    if (!same(answer, page.pageToolset.call(call.tool, call.arguments))) equal = false;
+    list.push([`${i} tool`, want.tool === call.tool, String(want.tool)], domainCheck(i, want, answer));
+  });
+  list.push(['transports_equal', equal === vector.expected.transports_equal, 'the page tools and the local server differ']);
+  list.push(['no network call', page.networkCalls === 0, String(page.networkCalls)]);
+  return checks(list);
+}
+
+module.exports = { runCli0027, runCli0028, runCli0037 };

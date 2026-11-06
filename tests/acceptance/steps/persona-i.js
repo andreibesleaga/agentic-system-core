@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32, AGSC-05-41, AGSC-09-20
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32, AGSC-05-41, AGSC-09-20, AGSC-06-38, AGSC-07-25, AGSC-09-13
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
@@ -9,7 +9,9 @@
 // one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38); a
 // note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
 // a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
-// (AGSC-05-40, AGSC-06-32); the site's own invariants and competency questions, checked by
+// (AGSC-05-40, AGSC-06-32); the note's domain parts on its page, in the page tool's answer run
+// from the published scripts and in its brief (AGSC-06-38, AGSC-09-13, AGSC-07-25); the site's
+// own invariants and competency questions, checked by
 // `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20); the TypeScript parts,
 // compiled into the shipped tree and needed by no install and no run (AGSC-09-09 for the
 // line the compiled proof module gives);
@@ -23,6 +25,7 @@ const { spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const { canonicalize } = require('json-canonicalize');
 const YAML = require('yaml');
@@ -580,6 +583,42 @@ module.exports = [
       const edge = (s, p, o) => `<${base}concepts/${s}/> <${NAMESPACE}${p}> <${base}concepts/${o}/> <${base}> .`;
       assert.ok(lines.has(edge(from, member, to)), `the domain link is not in ${nquadsRel}`);
       assert.ok(lines.has(edge(to, inverse, from)), `the computed inverse is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^the page "([^"]+)" lists under its relations table the domain type "([^"]+)", the role "([^"]+)" and the warrant "([^"]+)" \(AGSC-06-38\)$/u,
+    run(world, rel, type, role, warrant) {
+      const page = world.read(rel);
+      const list = /<dl class="meta domain">([\s\S]*?)<\/dl>/u.exec(page);
+      assert.ok(list !== null && page.indexOf('<table class="relations">') < list.index, `${rel} has no domain list under its relations table`);
+      const entries = [...list[1].matchAll(/<dt>(.*?)<\/dt><dd>(.*?)<\/dd>/gu)].map((m) => [m[1], m[2].replace(/<[^>]*>/gu, '')]);
+      assert.deepStrictEqual(entries, [['Domain type', type], ['Domain role', role], ['Warrant', warrant]]);
+    },
+  },
+  {
+    pattern: /^the page tool "read" of "([^"]+)", run from the published scripts, carries the domain type "([^"]+)", the role "([^"]+)" and that warrant \(AGSC-09-13\)$/u,
+    run(world, slug, type, role) {
+      // The two scripts the site serves, evaluated over its own routes in a context with no network.
+      const sources = {};
+      for (const [route, base64] of world.snapshot('www')) sources[`/${route}`] = Buffer.from(base64, 'base64').toString('utf8');
+      const context = vm.createContext({ TextEncoder });
+      for (const name of ['agsc-core.js', 'agsc-page-tools.js']) vm.runInContext(sources[`/compose/${name}`], context, { filename: name });
+      const api = context.AGSC_PAGE_TOOLS;
+      const toolset = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), context.AGSC_CORE);
+      const answer = JSON.parse(JSON.stringify(toolset.call('read', { slug })));
+      const { warrant } = splitItem(world.read(`content/concepts/${slug}.md`)).frontmatter;
+      assert.deepStrictEqual(answer.body.domain, { role, type, warrant });
+    },
+  },
+  {
+    pattern: /^the brief's "BRIEF\.md" has, after "## Members", the line "([^"]+)" under "## Domain" \(AGSC-07-25\)$/u,
+    run(world, line) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companion = fs.readdirSync(harness).find((name) => name.endsWith('.companion'));
+      const md = fs.readFileSync(path.join(harness, companion, 'BRIEF.md'), 'utf8');
+      const at = md.indexOf('\n## Domain\n\n');
+      assert.ok(md.indexOf('\n## Members\n') < at && at > 0, 'BRIEF.md has no "## Domain" section after "## Members"');
+      assert.ok(md.slice(at).split('\n\n')[1].split('\n').includes(line), md);
     },
   },
   {

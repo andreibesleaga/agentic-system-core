@@ -15,7 +15,7 @@ const { memoryPorts, captureStream } = require('./_shared.js');
 const { runCli0036 } = require('./_cli-help.js');
 const { runCli0016, runCli0017 } = require('./_cli-refusals.js');
 const { runCli0018, runCli0019 } = require('./_cli-mcp-primitives.js');
-const { runCli0027, runCli0028 } = require('./_cli-ten-tools.js');
+const { runCli0027, runCli0028, runCli0037 } = require('./_cli-ten-tools.js');
 const { runCli0020, runCli0021, runCli0022 } = require('./_cli-instant-and-order.js');
 const { loaderSources, runCli0023, runCli0024, runCli0025 } = require('./_cli-tool-sets-and-gate.js');
 const { guarded } = require('./_expected-reads.js');
@@ -705,9 +705,10 @@ Object.assign(HANDLERS, {
   'cli-0024': runCli0024,
   'cli-0025': runCli0025,
   'cli-0036': runCli0036,
-  // The tools of 1.1 (AGSC-09-13): the bound, the citation records, and the tool list of ten.
+  // The tools of 1.1 (AGSC-09-13): the bound, the citation records, the domain parts, and the tool list of ten.
   'cli-0027': (vector, ctx) => runCli0027(vector, ctx, evaluateWebmcp),
   'cli-0028': (vector, ctx) => runCli0028(vector, ctx, evaluateWebmcp),
+  'cli-0037': (vector, ctx) => runCli0037(vector, ctx, evaluateWebmcp),
   'cli-0038': runCli0019,
 });
 

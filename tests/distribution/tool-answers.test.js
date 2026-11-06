@@ -6,7 +6,8 @@
 // Link warnings of `knowledge/links.js`, the citation record to `knowledge/chunks.js`; and
 // properties over generated inputs — the bound keeps the ranked prefix and says the total only
 // above 100, the answers do not depend on the order of the edges, the brief is the same through
-// the host's hasher and through Web Crypto.
+// the host's hasher and through Web Crypto; the domain parts join a hit and a `read` body of an
+// item that has them, in code-point order of the members, and change no other answer.
 // Seeded properties, fixed instant, no network.
 
 const test = require('node:test');
@@ -360,4 +361,48 @@ test('AGSC-09-13: the page tools say when the chunk export or Web Crypto is miss
   } finally {
     Object.defineProperty(globalThis, 'crypto', saved);
   }
+});
+
+// ------------------------------------------------------------- the domain parts (cli-0037)
+
+const DOMAIN = Object.freeze({ context: 'billing', role: 'aggregate-root' });
+const domainOfSlug = (slug) => (slug === 'invoice' ? DOMAIN : null);
+
+test('toolWithDomain puts `domain` among the members in code-point order, and keeps a record with no part as it is', () => {
+  const hit = { iri: 'https://a.example/concepts/invoice/', score: 1, slug: 'invoice', title: 'Invoice' };
+  assert.deepEqual(Object.keys(answers.toolWithDomain(hit, DOMAIN)), ['domain', 'iri', 'score', 'slug', 'title']);
+  assert.equal(answers.toolWithDomain(hit, null), hit);
+  // Member names as answers have them (no array-index name, which an object orders first).
+  fc.assert(fc.property(fc.dictionary(fc.stringMatching(/^[a-z_]{1,6}$/u).filter((k) => k !== 'domain'), fc.nat()), (record) => {
+    const once = answers.toolWithDomain(record, DOMAIN);
+    assert.deepEqual(Object.keys(once), [...Object.keys(record), 'domain'].sort());
+    assert.deepEqual(answers.toolWithDomain(once, DOMAIN), once);
+  }), { numRuns: 100, seed: 20261106 });
+});
+
+test('toolDomainAnswer adds the parts to search hits and to a read body, and returns every other answer unchanged', () => {
+  const search = { body: { hits: [{ slug: 'note' }, { slug: 'invoice' }] }, source: 'search', type: 'items' };
+  assert.deepEqual(answers.toolDomainAnswer('search', search, domainOfSlug).body.hits, [{ slug: 'note' }, { domain: DOMAIN, slug: 'invoice' }]);
+  const none = { body: { hits: [{ slug: 'note' }] }, source: 'search', type: 'items' };
+  assert.equal(answers.toolDomainAnswer('search', none, domainOfSlug), none);
+  const read = { body: { body: 'B.', slug: 'invoice' }, source: 'read', type: 'item' };
+  assert.deepEqual(answers.toolDomainAnswer('read', read, domainOfSlug).body, { body: 'B.', domain: DOMAIN, slug: 'invoice' });
+  const fault = { body: { code: 'AGSC-E301' }, source: 'read', type: 'error' };
+  assert.equal(answers.toolDomainAnswer('read', fault, domainOfSlug), fault);
+  const links = { body: { slug: 'invoice' }, source: 'links', type: 'item' };
+  assert.equal(answers.toolDomainAnswer('links', links, domainOfSlug), links);
+  assert.equal(answers.toolDomainAnswer('read', { type: 'item' }, domainOfSlug).body, undefined);
+});
+
+test('toolDomainToolset applies the parts to synchronous and to promised answers, and needs the algebra', async () => {
+  const corpus = { bySlug: { invoice: { frontmatter: { domain_role: 'entity' }, slug: 'invoice' } } };
+  const core = { domainOf: (item) => ({ role: item.frontmatter.domain_role }) };
+  const toolset = { call: (name, args) => (name === 'brief' ? Promise.resolve({ body: {}, type: 'brief' })
+    : { body: { slug: args.slug }, type: 'item' }) };
+  const wrapped = answers.toolDomainToolset(toolset, corpus, core, []);
+  assert.deepEqual(wrapped.call('read', { slug: 'invoice' }).body, { domain: { role: 'entity' }, slug: 'invoice' });
+  assert.deepEqual(wrapped.call('read', { slug: 'other' }).body, { slug: 'other' });
+  assert.deepEqual(await wrapped.call('brief', {}), { body: {}, type: 'brief' });
+  assert.equal(answers.toolDomainToolset(toolset, corpus, undefined, []), toolset);
+  assert.equal(answers.toolDomainToolset(toolset, null, core, []).call('read', { slug: 'invoice' }).body.domain, undefined);
 });

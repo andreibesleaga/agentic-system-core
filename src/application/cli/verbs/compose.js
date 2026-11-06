@@ -342,7 +342,9 @@ function briefOutputs(ctx, bundle, result, items, from) {
     const outputs = saved !== undefined && architecture.isArchitecture(saved)
       ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
       : [];
-    return { dir, files: [...brief.briefFiles(result, { ...options, listed }), ...outputs], findings: [] };
+    // AGSC-07-25: the domain paragraph over the contexts the node declares (AGSC-08-32).
+    const contexts = bounded.declared(bundle.config).map((entry) => entry.cluster);
+    return { dir, files: [...brief.briefDomainFiles(result, { ...options, contexts, listed }), ...outputs], findings: [] };
   } catch (e) {
     if (e.code !== 'AGSC-E904') throw e;
     return { dir, files: [], findings: [{ code: e.code, message: e.message, severity: 'error' }] };

@@ -146,7 +146,10 @@ Add `--brief` and `compose` also explains the composition, in four files beside 
 `context.md` for an agent, `brief.json` for a program and `brief.mmd` as a diagram. They say why
 each item is there, the order to adopt them in (an item comes after what it requires), what is
 missing, and a checklist. The Harness files do not change, and `"compose": {"brief": true}` in
-`agsc.config.json` asks for the brief on every run.
+`agsc.config.json` asks for the brief on every run. When a member states a domain type, a role, a
+context or a warrant (the domain layer, [mode-1.md](mode-1.md)), the brief also lists those parts:
+under `## Domain` in `BRIEF.md`, on the member's entry in `brief.json` and in its section of
+`context.md`.
 
 ```bash demo
 agsc compose retry-with-backoff smoke-test --brief > /dev/null 2>&1
