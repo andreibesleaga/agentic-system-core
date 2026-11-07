@@ -6,7 +6,8 @@ The measured results are in [`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md)
 
 | path | what it is |
 |---|---|
-| `measure.js` | the pre-GA measurements runner: conformance, determinism, the security floor, build curves, retrieval, page-tool/MCP parity, tokens per item, accessibility, package size. One layer per invocation; `--assemble` merges the partials into `docs/measurements.json`. |
+| `measure.js` | the measurements runner: conformance, determinism, the security floor, build curves, retrieval, page-tool/MCP parity, tokens per item, accessibility, package size, install and cold start. One layer per invocation; `--assemble` merges the partials into `docs/measurements.json`, keeping the layers it did not measure; `--all` runs every layer the repository alone can run and assembles them into the scratch directory (the one-command run of `docs/BENCHMARKS.md`). |
+| `install.js` | the `install` layer: `npm install --omit=dev` of the packed tarball, its package folders and sizes, the cold start of `--version`, `lint` and `build`, and a module trace of each (Node's `module.registerHooks`) that shows which protocol packages a verb loads. |
 | `security.js` | the security-floor scorer: runs every case of `corpus/security-floor.json` through the real code path (`lint`/`ci` and the other verbs, `agsc-host emit`, `import`, `tools/validate-wellknown`, the federation walk, the skill checks) and reports detected / refused / refused under another code / neutralised / finished / missed, plus false positives on the valid controls. A case that feeds a run just under 1 MiB long starts its command with a kill bound: finished inside it is handled, stopped by it is missed. |
 | `parity.js` | page-tool / MCP parity: the call list of `corpus/parity-calls.json` asked of the real `agsc mcp` process over stdio, of the emitted page script, of the module and of the in-process server, compared as values (AGSC-09-16). |
 | `tokens.js` | token counts per item for `llms.txt`, `chunks.jsonl` and the `llm-context` export; the tokenizer is injected (installed outside the repository). |
@@ -27,8 +28,10 @@ node ../tools/bench --help
 node ../tools/bench --dry-run
 node ../tools/bench --set queries/agent-study --node <built output> --dry-run   # the agent-study kit against a build
 SOURCE_DATE_EPOCH=1767225600 node measure.js --layer conformance --scratch /tmp/bench
+SOURCE_DATE_EPOCH=1767225600 node measure.js --all --scratch /tmp/bench     # every layer the repository alone can run
+node ../tools/lint-claims --record ../docs/measurements.json ../docs/BENCHMARKS.md ../docs/MEASUREMENTS.md
 ```
 
-Nothing in this kit needs a key, a network connection or a model. The parts that do — the scored runs of the
+Nothing in this kit needs a key or a model, and only the `install` layer reaches a network: the npm registry, for the packed tarball's dependencies. The parts that do — the scored runs of the
 retrieval, agent-side and memory studies — are the work of the `tools/bench` program at 1.1 and are specified,
 not run, in `docs/BENCHMARKS.md`; their question sets, gold labels and results contract are here.

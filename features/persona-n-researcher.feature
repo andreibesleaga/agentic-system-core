@@ -1,4 +1,4 @@
-# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, PRD-066, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
+# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, PRD-066, PRD-068, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
 @persona-n
 Feature: Researcher measures a node offline and cites exactly what was measured
   As P14 (researcher)
@@ -27,6 +27,15 @@ Feature: Researcher measures a node offline and cites exactly what was measured
     And both find every row of the gold index among the chunks of the build
     And the two reports are byte-identical
     And no network call was attempted
+
+  @PRD-068 @NFR-05 @human @mode-0 @matrix-H19
+  Scenario: A researcher holds the numbers of a results page to the measurement record before publishing it
+    Given a results page whose measured region quotes the package count of the install layer of "docs/measurements.json"
+    When the researcher runs "tools/lint-claims" over the page with that record
+    Then the claims check passes
+    Given the measured region of the page also says that an install holds 999,999 packages
+    When the researcher runs "tools/lint-claims" over the page with that record
+    Then the claims check fails on "999,999", the one number the record does not hold
 
   @PRD-022 @PRD-060 @NFR-04 @agent @mode-1 @matrix-H19
   Scenario: The three graph dumps agree as sets

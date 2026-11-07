@@ -1,4 +1,5 @@
 'use strict';
+// verifies PRD-068
 // tools/lint-claims — the claims lint of the benchmark kit. Ranking words fail a
 // claims region (and only a claims region, when a file marks one); a results row
 // fails when it does not name its model, date, n, metric, value and interval, or
@@ -190,6 +191,59 @@ describe('tools/lint-claims — results rows', () => {
     assert.equal(json.findings.length, 2);
     assert.match(json.findings[0].message, /^not JSON/u);
     assert.equal(json.findings[1].message, 'holds no rows[] array');
+  });
+});
+
+describe('tools/lint-claims — numbers held to the record (--record)', () => {
+  const RECORD = JSON.stringify({
+    layers: { install: { packages: 87, package_bytes: 13012345, runs_ms: [370, 488], rss_kb: [67120] }, retrieval: { ndcg: 0.73712 } },
+    schema: 'agsc.measurements.v1',
+  });
+
+  it('passes a measured region whose every number the record holds, as written or at its precision and unit', () => {
+    const dir = writeTree(tmpdir(), {
+      'm.json': RECORD,
+      'ok.md': [
+        'Outside the region 123,456 and 9.99 are not read.',
+        '<!-- measured:start -->',
+        'An install holds 87 packages; the package is 13,012,345 bytes, 13.0 MB or 12.41 MiB on disk.',
+        'It starts in 0.37–0.49 s and 67 MB (`node bench/measure.js --runs 5` in a code span), nDCG@10 0.737.',
+        'Read on 7 November 2026 and 2026-11-07 with version 24.18.0 of AGSC-09-13.',
+        '| E1 | 100 intents, 95 % intervals | to be measured |',
+        '<!-- measured:end -->',
+      ].join('\n'),
+    });
+    const { code, json } = envelope('lint-claims', ['--record', path.join(dir, 'm.json'), path.join(dir, 'ok.md')]);
+    assert.equal(code, 0, JSON.stringify(json.findings));
+  });
+
+  it('fails a number of a measured region that the record does not hold, with its position', () => {
+    const dir = writeTree(tmpdir(), {
+      'm.json': RECORD,
+      'bad.md': '<!-- claims:start -->Wording only: 88.<!-- claims:end -->\n<!-- measured:start -->\nAn install holds 88 packages and starts in 0.31 s.\n<!-- measured:end -->\n',
+    });
+    const { code, json } = envelope('lint-claims', ['--record', path.join(dir, 'm.json'), path.join(dir, 'bad.md')]);
+    assert.equal(code, 1);
+    assert.deepEqual(json.findings.map((f) => [f.code, f.line, f.col]), [['AGSC-E202', 3, 18], ['AGSC-E202', 3, 44]]);
+    assert.match(json.findings[0].message, /^88 is in no layer of the record/u);
+  });
+
+  it('reads no number of a file without measured regions, nor without --record, and refuses a record it cannot read', () => {
+    const dir = writeTree(tmpdir(), { 'm.json': RECORD, 'plain.md': 'A plan of 100 intents and 3 seeds.\n', 'x.json': '[1, 2]', 'y.json': '{ no' });
+    assert.equal(envelope('lint-claims', ['--record', path.join(dir, 'm.json'), path.join(dir, 'plain.md')]).code, 0);
+    writeTree(dir, { 'open.md': '<!-- measured:start -->\n87 packages\n', 'unread.md': '<!-- measured:start -->\n88\n<!-- measured:end -->\n' });
+    assert.equal(envelope('lint-claims', [path.join(dir, 'unread.md')]).code, 0);
+    const open = envelope('lint-claims', ['--record', path.join(dir, 'm.json'), path.join(dir, 'open.md')]);
+    assert.deepEqual(open.json.findings.map((f) => [f.code, f.line]), [['AGSC-E202', 1]]);
+    assert.match(open.json.findings[0].message, /measured region opened here/u);
+    const notRecord = envelope('lint-claims', ['--record', path.join(dir, 'x.json'), path.join(dir, 'plain.md')]);
+    assert.equal(notRecord.code, 1);
+    assert.match(notRecord.json.findings[0].message, /holds no layers/u);
+    assert.match(envelope('lint-claims', ['--record', path.join(dir, 'y.json'), path.join(dir, 'plain.md')]).json.findings[0].message, /^not JSON/u);
+    const absent = envelope('lint-claims', ['--record', path.join(dir, 'absent.json'), path.join(dir, 'plain.md')]);
+    assert.deepEqual(codes(absent.json), ['AGSC-E901']);
+    assert.equal(capture('lint-claims', ['--record']).code, 2);
+    assert.equal(capture('lint-claims', ['--record', 'm.json']).code, 2);
   });
 });
 

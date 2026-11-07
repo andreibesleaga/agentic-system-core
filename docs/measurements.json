@@ -3687,9 +3687,224 @@
       "files": 658,
       "packed_bytes": 1257371,
       "unpacked_bytes": 4233981
+    },
+    "install": {
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer install --scratch <dir>",
+      "cold_start": {
+        "build": {
+          "modules_loaded": 333,
+          "ms_runs": [
+            1135,
+            1117,
+            1138,
+            1150,
+            1121
+          ],
+          "protocol_packages": [],
+          "rss_kb_runs": [
+            126568,
+            127400,
+            123912,
+            127048,
+            126456
+          ]
+        },
+        "lint": {
+          "modules_loaded": 332,
+          "ms_runs": [
+            857,
+            873,
+            875,
+            870,
+            861
+          ],
+          "protocol_packages": [],
+          "rss_kb_runs": [
+            104364,
+            103992,
+            104016,
+            104064,
+            104556
+          ]
+        },
+        "mcp_answering_nothing": {
+          "protocol_packages": [
+            "@hono/node-server",
+            "@modelcontextprotocol/core",
+            "@modelcontextprotocol/node",
+            "@modelcontextprotocol/server",
+            "hono"
+          ]
+        },
+        "node_alone": {
+          "modules_loaded": 0,
+          "ms_runs": [
+            60,
+            58,
+            57,
+            59,
+            57
+          ],
+          "protocol_packages": [],
+          "rss_kb_runs": [
+            44416,
+            44628,
+            44624,
+            44624,
+            44624
+          ]
+        },
+        "version": {
+          "modules_loaded": 173,
+          "ms_runs": [
+            240,
+            236,
+            234,
+            239,
+            238
+          ],
+          "protocol_packages": [],
+          "rss_kb_runs": [
+            66676,
+            66572,
+            66884,
+            67048,
+            67404
+          ]
+        }
+      },
+      "fixture": "tests/fixtures/minimal",
+      "install_bytes": 67694400,
+      "load_ms_runs": {
+        "@modelcontextprotocol/server": [
+          229,
+          248,
+          233,
+          240,
+          231
+        ],
+        "@modelcontextprotocol/node": [
+          282,
+          284,
+          281,
+          294,
+          292
+        ],
+        "@a2a-js/sdk": [
+          89,
+          81,
+          80,
+          81,
+          81
+        ]
+      },
+      "machine": {
+        "arch": "x64",
+        "node": "v24.18.0",
+        "platform": "Linux 6.6.114.1-microsoft-standard-WSL2"
+      },
+      "package_bytes": {
+        "agentic-system-core": 10730651,
+        "oxigraph": 8796868,
+        "@modelcontextprotocol/server": 7023377,
+        "zod": 6148944,
+        "@tpluscode/rdf-ns-builders": 5051857,
+        "@a2a-js/sdk": 4524573,
+        "@types/node": 2586357,
+        "@traqula/chevrotain": 2317921,
+        "jsonld": 2075535,
+        "markdown-it": 2064760,
+        "@traqula/rules-sparql-1-1": 1609201,
+        "@modelcontextprotocol/core": 1370840,
+        "fast-xml-parser": 1315394,
+        "hono": 1303825,
+        "undici": 1205968,
+        "ajv": 1033496,
+        "n3": 826106,
+        "@traqula/core": 799071,
+        "yaml": 686297,
+        "diff": 615597,
+        "@vocabulary/sh": 462217,
+        "@traqula/parser-sparql-1-1": 331415,
+        "entities": 330191,
+        "ky": 280722,
+        "fast-uri": 241202,
+        "fast-xml-builder": 223768,
+        "jose": 221809,
+        "readable-stream": 218700,
+        "commander": 207368,
+        "event-target-shim": 188883,
+        "argparse": 177843,
+        "clownface": 171439,
+        "path-expression-matcher": 170626,
+        "@modelcontextprotocol/node": 153446,
+        "linkify-it": 149190,
+        "@hono/node-server": 140053,
+        "structured-headers": 135690,
+        "undici-types": 120779,
+        "@toon-format/toon": 108167,
+        "rdf-validate-shacl": 101221,
+        "buffer": 91279,
+        "events": 82778,
+        "rdf-canonize": 82274,
+        "abort-controller": 76297,
+        "rdf-dataset-ext/node_modules/rdf-canonize": 75367,
+        "@nodable/entities": 74539,
+        "is-unsafe": 69687,
+        "rdf-literal": 58877,
+        "ajv-formats": 56763,
+        "json-canonicalize": 49564,
+        "rdf-data-factory": 46591,
+        "dotenv": 46091,
+        "debug": 42793,
+        "@rdfjs/types": 41601,
+        "@rdfjs/data-model": 38597,
+        "mdurl": 38519,
+        "rdf-validate-datatype": 36467,
+        "punycode.js": 33517,
+        "@rdfjs/dataset": 32543,
+        "safe-buffer": 32101,
+        "xml-naming": 31395,
+        "@digitalbazaar/http-client": 26829,
+        "canonicalize": 23534,
+        "json-schema-traverse": 22220,
+        "http-link-header": 17094,
+        "@rdfjs/term-map": 16781,
+        "rdf-dataset-ext": 16068,
+        "anynum": 16050,
+        "@rdfjs/term-set": 16042,
+        "lru-cache": 15643,
+        "process": 15325,
+        "strnum": 14932,
+        "yallist": 14752,
+        "string_decoder": 14427,
+        "uc.micro": 14020,
+        "fast-deep-equal": 12966,
+        "@zazuko/prefixes": 12216,
+        "@rdfjs/to-ntriples": 10566,
+        "base64-js": 9624,
+        "@rdfjs/namespace": 8775,
+        "setimmediate": 8558,
+        "@rdfjs/environment": 8114,
+        "ieee754": 6796,
+        "ms": 6721,
+        "@types/rdfjs__namespace": 3918,
+        "require-from-string": 3422
+      },
+      "package_version": "1.0.1",
+      "packages": 86,
+      "runs": 5,
+      "tarball": {
+        "files": 879,
+        "packed_bytes": 3356330,
+        "unpacked_bytes": 10730651
+      }
     }
   },
   "schema": "agsc.measurements.v1",
+  "measured": [
+    "install"
+  ],
   "measured_for": "2026-01-01",
   "spec_version": "1.0.0"
 }

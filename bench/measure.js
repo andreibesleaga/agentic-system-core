@@ -14,6 +14,15 @@
  *   node bench/measure.js --layer conformance --scratch <dir>
  *   node bench/measure.js --layer perf        --scratch <dir>
  *   node bench/measure.js --assemble --scratch <dir> --out docs/measurements.json
+ *   node bench/measure.js --all --scratch <dir>      # every layer the repository alone can run
+ *
+ * `--assemble` merges: a layer found in the scratch directory replaces the layer of
+ * that name in the record already at `--out`, and every other layer of that record is
+ * kept, so one layer can be re-measured without re-running the rest. `--all` runs
+ * the layers that need nothing outside this repository (conformance, determinism,
+ * security, perf, package, install) and assembles them into `<scratch>/measurements.json`,
+ * never into the repository's record unless `--out` names it, so a reader compares
+ * the two files.
  *
  * Every layer writes `<scratch>/measure-<layer>.json` and every number in it
  * carries the `command` that produced it, so a reader can re-run one line
@@ -40,6 +49,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+const install = require('./install.js');
 const metrics = require('./metrics.js');
 
 const REPO = path.resolve(__dirname, '..');
@@ -47,7 +57,9 @@ const NODE = process.execPath;
 const AGSC = path.join(REPO, 'bin', 'agsc.js');
 const EPOCH = '1767225600';   // 2026-01-01T00:00:00Z — the project's fixed clock
 
-const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'a11y', 'package']);
+const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'a11y', 'package', 'install']);
+/** The layers whose inputs the repository holds: `--all` runs these, in this order. */
+const SELF_CONTAINED = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'package', 'install']);
 
 // The command each layer records, so a reader can re-run one line exactly as printed: every run
 // of this script needs the fixed clock (it reads no wall clock) and a scratch directory. One table,
@@ -62,18 +74,23 @@ const COMMANDS = Object.freeze({
   parity: `${RUN} --layer parity --scratch <dir> --nodes <name>=<bundle dir>,…`,
   tokens: `SOURCE_DATE_EPOCH=${EPOCH} NODE_PATH=<scratch>/node_modules node bench/measure.js --layer tokens --scratch <dir> --nodes <name>=<www>,… --exports <name>=<dir>,…`,
   a11y: `SOURCE_DATE_EPOCH=${EPOCH} NODE_PATH=<scratch>/node_modules CHROME_EXE=<chrome> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<www>,…`,
+  install: `${RUN} --layer install --scratch <dir>`,
 });
 
 const HELP = `measure --layer <name> --scratch <dir> [--json]
 measure --assemble --scratch <dir> --out <file>
+measure --all --scratch <dir> [--out <file>] [--sizes <list>] [--runs <n>]
 
   Runs one measurement layer of docs/MEASUREMENTS.md and writes
   <scratch>/measure-<layer>.json, or assembles every partial into one record.
 
   --layer <name>   one of: ${LAYERS.join(' ')}
   --scratch <dir>  working directory OUTSIDE this repository (required)
-  --assemble       merge every partial found in <dir> into --out
-  --out <file>     where --assemble writes (default docs/measurements.json)
+  --assemble       merge every partial found in <dir> into --out; the other
+                   layers of the record already there are kept
+  --all            run ${SELF_CONTAINED.join(', ')}, then assemble
+  --out <file>     where --assemble writes (default docs/measurements.json;
+                   with --all, <dir>/measurements.json)
   --nodes <list>   name=dir,… — Bundles (parity) or build outputs (tokens,
                    a11y, retrieval); the record carries the names only
   --exports <list> name=dir,… — each node's llm-context export (tokens)
@@ -447,7 +464,7 @@ function layerRetrieval(nodes) {
 
 function layerPackage() {
   const r = timed('npm', ['pack', '--dry-run', '--json'], { cwd: REPO });
-  const pack = JSON.parse(r.out)[0];
+  const pack = install.packJson(r.out);
   return { command: 'npm pack --dry-run --json', files: pack.entryCount, packed_bytes: pack.size, unpacked_bytes: pack.unpackedSize };
 }
 
@@ -531,14 +548,37 @@ function layerPerf(scratch, sizes, runsPerSize) {
 
 // ------------------------------------------------------------ assembling ----
 
+/** One of the layers `--all` runs, measured. */
+function measureOne(layer, scratch, sizes, runsPerSize) {
+  if (layer === 'conformance') return layerConformance();
+  if (layer === 'determinism') return layerDeterminism(scratch);
+  if (layer === 'security') return layerSecurity(scratch);
+  if (layer === 'perf') return layerPerf(scratch, sizes, runsPerSize);
+  if (layer === 'package') return layerPackage();
+  return install.layerInstall({ command: COMMANDS.install, epoch: EPOCH, scratch, timed, timedWithRss });
+}
+
 function partialPath(scratch, layer) { return path.join(scratch, `measure-${layer}.json`); }
 
+/** The layers of the record already at `out`, or none. */
+function existingLayers(out) {
+  if (!fs.existsSync(out)) return {};
+  const layers = JSON.parse(fs.readFileSync(out, 'utf8')).layers;
+  return layers && typeof layers === 'object' ? layers : {};
+}
+
 function assemble(scratch, out) {
+  const kept = existingLayers(out);
   const record = { layers: Object.create(null), schema: 'agsc.measurements.v1' };
+  const measured = [];
   for (const layer of LAYERS) {
     const where = partialPath(scratch, layer);
-    if (fs.existsSync(where)) record.layers[layer] = JSON.parse(fs.readFileSync(where, 'utf8'));
+    if (fs.existsSync(where)) {
+      record.layers[layer] = JSON.parse(fs.readFileSync(where, 'utf8'));
+      measured.push(layer);
+    } else if (kept[layer] !== undefined) record.layers[layer] = kept[layer];
   }
+  record.measured = measured;
   record.measured_for = new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString().slice(0, 10);
   const counter = JSON.parse(cp.execFileSync(NODE, [path.join(REPO, 'tools', 'count-artifacts'), '--json'], { cwd: REPO, encoding: 'utf8' }));
   record.spec_version = counter.counts.spec_version;
@@ -556,13 +596,16 @@ function run(argv, io) {
   let target = path.join(REPO, 'docs', 'measurements.json');
   let json = false;
   let doAssemble = false;
+  let all = false;
+  let outGiven = false;
   let sizes = [100, 500, 501, 1000, 5000, 10000];
   let runsPerSize = 3;
   let nodes = [];
   let exportDirs = [];
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--layer') { i += 1; layer = argv[i]; } else if (arg === '--scratch') { i += 1; scratch = argv[i]; } else if (arg === '--out') { i += 1; target = argv[i]; } else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); } else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); } else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); } else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); } else if (arg === '--assemble') doAssemble = true;
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--layer') { i += 1; layer = argv[i]; } else if (arg === '--scratch') { i += 1; scratch = argv[i]; } else if (arg === '--out') { i += 1; target = argv[i]; outGiven = true; } else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); } else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); } else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); } else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); } else if (arg === '--assemble') doAssemble = true;
+    else if (arg === '--all') all = true;
     else if (arg === '--json') json = true;
     else return usage(`unknown argument ${arg}`);
   }
@@ -570,10 +613,19 @@ function run(argv, io) {
   if (typeof scratch !== 'string' || scratch === '') return usage('--scratch <dir> is required');
   fs.mkdirSync(scratch, { recursive: true });
 
-  if (doAssemble) {
-    const record = assemble(scratch, target);
-    out(`measure: assembled ${Object.keys(record.layers).length} layers into ${target}\n`);
+  const assembled = (where) => {
+    const record = assemble(scratch, where);
+    const kept = Object.keys(record.layers).filter((l) => !record.measured.includes(l));
+    out(`measure: assembled ${Object.keys(record.layers).length} layers into ${where} (measured: ${record.measured.join(' ') || 'none'}; kept from the record: ${kept.join(' ') || 'none'})\n`);
     return 0;
+  };
+  if (doAssemble) return assembled(target);
+  if (all) {
+    for (const name of SELF_CONTAINED) {
+      out(`measure: ${name} ...\n`);
+      fs.writeFileSync(partialPath(scratch, name), `${JSON.stringify(measureOne(name, scratch, sizes, runsPerSize), null, 2)}\n`);
+    }
+    return assembled(outGiven ? target : path.join(scratch, 'measurements.json'));
   }
   if (!LAYERS.includes(layer)) return usage(`--layer must be one of: ${LAYERS.join(' ')}`);
 
@@ -583,19 +635,15 @@ function run(argv, io) {
     else out(`measure: ${layer} written to ${partialPath(scratch, layer)}\n`);
     return 0;
   };
-  if (layer === 'conformance') return finish(layerConformance());
-  if (layer === 'determinism') return finish(layerDeterminism(scratch));
-  if (layer === 'security') return finish(layerSecurity(scratch));
-  if (layer === 'perf') return finish(layerPerf(scratch, sizes, runsPerSize));
+  if (SELF_CONTAINED.includes(layer)) return finish(measureOne(layer, scratch, sizes, runsPerSize));
   if (layer === 'tokens') return finish(layerTokens(nodes, exportDirs));
   if (layer === 'retrieval') return finish(layerRetrieval(nodes));
-  if (layer === 'package') return finish(layerPackage());
   if (layer === 'parity') return layerParity(nodes).then(finish);
   return layerA11y(nodes).then(finish);
 }
 
 if (require.main === module) Promise.resolve(run(process.argv.slice(2))).then((code) => process.exit(code));
 
-module.exports = { COMMANDS, HELP, LAYERS, run, specRules };
+module.exports = { COMMANDS, HELP, LAYERS, SELF_CONTAINED, assemble, run, specRules };
 
 /* c8 ignore stop */

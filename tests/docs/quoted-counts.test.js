@@ -94,6 +94,13 @@ test('docs/MEASUREMENTS.md quotes its record', () => {
   assert.ok(text.includes(`| files in the tarball | **${p.files}** |`), 'the package file count is not the record\'s');
   assert.ok(text.includes(`| npm package | ${p.files} files,`), 'the summary row of the package is not the record\'s');
 
+  const i = RECORD.layers.install;
+  const bytes = (n) => n.toLocaleString('en-US');
+  assert.ok(text.includes(`**The tarball:** ${i.tarball.files} files, ${bytes(i.tarball.packed_bytes)} bytes packed, ${bytes(i.tarball.unpacked_bytes)} unpacked`),
+    'the 1.1 tarball line is not the record\'s install layer');
+  assert.ok(text.includes(`holds **${i.packages} packages**`), 'the 1.1 install count is not the record\'s');
+  assert.ok(text.includes(`${i.cold_start.version.modules_loaded} modules loaded`), 'the 1.1 module count of --version is not the record\'s');
+
   const t = RECORD.layers.parity.totals;
   assert.ok(text.includes(`| **total** | | **${t.calls}** | **${t.equal}** | **${t.required_difference}** | **${t.differing}** | **${t.transport_equal} / ${t.calls}** |`),
     'the parity totals are not the record\'s');

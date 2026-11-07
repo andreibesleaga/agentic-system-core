@@ -13,6 +13,18 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `bench/measure.js --assemble` merges, as its help text already said: a layer measured into the scratch
+  directory replaces the layer of that name in the record at `--out`, and every other layer of that
+  record is kept (before, the record was rebuilt from the partials alone and lost every layer not
+  re-run). The record gains `measured`, the layers the last assembly measured (PRD-067). A repository
+  tool of the benchmark kit; no emitted byte changes.
+- `bench/measure.js --layer package` reads `npm pack --json` after the lines the `prepack` script prints
+  (`check:ts`), which made the layer fail on the 1.1 tree.
+- `docs/MEASUREMENTS.md`: the 1.1 install and cold-start paragraph now quotes the record's `install`
+  layer (86 packages; the module trace), between `measured` markers that `tools/lint-claims --record`
+  holds to the record; the 1.0.0 install and cold-start lines keep their figures with a dated note; six
+  sentences no longer use the word "first", so the whole page passes the claims check.
+
 - `bench/parity.js` hands the in-process tool servers the site vocabulary, as `agsc mcp` does, and on a
   node with the domain layer runs the page tools through the page's own `install` and the page-tools
   module with the domain facts the page script carries, so the call list compares the domain parts of
@@ -433,6 +445,33 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`tests/arch/pack-and-conform.test.js`). `npm audit` 0.
 
 ### Added
+
+- `node bench/measure.js --all --scratch <dir>`, the one-command run of the benchmark kit (I-096;
+  PRD-067): conformance, determinism, the security floor, the build curves, the package and the install,
+  every layer whose inputs the repository holds, with no key, model, judge or dataset, assembled into
+  `<dir>/measurements.json` for a reader to compare with `docs/measurements.json`.
+- The `install` layer of `bench/measure.js` (new `bench/install.js`): `npm pack`, `npm install --omit=dev`
+  of the tarball into an empty folder, the package folders and their sizes, five timed runs each of
+  `node -e ""`, `agsc --version`, `lint` and `build` on the reference fixture, the load time of
+  `@modelcontextprotocol/server`, `@modelcontextprotocol/node` and `@a2a-js/sdk`, and a module trace
+  (`module.registerHooks`, Node's own resolve hook; no library needed) showing that `--version`, `lint`
+  and `build` load no MCP or A2A package while `agsc mcp` loads the MCP ones. Measured into
+  `docs/measurements.json` by that command on 7 November 2026; the nine layers of the 1.0.0 run are kept.
+- `tools/lint-claims --record <file>` (PRD-068): every number written in digits inside a measured region
+  (`<!-- measured:start -->` … `<!-- measured:end -->`, apart from the claims regions so that marking one
+  never narrows the wording check) must be a number of the measurement record, at its written precision
+  and unit, unless its line says "to be measured"; otherwise `AGSC-E202`, exit 1. Own code: no library
+  checks prose numbers against a JSON record.
+- `docs/BENCHMARKS.md`: "Run it yourself: one command"; the six studies E1 to E6 and the twelve
+  statements they test, each "to be measured" (the model runs are planned for January 2027); and a table
+  of the kit against the five ACM artifact badges (Artifacts Available, Artifacts Evaluated – Functional
+  and – Reusable, Results Reproduced, Results Replicated): what the kit offers and what it lacks. The ACM
+  criteria are marked "to be confirmed by the owner": acm.org refused a plain fetch, and no browser
+  connection was available when the table was written.
+- Tests `tests/bench/measure.test.js` (the merge, the module trace and the record's trace claim) and the
+  `--record` cases of `tests/tools/lint-claims.test.js`; the persona-n scenario "A researcher holds the
+  numbers of a results page to the measurement record before publishing it"; `tests/docs/quoted-counts.test.js`
+  holds the 1.1 install paragraph to the record.
 
 - The kit of the agent-side study under `bench/queries/` (AGSC-00-20, the benchmark kit of 1.1;
   PRD-066): `agent-study/` with the question template and gold labels in the BEIR layout (one example

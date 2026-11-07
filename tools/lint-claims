@@ -3,7 +3,7 @@
 // will never claim"). It fails a results page, a README table or a results file that
 // words a measurement as a ranking, or prints a number a reader cannot trace.
 //
-//   lint-claims [--json] [--results <file>]... [--help] <file>...
+//   lint-claims [--json] [--results <file>]... [--record <file>] [--help] <file>...
 //
 // Text files (Markdown, HTML, plain text). Only the claims regions are read when
 // a file marks any — the text between `<!-- claims:start -->` and
@@ -27,11 +27,26 @@
 // (tests/bench/agent-kit.test.js); the order of `ci` and the key of the other
 // system's configuration are the two checks only this tool makes.
 //
+// Numbers (`--record docs/measurements.json`). In the measured regions of a text file
+// — between `<!-- measured:start -->` and `<!-- measured:end -->`, marked apart from the
+// claims regions so that marking one never narrows the wording check; never in a
+// file that marks none, where every number would be read — each number
+// written in digits must be one the measurement record holds, so a reader can trace
+// it: the same value, or the record's value at the written precision and unit (bytes
+// or kilobytes as KB, MB, GB, KiB, MiB, GiB; milliseconds as s; a ratio as %). A range
+// "a–b unit" gives both ends the unit. Not numbers here: text in a code span, a date
+// (2026-11-07, 7 November 2026, November 2026), a version with two dots, and digits
+// joined to a word, a hyphen, an at sign or a slash (AGSC-09-13, nDCG@10, E1). A line
+// that says "to be measured" is a planned row, and its numbers are not read. A number
+// the record does not hold is a finding (AGSC-E202). The check says the number exists
+// in the record, not which member it came from: tests/docs/quoted-counts.test.js binds
+// the members the measurements page quotes.
+//
 // Exit 0 pass, 1 findings, 2 usage.
 'use strict';
 const fs = require('fs');
 
-const HELP = `lint-claims [--json] [--results <file>]... [--help] <file>...
+const HELP = `lint-claims [--json] [--results <file>]... [--record <file>] [--help] <file>...
 
   Fails text that words a measurement as a ranking, and results rows a reader
   cannot trace (model, date, n, metric, value, confidence interval; both
@@ -41,6 +56,10 @@ const HELP = `lint-claims [--json] [--results <file>]... [--help] <file>...
                     (<!-- claims:start --> ... <!-- claims:end -->) are read
                     when it marks any, otherwise the whole file
   --results <file>  a results file, { "rows": [...] }; may be given more than once
+  --record <file>   the measurement record (docs/measurements.json): every number
+                    of a measured region (<!-- measured:start --> ...
+                    <!-- measured:end -->) must be one it holds, unless its line says
+                    "to be measured"
   --json            emit the envelope on stdout
   --help            this text
 
@@ -50,6 +69,8 @@ const HELP = `lint-claims [--json] [--results <file>]... [--help] <file>...
 const OWN_SYSTEM = 'agentic-system-core';
 const START = '<!-- claims:start -->';
 const END = '<!-- claims:end -->';
+const MEASURED = Object.freeze({ end: '<!-- measured:end -->', name: 'measured', start: '<!-- measured:start -->' });
+const CLAIMS = Object.freeze({ end: END, name: 'claims', start: START });
 
 /** The forbidden wording: [label, pattern]. Each pattern is global and case-blind. */
 const WORDING = [
@@ -64,6 +85,22 @@ const WORDING = [
 ];
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
+
+const MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December';
+/** What is not a number in a claims region: dates, versions with two dots. */
+const NOT_NUMBERS = [
+  /\b\d{4}-\d{2}-\d{2}\b/gu,
+  new RegExp(`\\b(?:\\d{1,2} )?(?:${MONTHS}) \\d{4}\\b`, 'gu'),
+  /\b\d+(?:\.\d+){2,}\b/gu,
+];
+/** A number written in digits, not joined to a word, a hyphen, an at sign, a slash or a decimal point. */
+const NUMBER = /(?<![\w.,@/#-])(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?![\w@/-]|[.,]\d)/gu;
+/** A unit after a number (or after the end of a range "a–b"), and the scales of the record's values it allows. */
+const UNIT = /^(?:\s?[–-]\s?[\d.,]+)?(?:\s|&nbsp;)?(KiB|MiB|GiB|KB|MB|GB|ms|s|%)(?![\w])/u;
+const SCALES = {
+  '%': [0.01, 1], GB: [1e9, 1e6], GiB: [1073741824, 1048576], KB: [1e3, 1], KiB: [1024, 1],
+  MB: [1e6, 1e3], MiB: [1048576, 1024], ms: [1], s: [1e3, 1],
+};
 
 /** True for a YYYY-MM-DD string that names a day of the Gregorian calendar. */
 function isCalendarDate(text) {
@@ -117,15 +154,15 @@ function finding(code, file, line, col, message) {
  * taken in order, so a region may open and close on one line, and the text beside
  * a marker on its own line is read with its original columns.
  */
-function readSegments(file, text) {
+function readSegments(file, text, kind) {
   const lines = text.split('\n');
-  if (!lines.some((l) => markerAt(l, START, 0) !== -1)) return { findings: [], segments: lines.map((l, i) => [i + 1, 0, l]) };
+  if (!lines.some((l) => markerAt(l, kind.start, 0) !== -1)) return { findings: [], marked: false, segments: lines.map((l, i) => [i + 1, 0, l]) };
   const segments = [];
   let opened = null;
   lines.forEach((line, i) => {
     let at = 0;
     for (;;) {
-      const marker = opened ? END : START;
+      const marker = opened ? kind.end : kind.start;
       const next = markerAt(line, marker, at);
       const stop = next === -1 ? line.length : next;
       if (opened && stop > at) segments.push([i + 1, at, line.slice(at, stop)]);
@@ -135,14 +172,44 @@ function readSegments(file, text) {
     }
   });
   const findings = opened
-    ? [finding('AGSC-E202', file, opened.line, opened.col, `the claims region opened here has no ${END}`)]
+    ? [finding('AGSC-E202', file, opened.line, opened.col, `the ${kind.name} region opened here has no ${kind.end}`)]
     : [];
-  return { findings, segments };
+  return { findings, marked: true, segments };
 }
 
-/** Forbidden wording in one text file. */
-function lintText(file, text) {
-  const { findings, segments } = readSegments(file, text);
+/** Every number of a parsed record, at any depth. */
+function recordNumbers(value, into = []) {
+  if (typeof value === 'number' && Number.isFinite(value)) into.push(value);
+  else if (value && typeof value === 'object') for (const member of Object.values(value)) recordNumbers(member, into);
+  return into;
+}
+
+/** True when the record holds `written` (with `unit`, or none) at its written precision. */
+function traced(written, unit, numbers) {
+  const plain = written.replace(/,/gu, '');
+  const value = Number(plain);
+  const tolerance = 0.5 * 10 ** -((plain.split('.')[1] || '').length) + 1e-9;
+  return (SCALES[unit] || [1]).some((scale) => numbers.some((r) => Math.abs(r / scale - value) <= tolerance));
+}
+
+/** The numbers of one segment that the record does not hold, as [column, written]. */
+function untracedNumbers(segment, numbers) {
+  if (/to be measured/iu.test(segment)) return [];
+  let text = segment;
+  const blank = (s) => ' '.repeat(s.length);
+  for (const [start, end] of codeSpans(text)) text = text.slice(0, start) + blank(text.slice(start, end)) + text.slice(end);
+  for (const pattern of NOT_NUMBERS) text = text.replace(pattern, blank);
+  const out = [];
+  for (const match of text.matchAll(NUMBER)) {
+    const unit = (UNIT.exec(text.slice(match.index + match[0].length)) || [])[1];
+    if (!traced(match[0], unit, numbers)) out.push([match.index, match[0]]);
+  }
+  return out;
+}
+
+/** Forbidden wording in one text file, and, given a record, the numbers it does not hold. */
+function lintText(file, text, record) {
+  const { findings, segments } = readSegments(file, text, CLAIMS);
   for (const [number, offset, segment] of segments) {
     for (const [label, pattern] of WORDING) {
       for (const match of segment.matchAll(pattern)) {
@@ -151,7 +218,32 @@ function lintText(file, text) {
       }
     }
   }
+  if (!record) return findings;
+  const measured = readSegments(file, text, MEASURED);
+  if (!measured.marked) return findings;
+  findings.push(...measured.findings);
+  for (const [number, offset, segment] of measured.segments) {
+    for (const [at, written] of untracedNumbers(segment, record.numbers)) {
+      findings.push(finding('AGSC-E202', file, number, offset + at + 1,
+        `${written} is in no layer of the record ${record.file}; quote a number of the record, or mark the line "to be measured"`));
+    }
+  }
   return findings;
+}
+
+/** The record of --record, or the finding that it cannot be used. */
+function readRecord(file) {
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, ''));
+  } catch (e) {
+    // A file-system error carries a code; a parse error does not.
+    return { finding: e.code ? finding('AGSC-E901', file, 1, 1, 'cannot be read') : finding('AGSC-E202', file, 1, 1, `not JSON: ${e.message}`) };
+  }
+  if (!data || typeof data.layers !== 'object' || data.layers === null || Array.isArray(data.layers)) {
+    return { finding: finding('AGSC-E202', file, 1, 1, 'holds no layers{} object: not a measurement record') };
+  }
+  return { record: { file, numbers: recordNumbers(data.layers) } };
 }
 
 /** The members one row is missing, as messages. */
@@ -192,7 +284,7 @@ function lintResults(file, text) {
 
 /** The arguments, or a usage message. */
 function parse(argv) {
-  const options = { help: false, json: false, results: [], texts: [] };
+  const options = { help: false, json: false, record: null, results: [], texts: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') options.help = true;
@@ -201,6 +293,10 @@ function parse(argv) {
       i += 1;
       if (argv[i] === undefined || argv[i].startsWith('-')) return { error: '--results needs a file (AGSC-E003)' };
       options.results.push(argv[i]);
+    } else if (arg === '--record') {
+      i += 1;
+      if (argv[i] === undefined || argv[i].startsWith('-')) return { error: '--record needs a file (AGSC-E003)' };
+      options.record = argv[i];
     } else if (arg.startsWith('-')) return { error: `unknown flag ${arg} (AGSC-E002)` };
     else options.texts.push(arg);
   }
@@ -212,9 +308,12 @@ function parse(argv) {
 
 /** Every input read and linted; an unreadable one is itself a finding. */
 function lintAll(options) {
-  const inputs = [...options.texts.map((f) => [f, lintText]), ...options.results.map((f) => [f, lintResults])];
+  const { finding: unusable, record } = options.record ? readRecord(options.record) : {};
+  const inputs = [...options.texts.map((f) => [f, (name, text) => lintText(name, text, record)]),
+    ...options.results.map((f) => [f, lintResults])];
   let read = 0;
-  const findings = inputs.flatMap(([file, lint]) => {
+  const findings = unusable ? [unusable] : [];
+  findings.push(...inputs.flatMap(([file, lint]) => {
     let text;
     try {
       // A byte-order mark is no part of the text: JSON.parse refuses it and it would shift line 1.
@@ -224,7 +323,7 @@ function lintAll(options) {
     }
     read += 1;
     return lint(file, text);
-  });
+  }));
   return { findings, read };
 }
 

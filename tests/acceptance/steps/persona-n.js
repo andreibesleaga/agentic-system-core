@@ -2,7 +2,8 @@
 // verifies AGSC-05-06
 // Steps of features/persona-n-researcher.feature: a researcher who measures a node
 // with the shipped benchmark kit, offline, gets the same numbers twice, checks the kit of the
-// agent-side study against a build before any scored run, checks that
+// agent-side study against a build before any scored run, holds the numbers of a
+// results page to the measurement record (tools/lint-claims --record), checks that
 // the three graph dumps of a build hold one graph, and cites exactly what was
 // measured — the release (CITATION.cff), the node and its content version (the
 // graph dumps and the provenance header of llms.txt) and the conformance report.
@@ -22,6 +23,7 @@ const GENERATOR = path.join(ROOT, 'bench', 'gen-bundle.js');
 const BENCH = path.join(ROOT, 'tools', 'bench');
 const AGENT_STUDY = path.join(ROOT, 'bench', 'queries', 'agent-study');
 const KIT = path.join(ROOT, 'bench', 'runners', 'kit.js');
+const LINT_CLAIMS = path.join(ROOT, 'tools', 'lint-claims');
 const BENCH_SURFACES = ['chunks', 'llms', 'search'];
 
 /** One RDF term as a comparable string; literals keep their datatype or language. */
@@ -169,6 +171,46 @@ module.exports = [
       for (const text of world.state.reports) {
         assert.deepStrictEqual(JSON.parse(text).kit.gold_index, { checked: rows, digest_changed: 0, fixture_ids: 0, found: rows, rows });
       }
+    },
+  },
+  {
+    pattern: /^a results page whose measured region quotes the package count of the install layer of "(docs\/measurements\.json)"$/u,
+    run(world, record) {
+      world.state.record = path.join(ROOT, record);
+      const packages = JSON.parse(fs.readFileSync(world.state.record, 'utf8')).layers.install.packages;
+      world.state.page = path.join(world.temp('agsc-acc-claims-'), 'RESULTS.md');
+      world.state.measured = [`An install of the package holds ${packages} packages.`];
+      fs.writeFileSync(world.state.page, `<!-- measured:start -->\n${world.state.measured.join('\n')}\n<!-- measured:end -->\n`);
+    },
+  },
+  {
+    pattern: /^the measured region of the page also says that an install holds ([\d,]+) packages$/u,
+    run(world, count) {
+      world.state.measured.push(`An install holds ${count} packages.`);
+      fs.writeFileSync(world.state.page, `<!-- measured:start -->\n${world.state.measured.join('\n')}\n<!-- measured:end -->\n`);
+    },
+  },
+  {
+    pattern: 'the researcher runs "tools/lint-claims" over the page with that record',
+    run(world) {
+      const r = spawnSync(process.execPath, [LINT_CLAIMS, '--json', '--record', world.state.record, world.state.page],
+        { encoding: 'utf8', env: world.offlineEnv() });
+      world.state.claims = { code: r.status, report: JSON.parse(r.stdout) };
+    },
+  },
+  {
+    pattern: 'the claims check passes',
+    run(world) {
+      assert.strictEqual(world.state.claims.code, 0, JSON.stringify(world.state.claims.report.findings));
+    },
+  },
+  {
+    pattern: /^the claims check fails on "([\d,]+)", the one number the record does not hold$/u,
+    run(world, written) {
+      assert.strictEqual(world.state.claims.code, 1);
+      const findings = world.state.claims.report.findings;
+      assert.deepStrictEqual(findings.map((f) => [f.code, f.line]), [['AGSC-E202', 3]]);
+      assert.ok(findings[0].message.startsWith(`${written} is in no layer of the record`), findings[0].message);
     },
   },
   {
