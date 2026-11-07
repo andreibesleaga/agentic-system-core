@@ -8,9 +8,15 @@
 //     independence AGSC-09-90 gives the checkers. `npm run arch` holds the sources to the
 //     same rule (`bench-runners-standalone` in .dependency-cruiser.js); this test holds the
 //     compiled files and the tool, which the dependency rule does not cruise.
-//   * Every runner `tools/bench` requires ships with it: the package's `files[]` lists
-//     bench/runners/, and each runner requires only Node built-ins, the run-time
+//   * Every runner `tools/bench` requires ships with it, by name in the package's
+//     `files[]`, and a runner only a maintainer script calls (the install layer of
+//     bench/measure.js) does not; each runner requires only Node built-ins, the run-time
 //     dependencies and other runners.
+//   * No runner and no source of one reads the clock or draws a random number: the dry
+//     run's report is a function of its inputs, so two runs on different days give the
+//     same bytes (a test that compares two runs made back to back cannot see a date).
+//     A runner that times something is handed its timers (bench/measure.js does that for
+//     the install layer).
 //
 // Deterministic: reads files only; no clock, no network.
 
@@ -60,10 +66,12 @@ test('the dependency rule holds the runners\' sources to the same independence',
 });
 
 test('every runner tools/bench requires ships, and needs only Node, the run-time dependencies and other runners', () => {
-  assert.ok(pkg.files.includes('bench/runners/'), 'package.json files[] ships bench/runners/');
   const runtime = new Set(Object.keys(pkg.dependencies));
   const used = specifiers(path.join(ROOT, 'tools', 'bench')).map((s) => target(path.join(ROOT, 'tools', 'bench'), s)).filter(Boolean);
-  assert.ok(used.some((where) => where.startsWith('bench/runners/')), 'tools/bench requires a runner');
+  const runners = used.filter((where) => where.startsWith('bench/runners/')).map((where) => (where.endsWith('.js') ? where : `${where}.js`));
+  assert.ok(runners.length > 0, 'tools/bench requires a runner');
+  const shipped = pkg.files.filter((f) => f.startsWith('bench/runners'));
+  assert.deepEqual(shipped.sort(), [...new Set(runners)].sort(), 'package.json files[] ships, by name, the runners tools/bench requires and no other');
   for (const file of listed(RUNNERS, '.js')) {
     for (const specifier of specifiers(file)) {
       if (specifier.startsWith('node:')) continue;
@@ -75,5 +83,12 @@ test('every runner tools/bench requires ships, and needs only Node, the run-time
       const name = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
       assert.ok(runtime.has(name), `${path.relative(ROOT, file)} requires ${specifier}, which is no run-time dependency`);
     }
+  }
+});
+
+test('no runner and no source of one reads the clock or draws a random number', () => {
+  for (const file of [...listed(RUNNERS, '.js'), ...listed(SOURCES, '.ts')]) {
+    const body = fs.readFileSync(file, 'utf8').split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/u.test(l)).join('\n');
+    assert.ok(!/Date\.now|new Date\(|Math\.random/u.test(body), `${path.relative(ROOT, file)} reaches for the clock or randomness`);
   }
 });

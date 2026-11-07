@@ -115,6 +115,32 @@ describe('the agent-study set: templates, gold index and rules', () => {
     assert.deepEqual([twice.rows.length, twice.findings[0].line], [1, 3]);
     assert.match(twice.findings[0].message, /line 2/u);
   });
+
+  // A gold row of any content: a node and the fixed-form cells as the index requires them,
+  // the other cells any text (tabs and line breaks included, which the writer folds).
+  const hex = (n) => fc.stringMatching(new RegExp(`^[0-9a-f]{${n}}$`, 'u'));
+  const goldRow = fc.record({
+    node: fc.stringMatching(/^[a-z0-9.-]{1,20}$/u), chunk_id: hex(64), item: fc.string(), ordinal: fc.nat(),
+    kind: fc.string(), section: fc.string(), title: fc.string(), digest16: hex(16), first_140_chars: fc.string(),
+  });
+  const goldRowsArb = fc.uniqueArray(goldRow, { maxLength: 12, selector: (r) => r.chunk_id });
+  const byId = (rows) => [...rows].sort((a, b) => (a.chunk_id < b.chunk_id ? -1 : 1));
+
+  it('property: the written gold index reads back to the same text, with no finding', () => {
+    fc.assert(fc.property(goldRowsArb, (rows) => {
+      const text = kit.formatGoldIndex(rows);
+      const read = kit.parseGoldIndex(text, 'g');
+      return read.findings.length === 0 && read.rows.length === rows.length && kit.formatGoldIndex(read.rows) === text;
+    }), { numRuns: 500, seed: 20260101 });
+  });
+
+  it('property: the rows read from a gold index do not depend on the order it lists them in', () => {
+    const permuted = goldRowsArb.chain((rows) => fc.tuple(fc.constant(rows), fc.shuffledSubarray(rows, { maxLength: rows.length, minLength: rows.length })));
+    fc.assert(fc.property(permuted, ([rows, shuffled]) => {
+      const read = (list) => byId(kit.parseGoldIndex(kit.formatGoldIndex(list), 'g').rows);
+      assert.deepEqual(read(shuffled), read(rows));
+    }), { numRuns: 500, seed: 20260101 });
+  });
 });
 
 describe('the results-row contract', () => {

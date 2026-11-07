@@ -9,6 +9,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { describe, it } = require('node:test');
 
+const fc = require('fast-check');
+
+const { lintText } = require('../../tools/lint-claims');
 const { capture, codes, envelope, tmpdir, writeTree } = require('./helpers');
 
 const ROW = Object.freeze({
@@ -244,6 +247,34 @@ describe('tools/lint-claims — numbers held to the record (--record)', () => {
     assert.deepEqual(codes(absent.json), ['AGSC-E901']);
     assert.equal(capture('lint-claims', ['--record']).code, 2);
     assert.equal(capture('lint-claims', ['--record', 'm.json']).code, 2);
+  });
+});
+
+describe('tools/lint-claims — numbers held to the record, as properties', () => {
+  // A value of the record: up to ten million, with up to four decimals. Each unit the
+  // check reads, with the scales it allows (the tool's SCALES).
+  const value = fc.tuple(fc.integer({ max: 10_000_000, min: 0 }), fc.integer({ max: 4, min: 0 })).map(([n, d]) => n / 10 ** d);
+  const UNITS = [['', [1]], [' ms', [1]], [' s', [1e3, 1]], [' %', [0.01, 1]], [' KB', [1e3, 1]], [' MB', [1e6, 1e3]],
+    [' KiB', [1024, 1]], [' MiB', [1048576, 1024]]];
+  const grouped = (written) => written.replace(/^\d+/u, (whole) => whole.replace(/\B(?=(\d{3})+$)/gu, ','));
+  const page = (written) => `<!-- measured:start -->\nThe value is ${written}.\n<!-- measured:end -->\n`;
+  const findings = (written, v) => lintText('p.md', page(written), { file: 'm.json', numbers: [v] }).filter((f) => f.code === 'AGSC-E202');
+
+  it('property: a value of the record, written at any precision, in any unit it allows, with or without thousands separators, passes', () => {
+    const written = fc.record({ comma: fc.boolean(), precision: fc.integer({ max: 3, min: 0 }), scale: fc.nat(), unit: fc.integer({ max: UNITS.length - 1, min: 0 }), v: value });
+    fc.assert(fc.property(written, ({ comma, precision, scale, unit, v }) => {
+      const [suffix, scales] = UNITS[unit];
+      const digits = (v / scales[scale % scales.length]).toFixed(precision);
+      assert.deepEqual(findings(`${comma ? grouped(digits) : digits}${suffix}`, v), [], `${digits}${suffix} of ${v}`);
+    }), { numRuns: 2000, seed: 20260101 });
+  });
+
+  it('property: a value moved past the tolerance of its written precision fails', () => {
+    const moved = fc.record({ ms: fc.boolean(), precision: fc.integer({ max: 3, min: 0 }), v: value });
+    fc.assert(fc.property(moved, ({ ms, precision, v }) => {
+      const written = `${(v + 2 * 10 ** -precision).toFixed(precision)}${ms ? ' ms' : ''}`;
+      assert.equal(findings(written, v).length, 1, `${written} against ${v}`);
+    }), { numRuns: 2000, seed: 20260101 });
   });
 });
 

@@ -13,6 +13,18 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The package ships the benchmark runner `tools/bench` calls, `bench/runners/kit.js`, by name, and no
+  longer the install layer's runner `bench/runners/install.js`, whose only caller, `bench/measure.js`,
+  stays in the repository: `files[]` lists `bench/runners/kit.js` instead of the folder
+  (`tests/arch/package-manifest.test.js`, `tests/arch/bench-runners.test.js`). One file fewer in the
+  tarball; no emitted byte changes.
+- The claims check reaches the 1.1 prose of `docs/BENCHMARKS.md`: the one-command run, the agent-side
+  kit and the ACM badge table are measured regions, so a number in them that `docs/measurements.json`
+  does not hold fails `tools/lint-claims --record` (PRD-068; `tests/docs/claims.test.js` seeds one into
+  each). `docs/MEASUREMENTS.md` marks each figure of the 1.0.0 run that the record does not hold
+  ("1.0.0 run; not in the record": the `verify` line of §4, the 1.0.0 install and cold start of §9,
+  §11, and their summary rows), and `docs/BENCHMARKS.md` says that the check reads the measured
+  regions only. No emitted byte changes.
 - `bench/measure.js --assemble` merges, as its help text already said: a layer measured into the scratch
   directory replaces the layer of that name in the record at `--out`, and every other layer of that
   record is kept (before, the record was rebuilt from the partials alone and lost every layer not
@@ -472,13 +484,22 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A fitness function for the benchmark runners: no runner under `bench/runners/` and no source under
+  `src-ts/bench/` reads the clock or draws a random number, so the dry run's report cannot carry a day
+  that a test comparing two runs made back to back would not see (`tests/arch/bench-runners.test.js`;
+  a runner that times something is handed its timers). Fixed-seed property tests: the gold index
+  written by `formatGoldIndex` reads back to the same text with no finding, and the rows read do not
+  depend on the order the index lists them in (`tests/bench/agent-kit.test.js`); every value of the
+  record, written at any precision and in any unit the claims check allows, passes `tools/lint-claims`,
+  and a value moved past the tolerance of its written precision fails (`tests/tools/lint-claims.test.js`).
+  `tests/docs/docs-accuracy.test.js` holds the table of `bench/README.md` to paths that exist.
 - `node bench/measure.js --all --scratch <dir>`, the one-command run of the benchmark kit (I-096;
   PRD-067): conformance, determinism, the security floor, the build curves, the package and the install,
   every layer whose inputs the repository holds, with no key, model, judge or dataset, assembled into
   `<dir>/measurements.json` for a reader to compare with `docs/measurements.json`.
 - The `install` layer of `bench/measure.js` (new `bench/runners/install.js`, compiled from strict
-  TypeScript `src-ts/bench/install.ts` like the other benchmark runner; shipped with `bench/runners/`,
-  requires only Node built-ins): `npm pack`, `npm install --omit=dev`
+  TypeScript `src-ts/bench/install.ts` like the other benchmark runner; kept in the repository with
+  `bench/measure.js`, requires only Node built-ins): `npm pack`, `npm install --omit=dev`
   of the tarball into an empty folder, the package folders and their sizes, five timed runs each of
   `node -e ""`, `agsc --version`, `lint` and `build` on the reference fixture, the load time of
   `@modelcontextprotocol/server`, `@modelcontextprotocol/node` and `@a2a-js/sdk`, and a module trace

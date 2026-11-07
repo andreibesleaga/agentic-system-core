@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method).
 
-**Status: every one of the nine layers was measured on 2026-10-12, one after another, into one scratch directory, on the `1.0.0` tree (the specification and engine of this release, before the release commit).** `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. Four figures outside the nine layers were measured the same day by the commands shown with them and are not in the record: the `verify` line of §4, the install and cold-start lines of §9, and the cost figures of §11. *(1.1, 7 November 2026: the install and the cold start were re-measured on the 1.1 tree as a tenth layer, `install`, which the record now holds beside the nine layers of the 1.0.0 run; §9 gives both.)* The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
+**Status: every one of the nine layers was measured on 2026-10-12, one after another, into one scratch directory, on the `1.0.0` tree (the specification and engine of this release, before the release commit).** `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. Four figures outside the nine layers were measured the same day by the commands shown with them and are not in the record: the `verify` line of §4, the install and cold-start lines of §9, and the cost figures of §11. *(1.1, 7 November 2026: the install and the cold start were re-measured on the 1.1 tree as a tenth layer, `install`, which the record now holds beside the nine layers of the 1.0.0 run; §9 gives both.)* *(1.1, 7 November 2026: each of those figures is marked "1.0.0 run; not in the record" where it stands. `tools/lint-claims --record` holds the measured regions of this page and of BENCHMARKS.md to the record, and these figures stand outside them until they are measured into it.)* The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
 
 Every number in the nine layers is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
@@ -163,7 +163,7 @@ No HTML page exceeds the budget at any size. The largest page is the cluster pag
 
 **Supported scale, stated from these numbers and nothing else.** The reference engine is measured to **10,000 published items** on one machine: 86.64 s of build, 1,778 MiB peak, 300.9 MB of output in 30,162 files, every budget of AGSC-06-21 met. From 1,000 to 10,000 items the build grows 11.9× in time and 4.7× in peak memory for a 10× corpus: memory grows less than the corpus, time somewhat more. Above 10,000 items nothing is measured and nothing is claimed. Where such a node can be hosted is §11.
 
-`agsc verify` (two builds in one process, digests kept, AGSC-04-02), with `SOURCE_DATE_EPOCH=1767225600 /usr/bin/time -v node bin/agsc.js verify`: on the 5,000-item Bundle 54.7 s wall and **1,244 MiB** peak — about 220 MiB above one build, the earlier build's garbage not yet reclaimed while the second runs; on the 500-item Bundle 6.4 s and 298 MiB.
+*(1.0.0 run; not in the record.)* `agsc verify` (two builds in one process, digests kept, AGSC-04-02), with `SOURCE_DATE_EPOCH=1767225600 /usr/bin/time -v node bin/agsc.js verify`: on the 5,000-item Bundle 54.7 s wall and **1,244 MiB** peak — about 220 MiB above one build, the earlier build's garbage not yet reclaimed while the second runs; on the 500-item Bundle 6.4 s and 298 MiB.
 
 ---
 
@@ -261,11 +261,11 @@ npm ls --omit=dev --parseable --all | xargs du -sk      # what a consumer's inst
 | unpacked | **4.23 MB** |
 | packed | **1,257 KB** |
 
-By folder, the largest shipped parts are `tests/vectors` (632 KB, 251 files, read by `conform`), `src/distribution` (468 KB, 31 files), the specification `spec/` (451 KB), `src/interchange` (383 KB) and `tests/conformance` (314 KB, 32 files). What no verb reads and still ships — `examples/` (107 files, 85 KB), `docs/diagrams/` (22 files, 52 KB, read by the `validate-diagrams` checker over the engine's own tree), `docs/guides/` and the changelog (149 KB) — is shipped on purpose and left as it is.
+By folder, the largest shipped parts are `tests/vectors` (632 KB, 251 files, read by `conform`), `src/distribution` (468 KB, 31 files), the specification `spec/` (451 KB), `src/interchange` (383 KB) and `tests/conformance` (314 KB, 32 files). What no verb reads and still ships — `examples/` (107 files, 85 KB), `docs/diagrams/` (22 files, 52 KB, read by the `validate-diagrams` checker over the engine's own tree), `docs/guides/` and the changelog (149 KB) — is shipped on purpose and left as it is. *(1.0.0 run; not in the record.)*
 
-**What an install actually costs** (`npm install --omit=dev` of the packed tarball in an empty folder): **137 packages**, the package itself among them. The largest by far are the MCP server's: `zod` 8.2 MB, `@modelcontextprotocol/sdk` 6.2 MB, `hono` 3.7 MB, `undici` 1.6 MB — then `ajv` 2.5 MB, `jsonld` 2.1 MB, `markdown-it` 1.9 MB, `fast-xml-parser` 1.4 MB, `yaml` 1.3 MB, `diff` 1.0 MB, `n3` 0.9 MB (on disk, `du -sk`). The package's own 4.2 MB is a small part of the install, and the lever on the install is the MCP SDK's dependency tree, not this manifest. *(1.1, 7 November 2026: re-measured on the 1.1 tree, below.)*
+**What an install actually costs** (`npm install --omit=dev` of the packed tarball in an empty folder): **137 packages**, the package itself among them. The largest by far are the MCP server's: `zod` 8.2 MB, `@modelcontextprotocol/sdk` 6.2 MB, `hono` 3.7 MB, `undici` 1.6 MB — then `ajv` 2.5 MB, `jsonld` 2.1 MB, `markdown-it` 1.9 MB, `fast-xml-parser` 1.4 MB, `yaml` 1.3 MB, `diff` 1.0 MB, `n3` 0.9 MB (on disk, `du -sk`). The package's own 4.2 MB is a small part of the install, and the lever on the install is the MCP SDK's dependency tree, not this manifest. *(1.0.0 run; not in the record. 1.1, 7 November 2026: re-measured on the 1.1 tree, below.)*
 
-**Cold start** (`/usr/bin/time`, five runs, from that install, the reference fixture): `agsc --version` 0.23–0.24 s and 65 MB with 120 modules loaded (`node -e ""` alone: 0.05–0.06 s, 44 MB); `agsc lint` 0.88–0.97 s and 93–95 MB with 288 modules. Every verb is required only when it runs; `jsonld` (183–206 ms to load) and the MCP SDK (323–344 ms) are loaded only by the verbs that emit RDF or serve MCP, never by `--version`, `lint`, `build` or `verify`. *(1.1, 7 November 2026: re-measured on the 1.1 tree, below.)*
+**Cold start** (`/usr/bin/time`, five runs, from that install, the reference fixture): `agsc --version` 0.23–0.24 s and 65 MB with 120 modules loaded (`node -e ""` alone: 0.05–0.06 s, 44 MB); `agsc lint` 0.88–0.97 s and 93–95 MB with 288 modules. Every verb is required only when it runs; `jsonld` (183–206 ms to load) and the MCP SDK (323–344 ms) are loaded only by the verbs that emit RDF or serve MCP, never by `--version`, `lint`, `build` or `verify`. *(1.0.0 run; not in the record. 1.1, 7 November 2026: re-measured on the 1.1 tree, below.)*
 
 **1.1: the install and the cold start, measured again (7 November 2026).** The two paragraphs above are the 1.0.0 run and stay as they were. The 1.1 tree replaces `@modelcontextprotocol/sdk` with the official MCP packages `@modelcontextprotocol/server` and `@modelcontextprotocol/node`, and adds `oxigraph`, `rdf-validate-shacl`, `@traqula/parser-sparql-1-1`, `@a2a-js/sdk`, `structured-headers` and `http-link-header` as run-time packages. The figures are the record's `install` layer, measured by one command on the `next-1.1` branch with Node 24.18.0 on Linux (WSL 2), the machine above. Its byte sizes describe the tree on the day it was measured: the documents and this record ship in the tarball, so a later commit packs to other sizes. The record's `spec_version` is the version the measured tree's specification states, 1.0.0 until the 1.1 release:
 
@@ -295,6 +295,8 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --assemble --scratch <dir> --
 ---
 
 ## 11. Cost — what a visit, an agent session and a month of hosting cost
+
+*1.0.0 run; not in the record: every figure of this section was measured on 2026-10-12 by the commands below, or read from the host's pages on the dates given, and `docs/measurements.json` holds none of them.*
 
 ```
 # page weight: a real headless Chromium (chrome-headless-shell 1228 through playwright-core 1.62.1, both outside the repository) over a loopback server of the built node; every request counted, every other origin blocked
@@ -345,7 +347,7 @@ A published node costs three files per item (the page, the Markdown view, the JS
 
 ## Summary table (numbers only)
 
-Every figure is from this document; nothing is rounded up.
+Every figure is from this document; nothing is rounded up. Rows from the 1.0.0 run; not in the record: `verify`, the item-page visit, the MCP calls, the hosting and the runtime install of the npm package (§4, §9, §11). The rc.6 figures of the security-floor row are the score of that published package (§3).
 
 | quantity | value |
 |---|---|

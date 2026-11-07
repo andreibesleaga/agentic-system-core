@@ -58,11 +58,12 @@ test('only the nine checkers, the two generators of 1.1, the counter and the ben
       `tools/${tool} ${shipped.includes(`tools/${tool}`) ? 'must' : 'must not'} ship`);
   }
   // The benchmark tool reads its committed query sets and the results-row contract, and
-  // its dry run calls the kit's runner; the measurement scripts and their corpus are the
-  // maintainer's and stay in the repository.
+  // its dry run calls the kit's runner; the measurement scripts, their corpus and the
+  // install layer's runner, which only bench/measure.js calls, are the maintainer's and
+  // stay in the repository.
   assert.ok(ships('bench/queries/'));
   assert.ok(ships('bench/runners/kit.js'));
-  assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js'));
+  assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js') && !ships('bench/runners/install.js'));
 });
 
 test('AGSC-00-01 + AGSC-08-06: the texts a consumer has to be able to read ship', () => {

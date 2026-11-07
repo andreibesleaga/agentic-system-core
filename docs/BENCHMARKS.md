@@ -12,13 +12,15 @@ This document describes the benchmark kit under `bench/` and the standalone runn
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --all --scratch <dir>
 ```
 
+<!-- measured:start -->
 From a clone of this repository, after `npm ci`, this one command measures every layer whose inputs the repository holds: conformance, determinism, the security floor and the build curves (layers A to D), the package and the install. It needs no key, no model, no judge and no dataset; the install layer alone reaches the npm registry, to install the packed tarball's dependencies, and `--offline` leaves it out. It writes `<dir>/measurements.json` in the layout of `docs/measurements.json` and leaves the repository's record alone, so you compare the two files. The conformance counts, the determinism byte comparisons and the pass/fail outcomes should be equal on any machine. The install layer's package count and sizes depend on what the npm registry serves on the day, and every byte size describes the tree when it was measured (the documents and the record ship in the tarball). Times and memory are your machine's, and the record states the machine they were taken on. The build curves reach 10,000 items by default and take the longest; `--sizes 100 --runs 1` gives a quick check of the command itself.
 
-What the command needs besides the clone: Linux with GNU `time` at `/usr/bin/time` (the build curves and the install layer read wall time and peak memory from `time -v`), and for the install layer Node 22.15 or later (its module trace uses `module.registerHooks`). The install layer names what is missing before it runs anything.
+What the command needs besides the clone: Linux with GNU `time` at `/usr/bin/time` (the build curves and the install layer read wall time and peak memory from `time -v`), and for the install layer Node `22.15` or later (its module trace uses `module.registerHooks`). The install layer names what is missing before it runs anything.
 
 Four layers need what the repository does not hold: accessibility (layer E) and the token counts need three libraries installed outside the repository (axe-core, `playwright-core` and `gpt-tokenizer`) and a Chromium binary; the parity layer reads Bundles, and the retrieval, token and accessibility layers read nodes you have built. Their commands are below. The mechanical scoring needs no key either: `tools/bench` scores the committed query set over a built node with no model and no judge, and `tools/bench --dry-run` checks the agent-side study's kit. Only the model runs of the studies need a model, a local one or a key, and they are not part of this command.
 
 `bench/measure.js --assemble` merges: a layer measured into the scratch directory replaces the layer of that name in the record at `--out`, and every other layer of that record is kept. The record's `measured` member lists the layers the last assembly measured.
+<!-- measured:end -->
 
 ## Running it, layer by layer
 
@@ -86,12 +88,13 @@ Its design, fixed before any number exists:
 
 ## The agent-side study: its kit
 
+<!-- measured:start -->
 The second study asks whether an agent finds, checks and cites a node's published units better through the node's contract — its tool server, its chunk export and its discovery document (condition C2) — than over plain pages (C0) or over plain pages and `llms.txt` (C1). Its unit is a chunk, not an item: a question's gold labels are chunk ids, and an answer is scored on the chunk ids it cites (`bench/metrics.js#citationScore`, with the interval, paired test, correction and effect size of the list above). The model runs are not part of the engine and have not been run; what the engine ships is everything that must exist, dated, before any scored run:
 
 | File | What it is |
 |---|---|
 | `bench/queries/agent-study/queries.jsonl`, `qrels/test.tsv` | the question template and the gold labels in the BEIR layout; one example row until the questions are written |
-| `bench/queries/agent-study/gold-index.tsv` | every chunk of the two public nodes (`agenticsystemcore.com`, 21 chunks; `patterns.agenticsystemcore.com`, 128): node, chunk id, item, ordinal, kind, section, title and digest prefix. The question writer picks gold units from it. The 21 rows of the main node come from its published build, made with the 1.0.1 engine, until that site is built with 1.1. The repository copy leaves the chunk-text column empty, because that text is the nodes' prose, under their Content Use Terms; `node bench/runners/kit.js gold-index` writes the full index from the builds |
+| `bench/queries/agent-study/gold-index.tsv` | every chunk of the two public nodes (`agenticsystemcore.com`, 21 chunks; `patterns.agenticsystemcore.com`, 128): node, chunk id, item, ordinal, kind, section, title and digest prefix. The question writer picks gold units from it. The 21 rows of the main node come from its published build, made with the 1.0.1 engine, until that site is built with `1.1`. The repository copy leaves the chunk-text column empty, because that text is the nodes' prose, under their Content Use Terms; `node bench/runners/kit.js gold-index` writes the full index from the builds |
 | `bench/queries/agent-study/datasheet.md` | the datasheet, filled in when the set is frozen |
 | `bench/queries/agent-study/README.md` | the six rules for writing the set: gold labels before any run, no leakage, the counts, the split by item, one gold set per question, the freeze |
 | `bench/queries/results-row.schema.json` | the results-row contract (below) |
@@ -101,6 +104,7 @@ The second study asks whether an agent finds, checks and cites a node's publishe
 **The dry run.** `tools/bench --dry-run` scores nothing and reads files only. With any set it checks that the contract is a schema of draft 2020-12 that accepts its own examples. With a set that carries a gold index it checks that each row of the index has its nine columns, a 64-digit chunk id, an ordinal and a 16-digit digest prefix, and names a chunk id once, and that every gold label names a chunk of the index. With `--node <built output>` it reads the build's `chunks.jsonl`, and a sharded export through the shards its manifest lists (a line that is no chunk record is `AGSC-E201` with its file and line): a gold row of a node the build publishes must name a chunk of that build (`AGSC-E301`, exit 1, otherwise), and its digest prefix must match (the warning `AGSC-E210` otherwise: the chunk changed, so its questions need a second look). A row of another node is a fixture id for that build, counted under `fixture_ids` and not checked, because only a build of its own node can check it; when no row names the build's node, nothing was checked, and the warning `AGSC-E210` says so. The report under `kit` gives the counts: `index`, the gold rows read and the gold labels checked against them, and with `--node`, `gold_index`, the rows checked and found and the fixture ids, and two runs over the same inputs give the same bytes. On 7 November 2026 a build of the demonstration node (`agsc-demo-node`) with this engine at the fixed epoch held all 128 chunk ids of `patterns.agenticsystemcore.com` with the digest prefixes the index records, and the 21 rows of the main node were fixture ids for it.
 
 The runner behind the dry run, `bench/runners/kit.js`, is compiled from strict TypeScript (`src-ts/bench/kit.ts`) and, like `tools/bench`, requires nothing of `src/`; it validates through Ajv, the JSON Schema validator the engine already pins. The statistics stay in `bench/metrics.js`. The maintained statistics package read on 7 November 2026, `simple-statistics` 8.0.0, has a permutation test for two independent samples, drawn by default from `Math.random`, and none of the rest the study needs: a paired permutation test that is exact up to 16 pairs, a percentile bootstrap interval, Holm's correction and Cliff's delta, each reproducible from a seed.
+<!-- measured:end -->
 
 ## The studies and the twelve statements: planned, to be measured
 
@@ -132,11 +136,12 @@ The six studies of the kit and the twelve statements they test are written down 
 | 12 | A NOW page derived from git and front matter answers state questions with fewer tool calls than reading the log, and two builds give it the same bytes | E1, a state sub-study of 20 intents, plus the determinism vectors | to be measured |
 <!-- measured:end --><!-- claims:end -->
 
-`tools/lint-claims --record docs/measurements.json docs/BENCHMARKS.md` holds the region above to the claims rules and its numbers to the record: a row that is not "to be measured" may only carry numbers the record holds. The suite runs the check on this page and on `docs/MEASUREMENTS.md` (`tests/docs/claims.test.js`).
+`tools/lint-claims --record docs/measurements.json docs/BENCHMARKS.md` holds the region above to the claims rules and its numbers to the record: a row that is not "to be measured" may only carry numbers the record holds. The same check holds the other measured regions of this page (the one-command run, the agent-side kit and the badge table below) and of `docs/MEASUREMENTS.md` to the record; it reads numbers in the measured regions only. In `docs/MEASUREMENTS.md`, a figure that the 1.0.0 run gave and the record does not hold is marked "1.0.0 run; not in the record" where it stands, until it is measured into the record. The suite runs the check on this page and on `docs/MEASUREMENTS.md` (`tests/docs/claims.test.js`).
 
 ## The kit and the ACM artifact badges
 
-ACM's policy "Artifact Review and Badging" (Version 1.1, by that source) names five badges that a venue's artifact evaluation may award to a paper. A badge is awarded by such an evaluation, never by this project; the table says what the kit offers one and what it still lacks. The badge names, the version and the one-line criteria below come from a secondary source and have not yet been checked against the policy page (`https://www.acm.org/publications/policies/artifact-review-and-badging-current`); they are paraphrases, not quotations.
+<!-- measured:start -->
+ACM's policy "Artifact Review and Badging" (Version `1.1`, by that source) names five badges that a venue's artifact evaluation may award to a paper. A badge is awarded by such an evaluation, never by this project; the table says what the kit offers one and what it still lacks. The badge names, the version and the one-line criteria below come from a secondary source and have not yet been checked against the policy page (`https://www.acm.org/publications/policies/artifact-review-and-badging-current`); they are paraphrases, not quotations.
 
 | ACM badge | its criterion, in one line (paraphrased, not yet checked against the policy page) | what the kit offers | what it still lacks |
 |---|---|---|---|
@@ -145,6 +150,7 @@ ACM's policy "Artifact Review and Badging" (Version 1.1, by that source) names f
 | Artifacts Evaluated – Reusable | beyond functional: documented and structured carefully enough that others can reuse and repurpose them, following the norms of the field | the BEIR layout for query sets, a datasheet, the six rules for writing a set, the metrics in one tested module | a frozen and filled-in datasheet and machine-readable dataset metadata; a second annotator for the gold labels; pinned versions of the three outside libraries and the Chromium binary in one install file; a guide for running the kit on a corpus other than the two public nodes |
 | Results Reproduced | the main results were obtained again by another team, using in part the author's artifacts | nothing yet: there are no study results to reproduce | the studies' results, then a run by another team |
 | Results Replicated | the main results were obtained again by another team without the author's artifacts | nothing yet | as above, and an independent implementation |
+<!-- measured:end -->
 
 ## The memory-competency layer, and which benchmarks apply at all
 

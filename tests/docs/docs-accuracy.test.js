@@ -291,3 +291,11 @@ test('related work: the neighbours a reviewer asks about have rows', () => {
   assert.match(row(text, '*Complex Knowledge Curation'), /Skillful-Alhazen/u);
   assert.match(flat(row(text, 'MCP Skills extension')), /skill packs are files[^|]*nothing here forecloses/u);
 });
+
+// --- bench/README.md: the kit's table of paths -----------------------------------------------
+
+test('bench/README.md: every path its table names exists under bench/', () => {
+  const paths = read('bench/README.md').split('\n').map((l) => /^\| `([^`]+)` \|/u.exec(l)).filter(Boolean).map((m) => m[1]);
+  assert.ok(paths.length >= 10, `${paths.length} rows read`);
+  for (const rel of paths) assert.ok(fs.existsSync(path.join(ROOT, 'bench', ...rel.split('/'))), `bench/README.md names bench/${rel}, which does not exist`);
+});

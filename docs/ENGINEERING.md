@@ -311,8 +311,10 @@ tested with stand-in timers. `bench/measure.js` and its other layers stay JavaSc
 predate 1.1, and 1.1 rewrites no existing JavaScript module.
 
 So running the engine, an install with `npm ci --omit=dev` and the published package
-need no TypeScript: what runs and what ships is the JavaScript under `src/` and
-`bench/runners/`, and the sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
+need no TypeScript: what runs is the JavaScript under `src/` and `bench/runners/`; what
+ships is the JavaScript under `src/` and `bench/runners/kit.js`, the runner `tools/bench`
+calls (the install layer's runner stays in the repository with `bench/measure.js`, its only
+caller), and the sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
 dependency: `tests/tools/build-ts.test.js` and `tests/arch/typescript-parts.test.js`. The
 first module, `src-ts/shared/version-line.ts`, is the proof of the chain: it gives the
 line `agsc --version` prints, the command line prints that line through it
