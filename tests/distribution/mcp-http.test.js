@@ -6,7 +6,8 @@
 //   * the host names a request may name are the three loopback names and the `--bind` address,
 //     written as the URL parser writes a host;
 //   * the two places where the transport adds to the official SDK — only `/mcp` is the endpoint,
-//     and `subscriptions/listen` is an unknown method (404, -32601) — and the errors of
+//     and `subscriptions/listen` is an unknown method (404, -32601) once the SDK's checks admit
+//     it, and otherwise the check's own answer (415, -32020, -32022, -32602) — and the errors of
 //     AGSC-09-19 (4) (5) as this transport sends them;
 //   * a property: a `Host` or an `Origin` that names no allowed host is 403 and runs no tool;
 //   * transport parity: for one fixed list of requests of revision 2026-07-28, the real
@@ -158,6 +159,32 @@ test('AGSC-09-18 (2), AGSC-09-19 (3) (4) (5): the endpoint, subscriptions/listen
     assert.deepEqual(missing.error.data, { uri: 'memory://agenticsystemcore/no-such-item' });
     const call = modern(10, 'tools/call', { arguments: {}, name: 'frobnicate' });
     assert.equal(JSON.parse((await send(server.url, { body: call, headers: headersOf(call) })).body).error.code, -32602);
+  } finally {
+    await server.close();
+  }
+});
+
+test('AGSC-09-18 (4): a subscriptions/listen request that fails the checks gets the check\'s answer, not -32601', async () => {
+  const server = await inProcess();
+  try {
+    const listen = (revision, withMeta = true) => ({
+      id: 11, jsonrpc: '2.0', method: 'subscriptions/listen',
+      params: withMeta ? { _meta: { ...meta, 'io.modelcontextprotocol/protocolVersion': revision } } : {},
+    });
+    const answer = async (body, headers) => {
+      const got = await send(server.url, { body, headers: { ...headersOf(body), ...headers } });
+      return [got.status, got.status === 415 ? null : JSON.parse(got.body).error.code];
+    };
+    // A revision the transport does not speak, in the header and the body: -32022.
+    assert.deepEqual(await answer(listen('1999-01-01'), { 'MCP-Protocol-Version': '1999-01-01' }), [400, -32022]);
+    // No `_meta` behind a header of 2026-07-28: the envelope error -32602.
+    assert.deepEqual(await answer(listen(MODERN, false), {}), [400, -32602]);
+    // A body that is not declared as JSON: 415.
+    assert.deepEqual(await answer(listen(MODERN), { 'Content-Type': 'text/plain' }), [415, null]);
+    // Header and body disagree: -32020.
+    assert.deepEqual(await answer(listen('1999-01-01'), {}), [400, -32020]);
+    // Every check passed: the method is unknown.
+    assert.deepEqual(await answer(listen(MODERN), {}), [404, -32601]);
   } finally {
     await server.close();
   }

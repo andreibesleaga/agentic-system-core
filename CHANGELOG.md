@@ -1214,6 +1214,37 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `/.well-known/agent-card.json` is written only when every `responder` of `surfaces[]` is an
+  Agent2Agent one (its version `a2a:<version>`) and the `a2a-card` version is a bare A2A version such
+  as `1.0`; otherwise no card is written and the build warns `AGSC-E210`. The card lists every
+  responder as an A2A interface and copies the `a2a-card` version into each, so a node with an MCP
+  responder (`mcp:2026-07-28`) published that endpoint as an A2A JSON-RPC interface, and an
+  `a2a-card` version of `a2a:1.0` gave every interface the `protocolVersion` `a2a:1.0` (AGSC-06-34,
+  AGSC-11-21; the emission is optional, so writing none conforms; a warning, not an error, because
+  1.0 accepted the declaration, D-15). No reference node declares a card: no byte changes.
+- The tool server checks a `subscriptions/listen` request like any other before it answers it as an
+  unknown method (AGSC-09-19 (3)): over HTTP a listen request whose `MCP-Protocol-Version` names
+  another revision is `-32022`, one with no envelope `-32602`, one that is not `application/json`
+  415, and one whose header and body disagree `-32020` (AGSC-09-18 (4)), decided by the SDK's own
+  classifier (`classifyInboundRequest` of `@modelcontextprotocol/server` 2.4.0); over standard input
+  and output a listen request of another revision is `-32022` naming both revisions and one whose
+  `_meta` lacks `clientCapabilities` the SDK's `-32602`. Each used to be `-32601`.
+- Over standard input and output the first request fixes the revision of the process, as the SDK
+  pins one era per process and MCP 2026-07-28 (basic/versioning, re-read 2026-11-07) scopes legacy
+  semantics to the stdio process: after `initialize`, a request of 2026-07-28 is `-32022` naming
+  `2025-11-25`, where it used to be served with the members of 2025-11-25 (no `resultType`); after
+  a request of 2026-07-28 the SDK already answered `initialize` with `-32022` naming `2026-07-28`
+  (AGSC-09-19). Documented in `docs/USING-WITH-ASSISTANTS.md` and `src/REFERENCE.md`.
+- Documentation of block 8 made true to the code: `docs/USING-WITH-ASSISTANTS.md` says which
+  headers every HTTP request carries (`MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name` for a
+  call, a read or a prompt; AGSC-09-18 (4)) with a tool-call example; `docs/CONNECTORS.md` says the
+  2025-11-25 handshake is served over standard input and output only; the mode-0 guide's licence
+  example sets `license_prose` beside `license_url`, so a chunk no longer names the Content Use
+  Terms beside a CC BY address; `docs/PROTOCOLS.md` names TOON 4.4 (Working Draft of 8 October
+  2026) and `@toon-format/toon` 4.4.0, and the type of the card's catalogue entry; the module map of
+  `docs/PLAN.md`, the container and scenario diagrams and the agent skill (both copies) show the
+  HTTP transport; `src-ts/README.md` and `docs/ENGINEERING.md` no longer list an A2A responder as
+  written (it is planned for 2.0); the MCP core tests name AGSC-09-13a.
 - A brief whose `derived` member (AGSC-07-25) would hold more than 1,000,000 steps in the paths of
   its readings is refused with `AGSC-E904`, the code of a size cap: `compose --brief` and
   `compose.brief: true` report it at exit 1 and write nothing, the Harness included; the `brief`

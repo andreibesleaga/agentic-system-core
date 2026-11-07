@@ -306,6 +306,24 @@ curl -s http://127.0.0.1:8765/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
+Every request over HTTP carries the headers `MCP-Protocol-Version` and `Mcp-Method`, and a
+`tools/call`, `resources/read` or `prompts/get` also carries `Mcp-Name`, the tool, resource or
+prompt it names (AGSC-09-18 (4)). A request without one is refused with HTTP 400 and the error
+`-32020`. A tool call sent by hand therefore looks like this:
+
+```bash
+curl -s http://127.0.0.1:8765/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' -H 'Mcp-Method: tools/call' -H 'Mcp-Name: search' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"handoff"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
+
+Over standard input and output, the first request decides the revision for the life of the
+process: after `initialize`, a request of 2026-07-28 is refused with the error `-32022` naming
+2025-11-25, and after a request of 2026-07-28, `initialize` is refused naming 2026-07-28 (a
+`server/discover` probe decides nothing). A client that wants the other revision starts the
+server again.
+
 If you see a JSON line naming `agentic-system-core`, the server works and any remaining
 problem is in your assistant's configuration. Two things to check first: the working
 directory must be the Bundle (the folder with `agsc.config.json`), and the assistant has

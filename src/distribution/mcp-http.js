@@ -27,7 +27,11 @@
 // Own code, each because the SDK has no option for it (audit record `B8-library-choice.md`):
 //   1. the path: only `/mcp` is the endpoint, any other path is 404 (`toNodeHandler` routes no path);
 //   2. `subscriptions/listen` is answered as an unknown method, 404 with -32601 (AGSC-09-19 (3));
-//      `createMcpHandler` serves it from its own router whatever the server registers.
+//      `createMcpHandler` serves it from its own router whatever the server registers. Only a
+//      request that passes every check before it is answered so — a JSON body, and the SDK's own
+//      ladder (`classifyInboundRequest`, the code `createMcpHandler` runs) routing it as a request
+//      of 2026-07-28 —; any other is left to the SDK, which answers 415, -32020, -32022 or -32602
+//      as AGSC-09-18 (4) says.
 //
 // No socket here: the Distribution context may not open one (`.dependency-cruiser.js`); the
 // application layer listens through the HTTP server adapter and hands each request to `handle`.
@@ -38,9 +42,13 @@ exports.allowedHosts = allowedHosts;
 exports.createHttpHandler = createHttpHandler;
 const server_1 = require("@modelcontextprotocol/server");
 const node_1 = require("@modelcontextprotocol/node");
+const surfaces_js_1 = require("../../src/boundary/surfaces.js");
 const mcp_core_js_1 = require("./mcp-core.js");
 /** The one endpoint of AGSC-09-18 (2). */
 exports.MCP_HTTP_PATH = '/mcp';
+const PROTOCOL_HEADERS = [
+    ['mcpMethodHeader', 'mcp-method'], ['mcpNameHeader', 'mcp-name'], ['protocolVersionHeader', 'mcp-protocol-version'],
+];
 /** The loopback names every request may name in `Host` or `Origin` (AGSC-09-18 (3)). */
 const LOOPBACK_NAMES = ['127.0.0.1', 'localhost', '[::1]'];
 /**
@@ -55,16 +63,31 @@ function allowedHosts(bind) {
     const named = new URL(`http://${bind.includes(':') ? `[${bind}]` : bind}/`).hostname;
     return hosts.includes(named) ? hosts : [...hosts, named];
 }
-/** Gap 2: a `subscriptions/listen` request (its header and its body agree) is answered as an unknown method. */
+/** The three MCP headers the SDK's classifier reads, those the request has. */
+function protocolHeaders(request) {
+    const found = {};
+    for (const [member, name] of PROTOCOL_HEADERS) {
+        const value = request.headers.get(name);
+        if (value !== null)
+            found[member] = value;
+    }
+    return found;
+}
+/**
+ * Gap 2: a `subscriptions/listen` request that the SDK's checks admit as a request of 2026-07-28 is
+ * answered as an unknown method; every other request is the SDK's.
+ */
 async function listenRefusal(request) {
-    if (request.headers.get('mcp-method') !== 'subscriptions/listen')
+    if (request.headers.get('mcp-method') !== 'subscriptions/listen' || !(0, server_1.isJsonContentType)(request.headers.get('content-type'))) {
         return undefined;
+    }
     const body = await request.clone().json().catch(() => undefined);
-    const message = body;
-    if (message?.method !== 'subscriptions/listen')
+    const outcome = (0, server_1.classifyInboundRequest)({ body, httpMethod: request.method, ...protocolHeaders(request) });
+    if (outcome.kind !== 'modern' || outcome.messageKind !== 'request' || outcome.message.method !== 'subscriptions/listen'
+        || outcome.classification.revision !== surfaces_js_1.MCP_PROTOCOL_VERSION)
         return undefined;
-    const id = typeof message.id === 'string' || typeof message.id === 'number' ? message.id : null;
-    return Response.json({ error: { code: server_1.ProtocolErrorCode.MethodNotFound, message: 'Method not found' }, id, jsonrpc: server_1.JSONRPC_VERSION }, { status: 404 });
+    return Response.json({ error: { code: server_1.ProtocolErrorCode.MethodNotFound, message: 'Method not found' }, id: outcome.message.id,
+        jsonrpc: server_1.JSONRPC_VERSION }, { status: 404 });
 }
 /**
  * The Streamable HTTP transport over a loaded Bundle (AGSC-09-18). Each request passes the `Host`

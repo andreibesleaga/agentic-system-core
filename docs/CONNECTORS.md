@@ -106,7 +106,8 @@ and every item as a resource. It never writes: `propose` and `remember` hand bac
 text for a person to save. The set-up for Claude Desktop, Claude Code, Cursor,
 VS Code and Codex CLI is in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
 Two facts to keep in mind: the server speaks protocol revision `2026-07-28` and,
-to a client that opens with `initialize`, revision `2025-11-25` as well (it is built
+over standard input and output, to a client that opens with `initialize`, revision
+`2025-11-25` as well (the HTTP form speaks `2026-07-28` only) (it is built
 on the official MCP SDK, `@modelcontextprotocol/server`), and MCP's tool annotations
 carry no "untrusted content" flag, so the untrusted mark travels in each result's own
 `trust` member.

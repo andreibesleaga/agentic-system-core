@@ -25,7 +25,7 @@
 | `internal-links.js` | the build's dangling-link check: every internal link a built page carries resolves to a route the same build emits (AGSC-06-01) |
 | `discovery.js` | the discovery document (`/.well-known/knowledge-linkset`) and its checker |
 | `well-known.js` | the well-known files of a build, in the order each needs the one before: the agent card, the discovery document (with the surfaces it declares, derived from what the build emits) and the two catalogue files, whose entries carry the digests of the other two |
-| `a2a-card.js` | compiled from `src-ts/distribution/a2a-card.ts` (do not edit): the A2A agent card `/.well-known/agent-card.json` (1.1, AGSC-06-34), written by the official A2A SDK's codec (`@a2a-js/sdk`) only for a node that declares both an `a2a-card` and a `responder` surface; loaded only by such a node |
+| `a2a-card.js` | compiled from `src-ts/distribution/a2a-card.ts` (do not edit): the A2A agent card `/.well-known/agent-card.json` (1.1, AGSC-06-34), written by the official A2A SDK's codec (`@a2a-js/sdk`) only for a node that declares both an `a2a-card` and a `responder` surface, every responder an A2A one (`a2a:`) and the `a2a-card` version a bare A2A version (otherwise the warning AGSC-E210 and no card); loaded only by a node that declares a card |
 | `ai-catalog.js` | `/.well-known/ard.json` and `/.well-known/ai-catalog.json` (1.1, AGSC-06-42), only when `discovery.ai_catalog` is `true`: one entry for the discovery document and one for the card, each with the SHA-256 of the bytes it points at. Both formats are proposals |
 | `headers.js` | `_headers` and `_redirects`; the FAIR Signposting links of `/` in its one `Link` field (1.1, AGSC-06-40) |
 | `llms.js` | `/llms.txt` and `/llms-full.txt`, byte for byte |

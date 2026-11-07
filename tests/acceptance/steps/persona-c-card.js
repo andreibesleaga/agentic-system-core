@@ -2,7 +2,9 @@
 // verifies AGSC-06-34, AGSC-06-42
 // Steps of features/persona-c-agent-mcp.feature for an A2A client and a catalogue crawler: a node
 // that declares the `a2a-card` surface without a `responder` publishes no card and its build is
-// refused with AGSC-E210 (AGSC-06-07); with a responder the card is published and the official A2A
+// refused with AGSC-E210 (AGSC-06-07); with only an MCP responder no card is published, an MCP
+// endpoint not being an A2A interface, and the build warns AGSC-E210 (AGSC-11-21); with an A2A
+// responder the card is published and the official A2A
 // SDK (`@a2a-js/sdk`) reads it back unchanged (AGSC-06-34); with `discovery.ai_catalog` the two
 // catalogue files carry the SHA-256 of the card and of the discovery document the build wrote
 // (AGSC-06-42).
@@ -26,6 +28,12 @@ module.exports = [
     pattern: 'the configuration declares the a2a-card surface and no responder',
     run(world) {
       configure(world, { surfaces: [CARD] });
+    },
+  },
+  {
+    pattern: /^the configuration declares an MCP responder "([^"]+)" beside the a2a-card surface$/u,
+    run(world, target) {
+      configure(world, { surfaces: [{ access: 'consent', surface: 'responder', target, version: 'mcp:2026-07-28' }, CARD] });
     },
   },
   {

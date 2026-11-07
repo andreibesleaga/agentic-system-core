@@ -135,7 +135,7 @@ graph TB
     CB["composition core (identical modules, no node: imports)"]
     WM["WebMCP page tools (should S8)"]
   end
-  subgraph MCP["Container: agsc mcp (local stdio server)"]
+  subgraph MCP["Container: agsc mcp — stdio, or Streamable HTTP on loopback (1.1)"]
     T["10 tools: search read links compose propose ask remember brief explain check"]
   end
   subgraph CI["Container: GitHub Actions"]
@@ -205,7 +205,8 @@ graph TB
 | distribution | `site.js` | route set → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
-| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember), 10 from 1.1 (+brief, +explain, +check: `mcp-tools.js`, `tool-answers.js`); staleness + link checks | — | init mcp refresh |
+| distribution | `init.js` `refresh.js` | scaffold; staleness + link checks | — | init refresh |
+| distribution | `mcp-stdio.js` `mcp-core.js` `mcp-http.js` `mcp-tools.js` `mcp-resources.js` `tool-answers.js` | the tool server: 7 tools at 1.0 (+ask, +remember), 10 from 1.1 (+brief, +explain, +check); from 1.1 on the official MCP SDK, both revisions (AGSC-09-19); standard input and output, and Streamable HTTP on a loopback address through `adapters/node-http-server.js#listenWith` (AGSC-09-18); `mcp-core.js` and `mcp-http.js` compiled from `src-ts/` | — | mcp |
 | interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
 | interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |

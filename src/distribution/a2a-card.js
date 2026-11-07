@@ -22,7 +22,12 @@
 //      every empty member, `capabilities` `{}` among them, which the card must carry.
 //
 // A read-only local MCP tool server is not an A2A endpoint: only a declared `responder` makes a
-// node eligible (AGSC-06-34). PURE: no file, no clock, no network.
+// node eligible (AGSC-06-34). An MCP responder is not one either (AGSC-11-21 names a responder's
+// protocol by the prefix of its version), and the rule lists every responder as an interface and
+// copies the `a2a-card` version into each: so a card is written only when every responder is an
+// A2A one (`a2a:`) and the `a2a-card` version is a bare A2A version (`1.0`); otherwise no card is
+// written, which the OPTIONAL emission allows, and the warning AGSC-E210 says why (a warning, not
+// an error: 1.0 accepted the declaration, D-15). PURE: no file, no clock, no network.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SKILL_TAGS = exports.DEFAULT_BINDING = exports.CARD_PATH = void 0;
 exports.eligible = eligible;
@@ -40,16 +45,44 @@ exports.DEFAULT_BINDING = 'JSONRPC';
 /** AGSC-06-34: the `tags` of every skill (A2A 1.0 §4.4.5 requires them). */
 exports.SKILL_TAGS = Object.freeze(['knowledge', 'skill-pack']);
 const declared = (surfaces, name) => surfaces.filter((entry) => entry !== null && typeof entry === 'object' && entry.surface === name);
-/** AGSC-06-34: the node declares both the `a2a-card` and a `responder` surface. */
-function eligible(surfaces) {
-    return declared(surfaces, 'a2a-card').length > 0 && declared(surfaces, 'responder').length > 0;
+/** AGSC-11-21: the version prefix of a responder that is an Agent2Agent server. */
+const A2A_PREFIX = 'a2a:';
+/** AGSC-11-16: the protocol version of `a2a-card`, the bare form `config.schema.json` admits. */
+const A2A_VERSION = /^[0-9]+\.[0-9]+(?:\.[0-9]+)?$/u;
+/** Why a node that declares `a2a-card` and a responder gets no card, or null when it gets one. */
+function unpublishable(surfaces) {
+    if (declared(surfaces, 'responder').some((entry) => !String(entry.version).startsWith(A2A_PREFIX))) {
+        return 'a responder whose version is not a2a:<version> is not an A2A endpoint, and the card would list it as one';
+    }
+    const [declaration] = declared(surfaces, 'a2a-card');
+    if (!A2A_VERSION.test(String(declaration?.version))) {
+        return `the a2a-card version ${JSON.stringify(declaration?.version)} is not an A2A protocol version such as 1.0, and`
+            + ' the card would carry it as the protocolVersion of every interface';
+    }
+    return null;
 }
-/** AGSC-06-07: an `a2a-card` declared with no `responder` behind it is a card without an endpoint. */
+/**
+ * AGSC-06-34: the node declares both the `a2a-card` and a `responder` surface, every responder is
+ * an A2A one and the `a2a-card` version is an A2A version.
+ */
+function eligible(surfaces) {
+    return declared(surfaces, 'a2a-card').length > 0 && declared(surfaces, 'responder').length > 0 && unpublishable(surfaces) === null;
+}
+/**
+ * AGSC-06-07: an `a2a-card` declared with no `responder` behind it is a card without an endpoint
+ * (the error of 1.0); one whose card would not be a true A2A card is the warning of the header.
+ */
 function cardFindings(surfaces) {
-    if (declared(surfaces, 'a2a-card').length === 0 || declared(surfaces, 'responder').length > 0)
+    if (declared(surfaces, 'a2a-card').length === 0)
         return [];
-    return [(0, validate_js_1.finding)('AGSC-E210', 'surfaces[] declares a2a-card but no responder surface: a card without an endpoint is not'
-            + ' published (AGSC-06-07, AGSC-06-34; a local MCP tool server is not an A2A endpoint)', { file: 'agsc.config.json' })];
+    if (declared(surfaces, 'responder').length === 0) {
+        return [(0, validate_js_1.finding)('AGSC-E210', 'surfaces[] declares a2a-card but no responder surface: a card without an endpoint is not'
+                + ' published (AGSC-06-07, AGSC-06-34; a local MCP tool server is not an A2A endpoint)', { file: 'agsc.config.json' })];
+    }
+    const why = unpublishable(surfaces);
+    if (why === null)
+        return [];
+    return [(0, validate_js_1.finding)('AGSC-E210', `no /.well-known/agent-card.json is written: ${why} (AGSC-06-34, AGSC-11-21)`, { file: 'agsc.config.json', severity: 'warn' })];
 }
 /** A text member: the first value that is a non-empty string. */
 function firstText(...values) {

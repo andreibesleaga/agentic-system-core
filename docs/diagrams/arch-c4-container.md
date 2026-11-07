@@ -14,7 +14,7 @@ flowchart TB
   end
   CLI["agsc<br/>command line, 16 verbs"]
   HOSTC["agsc-host<br/>hosting profiles, local server"]
-  MCP["agsc mcp<br/>local MCP server over stdio"]
+  MCP["agsc mcp<br/>local MCP server: stdio,<br/>or Streamable HTTP on loopback (1.1)"]
   CHK["tools/validate-*, gen-*<br/>nine standalone checkers"]
   OUT["Built node<br/>(static files in build.out)"]
   PAGE["Page tools<br/>(script in the built pages)"]
@@ -32,6 +32,12 @@ flowchart TB
   VEC -->|expected bytes for| CLI
 ```
 
-Trace: AGSC-09-07 (the sixteen verbs), AGSC-09-13 (the local server), AGSC-09-16
+The built node holds, from 1.1, the agent card `/.well-known/agent-card.json` of a node that
+declares an A2A responder and, on `discovery.ai_catalog`, the catalogue files `ard.json` and
+`ai-catalog.json` beside the discovery document.
+
+Trace: AGSC-09-07 (the sixteen verbs), AGSC-09-13 (the local server), AGSC-09-18 and
+AGSC-09-19 (its HTTP transport and the two MCP revisions), AGSC-06-34 and AGSC-06-42 (the card
+and the catalogue files), AGSC-09-16
 (page tools), AGSC-09-90 (independent checkers), AGSC-00-24 (the deployment-profile
 plugin kind).

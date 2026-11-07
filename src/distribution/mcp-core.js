@@ -23,8 +23,16 @@
 //   2. A request whose `_meta` names a revision other than 2026-07-28 is -32022 naming both
 //      revisions; the SDK names 2026-07-28 only, and serves such a request once the process has
 //      answered a first one.
-//   3. `subscriptions/listen` is answered as an unknown method (-32601); the SDK serves it.
+//   3. `subscriptions/listen` is answered as an unknown method (-32601); the SDK serves it. Only a
+//      request that passes the checks before it is one: a listen request of another revision is
+//      the -32022 of point 2, and one whose `_meta` lacks `clientCapabilities` is the SDK's -32602.
 //   4. Under 2025-11-25 a missing resource is -32002, as that revision says; the SDK sends -32602.
+//   5. The first request fixes the revision of the process, as the SDK pins one era per process
+//      (MCP 2026-07-28, basic/versioning: legacy semantics are "scoped to the stdio process"; a
+//      `server/discover` probe fixes nothing). Opened with `initialize`, the process answers a later
+//      request of 2026-07-28 with -32022 naming 2025-11-25, instead of serving it with the members
+//      of 2025-11-25; opened with 2026-07-28, the SDK answers a later `initialize` with -32022
+//      naming 2026-07-28. A client that wants the other revision starts another process.
 //
 // PURE over the Bundle it is given: no clock, no network, no file read; the only I/O is the two
 // streams the application layer hands in.
@@ -123,16 +131,53 @@ function serve(toolset, resources, base, version) {
     });
     return server;
 }
+/** The `_meta` of a request, when it has one. */
+function metaOf(request) {
+    return request.params?._meta;
+}
 /** The revision a request's `_meta` names (2026-07-28 and later), or undefined for a handshake-era request. */
 function claimedRevision(request) {
-    const meta = request.params?._meta;
-    return meta?.[server_1.PROTOCOL_VERSION_META_KEY];
+    return metaOf(request)?.[server_1.PROTOCOL_VERSION_META_KEY];
+}
+/** The `_meta` of 2026-07-28 carries the client's capabilities (MCP basic/index, "Request Metadata"). */
+function hasClientCapabilities(request) {
+    const capabilities = metaOf(request)?.[server_1.CLIENT_CAPABILITIES_META_KEY];
+    return typeof capabilities === 'object' && capabilities !== null;
+}
+/** The SDK's error for a revision the process does not serve, naming the ones it does. */
+function unsupported(id, requested, supported) {
+    const fault = new server_1.UnsupportedProtocolVersionError({ requested, supported: [...supported] });
+    return { error: { code: fault.code, data: fault.data, message: fault.message }, id, jsonrpc: server_1.JSONRPC_VERSION };
+}
+/** The handshake revisions of the stdio server: every one it speaks but 2026-07-28. */
+const HANDSHAKE_REVISIONS = surfaces_js_1.MCP_STDIO_REVISIONS.filter((revision) => revision !== surfaces_js_1.MCP_PROTOCOL_VERSION);
+/**
+ * Point 5: the server of a process the SDK has pinned to the handshake era. Each request of
+ * 2026-07-28 that reaches it — in the order the SDK serves the requests, so a request sent right
+ * after `initialize` is held too — is answered by the gate with -32022 naming the handshake
+ * revision; every other message reaches the SDK server as before.
+ */
+function pinnedToHandshake(server, gate) {
+    const connect = server.connect.bind(server);
+    server.connect = async (channel) => {
+        await connect(channel);
+        const deliver = channel.onmessage;
+        channel.onmessage = (message, extra) => {
+            if ((0, server_1.isJSONRPCRequest)(message) && claimedRevision(message) === surfaces_js_1.MCP_PROTOCOL_VERSION) {
+                gate.answer(unsupported(message.id, surfaces_js_1.MCP_PROTOCOL_VERSION, HANDSHAKE_REVISIONS));
+                return;
+            }
+            deliver?.(message, extra);
+        };
+    };
+    return server;
 }
 /**
  * The stdio gate: a Transport between the SDK's stdio transport and `serveStdio` that adds what
  * AGSC-09-19 asks of a server speaking both revisions and the SDK does not do (the four points
  * of the header). It answers two kinds of request itself, with the SDK's error codes, and
- * corrects two kinds of answer; every other message passes through untouched.
+ * corrects two kinds of answer; every other message passes through untouched. `answer` also
+ * writes the refusals of point 5, which the handshake-era server asks it for.
  */
 class StdioRevisionGate {
     onclose;
@@ -157,7 +202,7 @@ class StdioRevisionGate {
         if ((0, server_1.isJSONRPCRequest)(message)) {
             const refusal = this.#refusal(message);
             if (refusal !== undefined) {
-                this.#wire.send(refusal).catch((error) => { this.onerror?.(error); });
+                this.answer(refusal);
                 return;
             }
             const revision = claimedRevision(message);
@@ -168,16 +213,20 @@ class StdioRevisionGate {
         }
         this.onmessage?.(message, extra);
     }
-    /** Points 2 and 3: the answer of a request the server must not serve, or undefined. */
+    /** Points 2 and 3, in that order: the answer of a request the server must not serve, or undefined. */
     #refusal(request) {
-        if (request.method === 'subscriptions/listen') {
+        const revision = claimedRevision(request);
+        if (typeof revision === 'string' && revision !== surfaces_js_1.MCP_PROTOCOL_VERSION) {
+            return unsupported(request.id, revision, surfaces_js_1.MCP_STDIO_REVISIONS);
+        }
+        if (request.method === 'subscriptions/listen' && revision === surfaces_js_1.MCP_PROTOCOL_VERSION && hasClientCapabilities(request)) {
             return { error: { code: server_1.ProtocolErrorCode.MethodNotFound, message: 'Method not found' }, id: request.id, jsonrpc: server_1.JSONRPC_VERSION };
         }
-        const revision = claimedRevision(request);
-        if (typeof revision !== 'string' || revision === surfaces_js_1.MCP_PROTOCOL_VERSION)
-            return undefined;
-        const fault = new server_1.UnsupportedProtocolVersionError({ requested: revision, supported: [...surfaces_js_1.MCP_STDIO_REVISIONS] });
-        return { error: { code: fault.code, data: fault.data, message: fault.message }, id: request.id, jsonrpc: server_1.JSONRPC_VERSION };
+        return undefined;
+    }
+    /** Writes an answer the gate gives itself; a failed write is reported, as every write of the gate. */
+    answer(message) {
+        this.#wire.send(message).catch((error) => { this.onerror?.(error); });
     }
     /** Points 1 and 4: the answer as AGSC-09-19 words it. */
     #outbound(message) {
@@ -200,11 +249,15 @@ class StdioRevisionGate {
 exports.StdioRevisionGate = StdioRevisionGate;
 /**
  * The stdio tool server (AGSC-09-13, AGSC-09-19): the SDK's `serveStdio` over the two streams,
- * through the gate, one server instance per process built by `createServer`. The SDK closes on
+ * through the gate, one server instance per process built by `createServer` (a handshake-era one
+ * holds the requests of 2026-07-28 back, point 5). The SDK closes on
  * end of input, and the process then exits. Returns the SDK's handle (`close()`).
  */
 function serveStdio(context) {
     const { bundle, stdin, stdout, ...options } = context;
     const wire = new StdioRevisionGate(new stdio_1.StdioServerTransport(stdin, stdout));
-    return (0, stdio_1.serveStdio)(() => createServer(bundle, options).server, { transport: wire });
+    return (0, stdio_1.serveStdio)(({ era }) => {
+        const { server } = createServer(bundle, options);
+        return era === 'legacy' ? pinnedToHandshake(server, wire) : server;
+    }, { transport: wire });
 }

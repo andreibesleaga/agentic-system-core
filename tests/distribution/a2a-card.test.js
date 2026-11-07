@@ -6,7 +6,8 @@
 //     is present, `tags` on every skill (§4.4.5), and `url`, `protocolBinding`, `protocolVersion`
 //     on every interface (§4.4.6) (the lists re-read on 2026-11-07).
 //   * No card without both declarations; a card without a responder is AGSC-E210; a local MCP tool
-//     server makes no node eligible.
+//     server makes no node eligible, nor does an MCP responder or an a2a-card version that is not
+//     an A2A version (the warning AGSC-E210, AGSC-11-21).
 //   * The build loads the card module, and the SDK with it, only for a node that declares a card.
 //   * fast-check: the card keeps the packs' and the responders' order and is the same bytes twice.
 //
@@ -68,6 +69,27 @@ test('AGSC-06-07: no card without both declarations; a card without an endpoint 
   assert.deepEqual(card.cardFindings([RESPONDER]), []);
   assert.deepEqual(card.cardFindings([RESPONDER, CARD]), []);
   assert.equal(card.eligible([{ surface: 'mcp', target: 'https://a.example/specs/mcp/' }, CARD]), false, 'a tool server is not an A2A endpoint');
+});
+
+test('AGSC-06-34 with AGSC-11-21: an MCP responder is not an A2A interface, and an interface carries an A2A version', () => {
+  const mcpResponder = { ...RESPONDER, binding: undefined, target: 'https://a.example/mcp', version: 'mcp:2026-07-28' };
+  const warned = (surfaces) => card.cardFindings(surfaces).map((f) => [f.code, f.severity]);
+  // Only MCP responders: no card (its one interface would name an MCP endpoint), a warning (D-15:
+  // 1.0 accepted the declaration), and still the error of 1.0 when there is no responder at all.
+  assert.equal(card.cardBytes(input({ surfaces: [mcpResponder, CARD] })), null);
+  assert.deepEqual(warned([mcpResponder, CARD]), [['AGSC-E210', 'warn']]);
+  // An A2A responder beside an MCP one: the rule lists every responder, so no card is written
+  // rather than one that names the MCP endpoint as an A2A interface.
+  assert.equal(card.cardBytes(input({ surfaces: [RESPONDER, mcpResponder, CARD] })), null);
+  assert.deepEqual(warned([RESPONDER, mcpResponder, CARD]), [['AGSC-E210', 'warn']]);
+  // The a2a-card version is copied into protocolVersion, so it must be an A2A version itself.
+  for (const version of ['a2a:1.0', 'mcp:2026-07-28']) {
+    assert.equal(card.cardBytes(input({ surfaces: [RESPONDER, { ...CARD, version }] })), null, version);
+    assert.deepEqual(warned([RESPONDER, { ...CARD, version }]), [['AGSC-E210', 'warn']], version);
+  }
+  assert.deepEqual(warned([CARD]), [['AGSC-E210', 'error']], 'no responder: the 1.0 error');
+  assert.deepEqual(JSON.parse(card.cardBytes(input({ surfaces: [RESPONDER, { ...CARD, version: '1.0.0' }] })))
+    .supportedInterfaces.map((i) => i.protocolVersion), ['1.0.0']);
 });
 
 test('the build loads the card module and the A2A SDK only for a node that declares a card', () => {

@@ -7,8 +7,10 @@
 // revision 2025-11-25) and a client that sends per-request `_meta` (revision 2026-07-28) from
 // one server factory, and the places where the frozen rule asks for more than the SDK does —
 // `server/discover` lists both revisions, a request of a revision the server does not speak is
-// -32022 naming both, `subscriptions/listen` is an unknown method, and a missing resource is
-// -32002 under 2025-11-25 — are what the gate of the core adds (its header names them).
+// -32022 naming both, `subscriptions/listen` is an unknown method once its revision and envelope
+// have passed their checks, a missing resource is -32002 under 2025-11-25, and the first request
+// fixes the revision of the process (a request of the other one is -32022 naming it) — are what
+// the gate of the core adds (its header names them).
 // The property tests: `tools/list` is the same list in code-point order whatever the calls before
 // it, and a tool answer under 2025-11-25 carries the bytes of the 1.0 server with MCP's `isError`.
 //
@@ -162,7 +164,7 @@ test('AGSC-09-19 (2): every result is complete, and the list and read results ca
   assert.equal(byId.get(6).result.isError, false);
 });
 
-test('AGSC-09-19 (3)-(5): the errors of 2026-07-28', async () => {
+test('AGSC-09-19 (3)-(5), AGSC-09-13a: the errors of 2026-07-28', async () => {
   const { byId } = await session([
     modern(1, 'resources/read', { uri: 'memory://minimal/no-such-item' }),
     modern(2, 'tools/call', { arguments: {}, name: 'no-such-tool' }),
@@ -180,6 +182,39 @@ test('AGSC-09-19 (3)-(5): the errors of 2026-07-28', async () => {
   assert.deepEqual(byId.get(4).error.data, { requested: '1900-01-01', supported: [MODERN, LEGACY] });
   assert.equal(byId.get(5).error.code, -32601);
   assert.equal(byId.get(6).error.code, -32602);
+});
+
+test('AGSC-09-19 (3): a subscriptions/listen request of another revision, or with no envelope, is not answered as unknown', async () => {
+  const { byId } = await session([
+    request(1, 'subscriptions/listen', { _meta: { ...meta('1999-01-01') } }),
+    request(2, 'subscriptions/listen', { _meta: { 'io.modelcontextprotocol/protocolVersion': MODERN } }),
+    modern(3, 'subscriptions/listen'),
+  ]);
+  assert.equal(byId.get(1).error.code, -32022, 'the revision is checked first');
+  assert.deepEqual(byId.get(1).error.data, { requested: '1999-01-01', supported: [MODERN, LEGACY] });
+  assert.equal(byId.get(2).error.code, -32602, 'an envelope without clientCapabilities is the SDK\'s envelope error');
+  assert.equal(byId.get(3).error.code, -32601, 'a valid request of 2026-07-28 is an unknown method');
+});
+
+test('AGSC-09-19: the first request fixes the revision of the process; a request of the other one is -32022 naming it', async () => {
+  // Opened with initialize: a later request of 2026-07-28 is refused, naming 2025-11-25, and not
+  // served with the members of 2025-11-25 as if it were one of that revision.
+  const legacy = await session([INITIALIZE, INITIALIZED, modern(2, 'tools/list'), modern(3, 'server/discover'), request(4, 'tools/list')]);
+  for (const id of [2, 3]) {
+    assert.equal(legacy.byId.get(id).error.code, -32022, String(id));
+    assert.deepEqual(legacy.byId.get(id).error.data, { requested: MODERN, supported: [LEGACY] }, String(id));
+  }
+  assert.equal(legacy.byId.get(4).result.tools.length, 10, 'the process still serves 2025-11-25');
+  // Opened with 2026-07-28: a later initialize is refused by the SDK, naming 2026-07-28.
+  const recent = await session([modern(7, 'tools/list'), INITIALIZE, modern(3, 'tools/list')]);
+  assert.equal(recent.byId.get(7).error, undefined);
+  assert.equal(recent.byId.get(INITIALIZE.id).error.code, -32022);
+  assert.deepEqual(recent.byId.get(INITIALIZE.id).error.data.supported, [MODERN]);
+  assert.equal(recent.byId.get(3).result.resultType, 'complete');
+  // A probe with server/discover fixes nothing: a client may still open with initialize after it.
+  const probed = await session([modern(5, 'server/discover'), INITIALIZE]);
+  assert.deepEqual(probed.byId.get(5).result.supportedVersions, [MODERN, LEGACY]);
+  assert.equal(probed.byId.get(INITIALIZE.id).result.protocolVersion, LEGACY);
 });
 
 test('AGSC-09-19: a first request of a revision the server does not speak is -32022 naming both revisions', async () => {
@@ -216,7 +251,7 @@ test('property: tools/list is the same list, in code-point order, whatever was c
   }), { numRuns: 25, seed: 20261106 });
 });
 
-test('property: under 2025-11-25 a tool answer is the 1.0 bytes, with MCP\'s isError beside them', async () => {
+test('property, AGSC-09-13a: under 2025-11-25 a tool answer is the 1.0 bytes, with MCP\'s isError beside them', async () => {
   const toolset = tools(bundle, OPTIONS);
   await fc.assert(fc.asyncProperty(fc.array(callArb, { minLength: 1, maxLength: 4 }), async (calls) => {
     const frames = [INITIALIZE, INITIALIZED, ...calls.map((c, i) => request(i + 2, 'tools/call', { arguments: c.args, name: c.name }))];

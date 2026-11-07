@@ -197,8 +197,10 @@ and one download for each graph file, the chunks and the discovery document. The
 `Link` header the host sends with `/` (written into `_headers`) names the same files
 and the address to cite. To give the dataset a creator and a licence that names a
 version, add them to `agsc.config.json`, for example
-`"bundle": { "creator": { "name": "Josiah Carberry", "orcid": "0000-0002-1825-0097" }, "license_url": "https://creativecommons.org/licenses/by/4.0/" }`
-beside the keys `bundle` already has. A description of `content/index.md` shorter than
+`"bundle": { "creator": { "name": "Josiah Carberry", "orcid": "0000-0002-1825-0097" }, "license_prose": "CC-BY-4.0", "license_url": "https://creativecommons.org/licenses/by/4.0/" }`
+beside the keys `bundle` already has. `license_url` names a version of the licence that
+`license_prose` names: without `license_prose` the node's licence is the Content Use Terms,
+and each chunk would then name those terms beside a CC BY address. A description of `content/index.md` shorter than
 50 characters gets a warning (`AGSC-E202`): dataset search ignores one that short. The
 one `init` wrote is shorter; write your own on the `description:` line of that file.
 

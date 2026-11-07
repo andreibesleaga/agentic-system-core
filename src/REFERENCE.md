@@ -689,7 +689,7 @@ drive them, `init` and `ci`.
 | `distribution/discovery.js` | Distribution | AGSC-06-07…12, 06-35, 10-12, 11-16, 11-20, 11-23 — the link set, its validator, the peer check |
 | `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects`; AGSC-06-40 — the FAIR Signposting links of `/` in the one `Link` field of its block, after the AGSC-11-05 value; the blocks of the card and the two catalogue files where the build wrote them |
 | `distribution/well-known.js` | Distribution | AGSC-06-07, 06-08, 06-34, 06-42, 11-16 — the well-known files in order: the agent card, the discovery document with its declared surfaces (`declaredSurfaces`, moved here from `site.js`), the catalogue files over the bytes of the other two |
-| `distribution/a2a-card.js` | Distribution | compiled from `src-ts/distribution/a2a-card.ts` — AGSC-06-34 with AGSC-06-07: the A2A 1.0 agent card, typed as the official SDK's `AgentCard` and written by its codec (`AgentCard.toJSON`), JCS and one LF; own code only for `skills` `[]` and the bytes; AGSC-E210 for a card without a responder |
+| `distribution/a2a-card.js` | Distribution | compiled from `src-ts/distribution/a2a-card.ts` — AGSC-06-34 with AGSC-06-07: the A2A 1.0 agent card, typed as the official SDK's `AgentCard` and written by its codec (`AgentCard.toJSON`), JCS and one LF; own code only for `skills` `[]` and the bytes; AGSC-E210 for a card without a responder (error), and no card with the warning AGSC-E210 when a responder is not `a2a:` or the `a2a-card` version is not a bare A2A version (an MCP endpoint is not an A2A interface) |
 | `distribution/ai-catalog.js` | Distribution | AGSC-06-42 — `/.well-known/ard.json` and `/.well-known/ai-catalog.json` on `discovery.ai_catalog`: one entry per file pointed at, its SHA-256 over the served bytes; AGSC-E209 for a host that is not a domain name, AGSC-E202 for no `bundle.id` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
 | `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; from 1.1 AGSC-06-46: `describedby` `/llms.txt` (`text/plain`) in every `<head>` after the discovery document's link, and `alternate` `text/markdown` to `/pages/<slug>.md` on an item page; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
@@ -762,7 +762,7 @@ declaredSurfaces({ base, config, emitted, mcpServed, webmcpVersion }) -> [{surfa
 
 // distribution/a2a-card.js (compiled from src-ts/distribution/a2a-card.ts)
 cardBytes({ title, description, tagline, bundleVersion, specVersion, visibility, surfaces, packs }) -> string | null
-card(input) -> AgentCard; eligible(surfaces); cardFindings(surfaces) -> Finding[]   // AGSC-E210
+card(input) -> AgentCard; eligible(surfaces); cardFindings(surfaces) -> Finding[]   // AGSC-E210 (error: no responder; warn: not an A2A card)
 CARD_PATH DEFAULT_BINDING SKILL_TAGS
 
 // distribution/ai-catalog.js
@@ -929,7 +929,7 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
 | `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
-| `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise |
+| `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise; the first request fixes the revision of the process |
 | `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 — the `mcp` verb's entry: the Bundle and the two streams checked, then `mcp-core.serveStdio` |
 | `distribution/mcp-http.js` | Distribution | compiled from `src-ts/distribution/mcp-http.ts` — AGSC-09-18 with AGSC-09-19 for its results: the Streamable HTTP transport of `mcp --http`, wiring only — the SDK's `createMcpHandler` (`legacy: 'reject'`: revision 2026-07-28 only, stateless, one server per request from `mcp-core.serverFactory`, the header checks, 405, 202, 404) and `@modelcontextprotocol/node` (`toNodeHandler`, the `Host` and `Origin` guards over `allowedHosts(bind)`); own code only for the path `/mcp` and for `subscriptions/listen` as an unknown method. Opens no socket |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
@@ -1069,15 +1069,20 @@ replaces `@modelcontextprotocol/sdk`) in `distribution/mcp-core.js`: it speaks r
 `2026-07-28` statelessly, with `server/discover`, `resultType`, `ttlMs` and `cacheScope`,
 and, over standard input and output, revision `2025-11-25` to a client that opens with
 `initialize`, negotiating down to `2025-03-26` as 1.0 did (AGSC-09-19). The SDK's
-`serveStdio` picks the era from the first message. Four answers of AGSC-09-19 differ from
-the SDK's, and the core's stdio gate gives them: `server/discover` and an unsupported
-revision name both revisions, `subscriptions/listen` is an unknown method, and a missing
-resource is `-32002` under `2025-11-25`. With `--http <port>` the same servers answer over
+`serveStdio` picks the era from the first message, and that era holds for the life of the
+process (a `server/discover` probe fixes nothing): after `initialize`, a request of
+`2026-07-28` is `-32022` naming `2025-11-25`; after a request of `2026-07-28`, `initialize`
+is `-32022` naming `2026-07-28`. Four answers of AGSC-09-19 differ from the SDK's, and the
+core's stdio gate gives them: `server/discover` and an unsupported revision name both
+revisions, `subscriptions/listen` is an unknown method (once the revision and the envelope
+have passed their checks), and a missing resource is `-32002` under `2025-11-25`. With `--http <port>` the same servers answer over
 Streamable HTTP (`distribution/mcp-http.js`, AGSC-09-18): the SDK's `createMcpHandler` with
 `legacy: 'reject'` serves revision `2026-07-28` alone, statelessly, one server per request,
 and `@modelcontextprotocol/node` adapts the Node request and checks `Host` and `Origin`
 against the loopback names and the `--bind` address; the transport adds only the path
-`/mcp` and `subscriptions/listen` as an unknown method. The external revisions — `MCP_PROTOCOL_VERSION`
+`/mcp` and `subscriptions/listen` as an unknown method, for a request the SDK's own checks
+(`classifyInboundRequest`) admit as one of `2026-07-28`; any other gets the SDK's 415,
+`-32020`, `-32022` or `-32602`. The external revisions — `MCP_PROTOCOL_VERSION`
 (`2026-07-28`, the newest revision the server speaks and the one an `mcp` declaration
 carries by default), `MCP_LEGACY_VERSION` (`2025-11-25`), `MCP_STDIO_REVISIONS`,
 `MCP_SURFACE_VERSION` (the same `2026-07-28`) and

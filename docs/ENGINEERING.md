@@ -269,7 +269,7 @@ and its licence, `MIT OR Apache-2.0`, whose texts sit beside them.
 
 **Why.** The new parts of the engine that carry a protocol's messages to agents are to
 be written in strict TypeScript: the Model Context Protocol core of revision 2026-07-28
-and its HTTP transport, the A2A responder, the runners of the benchmark kit, and any
+and its HTTP transport, an A2A responder (planned for 2.0), the runners of the benchmark kit, and any
 later module in the places `tests/arch/typescript-parts.test.js` checks. The first is
 the MCP core, `src-ts/distribution/mcp-core.ts`, a thin adapter on the official MCP
 TypeScript SDK (`@modelcontextprotocol/server`), and its HTTP transport,

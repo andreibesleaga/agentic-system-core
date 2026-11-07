@@ -68,6 +68,7 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 
 - **Memory for one agent.** `agsc mcp` in a Bundle gives an assistant ten tools to
   search, read, follow links and cite items by address; nothing leaves the machine
+  (from 1.1 also over Streamable HTTP on the loopback address, `agsc mcp --http <port>`)
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l1--the-assistant-that-answers-from-one-folder)).
 - **Shared memory for many agents.** Every agent reads the same published files and
   writes only by proposals a person ratifies

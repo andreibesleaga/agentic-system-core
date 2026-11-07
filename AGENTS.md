@@ -78,4 +78,8 @@ only under the system temporary directory. Keep them that way.
 
 A published node is read by agents through its own files — `/.well-known/knowledge-linkset`,
 `/llms.txt`, `/chunks.jsonl`, the graph dumps — or through `agsc mcp`; see
-[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
+[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md). From 1.1 the tool server is
+built on the official MCP SDK and speaks revision 2026-07-28 beside 2025-11-25 (stdio) or alone
+(`--http`, loopback); a node may also publish an A2A agent card, two opt-in catalogue files and
+`/chunks-index.toon`. The outside standards and the version of each are in
+[docs/PROTOCOLS.md](docs/PROTOCOLS.md); the protocol modules are TypeScript under `src-ts/`.

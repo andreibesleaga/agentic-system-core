@@ -24,7 +24,7 @@ A steering file is context, not enforcement. A `CLAUDE.md` can keep the node's f
 
 ## Assistants: the tool server
 
-Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -- npx -y agsc-cli mcp`. Codex CLI: `codex mcp add my-knowledge -- npx -y agsc-cli mcp`. Cursor (`.cursor/mcp.json`) and Claude Desktop use `{"mcpServers":{"my-knowledge":{"command":"npx","args":["-y","agsc-cli","mcp"]}}}`; VS Code (`.vscode/mcp.json`) uses the top-level key `servers` with `"type": "stdio"`. The server reads the Bundle once at start; restart it after edits.
+Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -- npx -y agsc-cli mcp`. Codex CLI: `codex mcp add my-knowledge -- npx -y agsc-cli mcp`. Cursor (`.cursor/mcp.json`) and Claude Desktop use `{"mcpServers":{"my-knowledge":{"command":"npx","args":["-y","agsc-cli","mcp"]}}}`; VS Code (`.vscode/mcp.json`) uses the top-level key `servers` with `"type": "stdio"`. The server reads the Bundle once at start; restart it after edits. From 1.1, `agsc mcp --http <port>` serves the same tools over Streamable HTTP (MCP 2026-07-28 only) at `http://127.0.0.1:<port>/mcp`, loopback only.
 
 ## Skills
 

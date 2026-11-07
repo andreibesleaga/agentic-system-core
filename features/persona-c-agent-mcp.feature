@@ -173,6 +173,11 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the command exits 1
     And the JSON envelope carries the error "AGSC-E210"
     And the Bundle does not hold "www/.well-known/agent-card.json"
+    Given the configuration declares an MCP responder "https://agenticsystemcore.com/mcp" beside the a2a-card surface
+    When the publisher runs "agsc build --json"
+    Then the command exits 0
+    And the JSON envelope carries the warning "AGSC-E210"
+    And the Bundle does not hold "www/.well-known/agent-card.json"
     Given the configuration declares a responder "https://agenticsystemcore.com/a2a" beside the a2a-card surface and switches discovery.ai_catalog on
     When the publisher runs "agsc build --json"
     Then the command exits 0
