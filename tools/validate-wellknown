@@ -21,7 +21,9 @@
 // `agsc-chunk-count` and `agsc-chunk-set` of the chunks surface link are recomputed over the
 // fetched /chunks.jsonl (its shards when it is the manifest) and required of a document of
 // 1.1.0 or later, and an `agsc-ledger-length` is compared with the fetched ledger (AGSC-09-93
-// (b) and (c), AGSC-06-44).
+// (b) and (c), AGSC-06-44). At every Level an `a2a-card` declared on the node's own origin is
+// resolved, and a card the node does not serve is a warning AGSC-E210 (AGSC-11-16; a warning
+// because a 1.0 node declared the surface and served no card).
 //
 // Error codes. The §9.4 registry names no dedicated code for the shape checks of
 // AGSC-09-93; until a MINOR assigns them this tool uses
@@ -565,7 +567,10 @@ async function checkDigest(t, h, rel, ext, doc) {
   } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
 }
 
-/** AGSC-11-16: one rel#surface target's declaration; an llms-txt or chunks target must resolve. */
+/**
+ * AGSC-11-16: one rel#surface target's declaration; an llms-txt or chunks target must resolve,
+ * and so must an a2a-card target on the node's own origin (`checkCardTarget`).
+ */
 async function checkSurface(t, h, doc) {
   const { ctx, F, headerChecks, src } = doc;
   const s = t['agsc-surface'], acc = t['agsc-access'], ver = t['agsc-surface-version'];
@@ -586,6 +591,22 @@ async function checkSurface(t, h, doc) {
       headerChecks(got, false);
       if (open && got) await recomputeChunkFacts(t, got, doc);
     } catch (e) { F(e.code === 'AGSC-E906' ? 'AGSC-E906' : 'AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
+  }
+  if (name === 'a2a-card') await checkCardTarget(t, h, doc);
+}
+
+/**
+ * AGSC-11-16: an a2a-card declared on the node's own origin names a card the node serves. A
+ * warning, not an error: a 1.0 node declared the surface and served no card (D-15). A card on
+ * another origin is not fetched, the surface being declaration-only (AGSC-11-17).
+ */
+async function checkCardTarget(t, h, doc) {
+  if (h.origin !== doc.anchor.origin) return;
+  try {
+    await doc.src.resolve(t.href, doc.ctx.anchor);
+  } catch (e) {
+    if (e.code === 'AGSC-E906') { doc.F('AGSC-E906', `rel#surface a2a-card: ${e.message}`); return; }
+    doc.F('AGSC-E210', `rel#surface a2a-card: the declared card ${t.href} is not served by this node: ${e.message} (AGSC-11-16)`, 'warn');
   }
 }
 

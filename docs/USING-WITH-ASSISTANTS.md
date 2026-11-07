@@ -319,8 +319,8 @@ curl -s http://127.0.0.1:8765/mcp \
 ```
 
 Over standard input and output, the first request decides the revision for the life of the
-process: after `initialize`, a request of 2026-07-28 is refused with the error `-32022` naming
-2025-11-25, and after a request of 2026-07-28, `initialize` is refused naming 2026-07-28 (a
+process: after `initialize`, a request of 2026-07-28, or of any other revision, is refused with
+the error `-32022` naming 2025-11-25, and after a request of 2026-07-28, `initialize` is refused naming 2026-07-28 (a
 `server/discover` probe decides nothing). A client that wants the other revision starts the
 server again.
 

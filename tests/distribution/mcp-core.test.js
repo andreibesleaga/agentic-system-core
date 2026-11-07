@@ -85,6 +85,37 @@ async function session(frames, options = OPTIONS) {
   return { byId, lines: text.split('\n').filter((l) => l !== '') };
 }
 
+/**
+ * One stdio session in turns, as a client that waits for each answer: write a frame, wait for
+ * its response when it is a request, then write the next. Returns the responses by id.
+ */
+async function turns(frames, options = OPTIONS) {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  stdout.setEncoding('utf8');
+  const byId = new Map();
+  const waiting = new Map();
+  let text = '';
+  stdout.on('data', (chunk) => {
+    text += chunk;
+    const lines = text.split('\n');
+    text = lines.pop();
+    for (const frame of lines.map((line) => JSON.parse(line))) {
+      byId.set(frame.id, frame);
+      waiting.get(frame.id)?.();
+    }
+  });
+  const handle = await core.serveStdio({ ...options, bundle, stdin, stdout });
+  for (const frame of frames) {
+    const answered = frame.id === undefined ? Promise.resolve() : new Promise((resolve) => { waiting.set(frame.id, resolve); });
+    stdin.write(`${JSON.stringify(frame)}\n`);
+    await answered;
+  }
+  stdin.end();
+  await handle.close();
+  return byId;
+}
+
 /* ------------------------------------------------------------ the module */
 
 test('the core names the server and builds one official SDK server with the shared toolset', () => {
@@ -215,6 +246,15 @@ test('AGSC-09-19: the first request fixes the revision of the process; a request
   const probed = await session([modern(5, 'server/discover'), INITIALIZE]);
   assert.deepEqual(probed.byId.get(5).result.supportedVersions, [MODERN, LEGACY]);
   assert.equal(probed.byId.get(INITIALIZE.id).result.protocolVersion, LEGACY);
+});
+
+test('AGSC-09-19: once initialize has fixed 2025-11-25, a request of an unknown revision is -32022 naming that one revision', async () => {
+  // A client that retries with a revision the error names is served: the error names only the
+  // revision the process still serves, not 2026-07-28, which it now refuses.
+  const byId = await turns([INITIALIZE, INITIALIZED, modern(2, 'tools/list', {}, '2099-01-01'), request(3, 'tools/list')]);
+  assert.equal(byId.get(2).error.code, -32022);
+  assert.deepEqual(byId.get(2).error.data, { requested: '2099-01-01', supported: [LEGACY] });
+  assert.equal(byId.get(3).result.tools.length, 10, 'the retry with the named revision is served');
 });
 
 test('AGSC-09-19: a first request of a revision the server does not speak is -32022 naming both revisions', async () => {

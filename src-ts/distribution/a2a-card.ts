@@ -24,8 +24,9 @@
 // protocol by the prefix of its version), and the rule lists every responder as an interface and
 // copies the `a2a-card` version into each: so a card is written only when every responder is an
 // A2A one (`a2a:`) and the `a2a-card` version is a bare A2A version (`1.0`); otherwise no card is
-// written, which the OPTIONAL emission allows, and the warning AGSC-E210 says why (a warning, not
-// an error: 1.0 accepted the declaration, D-15). PURE: no file, no clock, no network.
+// written, which the OPTIONAL emission allows, and the warning AGSC-E210 says why and that the
+// discovery document still declares the card (a warning, not an error: 1.0 accepted the
+// declaration, D-15). PURE: no file, no clock, no network.
 
 import { AgentCard } from '@a2a-js/sdk';
 import type { AgentCard as Card, AgentInterface, AgentSkill } from '@a2a-js/sdk';
@@ -111,8 +112,10 @@ export function cardFindings(surfaces: readonly SurfaceEntry[]): object[] {
   }
   const why = unpublishable(surfaces);
   if (why === null) return [];
-  return [finding('AGSC-E210', `no /.well-known/agent-card.json is written: ${why} (AGSC-06-34, AGSC-11-21)`,
-    { file: 'agsc.config.json', severity: 'warn' })];
+  const [declaration] = declared(surfaces, 'a2a-card');
+  return [finding('AGSC-E210', `no /.well-known/agent-card.json is written: ${why}; the discovery document still declares`
+    + ` a2a-card at ${String(declaration?.target)}, which this node does not serve (AGSC-06-34, AGSC-11-16, AGSC-11-21)`,
+  { file: 'agsc.config.json', severity: 'warn' })];
 }
 
 /** A text member: the first value that is a non-empty string. */

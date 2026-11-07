@@ -1074,7 +1074,8 @@ process (a `server/discover` probe fixes nothing): after `initialize`, a request
 `2026-07-28` is `-32022` naming `2025-11-25`; after a request of `2026-07-28`, `initialize`
 is `-32022` naming `2026-07-28`. Four answers of AGSC-09-19 differ from the SDK's, and the
 core's stdio gate gives them: `server/discover` and an unsupported revision name both
-revisions, `subscriptions/listen` is an unknown method (once the revision and the envelope
+revisions (after `initialize`, an unsupported revision names `2025-11-25` alone, the one
+revision the process still serves), `subscriptions/listen` is an unknown method (once the revision and the envelope
 have passed their checks), and a missing resource is `-32002` under `2025-11-25`. With `--http <port>` the same servers answer over
 Streamable HTTP (`distribution/mcp-http.js`, AGSC-09-18): the SDK's `createMcpHandler` with
 `legacy: 'reject'` serves revision `2026-07-28` alone, statelessly, one server per request,

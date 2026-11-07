@@ -7,10 +7,12 @@
 // responder the card is published and the official A2A
 // SDK (`@a2a-js/sdk`) reads it back unchanged (AGSC-06-34); with `discovery.ai_catalog` the two
 // catalogue files carry the SHA-256 of the card and of the discovery document the build wrote
-// (AGSC-06-42).
+// (AGSC-06-42). The shipped `validate-wellknown` resolves the `a2a-card` target on the node's own
+// origin and warns AGSC-E210 when the declared card is not served (AGSC-11-16).
 
 const assert = require('node:assert');
 const { createHash } = require('node:crypto');
+const path = require('node:path');
 const { AgentCard } = require('@a2a-js/sdk');
 
 const CARD = { access: 'none', surface: 'a2a-card', target: 'https://agenticsystemcore.com/.well-known/agent-card.json', version: '1.0' };
@@ -19,6 +21,13 @@ const CARD = { access: 'none', surface: 'a2a-card', target: 'https://agenticsyst
 function configure(world, patch) {
   const config = JSON.parse(world.read('agsc.config.json'));
   world.write('agsc.config.json', `${JSON.stringify({ ...config, ...patch }, null, 2)}\n`);
+}
+
+/** The AGSC-E210 findings of the shipped validate-wellknown, at Level 1, about the a2a-card target. */
+function cardTargetFindings(world) {
+  const run = world.tool('validate-wellknown', [path.join(world.dir, 'www', '.well-known', 'knowledge-linkset'), '--level', '1', '--json']);
+  assert.strictEqual(run.exit, 0, run.stdout + run.stderr);
+  return JSON.parse(run.stdout).findings.filter((f) => f.code === 'AGSC-E210' && f.message.includes('a2a-card'));
 }
 
 const hex = (text) => `sha256:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
@@ -53,6 +62,18 @@ module.exports = [
       const packs = JSON.parse(world.read('www/skills/index.json')).packs;
       assert.ok(packs.length > 0, 'the acceptance Bundle publishes skill packs');
       assert.deepStrictEqual(card.skills.map((s) => s.id), packs.map((p) => p.name));
+    },
+  },
+  {
+    pattern: 'the shipped validate-wellknown warns "AGSC-E210" that the a2a-card target of the discovery file is not served',
+    run(world) {
+      assert.deepStrictEqual(cardTargetFindings(world).map((f) => f.severity), ['warn']);
+    },
+  },
+  {
+    pattern: 'the shipped validate-wellknown finds the a2a-card target of the discovery file served',
+    run(world) {
+      assert.deepStrictEqual(cardTargetFindings(world), []);
     },
   },
   {

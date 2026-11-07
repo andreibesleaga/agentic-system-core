@@ -1235,6 +1235,20 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `2025-11-25`, where it used to be served with the members of 2025-11-25 (no `resultType`); after
   a request of 2026-07-28 the SDK already answered `initialize` with `-32022` naming `2026-07-28`
   (AGSC-09-19). Documented in `docs/USING-WITH-ASSISTANTS.md` and `src/REFERENCE.md`.
+- Over standard input and output, once `initialize` has fixed revision 2025-11-25, a request of an
+  unknown revision is `-32022` naming `2025-11-25` alone, the one revision the process still serves;
+  it named both, so a client that retried with 2026-07-28, as MCP basic/versioning suggests, was
+  refused again (AGSC-09-19; block 8 audit). Before the first request, and in a process of
+  2026-07-28, the error still names both revisions, as vector `cli-0034` pins.
+- The warning `AGSC-E210` for an agent card left out now says that the discovery document still
+  declares `a2a-card` at its target, which the node does not serve, and `tools/validate-wellknown`
+  resolves an `a2a-card` target on the node's own origin at every Level and warns `AGSC-E210` when no
+  card is served there (AGSC-11-16: a target that does not resolve is `AGSC-E210` from
+  `validate-wellknown`; until now only the `llms-txt` and `chunks` targets were resolved). A warning,
+  not an error, because a 1.0 node declared the surface and served no card (D-15); a card on another
+  origin is not fetched (AGSC-11-17, declaration-only). The declaration itself stays: dropping it
+  would change the discovery document of every node that declares it, a specification decision
+  (block 8 audit). No emitted byte changes.
 - Documentation of block 8 made true to the code: `docs/USING-WITH-ASSISTANTS.md` says which
   headers every HTTP request carries (`MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name` for a
   call, a read or a prompt; AGSC-09-18 (4)) with a tool-call example; `docs/CONNECTORS.md` says the

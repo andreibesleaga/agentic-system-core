@@ -20,7 +20,8 @@
 //   1. `server/discover` lists both revisions of the stdio server; the SDK lists 2026-07-28 only.
 //   2. A request whose `_meta` names a revision other than 2026-07-28 is -32022 naming both
 //      revisions; the SDK names 2026-07-28 only, and serves such a request once the process has
-//      answered a first one.
+//      answered a first one. Once `initialize` has fixed 2025-11-25 (point 5), the error names
+//      that revision only, so that a client retrying with a revision the error names is served.
 //   3. `subscriptions/listen` is answered as an unknown method (-32601); the SDK serves it. Only a
 //      request that passes the checks before it is one: a listen request of another revision is
 //      the -32022 of point 2, and one whose `_meta` lacks `clientCapabilities` is the SDK's -32602.
@@ -233,12 +234,14 @@ const HANDSHAKE_REVISIONS: readonly string[] = MCP_STDIO_REVISIONS.filter((revis
  * Point 5: the server of a process the SDK has pinned to the handshake era. Each request of
  * 2026-07-28 that reaches it — in the order the SDK serves the requests, so a request sent right
  * after `initialize` is held too — is answered by the gate with -32022 naming the handshake
- * revision; every other message reaches the SDK server as before.
+ * revision; every other message reaches the SDK server as before. From the moment the SDK pins
+ * the era, before it serves `initialize`, the gate names the handshake revision alone in point 2.
  */
 function pinnedToHandshake(server: Server, gate: StdioRevisionGate): Server {
   const connect = server.connect.bind(server);
   server.connect = async (channel: Transport): Promise<void> => {
     await connect(channel);
+    gate.fix(HANDSHAKE_REVISIONS);
     const deliver = channel.onmessage;
     channel.onmessage = (message, extra) => {
       if (isJSONRPCRequest(message) && claimedRevision(message) === MCP_PROTOCOL_VERSION) {
@@ -256,7 +259,8 @@ function pinnedToHandshake(server: Server, gate: StdioRevisionGate): Server {
  * AGSC-09-19 asks of a server speaking both revisions and the SDK does not do (the four points
  * of the header). It answers two kinds of request itself, with the SDK's error codes, and
  * corrects two kinds of answer; every other message passes through untouched. `answer` also
- * writes the refusals of point 5, which the handshake-era server asks it for.
+ * writes the refusals of point 5, which the handshake-era server asks it for, and `fix` narrows
+ * the revisions point 2 names once that server is pinned.
  */
 export class StdioRevisionGate implements Transport {
   onclose?: () => void;
@@ -266,6 +270,8 @@ export class StdioRevisionGate implements Transport {
   /** Requests of `server/discover`, and `resources/read` requests sent under a handshake revision. */
   readonly #discover = new Set<RequestId>();
   readonly #handshakeReads = new Set<RequestId>();
+  /** The revisions the process still serves: both until the SDK pins the handshake era (point 5). */
+  #served: readonly string[] = MCP_STDIO_REVISIONS;
 
   constructor(wire: Transport) {
     this.#wire = wire;
@@ -300,12 +306,17 @@ export class StdioRevisionGate implements Transport {
   #refusal(request: JSONRPCRequest): JSONRPCMessage | undefined {
     const revision = claimedRevision(request);
     if (typeof revision === 'string' && revision !== MCP_PROTOCOL_VERSION) {
-      return unsupported(request.id, revision, MCP_STDIO_REVISIONS);
+      return unsupported(request.id, revision, this.#served);
     }
     if (request.method === 'subscriptions/listen' && revision === MCP_PROTOCOL_VERSION && hasClientCapabilities(request)) {
       return { error: { code: ProtocolErrorCode.MethodNotFound, message: 'Method not found' }, id: request.id, jsonrpc: JSONRPC_VERSION };
     }
     return undefined;
+  }
+
+  /** Point 2 after point 5: from now on the refusals of point 2 name only `revisions`. */
+  fix(revisions: readonly string[]): void {
+    this.#served = revisions;
   }
 
   /** Writes an answer the gate gives itself; a failed write is reported, as every write of the gate. */

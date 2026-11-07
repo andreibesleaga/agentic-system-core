@@ -88,6 +88,9 @@ test('AGSC-06-34 with AGSC-11-21: an MCP responder is not an A2A interface, and 
     assert.deepEqual(warned([RESPONDER, { ...CARD, version }]), [['AGSC-E210', 'warn']], version);
   }
   assert.deepEqual(warned([CARD]), [['AGSC-E210', 'error']], 'no responder: the 1.0 error');
+  // The warning says that the declaration stays while the card is not served (AGSC-11-16).
+  assert.match(card.cardFindings([mcpResponder, CARD])[0].message,
+    /the discovery document still declares a2a-card at https:\/\/a\.example\/\.well-known\/agent-card\.json, which this node does not serve/u);
   assert.deepEqual(JSON.parse(card.cardBytes(input({ surfaces: [RESPONDER, { ...CARD, version: '1.0.0' }] })))
     .supportedInterfaces.map((i) => i.protocolVersion), ['1.0.0']);
 });
