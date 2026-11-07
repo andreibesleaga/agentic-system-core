@@ -96,8 +96,8 @@ A gap is a rule the reference engine does not implement yet. It is not counted a
 
 | Rule | What is missing |
 |---|---|
-| AGSC-01-13 | Language variants are reserved to 1.1 (AGSC-00-20, AGSC-01-13). At 1.0 a <slug>.<lang>.md beside its primary is AGSC-E206 at lint and no /<type-plural>/<slug>/<lang>/ route is built — vector bundle-0007 proves that through the real lint and build — and the 1.1 variant behaviour itself is not implemented. |
-| AGSC-01-13a | Reserved to 1.1 with AGSC-01-13: no variant route exists at 1.0, so nothing declares a variant's language or links its primary; the 1.1 behaviour is not implemented. |
+| AGSC-01-13 | Language variants are reserved to a later MINOR (AGSC-00-20, AGSC-01-13; spec/01 says so, and AGSC-06-01 says none at 1.0 or 1.1). At 1.1 a <slug>.<lang>.md beside its primary is AGSC-E206 at lint and no /<type-plural>/<slug>/<lang>/ route is built — vector bundle-0007 proves that through the real lint and build; the variant behaviour itself belongs to that later MINOR. |
+| AGSC-01-13a | Reserved to a later MINOR with AGSC-01-13: no variant route exists at 1.0 or 1.1, so nothing declares a variant's language or links its primary; that behaviour belongs to the later MINOR. |
 
 ## Matrix
 

@@ -47,7 +47,7 @@ test('content_digest is written only on the switch, and names the hash digest na
 
 test('chunk 0 starts at its first line that is not blank; U+00A0 is not blank (AGSC-06-45)', () => {
   assert.equal(recordsOf([CONCEPT('\n \t\n\nIntro.\n\n## A\n\nText.\n')])[0].text, 'Intro.\n');
-  assert.equal(recordsOf([CONCEPT(' \nIntro.\n')])[0].text, ' \nIntro.\n');
+  assert.equal(recordsOf([CONCEPT('\u00a0\nIntro.\n')])[0].text, '\u00a0\nIntro.\n');
   assert.equal(recordsOf([CONCEPT('Intro.\n\n\nMore.\n')])[0].text, 'Intro.\n\n\nMore.\n', 'blank lines inside stay');
 });
 

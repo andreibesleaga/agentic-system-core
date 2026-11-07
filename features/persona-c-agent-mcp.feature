@@ -166,7 +166,7 @@ Feature: Agent reader queries structured knowledge without scraping
     And nothing is written to the Bundle by the server
 
   @PRD-024 @agent @mode-1
-  Scenario: An A2A client finds an agent card only on a node that declares a responder, and a catalogue crawler finds both files by digest
+  Scenario: An A2A client finds an agent card only on a node that declares an A2A responder, and a catalogue crawler finds both files by digest
     Given a fresh copy of the acceptance Bundle
     And the configuration declares the a2a-card surface and no responder
     When the publisher runs "agsc build --json"

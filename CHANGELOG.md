@@ -234,7 +234,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`true`, `123`, `a: b`, a leading `[`, an empty text, a text with leading or trailing white space);
   every other text keeps its bytes, so the seven Harness files of `compose-0027` are unchanged
   (the file is an Agent Skills file, AGSC-07-19, AGSC-07-22; I-164). The lint and conform check that
-  a pack parses as YAML, the other half of I-164, is not in 1.1.
+  a pack parses as YAML, the other half of I-164, is not in 1.1. Bytes: on `agsc-demo-node`, the
+  three `SKILL.md` files whose `description` holds `: ` (`foundational`, `operations-reliability`,
+  `sdlc`) and their three `lock` values in `skills/index.json` (and so the `rel#skills` digest);
+  no other reference node changes.
 - Page scripts and the tool list for the ten tools (AGSC-09-13, AGSC-09-16; the hash of each file in
   `fixture-minimal`, old to new; these three files are the only bytes that change on the eight
   reference nodes): `compose/agsc-core.js` carries the brief of AGSC-07-25 (`bundle({ brief: true })`),

@@ -2,7 +2,8 @@
 // CONTEXT Knowledge — the tabular chunk index, `chunks-index.toon` (AGSC-06-37).
 //
 // WHAT. The uniform metadata of every chunk line — `id`, `item`, `kind`, `section`, `ordinal`,
-// `title`, `digest` — in the tabular form of TOON (specification 4.1 §9.3): the header
+// `title`, `digest` — in the tabular form of TOON (specification 4.4, the pinned `@toon-format/toon` 4.4.0; the rows are
+// the same as in 4.1): the header
 // `chunks[<n>]{id,item,kind,section,ordinal,title,digest}:`, then one row per chunk line of
 // `/chunks.jsonl`, in the same order, `id` and `digest` cut to their first 16 hexadecimal
 // characters. One trailing LF (AGSC-04-07). The cut `digest` is a locator only: a reader that

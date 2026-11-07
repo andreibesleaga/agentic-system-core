@@ -45,7 +45,9 @@ only under the system temporary directory. Keep them that way.
   registered one fits.
 - **Do not edit generated files by hand**: `docs/GLOSSARY.md`
   (`node tools/gen-glossary`), `docs/RULE-COVERAGE.md` (`node tools/rule-coverage
-  --write`), `docs/measurements.json` (`node bench/measure.js`), and every file of
+  --write`), `docs/measurements.json` (`node bench/measure.js`), `docs/ONTOLOGY-QUESTIONS.md`
+  (`node tools/gen-ontology-questions`), `schema/item-shapes.ttl` (`node tools/gen-shapes`),
+  `docs/REQUIREMENTS-MATRIX.md` (`node tools/requirements-matrix --write`), and every file of
   `src/` whose first line reads `// generated from src-ts/…` (edit its TypeScript source
   under `src-ts/`, then `npm run build:ts`; [docs/ENGINEERING.md](docs/ENGINEERING.md) §8).
 - **Do not add a dependency** unless a maintained, permissively licensed library at an
