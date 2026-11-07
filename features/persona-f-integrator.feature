@@ -26,6 +26,7 @@ Feature: Integrator installs this knowledge into my agent
     When the integrator opens ".claude/skills/<cluster>/SKILL.md"
     Then its frontmatter declares "name", equal to the pack's directory, "description" and "license"
     And "description" is at most 1024 characters and equals the cluster description
+    And it passes the Agent Skills check of AGSC-07-22 with no finding, as every installed pack does
     And the body lists each member with its type and canonical URL, its prose fenced as data (AGSC-07-16)
 
   @PRD-035 @human @matrix-H7

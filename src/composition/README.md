@@ -17,6 +17,7 @@
 | `brief.js` | the brief of a composition, valid or not: `brief.json`, `BRIEF.md`, `context.md` and `brief.mmd` beside the Harness, in the dependency order, with the gaps and the checklist (AGSC-07-25…07-27), and, when a member states a key of AGSC-02-25 or a domain link joins, the domain paragraph (`DOMAIN_PORTABLE`; `domainOf` is the one reader of the parts for pages and tools, `domainWithheld` and `domainWithin` leave out a context that is a cluster not listed); its functions run in the page too |
 | `blueprint.js` | the blueprint outputs of a saved architecture: the three C4 levels, one decision record per decision the members cite and a build plan, in `blueprint/` beside the Harness (AGSC-07-29); its functions run in the page too |
 | `skills.js` | the published skill packs and their lockfile |
+| `skill-format.js` | the Agent Skills check of a `SKILL.md` before it is written: the six fields, the bounds of `name` (at most 64, equal to the directory) and `description` (at most 1024), one code per fault; a published pack that fails is not written, a bound fault in a Harness skill file is a warning (AGSC-07-22) |
 | `archive.js` | the deterministic ZIP container (store only, fixed timestamps) |
 | `browser.js` | the browser build of the algebra, so the page runs the same code; it carries `DOMAIN_PORTABLE`, the declared contexts that are listed and the domain links only on a node whose listed items state a domain key or a domain link |
 | `conform.js` | the conformance report and the Level a run supports |

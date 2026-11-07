@@ -17,6 +17,8 @@
  *     including the no-`--` rule; `description` ≤ 1024 characters.
  *   * AGSC-07-20 — each pack declares its licence and is accompanied by a SHA-256
  *     lockfile over its files.
+ *   * AGSC-07-22 — before a pack is written its `SKILL.md` passes the Agent Skills check
+ *     of `skill-format.js`; a pack that fails it is not written.
  *   * AGSC-07-15 — no script, no executable, no symlink, no `allowed-tools` key;
  *     `AGSC-E407` on a violation. Nothing here can emit one: a pack is exactly one
  *     `SKILL.md` of text, `executableViolations()` re-checks the emitted set, and
@@ -62,6 +64,7 @@ const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trail
 const { keyValueLine } = require('../shared/key-value-line.js');
 const { withArticle } = require('../shared/article.js');
 const { yamlScalar } = require('./harness.js');
+const skillFormat = require('./skill-format.js');
 
 /** AGSC-06-18: the Content Use Terms identifier every prose-carrying export embeds. */
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
@@ -230,6 +233,12 @@ function packs(items, options) {
       && (Array.isArray(item.clusters) ? item.clusters : []).map(String).includes(slug));
     const text = packText(cluster, members, options);
     const path = `${slug}/${PACK_FILE}`;
+    // AGSC-07-22: the Agent Skills check before the file is written; a pack that fails it
+    // is not written. The packs of this writer pass by construction (the slug is checked
+    // above and the description bounded by `packDescription`), so no 1.0 byte changes.
+    const format = skillFormat.check(text, { directory: slug, file: path });
+    findings.push(...format);
+    if (format.some((f) => f.severity === 'error')) continue;
     files.push({ path, text });
     manifest.push({
       description: packDescription(cluster),

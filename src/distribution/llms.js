@@ -3,7 +3,8 @@
 // Implements AGSC-06-13 (what `/llms.txt` is), AGSC-06-13a (its exact byte layout
 // and that of `/llms-full.txt`), AGSC-06-14 (every published item is reachable),
 // AGSC-06-15 (the provenance header and the `text agsc-content` fence) and the
-// exclusions of AGSC-06-30 / AGSC-11-22.
+// exclusions of AGSC-06-30 / AGSC-11-22. The page-level relations of llms.txt v2 that
+// point at this file (AGSC-06-46) are written by `html.js#shell` from `LLMS_ROUTE`.
 //
 // The layout follows llms.txt v2: the H1 comes FIRST, the summary blockquote straight
 // after it (so a v2 parser reads the summary), and the provenance comment after the
@@ -24,6 +25,13 @@ const { withOneTrailingFeed, withoutTrailingSlashes } = require('../shared/trail
 
 /** AGSC-01-18: the default of `bundle.license_prose`. */
 const DEFAULT_LICENSE = TERMS;
+
+/**
+ * AGSC-06-13 / AGSC-06-46: the route of the file and its media type, which every generated
+ * page names in its `describedby` link of llms.txt v2 (`html.js#shell`).
+ */
+const LLMS_ROUTE = '/llms.txt';
+const LLMS_MEDIA_TYPE = 'text/plain';
 
 /** AGSC-05-01: `<site.base>/<type-plural>/<slug>/`, trailing slash included. */
 function iriOf(base, item) {
@@ -209,6 +217,8 @@ function llmsFullTxt(bundle, options = {}) {
 }
 
 module.exports = {
+  LLMS_MEDIA_TYPE,
+  LLMS_ROUTE,
   llmsTxt,
   llmsFullTxt,
   provenance,

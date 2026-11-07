@@ -15,6 +15,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ROOT, splitItem } = require('./_world.js');
+const skillFormat = require('../../../src/composition/skill-format.js');
 
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const BASE = 'https://agenticsystemcore.com/';
@@ -111,6 +112,17 @@ module.exports = [
       const { description } = splitItem(world.state.skill).frontmatter;
       assert.ok([...description].length <= 1024);
       assert.strictEqual(description, splitItem(world.read('content/clusters/protocols.md')).frontmatter.description);
+    },
+  },
+  {
+    pattern: 'it passes the Agent Skills check of AGSC-07-22 with no finding, as every installed pack does',
+    run(world) {
+      const installed = fs.readdirSync(path.join(world.dir, '.claude', 'skills')).sort();
+      assert.ok(installed.includes('protocols'), JSON.stringify(installed));
+      for (const name of installed) {
+        const rel = `.claude/skills/${name}/SKILL.md`;
+        assert.deepStrictEqual(skillFormat.check(world.read(rel), { directory: name, file: rel }), [], rel);
+      }
     },
   },
   {

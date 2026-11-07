@@ -178,7 +178,7 @@ which calls into the contexts.
 | `propose` | AGSC-08-04, AGSC-08-05 | `knowledge/adopt.js`, the `diff` library |
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `governance/agents.js#checkProposal`; the live path needs a model and a channel adapter |
-| `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**` |
+| `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**`; from 1.1 every `SKILL.md` passes the Agent Skills check of `composition/skill-format.js` before it is written (AGSC-07-22), and `compose` runs it over the Harness skill files |
 | `mcp` | AGSC-09-13, AGSC-09-18, AGSC-09-19 | `distribution/mcp-stdio.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; with `--http <port>`, `distribution/mcp-http.js` (compiled from `src-ts/`) behind `adapters/node-http-server.js#listenWith` on a loopback address; a streaming verb, nothing but protocol bytes on stdout |
 | `run` | AGSC-09-94, AGSC-02-22 | `knowledge/runblocks.js` and the ProcessRunner port; off by default, and it executes only on a runner that declares network isolation, which the shipped adapter does not |
 | `trace` | AGSC-09-94, AGSC-02-14 | `interchange/trace.js`; off by default |
@@ -232,7 +232,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | MCP Streamable HTTP transport for Node (`toNodeHandler`, the `Host` and `Origin` guards) | `@modelcontextprotocol/node` (with `hono`, `@hono/node-server`, MIT) | 2.1.2 | Apache-2.0 | `distribution/mcp-http.js` (from `src-ts/distribution/mcp-http.ts`) |
 | MCP client, to test the server as an assistant reaches it (dev) | `@modelcontextprotocol/client` | 2.4.0 | Apache-2.0 | tests only |
 | A2A agent card (the protocol's own JSON form of `AgentCard`) | `@a2a-js/sdk` (with `jose`, MIT) | 1.3.0 | Apache-2.0 | `distribution/a2a-card.js` (from `src-ts/distribution/a2a-card.ts`), loaded only by a node that declares a card |
-| RFC 8288 `Link` header parser, to read the emitted header independently (dev) | `http-link-header` | 1.1.4 | MIT | tests only |
+| RFC 8288 `Link` header parser, to read the emitted header independently | `http-link-header` | 1.1.4 | MIT | the conformance handler of `disc-0026` (`tests/conformance/areas/_discovery-web.js`, shipped in the package so that `agsc conform` runs every vector) and the tests; a run-time dependency from B08-WP5, a development one before |
 | TOON encoding | `@toon-format/toon` | 4.4.0 | MIT | `knowledge/chunks-index.js`, the tabular chunk index that the build serves as `/chunks-index.toon` (AGSC-06-37) and `interchange/adapters/llm-context.js` writes beside the node |
 | RFC 9651 Structured Fields (the Dictionary of an RFC 9530 digest value) | `structured-headers` | 2.1.1 | MIT | `knowledge/digest-field.js`, the one writer of `sha-256=:<base64>:` (AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17) |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |

@@ -12,6 +12,7 @@
 const compose = require('../../../composition/compose.js');
 const architecture = require('../../../composition/architecture.js');
 const harness = require('../../../composition/harness.js');
+const skillFormat = require('../../../composition/skill-format.js');
 const contextMap = require('../../../composition/context-map.js');
 const brief = require('../../../composition/brief.js');
 const blueprint = require('../../../composition/blueprint.js');
@@ -269,9 +270,14 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
   const options = harnessOptions(ctx, bundle, result, items);
   const emission = harness.emit(result, options);
   for (const violation of emission.violations) findings.push({ ...violation, severity: 'error' });
+  // AGSC-07-22: the Agent Skills check of each skill file before it is written. Here and not
+  // in `harness.js#skillFiles`, whose source the `/compose/` page ships: a bound fault is a
+  // warning and the file is written as authored (AGSC-00-14); any other fault is an error.
+  const format = skillFormat.harnessFindings(emission.kinds.skills);
+  findings.push(...format);
   // A Harness whose own files break a rule is not written at all: files that were
   // refused are not a Harness, and a partial one on disk would read as a valid one.
-  if (emission.violations.length > 0) {
+  if (emission.violations.length > 0 || format.some((f) => f.severity === 'error')) {
     return { archive: null, dir: null, emitted: false, files: [], findings, missing: ['every file: the emission broke a rule (AGSC-07-17)'] };
   }
   const dir = harnessDir(ctx, options.name);

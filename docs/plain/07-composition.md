@@ -8,4 +8,6 @@
 
 **Skill packs.** Procedures export to `SKILL.md` files that can be installed into agent tool trees and imported back.
 
+**From 1.1, every `SKILL.md` is checked against the Agent Skills format before it is written.** The name is at most 64 characters and equals its folder, the description at most 1,024 characters, and only the six fields of the format may appear. A published pack that fails is not written; a Harness skill file that is too long is still written, with a warning. The files the engine writes already pass, so no byte changes (AGSC-07-22).
+
 Rules: `spec/07-composition.md`, `AGSC-07-01` … `AGSC-07-24`.

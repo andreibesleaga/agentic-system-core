@@ -6,7 +6,9 @@
 // cookie, no `localStorage`, no beacon), AGSC-06-19 (the Schema.org JSON-LD),
 // AGSC-06-20 (WCAG 2.2 AA semantics and the `alt` text of a diagram), AGSC-06-24
 // (the `/about/` Quickstart, generated from the verb set so it cannot drift),
-// AGSC-06-25 (the `describedby` link in every `<head>`), AGSC-06-18 (the Content
+// AGSC-06-25 (the `describedby` link in every `<head>`), AGSC-06-46 (the two link
+// relations of llms.txt v2: `describedby` for `/llms.txt` on every page, `alternate`
+// `text/markdown` for the Markdown copy on an item page), AGSC-06-18 (the Content
 // Use Terms line every prose-carrying export embeds), AGSC-06-38 (it places the graph
 // view's sections, written by `graph-view.js`, on an item page) and AGSC-02-13 /
 // AGSC-02-98 (`inlineDiagram`: the author's diagram and every figure of the graph view
@@ -24,6 +26,7 @@ const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
+const { LLMS_MEDIA_TYPE, LLMS_ROUTE } = require('./llms.js');
 const theme = require('./theme.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -213,6 +216,9 @@ function shell(page) {
     `<title>${escapeHtml(page.title)}</title>`,
     `<meta name="description" content="${escapeHtml(page.description)}">`,
     `<link rel="describedby" href="${WELLKNOWN_PATH}" type="${MEDIA_TYPE}">`,
+    // AGSC-06-46: the llms.txt file that covers the page, after the discovery document's
+    // link (AGSC-06-25); a reader tells the two `describedby` links apart by their type.
+    `<link rel="describedby" href="${LLMS_ROUTE}" type="${LLMS_MEDIA_TYPE}">`,
   ];
   // The canonical address of the page: stated by the caller (an item page), or the
   // configured site base plus the page's own route. A page with no route of its own
@@ -484,6 +490,8 @@ function itemPage(item, options = {}) {
   return shell({
     ...options,
     url: options.url,
+    // AGSC-06-46: the Markdown copy of the page (AGSC-06-02), by the relation llms.txt v2 names.
+    alternates: [{ href: `/pages/${item.slug}.md`, type: 'text/markdown' }],
     title: item.title == null ? item.slug : item.title,
     description: item.description == null ? '' : item.description,
     lang: item.lang,

@@ -187,6 +187,7 @@ graph TB
 | governance | `ledger.js` | hash chain; offline re-verify | 12 | build ci verify |
 | composition | `closure.js` | closure, hiding, mutex, warnings, explained paths (spec/07 order) | — | compose |
 | composition | `emit-jsonld.js` `emit-agents.js` `emit-structurizr.js` `emit-mermaid.js` `emit-arc42.js` `emit-madr.js` | six of the seven Harness files | — | compose |
+| composition | `skill-format.js` | the Agent Skills check (1.1, AGSC-07-22) of every `SKILL.md` before it is written: a published pack (`skills.js`) and a Harness skill file (checked by the `compose` verb); bounds E204, missing `license` E202, `metadata` E201, `allowed-tools` E407, other keys E207; no byte changes | — | build skills compose |
 | composition | `context-map.js` | the context map of a composition (1.1): `context-map.json` in the companion directory beside the Harness, only for a node that declares contexts (AGSC-07-30); never a Harness byte | — | compose |
 | composition | `brief.js` | the brief of a composition (1.1): `brief.json`, `BRIEF.md`, `context.md`, `brief.mmd` in the companion directory beside the Harness, for `compose --brief` or `compose.brief`, valid composition or not; dependency order, gaps, checklist (AGSC-07-25…07-27); never a Harness byte; the same source runs in the page | — | compose |
 | composition | `blueprint.js` | the blueprint outputs of a saved architecture (1.1): the three C4 levels as Mermaid, one MADR record per `decided-by` target of a member, a build plan in dependency order, in `blueprint/` beside the Harness for `compose --from <slug> --brief` (AGSC-07-29); never a Harness byte; the same source runs in the page | — | compose |
@@ -697,7 +698,10 @@ handshake, and it does not serve `server/discover`. The tool server on revision 
 with `server/discover`, is planned for 1.1 (AGSC-00-20). *(1.1: done — the server speaks
 2026-07-28 with `server/discover` and, over standard input and output, still 2025-11-25 to a
 client that opens with `initialize` (AGSC-09-19); it is built on the official MCP SDK in
-`src-ts/distribution/mcp-core.ts`.)*
+`src-ts/distribution/mcp-core.ts`.)* *(1.1: the WebMCP date the discovery document declares
+by default moves from 2026-09-15 to 2026-10-27, the Draft Community Group Report AGSC-11-16
+names as the reference default; any `YYYY-MM-DD` stays conforming, and the page tools'
+registration through `document.modelContext` is unchanged.)*
 
 **ADR-004.** "The nine core keys carry composition semantics" reads: five of the nine core keys —
 uses, requires, excludes, contradicts and supersedes — change a composition, and related,

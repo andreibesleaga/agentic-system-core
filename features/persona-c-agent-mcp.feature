@@ -31,6 +31,14 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the result lists the "requires" Link from "a2a" as its computed inverse "required-by"
 
   @PRD-025 @agent @mode-1
+  Scenario: An agent that lands on any page finds the node's llms.txt and the page's Markdown copy by their link relations
+    Given a fresh copy of the acceptance Bundle
+    And the Bundle is built
+    Then every HTML page the build wrote names "/llms.txt" in its head with the relation "describedby" and the type "text/plain" (AGSC-06-46)
+    And the page "www/concepts/a2a/index.html" names its Markdown copy "/pages/a2a.md" with the relation "alternate" and the type "text/markdown", and the build wrote that copy
+    And the home page names no Markdown copy, and its first describedby link is still the discovery document (AGSC-06-25)
+
+  @PRD-025 @agent @mode-1
   Scenario: Non-MCP agent reads via llms.txt and RDF instead
     Given the agent has no MCP client
     When the agent fetches "/llms.txt"

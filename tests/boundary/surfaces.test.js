@@ -17,7 +17,9 @@ test('the foreign protocol versions live in the anti-corruption layer and nowher
   assert.deepStrictEqual(s.MCP_STDIO_REVISIONS, ['2026-07-28', '2025-11-25']);
   assert.strictEqual(s.MCP_PROTOCOL_MIN_VERSION, '2025-03-26');
   assert.strictEqual(s.MCP_SURFACE_VERSION, '2026-07-28');
-  assert.strictEqual(s.WEBMCP_SURFACE_VERSION, '2026-09-15');
+  // AGSC-11-16: the reference default is the Draft Community Group Report of 27 October 2026
+  // the rule names (no rule pins a date; any YYYY-MM-DD is conforming).
+  assert.strictEqual(s.WEBMCP_SURFACE_VERSION, '2026-10-27');
   assert.strictEqual(s.MCP_EXTENSION_ID, 'com.agenticsystemcore/knowledge');
   // The revisions are the official SDK's: the newest handshake revision it negotiates, and the
   // oldest it still accepts, are the two named here.
@@ -102,7 +104,7 @@ test('AGSC-11-16: a surface is declared only when it is served, ordered by href'
   });
   // AGSC-11-16: the revision the transport speaks, by default.
   assert.deepStrictEqual(links[3]['agsc-surface-version'], [s.MCP_PROTOCOL_VERSION]);
-  assert.deepStrictEqual(links[1]['agsc-surface-version'], ['2026-09-15']);
+  assert.deepStrictEqual(links[1]['agsc-surface-version'], ['2026-10-27']);
   // Nothing emitted, no server: nothing declared.
   assert.deepStrictEqual(plain(s.declare({ base: 'https://a.example/' })), []);
   assert.deepStrictEqual(plain(s.declare(undefined)), []);

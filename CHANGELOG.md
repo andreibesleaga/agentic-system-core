@@ -383,6 +383,38 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (the audit gate of `docs/ENGINEERING.md`) is clean again after GHSA-g3hv-75wg-m249 (moderate, `minimatch`
   below 11.0.1, reached only through eslint and `eslint-plugin-import-x`). Lint and the whole suite pass
   with it; nothing the package ships changes.
+- Every generated HTML page carries in its `<head>`, after the discovery document's `describedby` link
+  (AGSC-06-25), `<link rel="describedby" href="/llms.txt" type="text/plain">`, and every item page also
+  `<link rel="alternate" href="/pages/<slug>.md" type="text/markdown">`: the two page-level relations of
+  llms.txt v2 (modified 2026-08-10; llmstxt.org fetched directly on 7 November 2026), AGSC-06-46,
+  `build-0033`. `/llms.txt` and `/llms-full.txt` do not change (their v2 layout and escapes came with
+  AGSC-06-13a in block 3). The writer stays the engine's own: no llms.txt package on npm is the
+  convention's, and none writes the provenance comment or escapes exactly `\`, `[`, `]` and `(`.
+  Bytes, by AGSC-06-46: every `.html` page of every node (fixture-minimal `index.html`
+  `5d6d1801…e2ac` → `1f5cdaf6…8e3a`; agsc-demo-node `index.html` `5cd22c6d…c09e` → `47d31eef…b1e6`; every
+  node in `reference-1.0.1/README.md` § B08-WP5).
+- The discovery document declares the WebMCP Draft Community Group Report of 27 October 2026 by default:
+  `agsc-surface-version` of the `webmcp` surface `2026-09-15` → `2026-10-27`, the reference default
+  AGSC-11-16 names (`surfaces.WEBMCP_SURFACE_VERSION`; any `YYYY-MM-DD` stays conforming, and
+  `document.modelContext` registration is unchanged; the report of 2 November 2026, read on 7 November
+  2026, has the same `registerTool` dictionary). Bytes, by AGSC-11-16: `.well-known/knowledge-linkset`
+  of every node that serves `/compose/` (fixture-minimal `c4dccf93…af02` → `bf5425b4…e87f`;
+  agsc-demo-node `c2fb8f14…178e` → `de534b45…b614`).
+- Every `SKILL.md` is checked against the Agent Skills format before it is written (AGSC-07-22): the six
+  fields; `name` 1 to 64 characters of the slug grammar and equal to its directory, `description` 1 to
+  1024 characters, `compatibility` at most 500 (`AGSC-E204`), a missing `license` `AGSC-E202`, a
+  `metadata` that is not a map of strings `AGSC-E201`, `allowed-tools` `AGSC-E407`, any other key
+  `AGSC-E207`. A published pack that fails is not written; in a Harness skill file a bound fault is the
+  warning `AGSC-E204` and the file is written as authored (AGSC-00-14), checked by `compose` after the
+  emission so the `/compose/` page's script does not change. Own code (`src/composition/skill-format.js`,
+  on the engine's frontmatter and `yaml` readers): the format's reference validator, `skills-ref`, is
+  Python, and the npm ports answer messages, not the five codes. No byte changes (the packs and the
+  Harness skill files already pass).
+- Dependencies: `http-link-header` 1.1.4 (MIT, no dependencies) moves from the development to the
+  run-time dependencies, same exact pin: the conformance handler of `disc-0026`, which the package ships
+  so that `agsc conform` runs every vector (AGSC-09-02), reads the `Link` field of `/` with it, and the
+  packed package answered every `discovery` vector "no handler" without it
+  (`tests/arch/pack-and-conform.test.js`). `npm audit` 0.
 
 ### Added
 
@@ -1168,6 +1200,17 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `agsc import` usage line and the agent skill table name `--from skos` (a `<file.ttl>`), `export --skos`,
   `--closure`, `--manifest` and `lint --suggest`; `docs/guides/troubleshooting.md` gains the row of `AGSC-E416`
   and `docs/guides/mode-1.md` shows `lint.min_sources`.
+- `docs/guides/publish.md` § "What a page and `robots.txt` tell an agent": the head links of a page
+  (AGSC-06-46) and the default group of `robots.txt` with its `Content-Signal` line, both run by
+  `tests/docs/guides.test.js`; the IETF aipref `Content-Usage` field (`draft-ietf-aipref-vocab-08`,
+  `draft-ietf-aipref-attach-05`, re-read 7 November 2026) shown for comparison as a draft the engine
+  does not write (AGSC-06-18). `docs/PROTOCOLS.md` gains the AI Preferences row; the llms.txt, WebMCP
+  and Agent Skills rows say what 1.1 does.
+- Tests: `tests/distribution/page-links.test.js`, `tests/composition/skill-format.test.js` (fast-check:
+  the link of any slug, the check independent of the key order), the `build-0033` handler
+  (`tests/conformance/areas/_build-page-links.js`), the persona-c scenario "An agent that lands on any
+  page finds the node's llms.txt and the page's Markdown copy by their link relations" and a persona-f
+  step that runs the Agent Skills check over every installed pack.
 
 ### Fixed
 

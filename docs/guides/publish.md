@@ -73,6 +73,59 @@ Level 2 is the level a published node claims: every link carries its digest, the
 link carries the node's facts, and the ledger is linked. If the checker fails here, it
 will fail on the live address too; fix the build first.
 
+### What a page and `robots.txt` tell an agent
+
+An agent that lands on one page can find the rest of the node from that page's `<head>`.
+From 1.1 every page names the discovery document and `/llms.txt`, both with the relation
+`describedby` and told apart by their type, and an item page also names its Markdown copy
+with the relation `alternate` and the type `text/markdown`. These are the two page-level
+relations of llms.txt v2 (llmstxt.org, modified 10 August 2026), AGSC-06-46:
+
+```bash demo
+grep -o '<link rel="[a-z]*" href="[^"]*" type="[^"]*">' www/concepts/sourdough/index.html
+```
+
+```text expect
+<link rel="describedby" href="/.well-known/knowledge-linkset" type="application/linkset+json">
+<link rel="describedby" href="/llms.txt" type="text/plain">
+<link rel="alternate" href="/pages/sourdough.md" type="text/markdown">
+```
+
+`robots.txt` invites every crawler with `Allow: /`, keeps out the training crawlers that
+`site.tdm_crawlers` names (one group each, before this one) and repeats the same use
+policy in a `Content-Signal` line of every group. The line follows the Content Signals
+Policy (contentsignals.org): search yes, use as input to an answer yes, training no. It is
+an extra record that a crawler may read or ignore (RFC 9309 §2.2.4), not one of the three
+licence dialects of AGSC-06-18. The last group of the file:
+
+```bash demo
+sed -n '/^User-agent: \*$/,$p' www/robots.txt
+```
+
+```text expect
+User-agent: *
+# Content Signals Policy: the same policy as /.well-known/tdmrep.json and /legal/
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Sitemap: https://notes.example.org/sitemap.xml
+```
+
+A node whose prose carries another licence (`bundle.license_prose`) writes
+`Content-Signal: search=yes, ai-input=yes` and no training groups.
+
+The IETF AI Preferences working group is drafting a similar field, `Content-Usage`, for
+`robots.txt` and HTTP. It is still a draft (`draft-ietf-aipref-vocab-08` and
+`draft-ietf-aipref-attach-05`, read 7 November 2026, both "work in progress"), and the
+engine does not write it at 1.x (AGSC-06-18). For comparison only, the draft's form of the
+training reservation is:
+
+```text
+Content-Usage: train-ai=n
+```
+
+Do not add it by hand to the built `robots.txt` or `_headers`: the next build writes both
+files again, and at 1.x no file of a node may state the field (AGSC-06-18).
+
 ## 3. Choose a host
 
 `agsc-host list` names the hosting profiles the engine can write settings for, with what

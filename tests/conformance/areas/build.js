@@ -5,7 +5,8 @@
 // tokenizer and the sharded index, the served header set, `security.txt`, the
 // content version, the trailing LF, the stale instant and the reproducible assets;
 // the graph view of an item page (build-0032) is in _build-graph-view.js, the 1.1 route set
-// and the query page (build-0029, build-0030) in _build-query-page.js.
+// and the query page (build-0029, build-0030) in _build-query-page.js, the llms.txt v2 link
+// relations of every page (build-0033) in _build-page-links.js.
 // HANDLERS at the bottom maps each case id to its handler.
 
 const crypto = require('node:crypto');
@@ -24,6 +25,7 @@ const { guarded } = require('./_expected-reads.js');
 const surfaces = require('./_build-surfaces.js');
 const graphView = require('./_build-graph-view.js');
 const queryPage = require('./_build-query-page.js');
+const pageLinks = require('./_build-page-links.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -541,6 +543,8 @@ const HANDLERS = {
   ...graphView.HANDLERS,
   // The 1.1 route set and the query page (_build-query-page.js).
   ...queryPage.HANDLERS,
+  // The llms.txt v2 link relations of every page (_build-page-links.js).
+  ...pageLinks.HANDLERS,
   // The search-tokenizer cases (AGSC-06-16/06-23).
   'build-0001': searchCase,
   'build-0002': searchCase,

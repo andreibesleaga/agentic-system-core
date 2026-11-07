@@ -57,9 +57,11 @@ const MCP_SURFACE_VERSION = MCP_PROTOCOL_VERSION;
  * date is conforming" — because the report is a living document. This constant is
  * therefore a default, not a pin: `declare({webmcpVersion})` echoes whatever date the
  * node targets, and `bnd-0037` asserts the echo and the `YYYY-MM-DD` shape, never a
- * value.
+ * value. From 1.1 it is the report of 27 October 2026, the reference default the rule
+ * names, whose API is `document.modelContext` (`webmcp.js` registers there); the report
+ * of 2 November 2026 (read 2026-11-07) asks the same of a tool.
  */
-const WEBMCP_SURFACE_VERSION = '2026-09-15';
+const WEBMCP_SURFACE_VERSION = '2026-10-27';
 /** AGSC-11-16: the shape every `agsc-surface-version` of `webmcp` takes. */
 const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */

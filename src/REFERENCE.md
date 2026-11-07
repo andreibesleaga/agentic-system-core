@@ -685,14 +685,14 @@ drive them, `init` and `ci`.
 | `governance/auto-merge.js` | Governance | AGSC-08-26(g) — the history check of a channel set to `auto`, read from the git-log file |
 | `governance/boards.js` | Governance | AGSC-10-13, AGSC-10-16…18 — the board exports, the derived `done` and `claimed_by`, the WIP limit |
 | `distribution/search.js` | Distribution | AGSC-06-16, AGSC-06-21, AGSC-06-23 — the normative tokenizer and the index |
-| `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files |
+| `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files; `LLMS_ROUTE` and `LLMS_MEDIA_TYPE`, which every page names (AGSC-06-46). Own code: no llms.txt writer on npm is the convention's own, and none writes the provenance comment or escapes exactly `\`, `[`, `]` and `(` as AGSC-06-13a asks |
 | `distribution/discovery.js` | Distribution | AGSC-06-07…12, 06-35, 10-12, 11-16, 11-20, 11-23 — the link set, its validator, the peer check |
 | `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects`; AGSC-06-40 — the FAIR Signposting links of `/` in the one `Link` field of its block, after the AGSC-11-05 value; the blocks of the card and the two catalogue files where the build wrote them |
 | `distribution/well-known.js` | Distribution | AGSC-06-07, 06-08, 06-34, 06-42, 11-16 — the well-known files in order: the agent card, the discovery document with its declared surfaces (`declaredSurfaces`, moved here from `site.js`), the catalogue files over the bytes of the other two |
 | `distribution/a2a-card.js` | Distribution | compiled from `src-ts/distribution/a2a-card.ts` — AGSC-06-34 with AGSC-06-07: the A2A 1.0 agent card, typed as the official SDK's `AgentCard` and written by its codec (`AgentCard.toJSON`), JCS and one LF; own code only for `skills` `[]` and the bytes; AGSC-E210 for a card without a responder |
 | `distribution/ai-catalog.js` | Distribution | AGSC-06-42 — `/.well-known/ard.json` and `/.well-known/ai-catalog.json` on `discovery.ai_catalog`: one entry per file pointed at, its SHA-256 over the served bytes; AGSC-E209 for a host that is not a domain name, AGSC-E202 for no `bundle.id` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
-| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
+| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; from 1.1 AGSC-06-46: `describedby` `/llms.txt` (`text/plain`) in every `<head>` after the discovery document's link, and `alternate` `text/markdown` to `/pages/<slug>.md` on an item page; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
 | `distribution/architecture-brief.js` | Distribution | AGSC-07-25, AGSC-07-24 — the brief on the item page of a saved architecture, written by the build over the listed items: the summary, the dependency order, the gaps, the checklist (each list at most 50 entries) and the link to `/compose/?from=<slug>` |
 | `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
 | `distribution/domain-view.js` | Distribution | AGSC-06-38 (the domain sentences), AGSC-08-32 — on a node with a site vocabulary, the item's domain type, role, context and warrant in a definition list under the relations table, each with its label, and the columns "Domain type" and "Domain context" where a row's item has one; and whether the two page scripts carry the domain parts (only when a listed item states a key of AGSC-02-25) |
@@ -739,6 +739,7 @@ index(items) -> { docs, terms }; files(items, { itemsPerShard }) -> { files, man
 // distribution/llms.js
 llmsTxt(bundle, { generatedAt, specVersion, terms, bundleVersion, visibility }) -> string
 llmsFullTxt(bundle, { … }) -> string; sectionBlocks(bundle); primaryCluster(item); iriOf(base, item)
+LLMS_ROUTE   // '/llms.txt'; LLMS_MEDIA_TYPE 'text/plain' (AGSC-06-46)
 
 // distribution/discovery.js
 linkset(config, { level, ledgerHead, digests, counts, generatedAt, specVersion,
@@ -921,6 +922,7 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-
 | `composition/brief.js` | Composition | AGSC-07-25…07-27 (with AGSC-00-05, AGSC-05-33, AGSC-08-32 for the domain paragraph) — the brief of a composition, valid or not: `brief.json` (JCS), `BRIEF.md`, `context.md` (at most 65,536 bytes) and `brief.mmd`, in the companion directory `<harness dir>.companion/`; the dependency order, the gaps and the checklist; only listed items are named. PORTABLE: `composition/browser.js` carries it in the page bundle when asked (`bundle({ brief: true })`), so the page and the command line write the same bytes; nothing in `harness.js` reads it (`tests/arch/brief.test.js`). It writes no narration (AGSC-07-28). Above an engine bound of 1,000,000 steps in the paths of `derived` (`derivedBound`; the rule sets none, and the member grows with the cube of a chain's length) it refuses with `AGSC-E904` before it builds the paths |
 | `composition/blueprint.js` | Composition | AGSC-07-29 (with AGSC-00-05, AGSC-07-26) — the blueprint outputs of a saved architecture, in `blueprint/` of the directory beside the Harness: `c4-context.mmd`, `c4-containers.mmd`, `c4-components.mmd` (the first three C4 levels as Mermaid), `decisions/NNNN-<slug>.md` (one MADR record per distinct `decided-by` target of a member) and `build-plan.md` (one step per member in dependency order); read from the brief's own parts, so only listed items are named; JSON Schema, OpenAPI and test scaffolds are not outputs at 1.1; the architecture's title is a Mermaid label (`mermaidLabel`: a quote is `#quot;`). PORTABLE: the page bundle carries it with the brief; nothing in `harness.js` reads it (`tests/arch/brief.test.js`) |
 | `composition/skills.js` | Composition | AGSC-07-19…22 — the published skill packs, one per Cluster, and their lockfile |
+| `composition/skill-format.js` | Composition | AGSC-07-22 (with AGSC-07-15, AGSC-00-14) — the Agent Skills check of a `SKILL.md` before it is written: the frontmatter read by `knowledge/frontmatter.js#split` and `knowledge/yaml.js` (the pinned `yaml`), then the six fields; `check(text, {directory, file, harness})` → findings (an error means the file is not written; in a Harness file a bound fault is the warning `AGSC-E204`); `harnessFindings(kinds.skills)` for one Harness emission. Own code: the format's reference validator is Python, and the npm ports answer messages, not the five codes |
 | `composition/conform.js` | Composition | AGSC-09-01…09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15 — the claim, the Level's area set, the divergence verdicts, the report |
 | `composition/archive.js` | Composition | / — the `.zip` PACKAGING of a multi-file result (the Harness of AGSC-07-12, the skill packs of AGSC-07-19, an export root of AGSC-01-26…28). PORTABLE: it is in the bundle of AGSC-07-13, so the `/compose/` page's "download all" link and `--zip` build the same bytes. STORE only, entries in code-point path order, the AGSC-04-09 build instant in UTC, nothing optional written. Never a file OF a Harness (AGSC-07-12 closes that set) and never a build INPUT (AGSC-01-16, `AGSC-E903`) |
 | `boundary/surfaces.js` | Boundary | AGSC-11-16…11-19, AGSC-11-21, AGSC-10-14 — declaration, pinning, the floor in each surface's vocabulary, and the ONE place a foreign protocol version is named |
@@ -950,6 +952,10 @@ selectionFences(body)
 isArchitecture(item) -> boolean   // a Concept of kind architecture (AGSC-07-29)
 // composition/harness.js
 isEmitted(result); dslRelationships(result); mermaidEdges(result); pairs(result)
+// composition/skill-format.js — AGSC-07-22
+check(text, {directory, file, harness?}) -> findings   // [] when the SKILL.md passes; an error: not written
+harnessFindings(kinds.skills) -> findings   // a bound fault in a Harness skill file is the warning AGSC-E204
+FIELDS; DESCRIPTION_MAX (1024); COMPATIBILITY_MAX (500)
 // composition/context-map.js — AGSC-07-30
 contextMap(result, {contexts, items, peers, bundleVersion, instant, licenseProse, selectionDigest, specVersion}) -> object | null
 contextMapFiles(result, options) -> [['context-map.json', text]] | []   // [] for a node with no contexts or an invalid composition
@@ -1040,6 +1046,7 @@ loadBundle(ports, { schemas }) -> Bundle
 | A2A agent card (`/.well-known/agent-card.json`) | `@a2a-js/sdk` | 1.3.0 | Apache-2.0 |
 | TOON tabular encoding (`/chunks-index.toon`, `export --to llm-context`) | `@toon-format/toon` | 4.4.0 | MIT |
 | RFC 9651 Structured Fields: the RFC 9530 digest value `sha-256=:<base64>:` | `structured-headers` | 2.1.1 | MIT |
+| RFC 8288 `Link` header, read back by the shipped conformance handler of `disc-0026` | `http-link-header` | 1.1.4 | MIT |
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
 MIT, maintained, zero dependencies, `require()`-able although
@@ -1074,8 +1081,9 @@ against the loopback names and the `--bind` address; the transport adds only the
 (`2026-07-28`, the newest revision the server speaks and the one an `mcp` declaration
 carries by default), `MCP_LEGACY_VERSION` (`2025-11-25`), `MCP_STDIO_REVISIONS`,
 `MCP_SURFACE_VERSION` (the same `2026-07-28`) and
-`WEBMCP_SURFACE_VERSION` (`2026-09-15`, the WebMCP report date the page tools'
-declaration carries by default) — all live in `boundary/surfaces.js`, the
+`WEBMCP_SURFACE_VERSION` (`2026-10-27` from 1.1, `2026-09-15` at 1.0: the WebMCP Draft
+Community Group Report date the page tools' declaration carries by default, the reference
+default AGSC-11-16 names) — all live in `boundary/surfaces.js`, the
 anti-corruption layer, never in a tool function.
 `tests/arch/surface-arrows.test.js` fails the build if any other module carries
 an external version literal.
