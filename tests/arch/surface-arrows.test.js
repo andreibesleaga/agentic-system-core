@@ -46,13 +46,34 @@ test('no tool function names a foreign protocol version (the anti-corruption rul
   }
 });
 
-test('the seven tool names are declared once, in Boundary, and reused', () => {
+/**
+ * The tool names as surfaces.js declares them, read from its text (the scan never runs a
+ * module), and the patterns that refuse a restatement: any three of them in a row, in their
+ * order, quoted. That catches the ten names of 1.1 and the seven of 1.0, whose run
+ * `'links', 'propose', 'read'` is three in a row of the ten too.
+ */
+function toolListPatterns(surfacesText) {
+  const literal = /const TOOL_NAMES = Object\.freeze\(\[([^\]]*)\]\)/u.exec(surfacesText);
+  const names = literal ? [...literal[1].matchAll(/'([a-z]+)'/gu)].map((m) => m[1]) : [];
+  const runs = [];
+  for (let i = 0; i + 3 <= names.length; i += 1) {
+    runs.push(new RegExp(names.slice(i, i + 3).map((n) => `['"]${n}['"]`).join(',\\s*'), 'u'));
+  }
+  return { names, runs };
+}
+
+test('the ten tool names are declared once, in Boundary, and reused', () => {
   const surfacesFile = sources().find((f) => f.rel === 'src/boundary/surfaces.js');
-  assert.match(surfacesFile.text, /const TOOL_NAMES = Object\.freeze\(\[/u);
+  const { names, runs } = toolListPatterns(surfacesFile.text);
+  assert.strictEqual(names.length, 10, 'TOOL_NAMES holds the ten tools of AGSC-09-13');
+  const restates = (text) => runs.some((re) => re.test(text));
+  // The check refuses both lists it exists for, and a single name is no restatement.
+  assert.ok(restates("['ask', 'brief', 'check', 'compose']"), 'the 1.1 list is not refused');
+  assert.ok(restates("['ask', 'compose', 'links', 'propose', 'read']"), 'the 1.0 list is not refused');
+  assert.ok(!restates("name === 'ask'"));
   for (const file of sources()) {
     if (file.rel === 'src/boundary/surfaces.js') continue;
-    assert.ok(!/'ask',\s*'compose',\s*'links'/u.test(file.text),
-      `${file.rel} restates the tool list; require TOOL_NAMES instead`);
+    assert.ok(!restates(file.text), `${file.rel} restates the tool list; require TOOL_NAMES instead`);
   }
 });
 

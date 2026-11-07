@@ -218,7 +218,7 @@ runtime, and is loadable from CommonJS.
 | JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT |
 | `format` keyword | `ajv-formats` | 3.0.1 | MIT |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT |
-| property tests (dev) | `fast-check` | 4.10.1 | MIT |
+| property tests (dev) | `fast-check` | 4.10.2 | MIT |
 | TypeScript compiler, Node types, lint rules (dev) | `typescript`, `@types/node`, `typescript-eslint` | 6.0.3, 22.20.5, 8.72.1 | Apache-2.0, MIT, MIT |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
 
@@ -360,7 +360,7 @@ construct an adapter.
 
 | Need | Library | Version | Licence |
 |---|---|---|---|
-| `.env` raw tokenising | `dotenv` (`.parse()` only, never `.config()`) | 18.0.3 | BSD-2-Clause |
+| `.env` raw tokenising | `dotenv` (`.parse()` only, never `.config()`) | 18.0.9 | BSD-2-Clause |
 | argv parsing | `commander` | 15.0.0 | MIT |
 
 **`.env`** — `application/config/env.js#parseDotenv` calls `dotenv.parse(text)` for
@@ -514,7 +514,7 @@ checkClaims(config, proposal, board) -> { accepted, findings, held_after }
 | Need | Library | Version | Licence |
 |---|---|---|---|
 | Markdown (CommonMark 0.31.2 + GFM tables) | `markdown-it` | 15.0.3 | MIT |
-| XML/SVG allow-list | `fast-xml-parser` | 5.11.1 | MIT |
+| XML/SVG allow-list | `fast-xml-parser` | 5.11.2 | MIT |
 
 `markdown-it` runs `{html:false, linkify:false, typographer:false}`: raw HTML never
 passes through, a bare URL is never turned into a link behind the author's back, and
@@ -980,7 +980,9 @@ bundle({ specVersion, brief?, domain? }) -> the page script; exportedNames({ bri
 section(item, {instant, items, route}) -> html | ''   // '' unless item is a saved architecture whose selection block reads; a brief above derivedBound gives a section that says so
 // composition/conform.js
 areasForLevel(level); claimCompleteness(claim); divergenceVerdict(d, options)
-divergenceVerdicts(list, options); crossImplementationClaim(claimed); report(input)
+divergenceVerdicts(list, options); report(input)
+crossImplementationClaim(claimed) -> {accepted, excepted, rejected, reason}   // AGSC-04-24; excepted: accepted file -> members no case pins (export-manifest.json -> ['spec_version'])
+CROSS_IMPLEMENTATION; CROSS_IMPLEMENTATION_1_1   // the 1.0 routes and Harness kinds; the 1.1 files, each {artefact, cases, except, named_by, test(name)}
 // boundary/surfaces.js
 declare({base, emitted, mcpServed, surfaces}) -> link objects
 validate({declared, emittedUndeclared, resolves, pinningVectors, responderDeclared}) -> Finding[]

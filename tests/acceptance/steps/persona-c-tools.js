@@ -16,6 +16,15 @@ const call = async (client, name, args) => (await client.callTool({ arguments: a
 
 module.exports = [
   {
+    pattern: 'the item "handoff" lists itself under "related", the Link warning "AGSC-E313" (AGSC-03-23)',
+    run(world) {
+      const rel = 'content/concepts/handoff.md';
+      const text = world.read(rel);
+      assert.ok(!/^related:/mu.test(text), 'the fixture already has a related key on handoff');
+      world.write(rel, text.replace(/^requires:\n/mu, 'related:\n  - handoff\nrequires:\n'));
+    },
+  },
+  {
     pattern: 'the agent calls tool "explain" with key "required-by", source "mcp" and target "a2a"',
     async run(world) {
       world.state.result = await call(world.state.client, 'explain', { key: 'required-by', source: 'mcp', target: 'a2a' });
@@ -58,6 +67,10 @@ module.exports = [
         .filter((rel) => !['draft', 'retired'].includes(splitItem(world.read(`content/${rel}`)).frontmatter.status))
         .map((rel) => rel.split('/')[1].slice(0, -3));
       assert.deepStrictEqual(r.body.selection, [...listed].sort());
+      // The Given step seeded one warning, so the loop below has a finding to check.
+      assert.ok(r.body.findings.length > 0, 'check returned no finding, so no warning was checked');
+      assert.ok(r.body.findings.some((f) => f.code === 'AGSC-E313' && JSON.stringify(f).includes('handoff')),
+        JSON.stringify(r.body.findings));
       for (const finding of r.body.findings) {
         assert.match(finding.code, /^AGSC-E31[3-6]$/u);
         for (const member of ['col', 'file', 'line', 'message']) assert.ok(!(member in finding), `${member} in ${JSON.stringify(finding)}`);

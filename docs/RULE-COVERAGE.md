@@ -12,10 +12,10 @@ A rule counts as verified when at least one of these names it: a live conformanc
 |---|---:|
 | Conformance vector | 211 |
 | Unit, integration or architecture test | 356 |
-| Executed acceptance scenario | 103 |
+| Executed acceptance scenario | 104 |
 | Checker header | 39 |
 
-Acceptance scenarios: 164 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 103 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 164 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 104 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -225,7 +225,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-19 | VERIFIED | yes | `imp-0010` | `knowledge/relations.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-03-20 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `knowledge/relations.test.js`, `standard/rules.test.js` | `persona-g-team.feature#Team authors Mode-2 Concepts without a new item type` | — |
 | AGSC-03-21 | PROSE-ONLY | — | — | — | — | — |
-| AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
+| AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk` | — |
 | AGSC-03-24 | VERIFIED | yes | `links-0012`, `links-0013` | `distribution/tool-answers.test.js`, `knowledge/links.test.js` | — | — |
 | AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-03-26 | VERIFIED | yes | `links-0016`, `links-0017` | `distribution/tool-answers.test.js`, `knowledge/links.test.js` | — | — |
@@ -427,7 +427,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-14b | VERIFIED | yes | `cli-0018` | `acceptance/steps/persona-c.js`, `distribution/mcp-client.test.js`, `distribution/mcp-resources.test.js` +7 | `persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP`, `persona-c-agent-mcp.feature#An MCP client lists and gets the one prompt` | — |
 | AGSC-09-15 | VERIFIED | — | — | `standard/consistency.test.js` | — | — |
 | AGSC-09-16 | VERIFIED | yes | `cli-0008`, `cli-0026` | `acceptance/steps/persona-c.js`, `bench/kit.test.js`, `distribution/compose-page-run.test.js` +13 | `persona-c-agent-mcp.feature#A page agent calls the ten page tools without a browser`, `persona-c-agent-mcp.feature#A page agent calls the ten page tools in a browser through document.modelContext`, `persona-c-agent-mcp.feature#An MCP client composes a selection through the compose tool` | — |
-| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | `acceptance/steps/persona-h.js`, `arch/headers-unified.test.js`, `interchange/export-manifest-cli.test.js` +1 | — | — |
+| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | `acceptance/steps/persona-h.js`, `arch/headers-unified.test.js`, `composition/conform.test.js` +2 | — | — |
 | AGSC-09-18 | VERIFIED | yes | `cli-0029`, `cli-0030`, `cli-0031` | `acceptance/steps/persona-c-http.js`, `application/cli/mcp-http-verb.test.js`, `distribution/mcp-http.test.js` | `persona-c-agent-mcp.feature#An agent on the same machine reaches the tool server over Streamable HTTP, and a page of another site is refused` | — |
 | AGSC-09-19 | VERIFIED | yes | `cli-0032`, `cli-0033`, `cli-0034` +1 | `acceptance/steps/persona-c-revisions.js`, `boundary/surfaces.test.js`, `distribution/mcp-client.test.js` +3 | `persona-c-agent-mcp.feature#An agent of the revision 2026-07-28 discovers the server and is answered with no handshake` | — |
 | AGSC-09-20 | VERIFIED | yes | — | `acceptance/steps/persona-i.js`, `application/cli/site-checks-verbs.test.js`, `knowledge/site-checks.test.js` | `persona-i-maintainer.feature#The site's own invariants and competency questions are checked by verify and ci, never by lint` | — |

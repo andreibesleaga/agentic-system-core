@@ -71,6 +71,8 @@ test('AGSC-06-34 / AGSC-06-42: the card and the catalogue files, their digests o
   assert.deepEqual(JSON.parse(text(files, '/.well-known/ard.json')).entries.map((e) => e.metadata.digest), [hex(card), hex(document)]);
   assert.equal(served(files, '/.well-known/ai-catalog.json')['Content-Type'], 'application/ai-catalog+json');
   assert.equal(served(files, '/.well-known/ard.json')['Content-Type'], 'application/json');
+  // The card is a JSON document (AGSC-06-34): its block carries the type beside the CORS pair.
+  assert.equal(served(files, '/.well-known/agent-card.json')['Content-Type'], 'application/json');
   for (const route of ['/.well-known/agent-card.json', '/.well-known/ard.json', '/.well-known/ai-catalog.json']) {
     assert.equal(served(files, route)['Access-Control-Allow-Origin'], '*', route);
   }

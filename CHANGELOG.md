@@ -73,7 +73,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (every other source still to `src/<context>/<name>.js`) and names a compiled runner whose source is gone;
   `eslint.config.js`, `tsconfig.json` and `tests/arch/typescript-parts.test.js` follow the mapping.
 - `docs/MEASUREMENTS.md` §9 gains a dated paragraph with the install and the cold start measured again on
-  the 1.1 tree (87 packages; `agsc --version`, `lint` and `build` load no MCP or A2A module); the 1.0.0
+  the 1.1 tree (86 packages; `agsc --version`, `lint` and `build` load no MCP or A2A module); the 1.0.0
   figures stay as they were.
 
 - The local tool server speaks MCP revision 2026-07-28 beside 2025-11-25 (AGSC-09-19; vectors
@@ -1359,6 +1359,42 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A cross-implementation claim (AGSC-04-24, as amended for 1.1.0) now accepts the files that 1.1 adds
+  to the obligation, each under the name the expected-byte cases that pin it use: `skos.ttl`
+  (`graph-0040`), `closure.nt` (`graph-0041`, `graph-0042`), `dist/suggestions.json` (`lint-0046` to
+  `lint-0050`), the four brief files `BRIEF.md`, `brief.json`, `brief.mmd` and `context.md`
+  (`compose-0024`, `compose-0034`), `/chunks-index.toon` (`chk-0010`), `context-map.json`
+  (`compose-0032`), the blueprint files `blueprint/c4-context.mmd`, `blueprint/c4-containers.mmd`,
+  `blueprint/c4-components.mmd` (`compose-0028`), `blueprint/decisions/NNNN-<slug>.md`
+  (`compose-0029`) and `blueprint/build-plan.md` (`compose-0030`), `export-manifest.json`
+  (`export-0003`, `export-0004`) and the compiled diagram `<slug>.svg` (`bundle-0018`, `bundle-0019`).
+  Before, only the 1.0 routes and the Harness kinds were accepted, so every 1.1 file of a claim was
+  rejected. The result of `composition/conform.js#crossImplementationClaim` gains `excepted`, which
+  maps an accepted file to the members no case pins: the manifest's own `spec_version`
+  (`tests/composition/conform.test.js`). No emitted byte changes.
+- `_headers` gives `/.well-known/agent-card.json` a `Content-Type: application/json` line beside its
+  cross-origin pair, as `/.well-known/ard.json` already had (AGSC-06-34, AGSC-06-17: each address is
+  one block with every header it takes). Before, the card was served with the host's default type.
+  Bytes change only on a node that publishes an agent card: its `_headers` gains that one line. No
+  reference node declares a card.
+- `agsc build` on a folder with no `content/index.md` reports the missing Bundle root (`AGSC-E901`)
+  and no longer also warns that the description of that missing file is too short for the Dataset
+  block (AGSC-06-41). Only standard error changes.
+- `docs/SPEC.md` says that `agsc mcp` speaks MCP 2026-07-28 and 2025-11-25 over standard input and
+  output, and 2026-07-28 over Streamable HTTP on loopback with `--http`; it still said the server
+  would move to 2026-07-28 in 1.1. The library tables of `src/README.md` and `src/REFERENCE.md` give
+  the pinned `fast-xml-parser` 5.11.2, `dotenv` 18.0.9 and `fast-check` 4.10.2, and
+  `tests/arch/dependency-tables.test.js` now holds every Version cell of those tables to
+  `package.json`. `docs/ARCHITECTURE-DDD.md` no longer says that all of `bench/` requires nothing of
+  `src/`: that holds for `tools/bench` and `bench/runners/`, while `bench/measure.js` loads engine
+  modules on purpose through its parity and security layers.
+- Three tests check what their rules say: the architecture test of the tool names refuses a module
+  that restates the ten names of 1.1 or the seven of 1.0, read from `TOOL_NAMES`
+  (`tests/arch/surface-arrows.test.js`); the page tools are compared with the local server as
+  serialized strings, so a member in another order fails, as AGSC-09-16 requires
+  (`tests/distribution/page-tools.test.js`); and the persona C scenario of the `check` tool seeds one
+  Link warning (`AGSC-E313`, an item that lists itself under `related`) so that its check of each
+  warning runs on at least one (`features/persona-c-agent-mcp.feature`).
 - `tools/bench --dry-run --node` and `kit.js gold-index` no longer stop on an uncaught exception when a
   line of the chunk export is not JSON or lacks `id`, `digest`, `iri`, `item`, `ordinal` or `text`: each
   such line is `AGSC-E201` with its file and line. A sharded export (AGSC-06-31) is read through the

@@ -118,7 +118,8 @@ Feature: Agent reader queries structured knowledge without scraping
 
   @PRD-023 @PRD-061 @agent @mode-1 @matrix-A2
   Scenario: An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk
-    Given "npx agentic-system-core mcp" is running over the acceptance Bundle
+    Given the item "handoff" lists itself under "related", the Link warning "AGSC-E313" (AGSC-03-23)
+    And "npx agentic-system-core mcp" is running over the acceptance Bundle
     When the agent calls tool "explain" with key "required-by", source "mcp" and target "a2a"
     Then the relation holds because "a2a" authors "requires" toward "mcp", the reading "inverse" (AGSC-05-33)
     And a relation that no Link gives is the answer "holds" false with no step, not an error

@@ -200,11 +200,13 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
       }
     }
   }
+  // AGSC-09-16: "the same members, in the same order", so the serialized strings are
+  // compared; a deep comparison would let a reordered member pass.
   for (const [name, args] of calls) {
-    const expected = JSON.parse(JSON.stringify(local.call(name, args)));
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(page.call(name, args))), expected,
+    const expected = JSON.stringify(local.call(name, args));
+    assert.strictEqual(JSON.stringify(page.call(name, args)), expected,
       `${name}(${JSON.stringify(args)}) differs between the EMITTED page script and the local server`);
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(here.call(name, args))), expected,
+    assert.strictEqual(JSON.stringify(here.call(name, args)), expected,
       `${name}(${JSON.stringify(args)}) differs between the module and the local server`);
   }
   assert.ok(calls.length >= 20, `only ${calls.length} calls were compared`);

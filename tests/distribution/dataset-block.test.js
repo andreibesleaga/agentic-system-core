@@ -7,7 +7,8 @@
 //   * `creator` comes from `bundle.creator`, else `site.author` with `site.author_orcid`, and the
 //     same Person is `prov:wasAttributedTo`; the licence URL is that of AGSC-06-44.
 //   * A restricted node names no download and claims no free access.
-//   * A description under 50 characters is the warning AGSC-E202.
+//   * A description under 50 characters is the warning AGSC-E202, and a Bundle with no root
+//     document gets the root error alone, not a warning about the file that is not there.
 //   * fast-check: the block is a pure function of its input, whatever order the served routes
 //     come in, and building it twice gives the same bytes.
 //
@@ -15,6 +16,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const fc = require('fast-check');
 const jsonld = require('jsonld');
 
@@ -132,6 +137,23 @@ test('AGSC-06-41: a description shorter than 50 characters is the warning AGSC-E
   assert.deepEqual(datasetFindings('x'.repeat(50)), []);
   assert.deepEqual(datasetFindings('é'.repeat(50)), [], 'characters, not bytes');
   assert.equal(datasetFindings(undefined).length, 1, 'no description at all');
+});
+
+test('AGSC-06-41: with no content/index.md, build reports the missing root and no description warning', () => {
+  const root = path.resolve(__dirname, '..', '..');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-no-root-'));
+  try {
+    fs.cpSync(path.join(root, 'tests', 'fixtures', 'minimal'), dir, { recursive: true });
+    fs.rmSync(path.join(dir, 'content', 'index.md'));
+    const env = { ...process.env, SOURCE_DATE_EPOCH: '1767225600' };
+    delete env.AGSC_DOI;
+    const r = spawnSync(process.execPath, [path.join(root, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /AGSC-E901 content\/index\.md, the Bundle root, is not there/u);
+    assert.doesNotMatch(r.stderr, /AGSC-06-41/u, 'a warning about a file that does not exist');
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
 });
 
 test('property: the block depends on the served set, not on its order, and is the same bytes twice', () => {

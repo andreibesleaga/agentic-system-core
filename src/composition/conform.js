@@ -14,6 +14,8 @@
  * PURE.
  */
 
+const { SLUG_PATTERN } = require('../knowledge/slug.js');
+
 /**
  * AGSC-09-04: the twenty-five areas in the order the rule names them. From 1.1 a
  * claim lists a Level's areas in this order (AGSC-10-15, AGSC-09-01(d)).
@@ -82,6 +84,46 @@ const CROSS_IMPLEMENTATION = Object.freeze([
   // leading slash — and AGSC-04-24 says their obligation
   // is discharged only when `tests/vectors/harness/` is populated, which it is not.
   'harness.jsonld', 'AGENTS.md', 'workspace.dsl', 'diagram.mmd', 'arc42.md',
+]);
+
+/**
+ * AGSC-04-24 (amended 2026-10-29 for 1.1.0): the files 1.1 adds to the obligation. Each
+ * entry is spelled as the rule `named_by` names the file (`<slug>` and `NNNN` stand for a
+ * slug and a four-digit number), under the name the expected-byte cases in `cases` use, and
+ * is claimable only through those cases; a file that no case pins is outside the obligation.
+ * `except` names the members no case pins: the manifest's own `spec_version` (AGSC-09-17).
+ * None of these is a route except the chunk index, so only it takes a leading slash. The
+ * compiled diagram is the SVG a page inlines (AGSC-01-07, AGSC-02-13), not the page.
+ */
+function entry(artefact, namedBy, cases, except) {
+  const pattern = artefact.replace(/[.]/gu, '\\.').replace('NNNN', '\\d{4}')
+    .replace('<slug>', SLUG_PATTERN.replace(/^\^|\$$/gu, ''));
+  const re = new RegExp(`^${artefact.startsWith('/') ? `/?${pattern.slice(1)}` : pattern}$`, 'u');
+  return Object.freeze({
+    artefact, cases: Object.freeze(cases), except: Object.freeze(except || []), named_by: namedBy,
+    test: (name) => re.test(name),
+  });
+}
+
+const BRIEF_CASES = ['compose-0024', 'compose-0034'];
+
+const CROSS_IMPLEMENTATION_1_1 = Object.freeze([
+  entry('skos.ttl', 'AGSC-05-36', ['graph-0040']),
+  entry('closure.nt', 'AGSC-05-37', ['graph-0041', 'graph-0042']),
+  entry('dist/suggestions.json', 'AGSC-05-35', ['lint-0046', 'lint-0047', 'lint-0048', 'lint-0049', 'lint-0050']),
+  entry('BRIEF.md', 'AGSC-07-25', BRIEF_CASES),
+  entry('brief.json', 'AGSC-07-25', BRIEF_CASES),
+  entry('brief.mmd', 'AGSC-07-25', BRIEF_CASES),
+  entry('context.md', 'AGSC-07-25', BRIEF_CASES),
+  entry('/chunks-index.toon', 'AGSC-06-37', ['chk-0010']),
+  entry('context-map.json', 'AGSC-07-30', ['compose-0032']),
+  entry('blueprint/c4-context.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/c4-containers.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/c4-components.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/decisions/NNNN-<slug>.md', 'AGSC-07-29', ['compose-0029']),
+  entry('blueprint/build-plan.md', 'AGSC-07-29', ['compose-0030']),
+  entry('export-manifest.json', 'AGSC-09-17', ['export-0003', 'export-0004'], ['spec_version']),
+  entry('<slug>.svg', 'AGSC-02-13', ['bundle-0018', 'bundle-0019']),
 ]);
 
 /** The reason AGSC-04-24 gives for keeping generated HTML out of that set. */
@@ -156,11 +198,18 @@ function divergenceVerdicts(divergences, options) {
   })));
 }
 
+/** The 1.1 entry a claimed name falls under, or undefined. */
+function entry11(name) {
+  return CROSS_IMPLEMENTATION_1_1.find((e) => e.test(name));
+}
+
 /**
- * crossImplementationClaim(claimed) -> { accepted, rejected, reason }
+ * crossImplementationClaim(claimed) -> { accepted, excepted, rejected, reason }
  * AGSC-04-24: byte-identity across implementations is claimable only for the
  * machine artefacts. A claim listing generated HTML has that entry rejected
- * and the rest of the claim stands.
+ * and the rest of the claim stands. `excepted` maps each accepted name that has
+ * members outside the obligation to those members (from 1.1, the manifest's
+ * `spec_version`); it is `{}` when there is none.
  *
  * A claimed ROUTE is recognised in the AGSC-06-01 form, with its leading slash
  * (`conform-0004`); the bare form without the slash is also
@@ -170,21 +219,27 @@ function divergenceVerdicts(divergences, options) {
 function crossImplementationClaim(claimed) {
   const list = Array.isArray(claimed) ? claimed : [];
   const accepted = [];
+  const excepted = {};
   const rejected = [];
   const routes = new Set(CROSS_IMPLEMENTATION.flatMap((r) => [r, r.replace(/^\//u, '')]));
   for (const artefact of list) {
     const name = String(artefact);
     const isHtml = /\.html?$/u.test(name);
+    const added = entry11(name);
     const known = routes.has(name)
       || /^\/?search-\d{2}\.json$/u.test(name)
       || /^\/?chunks-\d{2}\.jsonl$/u.test(name)
       || /^\/?boards\//u.test(name)
-      || /\.jsonld$/u.test(name);
+      || /\.jsonld$/u.test(name)
+      || added !== undefined;
     if (isHtml || !known) rejected.push(name);
     else accepted.push(name);
+    // No 1.1 entry is an HTML file, so an entry found here was accepted above.
+    if (added && added.except.length > 0) excepted[name] = added.except;
   }
   return Object.freeze({
     accepted: Object.freeze(accepted),
+    excepted: Object.freeze(excepted),
     reason: HTML_REASON,
     rejected: Object.freeze(rejected),
   });
@@ -220,6 +275,7 @@ function report(input) {
 
 module.exports = {
   CROSS_IMPLEMENTATION,
+  CROSS_IMPLEMENTATION_1_1,
   HIGHER_LEVEL_CASES,
   HTML_REASON,
   LEVEL_NAMES,

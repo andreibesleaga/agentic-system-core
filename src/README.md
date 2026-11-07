@@ -223,13 +223,13 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
 | Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js`, `knowledge/skos-export.js`, `knowledge/domain.js` and the crosswalk reader of `boundary/federation.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |
-| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
+| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.2 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
 | SHACL Core validation | `rdf-validate-shacl` | 0.6.5 | MIT | `knowledge/shacl-core.js` only (`tests/arch/shacl-library.test.js`), for a site's own invariants (AGSC-05-41); never at build |
 | SPARQL 1.1 parser | `@traqula/parser-sparql-1-1` | 1.4.0 | MIT | `knowledge/competency.js` only (`tests/arch/sparql-library.test.js`), for a site's competency questions (AGSC-05-41); never at build |
 | SPARQL 1.1 engine | `oxigraph` | 0.5.13 | MIT OR Apache-2.0 | `knowledge/competency.js` only, the same test; run by `verify` and `ci` (AGSC-09-20), never at build. Its WebAssembly build is also the engine of `/query/`, vendored byte for byte under `distribution/vendor/oxigraph-0.5.13/` and kept equal to this dependency by `tests/arch/query-engine-pin.test.js`; its Node build runs the page's examples in `tests/distribution/query-examples.test.js` |
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |
-| `.env` tokenising (`parse` only) | `dotenv` | 18.0.3 | BSD-2-Clause | `application/config/env.js` |
+| `.env` tokenising (`parse` only) | `dotenv` | 18.0.9 | BSD-2-Clause | `application/config/env.js` |
 | unified diffs | `diff` | 9.0.0 | BSD-3-Clause | `application/cli/verbs/propose.js` |
 | MCP server, revisions 2026-07-28 and 2025-11-25 | `@modelcontextprotocol/server` (with `@modelcontextprotocol/core`) | 2.4.0 | Apache-2.0 | `distribution/mcp-core.js` (from `src-ts/distribution/mcp-core.ts`) |
 | MCP Streamable HTTP transport for Node (`toNodeHandler`, the `Host` and `Origin` guards) | `@modelcontextprotocol/node` (with `hono`, `@hono/node-server`, MIT) | 2.1.2 | Apache-2.0 | `distribution/mcp-http.js` (from `src-ts/distribution/mcp-http.ts`) |
@@ -238,7 +238,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | RFC 8288 `Link` header parser, to read the emitted header independently | `http-link-header` | 1.1.4 | MIT | the conformance handler of `disc-0026` (`tests/conformance/areas/_discovery-web.js`, shipped in the package so that `agsc conform` runs every vector) and the tests; a run-time dependency from B08-WP5, a development one before |
 | TOON encoding | `@toon-format/toon` | 4.4.0 | MIT | `knowledge/chunks-index.js`, the tabular chunk index that the build serves as `/chunks-index.toon` (AGSC-06-37) and `interchange/adapters/llm-context.js` writes beside the node |
 | RFC 9651 Structured Fields (the Dictionary of an RFC 9530 digest value) | `structured-headers` | 2.1.1 | MIT | `knowledge/digest-field.js`, the one writer of `sha-256=:<base64>:` (AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17) |
-| property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |
+| property tests (dev) | `fast-check` | 4.10.2 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
 | Gherkin parser (dev) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 | MIT | the acceptance runner |
 | TypeScript compiler (dev) | `typescript` | 6.0.3 | Apache-2.0 | `tools/build-ts` and `npm run typecheck`, for the sources under `src-ts/`; never at run time |

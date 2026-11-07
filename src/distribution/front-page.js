@@ -117,7 +117,9 @@ function frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOpt
     config: bundle.config || {}, description: indexFrontmatter.description, hasLegal, instant, name: title, served,
   }));
   return {
-    findings: datasetFindings(indexFrontmatter.description),
+    // With no root document the build already fails on it (AGSC-E901); a warning about the
+    // length of its description would be about a file that is not there.
+    findings: bundle.index ? datasetFindings(indexFrontmatter.description) : [],
     html: html.homePage({ description: indexFrontmatter.description, introHtml, sections, title },
       { ...pageOptions, jsonld, route: '/' }),
   };

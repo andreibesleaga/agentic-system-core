@@ -61,12 +61,13 @@ const PUBLIC_ARTEFACTS = Object.freeze([
 /**
  * AGSC-06-34, AGSC-06-42, AGSC-06-37: the files a build writes only on a condition — the well-known
  * files on a switch, the tabular chunk index by the size of the published set — and the content
- * type each is served with (`null`: the host's default for `.json`; `text/toon` is the provisional
- * media type the TOON specification names). Each is a public artefact (AGSC-11-03), so its block
+ * type each is served with (`text/toon` is the provisional media type the TOON specification
+ * names). Each is a public artefact (AGSC-11-03), so its block
  * exists only where the build wrote the file and no other node's `_headers` changes.
  */
 const OPT_IN_FILES = Object.freeze([
-  [A2A_CARD_ROUTE, null],
+  // The Agent Card is a JSON document (AGSC-06-34), served as JSON like /.well-known/ard.json.
+  [A2A_CARD_ROUTE, 'application/json'],
   [aiCatalog.ARD_PATH, aiCatalog.ARD_MEDIA_TYPE],
   [aiCatalog.AI_CATALOG_PATH, aiCatalog.AI_CATALOG_MEDIA_TYPE],
   ['/chunks-index.toon', 'text/toon; charset=utf-8'],
@@ -249,7 +250,7 @@ function headerSets(config = {}, routes = []) {
   }
   // AGSC-06-34, AGSC-06-42, AGSC-06-37: the files written on a condition, public artefacts, where the build wrote them.
   for (const [route, type] of OPT_IN_FILES.filter(([one]) => routes.includes(one))) {
-    add(route, [...(restricted ? [] : CORS), ...(type === null ? [] : [['Content-Type', type]])]);
+    add(route, [...(restricted ? [] : CORS), ['Content-Type', type]]);
   }
   // AGSC-06-06: the versioned copies never change; no other address of `/ns/` gets the value.
   for (const version of versionDirectories(routes)) add(`/ns/${version}/*`, [['Cache-Control', IMMUTABLE]]);
