@@ -7,6 +7,13 @@
 // member that AGSC-06-28 names, and the citation record of a chunk that the tool `read`
 // carries (AGSC-09-13) is stated here.
 //
+// From 1.1: the members `abstract` (the item's own description), `license_url` (the
+// licence URL of AGSC-06-44) and, on the switch `chunks.content_digest`, `content_digest`
+// (AGSC-06-29), which a reader of 1.0 ignores (AGSC-00-21); no text begins with a blank
+// line (AGSC-06-45: a 1.0 writer kept the blank lines that began a body in chunk 0, so the
+// `text` and `digest` of that chunk change, its `id` does not); and the count and set
+// commitment of the chunks surface link (`commitment`, AGSC-06-44).
+//
 // The chunk export is Knowledge, not Distribution (spec/06 §6.5): what a chunk IS
 // — where it is cut, what it carries, what its identifier is — is a property of the
 // Bundle, and `distribution/site.js` only writes the bytes this module produces.
@@ -20,9 +27,11 @@
 // one algorithm decides what an anchor is, so a chunk's `section` is always the
 // anchor the rendered page carries.
 //
-// Vectors: chk-0001…chk-0006, chk-0008.
+// Vectors: chk-0002…chk-0005, chk-0009…chk-0016 (chk-0001, chk-0006 and chk-0008 were
+// withdrawn at 1.1 with the successors chk-0011…chk-0013).
 
 const { createHash } = require('node:crypto');
+const { sha256Field } = require('./digest-field.js');
 const { compareCodePoint } = require('./unicode.js');
 const markdown = require('./markdown.js');
 const { LINK_KEYS } = require('./relations.js'); // AGSC-03-01: the fourteen Link keys
@@ -122,13 +131,32 @@ function byteLength(s) {
   return Buffer.byteLength(s, 'utf8');
 }
 
+/** AGSC-06-45: a line is blank when it is empty or holds only U+0020 and U+0009. */
+const BLANK_LINE = /^[ \t]*$/u;
+
+/**
+ * AGSC-06-45: a text starts at its first line that is not blank. The blank lines before it
+ * belong to no chunk; blank lines inside the text are kept. A text with no other line is
+ * the empty string.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function fromFirstLine(text) {
+  const lines = String(text).split('\n');
+  let first = 0;
+  while (first < lines.length - 1 && BLANK_LINE.test(lines[first])) first += 1;
+  return first === lines.length - 1 && BLANK_LINE.test(lines[first]) ? '' : lines.slice(first).join('\n');
+}
+
 /**
  * Cut 1 (AGSC-06-27): split a body at every ATX heading of level 2 or 3 outside a
  * fenced code block. The text before the first such heading is section `''`
  * (chunk 0), dropped when empty; each heading with its following text is one
  * section, the heading line included. The blank lines immediately before a cut
- * belong to neither section, so a section's text ends with exactly one LF and
- * never begins with one.
+ * belong to neither section, so a section's text ends with exactly one LF; and the
+ * blank lines that begin a body belong to no section, so chunk 0 starts at its first
+ * line that is not blank (AGSC-06-45).
  *
  * @param {string} body
  * @returns {Array<{section:string, text:string}>}
@@ -145,7 +173,7 @@ function sections(body) {
     // empty element, which this same trim removes.
     while (slice.length > 0 && slice[slice.length - 1].trim() === '') slice.pop();
     if (slice.length === 0) continue; // an empty chunk 0 is not emitted
-    out.push({ section: i === 0 ? '' : cuts[i - 1].anchor, text: `${slice.join('\n')}\n` });
+    out.push({ section: i === 0 ? '' : cuts[i - 1].anchor, text: fromFirstLine(`${slice.join('\n')}\n`) });
   }
   return out;
 }
@@ -282,6 +310,11 @@ function keepsPage(item, releases) {
   return !heldBack(item, releases);
 }
 
+/**
+ * One chunk line (AGSC-06-29). The members of 1.1 are added only under their condition:
+ * `abstract` where the item has a description, `license_url` where the node has a licence URL,
+ * `content_digest` on the switch; JCS puts every member in its place when the line is written.
+ */
 function record(fields) {
   const out = {
     digest: fields.digest,
@@ -300,7 +333,15 @@ function record(fields) {
   };
   if (fields.subkind != null) out.subkind = fields.subkind;
   if (fields.links != null) out.links = fields.links;
+  if (fields.abstract != null) out.abstract = fields.abstract;
+  if (fields.licenseUrl != null) out.license_url = fields.licenseUrl;
+  if (fields.contentDigest === true) out.content_digest = sha256Field(fields.text);
   return out;
+}
+
+/** AGSC-06-29: the `abstract` of an item's chunks — its own `description`, unchanged, when it has one. */
+function abstractOf(item) {
+  return typeof item.description === 'string' && item.description !== '' ? item.description : null;
 }
 
 /**
@@ -345,6 +386,8 @@ function citationRecord(line, bundleVersion) {
  * @param {string} [options.license] `bundle.license_prose` (AGSC-01-18).
  * @param {object} [options.attachmentBytes] file name → text, for text attachments.
  * @param {object} [options.releases] the AGSC-01-20 switchboard.
+ * @param {string|null} [options.licenseUrl] the node's licence URL (`licenseUrl()`, AGSC-06-44).
+ * @param {boolean} [options.contentDigest] `chunks.content_digest` (AGSC-06-29), default false.
  * @returns {{records:Array<object>, findings:Array<object>}}
  */
 function records(items, options = {}) {
@@ -366,6 +409,7 @@ function records(items, options = {}) {
     const links = linksOf(item);
     const common = {
       iri, item: item.slug, kind: item.type || 'concept', license, title, links,
+      abstract: abstractOf(item), licenseUrl: options.licenseUrl, contentDigest: options.contentDigest === true,
     };
     if (item.type === 'concept' && item.kind != null) common.subkind = item.kind;
 
@@ -381,7 +425,9 @@ function records(items, options = {}) {
     }
 
     for (const part of sections(item.body == null ? '' : item.body)) {
-      splitBySize(part.text, maxBytes).forEach((text, ordinal) => {
+      // AGSC-06-45: a piece of Cut 2 that begins on a blank line starts after it; a piece of
+      // blank lines alone is no chunk, and the ordinals count the pieces that remain.
+      splitBySize(part.text, maxBytes).map(fromFirstLine).filter((text) => text !== '').forEach((text, ordinal) => {
         out.push(record({
           ...common, ordinal, section: part.section, type: 'text', text,
           digest: digestOf(text), id: chunkId(iri, part.section, ordinal),
@@ -474,8 +520,24 @@ function files(list, canonicalize, options = {}) {
   };
 }
 
+/**
+ * AGSC-06-44: what the chunks surface link states about the lines, besides the digest of the
+ * file: `agsc-chunk-count`, the decimal number of lines, and `agsc-chunk-set`, the SHA-256 over
+ * the `id` of every line in file order (shard order when sharded), each as its 64 hexadecimal
+ * characters and one LF — for no line, the SHA-256 of the empty byte string. A reader that holds
+ * the lines recomputes both and so finds a line that was dropped, added or moved.
+ *
+ * @param {Array<{id:string}>} list the lines, in file order.
+ * @returns {{count:string, set:string}}
+ */
+function commitment(list) {
+  return { count: String(list.length), set: sha256Field(list.map((r) => `${r.id}\n`).join('')) };
+}
+
 module.exports = {
   records,
+  commitment,
+  fromFirstLine,
   serialize,
   files,
   sections,

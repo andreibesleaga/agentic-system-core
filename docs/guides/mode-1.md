@@ -155,7 +155,7 @@ node "$ENGINE/tools/validate-wellknown" node-a/www/.well-known/knowledge-linkset
 ```
 
 ```text expect
-validate-wellknown pass (level 2): 22 input file(s) read, 0 error(s), 0 warning(s)
+validate-wellknown pass (level 2): 26 input file(s) read, 0 error(s), 0 warning(s)
 ```
 
 The checker reads both discovery documents, recomputes every digest they declare, and

@@ -8,6 +8,8 @@
 
 **The chunk export.** `/chunks.jsonl` is the Bundle pre-split for agents: one line per chunk, cut at headings outside code fences and at a size bound, with a stable id, the text, provenance, licence and terms, and a digest. No embeddings.
 
+**From 1.1, the chunks can be checked as a set.** Each chunk line also carries the item's own description (`abstract`) and a licence address that resolves (`license_url`); no chunk text begins with a blank line. The discovery document states the digest of `/chunks.jsonl`, the number of lines and one hash over all their ids, so a reader finds a line that was dropped or added. A node with at most 500 items also serves `/chunks-index.toon`, a compact table of the lines (AGSC-06-29, AGSC-06-37, AGSC-06-44, AGSC-06-45).
+
 **Headers.** No third-party scripts, no beacons; strict security headers; public artefacts readable cross-origin.
 
 Rules: `spec/06-surfaces.md`, `AGSC-06-01` … `AGSC-06-36`.

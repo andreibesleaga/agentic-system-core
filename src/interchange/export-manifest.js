@@ -15,7 +15,8 @@
  * `files` has `{content_digest, path}` for each file of the export except the manifest,
  * by code point of `path`. `content_digest` is the value of a `Content-Digest` field,
  * `sha-256=:<base64>:` (RFC 9530, <https://www.rfc-editor.org/rfc/rfc9530.html>), borrowed
- * for the bytes of a file, so no header is involved.
+ * for the bytes of a file, so no header is involved; the value is written by the one
+ * Structured Fields writer, `knowledge/digest-field.js` (RFC 9651, through a library).
  *
  * WHAT THIS MODULE DOES NOT KNOW. The bundle hash is the SHA-256 of the `graph.nq` of the
  * build, and the item IRIs are those of the published items; the caller (the application
@@ -29,6 +30,7 @@
 
 const { createHash } = require('node:crypto');
 
+const { sha256Field } = require('../knowledge/digest-field.js');
 const { canonicalize } = require('../knowledge/jcs.js');
 const { bundleIri } = require('../knowledge/nquads.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
@@ -39,7 +41,7 @@ const FILE = 'export-manifest.json';
 
 /** `sha-256=:<base64>:` over the UTF-8 bytes of a file (RFC 9530). */
 function contentDigest(text) {
-  return `sha-256=:${createHash('sha256').update(Buffer.from(String(text), 'utf8')).digest('base64')}:`;
+  return sha256Field(String(text));
 }
 
 /** The lowercase-hex SHA-256 of the JCS form of the item IRIs in code-point order. */

@@ -66,7 +66,7 @@ node "$ENGINE/tools/validate-wellknown" www/.well-known/knowledge-linkset --leve
 ```
 
 ```text expect
-validate-wellknown pass (level 2): 11 input file(s) read, 0 error(s), 0 warning(s)
+validate-wellknown pass (level 2): 13 input file(s) read, 0 error(s), 0 warning(s)
 ```
 
 Level 2 is the level a published node claims: every link carries its digest, the graph

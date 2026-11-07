@@ -82,6 +82,16 @@ Feature: Agent uses a node as external auditable memory
     Then each shape gives one record per chunk, and every record keeps the item IRI, the chunk digest, the licence, the terms and the trust mark "untrusted"
     And no network call was attempted
 
+  @PRD-061 @agent
+  Scenario: An agent checks the chunks it holds against what the node states about them
+    Given a fresh copy of the acceptance Bundle
+    And the Bundle is built and served on loopback
+    When the agent fetches "/chunks.jsonl", "/chunks-index.toon" and the discovery document over loopback
+    Then the chunks surface link states the digest of the file, the number of lines and the commitment to their ids, and the agent recomputes all three
+    And the index has one row per chunk line, in the same order, with the first 16 characters of each line's id and digest
+    And with one chunk line dropped the recomputed count and commitment no longer match what the node states
+    And the shipped validate-wellknown passes at Level 2 over loopback
+
   @PRD-026 @agent
   Scenario: The JSON-lines export is exactly the per-item graph nodes
     Given the Bundle is built

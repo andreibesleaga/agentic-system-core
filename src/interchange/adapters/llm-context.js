@@ -8,7 +8,9 @@
  * export (AGSC-06-26…31):
  *
  *   `chunks-index.toon`  the UNIFORM metadata of every chunk, in TOON tabular form
- *                        (`@toon-format/toon@4.1.1`, spec 4.1 §9.3) — `id`, `item`,
+ *                        (`@toon-format/toon`, spec 4.1 §9.3; written by
+ *                        `knowledge/chunks-index.js`, the same bytes a 1.1 node serves
+ *                        as `/chunks-index.toon`, AGSC-06-37) — `id`, `item`,
  *                        `kind`, `section`, `ordinal`, `title`, `digest`, in the
  *                        order AGSC-06-29 fixes for the records themselves. Research
  *                        33 measured ~26 % fewer tokens than the equivalent JSONL
@@ -32,15 +34,13 @@
  * Requirements: PRD-026.
  */
 
-const { encode } = require('@toon-format/toon');
 const chunks = require('../../knowledge/chunks.js');
+// AGSC-06-37: the index is the one the node serves as `/chunks-index.toon`, from one writer.
+const { INDEX_COLUMNS, chunksIndexToon, indexRows, short } = require('../../knowledge/chunks-index.js');
 const { singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { fenceProse } = require('../../knowledge/markdown.js');
 const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
-
-/** The seven uniform members of the index, in AGSC-06-29's own member order. */
-const INDEX_COLUMNS = Object.freeze(['id', 'item', 'kind', 'section', 'ordinal', 'title', 'digest']);
 
 /** The keys this adapter claims, for the implementer documentation of AGSC-01-26a. */
 const CLAIMED_KEYS = Object.freeze(['digest', 'id', 'item', 'kind', 'links', 'ordinal',
@@ -48,54 +48,6 @@ const CLAIMED_KEYS = Object.freeze(['digest', 'id', 'item', 'kind', 'links', 'or
 
 /** The two file names, relative to the adapter's output directory. */
 const FILES = Object.freeze(['chunks-index.toon', 'llms-ctx.txt']);
-
-/** A 64-hex digest truncated to the sixteen characters the index carries. */
-function short(hex) {
-  return String(hex == null ? '' : hex).slice(0, 16);
-}
-
-/**
- * The index rows. Every member is a string except `ordinal`, which is the decimal
- * ordinal AGSC-06-28 already fixes, so the table is uniform in the sense TOON's
- * tabular form requires (spec 4.1 §9.3, "arrays of uniform objects").
- *
- * @param {Array<object>} records chunk records from `knowledge/chunks.js#records`.
- * @returns {Array<object>}
- */
-function indexRows(records) {
-  return (records || []).map((r) => ({
-    digest: short(r.digest),
-    id: short(r.id),
-    item: String(r.item),
-    kind: String(r.kind),
-    ordinal: Number(r.ordinal),
-    section: r.section == null ? '' : String(r.section),
-    title: r.title == null ? '' : String(r.title),
-  }));
-}
-
-/**
- * `chunks-index.toon`. The header line is
- * `chunks[<n>]{id,item,kind,section,ordinal,title,digest}:` and the rows follow in
- * the record order of AGSC-06-29; a Bundle with no chunk emits the header with a
- * count of zero and no row, never an empty file, so the artefact is always readable.
- *
- * @param {Array<object>} records
- * @returns {string} LF-terminated, exactly one trailing LF (AGSC-04-07).
- */
-function chunksIndexToon(records) {
-  const rows = indexRows(records).map((row) => {
-    const ordered = {};
-    for (const column of INDEX_COLUMNS) ordered[column] = row[column];
-    return ordered;
-  });
-  // The encoder renders an empty array as `chunks: []` (spec 4.1 §9.1, the inline
-  // form), which carries no column list. The tabular header is written here for that
-  // one case so the artefact always declares its columns and always decodes to the
-  // same empty table — proven by decoding it back in the suite.
-  if (rows.length === 0) return `chunks[0]{${INDEX_COLUMNS.join(',')}}:\n`;
-  return withOneTrailingFeed(encode({ chunks: rows }));
-}
 
 /**
  * `llms-ctx.txt`. The header is AGSC-06-15's, followed by the one sentence that

@@ -138,6 +138,7 @@
         "n3": "2.7.12",
         "oxigraph": "0.5.13",
         "rdf-validate-shacl": "0.6.5",
+        "structured-headers": "2.1.1",
         "yaml": "2.9.1"
     },
     "devDependencies": {

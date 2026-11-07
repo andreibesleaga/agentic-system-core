@@ -233,7 +233,8 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | MCP client, to test the server as an assistant reaches it (dev) | `@modelcontextprotocol/client` | 2.4.0 | Apache-2.0 | tests only |
 | A2A agent card (the protocol's own JSON form of `AgentCard`) | `@a2a-js/sdk` (with `jose`, MIT) | 1.3.0 | Apache-2.0 | `distribution/a2a-card.js` (from `src-ts/distribution/a2a-card.ts`), loaded only by a node that declares a card |
 | RFC 8288 `Link` header parser, to read the emitted header independently (dev) | `http-link-header` | 1.1.4 | MIT | tests only |
-| TOON encoding | `@toon-format/toon` | 4.1.1 | MIT | `interchange/adapters/llm-context.js` |
+| TOON encoding | `@toon-format/toon` | 4.4.0 | MIT | `knowledge/chunks-index.js`, the tabular chunk index that the build serves as `/chunks-index.toon` (AGSC-06-37) and `interchange/adapters/llm-context.js` writes beside the node |
+| RFC 9651 Structured Fields (the Dictionary of an RFC 9530 digest value) | `structured-headers` | 2.1.1 | MIT | `knowledge/digest-field.js`, the one writer of `sha-256=:<base64>:` (AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17) |
 | property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
 | Gherkin parser (dev) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 | MIT | the acceptance runner |

@@ -6,7 +6,8 @@
 // AGSC-06-08 with AGSC-11-16 (the one discovery document and the surfaces it declares, derived
 // from what the writer emits; the declaration-only surfaces from `surfaces[]`) and AGSC-06-42
 // (the two opt-in catalogue files, whose entries carry the SHA-256 of the card's and the
-// document's bytes).
+// document's bytes); the facts of AGSC-06-44 that the document states about the chunk lines and
+// the ledger are handed to `discovery.linkset` from here.
 //
 // Why one module: the catalogue entries digest the exact bytes of the card and of the discovery
 // document, and the document declares the card's route, so the three are written here in that
@@ -89,9 +90,11 @@ function agentCard(input) {
  *
  * @param {{config:object, emitted:Map<string,string>, level?:number, ledgerHead?:string|null,
  *   bundleVersion:string, generatedAt:string, specVersion:string, items:Array<object>,
- *   description?:string, packs?:Array<object>, legal?:boolean, pages?:boolean}} input
+ *   description?:string, packs?:Array<object>, legal?:boolean, pages?:boolean,
+ *   chunkSet?:{count:string, set:string}}} input
  *   `emitted`: what the build wrote so far, route → bytes; `legal`: it writes `/legal/` later;
- *   `pages`: it writes the HTML pages, `/compose/` among them.
+ *   `pages`: it writes the HTML pages, `/compose/` among them; `chunkSet`: the count and the set
+ *   commitment of the chunk lines (AGSC-06-44).
  * @returns {{files: Map<string,string>, findings: Array<object>, skipped: Array<string>}}
  */
 function files(input) {
@@ -104,9 +107,13 @@ function files(input) {
   const digests = {};
   for (const [route, text] of input.emitted) digests[route] = discovery.digestOf(text);
   const routes = [...input.emitted.keys(), ...out.keys()];
+  const ledger = input.emitted.get('/ledger.jsonl');
   const wellknown = discovery.linkset(config, {
     level,
     ledgerHead: input.ledgerHead,
+    // AGSC-06-44: the number of entries of the derived ledger, one per line (AGSC-08-20a).
+    ledgerLength: ledger === undefined ? undefined : String(ledger).split('\n').length - 1,
+    chunkSet: input.chunkSet,
     bundleVersion: input.bundleVersion,
     digests,
     counts: discovery.countsOf(input.items || []),

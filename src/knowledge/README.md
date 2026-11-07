@@ -37,7 +37,9 @@
 | `shacl-core.js` | the SHACL Core subset of AGSC-05-41 that evaluates a site's own invariants: the check that refuses a shapes file outside it (`AGSC-E420`), the run of the pinned `rdf-validate-shacl` over a data graph, and the results in the order of the rule; `site-checks.js` turns them into findings |
 | `competency.js` | the competency questions of a site (AGSC-05-41): the shape of the questions file, the SPARQL subset (refused as `AGSC-E420` before any query runs), the run of each query by the pinned `oxigraph` after the pinned Traqula parser read it, and whether each answer agrees with its `expected` |
 | `site-checks.js` | the check that `verify` and `ci` run where a node declares `domain.shapes` or `domain.questions` (AGSC-09-20): one data graph (`graph.nq` and its closure), the shapes and the questions over it, and the findings `AGSC-E421` and `AGSC-E422` |
-| `chunks.js` | the chunk export for retrieval: the two cuts, the identifiers, the shards |
+| `chunks.js` | the chunk export for retrieval: the two cuts, the identifiers, the shards; from 1.1 the `abstract`, `license_url` and `content_digest` members, the text from its first line that is not blank, and the count and set commitment of the chunks surface link |
+| `chunks-index.js` | the tabular chunk index `chunks-index.toon` (AGSC-06-37), written by the pinned TOON encoder: served by the build as `/chunks-index.toon` and written by the `llm-context` adapter, so it lives here, where both contexts may read it |
+| `digest-field.js` | the RFC 9530 digest value `sha-256=:<base64>:`, an RFC 9651 Dictionary written by `structured-headers` over node:crypto's SHA-256; the one writer for the discovery-document digests, the chunk-set commitment, a chunk's `content_digest` and the export manifest |
 | `adopt.js` | adoption of bare Markdown: what `init` prepends, total and byte-preserving |
 | `content-version.js` | the content version of a Bundle, derived once from its history |
 | `provenance-header.js` | the provenance header every agent-facing text file starts with |

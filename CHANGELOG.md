@@ -102,6 +102,48 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   still answers). No byte changes from the move.
 - The vector `disc-0026` (unreleased) writes the severity of its validator finding `warn`, the literal
   of AGSC-09-11, instead of `warning`.
+- A chunk line (AGSC-06-29; `chk-0009`, `chk-0015`) carries `abstract`, the item's own `description`
+  copied unchanged, on every chunk of an item that has one (a cluster's chunk included), and
+  `license_url`, the licence URL of AGSC-06-44 (`bundle.license_url`, else the absolute URL of `/legal/`
+  when the node writes it), on every chunk of a node that has one; with `chunks.content_digest: true`
+  also `content_digest`, the same SHA-256 as `digest` written `sha-256=:<base64>:` (RFC 9530). A reader
+  of 1.0 ignores the three (AGSC-00-21; `tests/knowledge/chunks-1-1.test.js`). Bytes: `chunks.jsonl`
+  of every node whose items have descriptions (fixture-minimal `2f14b661…9d02` → `653411dc…5f4d`;
+  agsc-demo-node `f898be9d…7819` → `362e8bdd…3448`; every node in `reference-1.0.1/README.md`
+  § B08-WP4).
+- Behaviour change, by the new rule AGSC-06-45 (`chk-0016`, decision D-14): no chunk text begins with
+  a blank line (empty, or only spaces and tabs; U+00A0 is not blank). Chunk 0 of a body that begins
+  with blank lines starts at its first other line, so its `text` and `digest` differ from 1.0's and its
+  `id` does not; a piece that Cut 2 starts on a blank line starts after it, and a piece of blank lines
+  alone is no chunk. A body that begins with a cut heading or a non-blank line gives the chunks of 1.0;
+  on the reference nodes no chunk-0 text moves. The 1.0 vectors that pinned chunk-0 digests
+  (`chk-0001`, `chk-0006`, `chk-0008`, `conform-0004`) were withdrawn with successors in block 2.
+- The chunks surface link of the discovery document (AGSC-06-44; `chk-0014`) carries `digest` (over
+  `/chunks.jsonl`, the manifest when sharded), `agsc-chunk-count` and `agsc-chunk-set` (the SHA-256 over
+  every chunk `id` and one LF, in file order), at Level 2 and above on a node that is not `restricted`
+  (AGSC-11-20 (d)); the ledger link carries `agsc-ledger-length`, the number of ledger entries (a MAY
+  of AGSC-06-44 this writer states). Bytes: `.well-known/knowledge-linkset` of every Level-2 node
+  (fixture-minimal `198b7f5d…c03d` → `c4dccf93…af02`).
+- `tools/validate-wellknown` at `--level 2` (AGSC-09-93 (b), (c); `disc-0033`): on a document of 1.1.0 or
+  later whose chunks surface is not declared `credential`, the three attributes of the chunks link are
+  required (`AGSC-E202`) and the count and the commitment are recomputed over the fetched lines, the
+  shards in manifest order when the file is the manifest (`AGSC-E201` on a difference); the `digest`
+  is recomputed like every other; an `agsc-ledger-length` must equal the fetched ledger's entries
+  (`AGSC-E201`). A 1.0 document is accepted without them. The checks run from a URL and from a build
+  output on disk alike, as the digest checks do. A run reads up to two more files (the guides' and
+  demos' expected read counts move: `mode-1` and the distributed-memory demo 22 → 26, `publish` 11 → 13).
+- The digest value `sha-256=:<base64>:` of the discovery document and of the export manifest's
+  `content_digest` (AGSC-06-08, AGSC-09-17 (a)) is written by one function, `knowledge/digest-field.js`,
+  as an RFC 9651 Dictionary through the `structured-headers` library instead of a template string;
+  same bytes (G-REF of B08-WP4; `export-0003`, `export-0004` stay green). `_headers` carries no
+  `Content-Digest` and no static `Repr-Digest` (AGSC-09-17 (b), AGSC-06-17), now asserted by
+  `tests/arch/headers-unified.test.js` and `tests/distribution/chunk-surface.test.js`.
+- `interchange/adapters/llm-context.js` writes its `chunks-index.toon` with `knowledge/chunks-index.js`,
+  the writer of the node's `/chunks-index.toon`; same bytes.
+- The vectors `chk-0010` and `chk-0016` (unreleased) gain the cases of B2 request F-6: `chk-0010` a title
+  that begins with a space and holds `,`, `:`, `"` and `\`, and the title `true`, each written quoted as
+  AGSC-06-37 and TOON 4.1 say; `chk-0016` a body whose first line holds only U+00A0, which is not blank.
+- `docs/guides/mode-0.md`: the build writes one more file (`chunks-index.toon`), 58 → 59 and 59 → 60.
 
 - The `/compose/` page and its scripts (AGSC-07-25, AGSC-07-29, AGSC-06-01 page assets; the hash of
   each file in `fixture-minimal`, old to new; on the eight reference nodes these four files and
@@ -344,6 +386,34 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `/chunks-index.toon` (AGSC-06-37; `chk-0010`, `build-0037`): at Level 2 and above, when the published
+  set holds at most 500 items, the tabular index of `/chunks.jsonl` in TOON 4.1 — the header
+  `chunks[<n>]{id,item,kind,section,ordinal,title,digest}:` and one row per chunk line in the same
+  order, `id` and `digest` cut to 16 hex characters — written by the pinned `@toon-format/toon` encoder
+  (new `src/knowledge/chunks-index.js`); above 500 items the build names it among the routes it skipped.
+  Served with the cross-origin pair (AGSC-11-03) and `Content-Type: text/toon; charset=utf-8`, the TOON
+  specification's provisional media type, in one `_headers` block that exists only where the file is
+  written. Bytes: the new file on every Level-2 node and `_headers` (fixture-minimal `03c0b66c…ca16` →
+  `27ba75bf…ed25`).
+- `knowledge/chunks.js#commitment` (the count and set commitment of AGSC-06-44) and `#fromFirstLine`
+  (AGSC-06-45); `records()` takes `licenseUrl` and `contentDigest`.
+- Dependency: `structured-headers` 2.1.1 (MIT, no dependencies; the RFC 9651 / RFC 8941 implementation),
+  at an exact pin, because the RFC 9530 digest value is an RFC 9651 Dictionary and the engine writes no
+  serializer where a maintained library writes the format (new `src/knowledge/digest-field.js`). The
+  standalone `tools/validate-wellknown` keeps its own two lines (AGSC-09-90: no dependency). `npm audit`: 0.
+- Tests: `tests/knowledge/{chunks-1-1,chunks-index,digest-field}.test.js` (fast-check: no text begins
+  with a line feed and the chunks are deterministic; the commitment finds a dropped, an added or a moved
+  line; the index rows decode back to the records' members; the digest value equals Node's base64 and
+  parses back with the library), `tests/distribution/chunk-surface.test.js`,
+  `tests/tools/validate-wellknown-chunks.test.js`, handlers for `chk-0010`, `chk-0014`, `chk-0015`,
+  `chk-0016`, `build-0037`, `disc-0033`; a fitness test that each file written on a condition gets the
+  cross-origin headers the boundary gives it, and that no digest field reaches `_headers`.
+- An acceptance scenario (persona-h): an agent fetches `/chunks.jsonl`, `/chunks-index.toon` and the
+  discovery document over loopback, recomputes the digest, the count and the commitment the chunks link
+  states, reads the index with the TOON decoder, and finds that a dropped line no longer matches.
+- `docs/CITING-A-CHUNK.md` § "From 1.1": the four additions, the commitment check in one command, the
+  chunk-0 change and the index; `docs/plain/06-surfaces.md` one paragraph; `docs/PROTOCOLS.md` rows for
+  RFC 9530 from 1.1, RFC 9651 and TOON 4.1.
 - `/.well-known/agent-card.json` (AGSC-06-34 with AGSC-06-07; `disc-0030`, `disc-0031`), the A2A 1.0
   agent card, for a node that declares both the `a2a-card` and a `responder` surface in `surfaces[]`:
   every member A2A 1.0 requires and no other (`skills` one per skill pack, with the tags

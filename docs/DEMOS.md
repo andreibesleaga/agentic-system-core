@@ -380,16 +380,17 @@ node "$ENGINE/tools/validate-wellknown" a/www/.well-known/knowledge-linkset --le
 ```
 
 ```text expect
-validate-wellknown pass (level 2): 22 input file(s) read, 0 error(s), 0 warning(s)
+validate-wellknown pass (level 2): 26 input file(s) read, 0 error(s), 0 warning(s)
 a/www/.well-known/knowledge-linkset:1:1 error AGSC-E907 resolved, not mutual: no rel#peer names https://c.example/.well-known/knowledge-linkset (AGSC-10-12)
-validate-wellknown fail (level 2): 22 input file(s) read, 1 error(s), 0 warning(s)
+validate-wellknown fail (level 2): 26 input file(s) read, 1 error(s), 0 warning(s)
 checker exit 1
 ```
 
 What an agent reads first: the discovery document of `a`. Every link to one of the
 node's artefacts — the graph files, `llms.txt`, NOW, the ledger, the skills index —
-carries a SHA-256 digest; the peer and surface links carry none; the peer link leads
-to `b`; the surfaces say what access each needs. The agent then reads `b`'s
+carries a SHA-256 digest; the peer link carries none, and of the surface links only the
+`chunks` one does (from 1.1, beside the number of chunk lines and a commitment to their
+ids, AGSC-06-44); the peer link leads to `b`; the surfaces say what access each needs. The agent then reads `b`'s
 `llms.txt` — no node ever fetched on its behalf:
 
 ```bash demo
@@ -407,7 +408,7 @@ rel#ledger https://a.example/ledger.jsonl (digest)
 rel#now https://a.example/now.md (digest)
 rel#peer https://b.example/.well-known/knowledge-linkset
 rel#skills https://a.example/skills/index.json (digest)
-rel#surface https://a.example/chunks.jsonl
+rel#surface https://a.example/chunks.jsonl (digest)
 # b demo
 bundle: https://b.example/
 ```

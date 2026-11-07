@@ -1,6 +1,6 @@
 {
   "area": "chunks",
-  "description": "AGSC-06-45: no chunk text begins with a line feed. blank-start has a body that begins with two blank lines; its chunk 0 is \"Intro paragraph.\\n\", not \"\\n\\nIntro paragraph.\\n\", so its digest is the SHA-256 of the text without them — the same digest as the plain item whose body has no blank line (05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3) — while its id is unchanged by the rule (the id derives from the IRI, the section and the ordinal only, AGSC-06-28). space-line begins with two lines that hold only white space (spaces, a tab) and its chunk 0 starts at \"First line.\". The chunk that Cut 1 cuts at a heading (blank-start/intent) is as in 1.0. Derived by hand from the rule; digests and ids computed with hashlib.",
+  "description": "AGSC-06-45: no chunk text begins with a line feed. blank-start has a body that begins with two blank lines; its chunk 0 is \"Intro paragraph.\\n\", not \"\\n\\nIntro paragraph.\\n\", so its digest is the SHA-256 of the text without them — the same digest as the plain item whose body has no blank line (05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3) — while its id is unchanged by the rule (the id derives from the IRI, the section and the ordinal only, AGSC-06-28). space-line begins with two lines that hold only white space (spaces, a tab) and its chunk 0 starts at \"First line.\". The chunk that Cut 1 cuts at a heading (blank-start/intent) is as in 1.0. Derived by hand from the rule; digests and ids computed with hashlib. nbsp-line (B2 request F-6) begins with a line that holds only U+00A0, which is not blank under AGSC-06-45 (only U+0020 and U+0009 are), so its chunk 0 keeps that line.",
   "expected": {
     "lines": [
       {
@@ -32,6 +32,22 @@
         "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
         "text": "## Intent\n\nCoordinate workers.\n",
         "title": "Blank Start",
+        "trust": "untrusted",
+        "type": "text"
+      },
+      {
+        "digest": "8977ea97090998097b9be17330d85c7f415bcc9e74a77a4654fcc81145c60ebd",
+        "id": "4108acdf511a8c8176c0d076d469686825c98a03c5345b2b25c49eb028fd37fe",
+        "iri": "https://a.example/concepts/nbsp-line/",
+        "item": "nbsp-line",
+        "kind": "concept",
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "ordinal": 0,
+        "section": "",
+        "subkind": "explainer",
+        "terms": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "text": " \nFirst line.\n",
+        "title": "Nbsp Line",
         "trust": "untrusted",
         "type": "text"
       },
@@ -81,6 +97,13 @@
         "kind": "explainer",
         "slug": "blank-start",
         "title": "Blank Start",
+        "type": "concept"
+      },
+      {
+        "body": " \nFirst line.\n",
+        "kind": "explainer",
+        "slug": "nbsp-line",
+        "title": "Nbsp Line",
         "type": "concept"
       },
       {

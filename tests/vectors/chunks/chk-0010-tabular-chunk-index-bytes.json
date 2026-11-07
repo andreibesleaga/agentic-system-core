@@ -1,6 +1,6 @@
 {
   "area": "chunks",
-  "description": "AGSC-06-37: /chunks-index.toon, when a writer emits it, is the TOON tabular form (@toon-format/toon 4.1.1, specification 4.1, §9.3) of the records of /chunks.jsonl: the header chunks[<n>]{id,item,kind,section,ordinal,title,digest}: with n the number of chunk lines, then one row per line in the same order, id and digest cut to their first 16 hexadecimal characters; one trailing LF. The input is that of chk-0009 (four chunk lines), so the header says chunks[4] and the rows follow the record order (agent-patterns, handoff, supervisor, supervisor/intent). An empty Bundle gets the header with 0 and no row. The row text for the expected file was produced by the encoder the rule names; the header, the order and the cut identifiers are checked against chk-0009 (the 16-character prefixes of its ids and digests).",
+  "description": "AGSC-06-37: /chunks-index.toon, when a writer emits it, is the TOON tabular form (@toon-format/toon 4.1.1, specification 4.1, §9.3) of the records of /chunks.jsonl: the header chunks[<n>]{id,item,kind,section,ordinal,title,digest}: with n the number of chunk lines, then one row per line in the same order, id and digest cut to their first 16 hexadecimal characters; one trailing LF. The input is that of chk-0009 (four chunk lines), so the header says chunks[4] and the rows follow the record order (agent-patterns, handoff, supervisor, supervisor/intent). An empty Bundle gets the header with 0 and no row. The row text for the expected file was produced by the encoder the rule names; the header, the order and the cut identifiers are checked against chk-0009 (the 16-character prefixes of its ids and digests). Case quoted-titles (B2 request F-6): a title that begins with a space and holds a comma, a colon, two double quotes and a backslash is written in double quotes with \\\" and \\\\ escaped, and the title true is quoted, because it reads as a boolean; the row text was produced by the encoder and checked by hand against the quoting rule of AGSC-06-37.",
   "expected": {
     "cases": [
       {
@@ -30,6 +30,21 @@
         "header": "chunks[0]{id,item,kind,section,ordinal,title,digest}:",
         "name": "empty",
         "output": "chunks[0]{id,item,kind,section,ordinal,title,digest}:\n"
+      },
+      {
+        "header": "chunks[2]{id,item,kind,section,ordinal,title,digest}:",
+        "name": "quoted-titles",
+        "output": "chunks[2]{id,item,kind,section,ordinal,title,digest}:\n  19cd73d9d99afd65,mixed,concept,\"\",0,\" a,b:c \\\"d\\\" \\\\e\",61ebb162c522567b\n  348b8cd6e301e70c,word,concept,\"\",0,\"true\",61ebb162c522567b\n",
+        "row_prefixes": [
+          [
+            "19cd73d9d99afd65",
+            "61ebb162c522567b"
+          ],
+          [
+            "348b8cd6e301e70c",
+            "61ebb162c522567b"
+          ]
+        ]
       }
     ]
   },
@@ -74,6 +89,31 @@
         },
         "items": [],
         "name": "empty",
+        "site": {
+          "base": "https://a.example/"
+        }
+      },
+      {
+        "chunks": {
+          "max_bytes": 4096
+        },
+        "items": [
+          {
+            "body": "Text.\n",
+            "kind": "pattern",
+            "slug": "mixed",
+            "title": " a,b:c \"d\" \\e",
+            "type": "concept"
+          },
+          {
+            "body": "Text.\n",
+            "kind": "pattern",
+            "slug": "word",
+            "title": "true",
+            "type": "concept"
+          }
+        ],
+        "name": "quoted-titles",
         "site": {
           "base": "https://a.example/"
         }

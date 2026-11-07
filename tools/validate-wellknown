@@ -17,6 +17,11 @@
 // errors at Level 2 and above, warnings below (AGSC-09-93, as amended); and the `Link` header
 // of the node's home page `/` is read for the `describedby` link to the discovery document,
 // whose absence is a warning, because AGSC-06-25 makes that header a SHOULD (AGSC-06-40).
+// At --level 2 and above, from a URL or from a build output on disk, the `digest`,
+// `agsc-chunk-count` and `agsc-chunk-set` of the chunks surface link are recomputed over the
+// fetched /chunks.jsonl (its shards when it is the manifest) and required of a document of
+// 1.1.0 or later, and an `agsc-ledger-length` is compared with the fetched ledger (AGSC-09-93
+// (b) and (c), AGSC-06-44).
 //
 // Error codes. The §9.4 registry names no dedicated code for the shape checks of
 // AGSC-09-93; until a MINOR assigns them this tool uses
@@ -55,10 +60,12 @@ const RFC8288_STRING_ATTRS = new Set(['type', 'title', 'media']); // RFC 9264 §
 // AGSC-06-08 and AGSC-11-16 (with AGSC-06-35's `profile` and RFC 9264 §4.2.4.1's
 // `hreflang`): every target attribute this version defines. A document of a newer
 // MINOR may carry others; they are ignored with a warning (AGSC-00-21, AGSC-09-93).
-const KNOWN_ATTRS = new Set(['agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-contribute-mode',
-  'agsc-counts', 'agsc-generated-at', 'agsc-ledger-head', 'agsc-spec-version', 'agsc-surface',
-  'agsc-surface-version', 'agsc-tombstone', 'agsc-visibility', 'digest', 'hreflang', 'media', 'profile',
-  'title', 'title*', 'type']);
+const KNOWN_ATTRS = new Set(['agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-chunk-count',
+  'agsc-chunk-set', 'agsc-contribute-mode', 'agsc-counts', 'agsc-generated-at', 'agsc-ledger-head',
+  'agsc-ledger-length', 'agsc-spec-version', 'agsc-surface', 'agsc-surface-version', 'agsc-tombstone',
+  'agsc-visibility', 'digest', 'hreflang', 'media', 'profile', 'title', 'title*', 'type']);
+// AGSC-06-44: what the chunks surface link of a public node states from 1.1 on.
+const CHUNK_ATTRS = ['digest', 'agsc-chunk-count', 'agsc-chunk-set'];
 // AGSC-11-20: the targets a restricted node serves unauthenticated, and so the only
 // ones whose `digest` it may publish (its Level-0 view: `/graph.jsonld`, `/llms.txt`).
 const OPEN_WHEN_RESTRICTED = ['/graph.jsonld', '/llms.txt'];
@@ -571,9 +578,73 @@ async function checkSurface(t, h, doc) {
   if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
   if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
   // AGSC-11-20: the `chunks` of a restricted node declare `credential` and are not served unauthenticated.
-  if (name === 'llms-txt' || (name === 'chunks' && !(Array.isArray(acc) && acc[0] === 'credential'))) {
-    try { headerChecks(await src.resolve(t.href, ctx.anchor), false); } catch (e) { F(e.code === 'AGSC-E906' ? 'AGSC-E906' : 'AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
+  const open = name === 'chunks' && !(Array.isArray(acc) && acc[0] === 'credential');
+  if (open) requireChunkFacts(t, doc);
+  if (name === 'llms-txt' || open) {
+    try {
+      const got = await src.resolve(t.href, ctx.anchor);
+      headerChecks(got, false);
+      if (open && got) await recomputeChunkFacts(t, got, doc);
+    } catch (e) { F(e.code === 'AGSC-E906' ? 'AGSC-E906' : 'AGSC-E210', `rel#surface ${name}: target does not resolve: ${e.message}`); }
   }
+}
+
+/** True when `declared` (an `agsc-spec-version`) is 1.1.0 or later. */
+function fromOneOne(declared) {
+  const m = /^(\d+)\.(\d+)(?:\.|$)/.exec(String(declared));
+  return m !== null && (Number(m[1]) > 1 || (Number(m[1]) === 1 && Number(m[2]) >= 1));
+}
+
+/** AGSC-09-93 (b), AGSC-06-44: at Level ≥ 2 a document of 1.1.0 or later states the three on its public chunks link. */
+function requireChunkFacts(t, doc) {
+  if (doc.level < 2 || !fromOneOne(doc.version.declared)) return;
+  for (const a of CHUNK_ATTRS) {
+    if (t[a] === undefined) doc.F('AGSC-E202', `rel#surface ${t.href}: the chunks surface link of a ${doc.version.declared} document carries no ${a} (required at Level ≥ 2, AGSC-06-44)`);
+  }
+}
+
+/**
+ * The chunk lines a chunks file holds: its own lines, or, when it is the manifest of AGSC-06-31
+ * (one object with `shards`), the lines of every shard in manifest order.
+ */
+async function chunkLines(got, href, doc) {
+  const parse = (bytes) => bytes.toString('utf8').split('\n').filter((line) => line !== '').map((line) => JSON.parse(line));
+  const lines = parse(got.bytes);
+  if (lines.length !== 1 || !Array.isArray(lines[0].shards) || lines[0].id !== undefined) return lines;
+  const out = [];
+  for (const shard of lines[0].shards) {
+    const part = await doc.src.resolve(new URL(String(shard), href).href, doc.ctx.anchor);
+    if (part) out.push(...parse(part.bytes));
+  }
+  return out;
+}
+
+/**
+ * AGSC-09-93 (b), AGSC-06-44: the count and the set commitment, recomputed over the fetched lines —
+ * the commitment is the SHA-256 over each `id` and one LF, in file order. (The `digest` is
+ * recomputed with every other digest, `checkDigest`.)
+ */
+async function recomputeChunkFacts(t, got, doc) {
+  if (doc.level < 2 || (t['agsc-chunk-count'] === undefined && t['agsc-chunk-set'] === undefined)) return;
+  let lines;
+  try { lines = await chunkLines(got, t.href, doc); } catch (e) { doc.F('AGSC-E201', `rel#surface ${t.href}: the chunk lines cannot be read to recompute agsc-chunk-count and agsc-chunk-set: ${e.message}`); return; }
+  const set = 'sha-256=:' + crypto.createHash('sha256').update(lines.map((line) => `${line.id}\n`).join('')).digest('base64') + ':';
+  const stated = (a) => (Array.isArray(t[a]) && t[a].length === 1 ? t[a][0] : null);
+  if (t['agsc-chunk-count'] !== undefined && stated('agsc-chunk-count') !== String(lines.length)) doc.F('AGSC-E201', `rel#surface ${t.href}: agsc-chunk-count ${JSON.stringify(t['agsc-chunk-count'])} is not the ${lines.length} lines of the fetched file (AGSC-06-44)`);
+  if (t['agsc-chunk-set'] !== undefined && stated('agsc-chunk-set') !== set) doc.F('AGSC-E201', `rel#surface ${t.href}: agsc-chunk-set does not match the ids of the fetched lines (AGSC-06-44)`);
+}
+
+/** AGSC-09-93 (c), AGSC-06-44: `agsc-ledger-length`, when present, is the number of entries of the fetched ledger. */
+async function checkLedgerLength(t, doc) {
+  const { ctx, F, level, src } = doc;
+  if (t['agsc-ledger-length'] === undefined || (level < 2 && src.kind !== 'file')) return;
+  try {
+    const got = await src.resolve(t.href, ctx.anchor);
+    if (!got) return;
+    const entries = got.bytes.toString('utf8').split('\n').filter((line) => line !== '').length;
+    const value = t['agsc-ledger-length'];
+    if (!(Array.isArray(value) && value.length === 1 && value[0] === String(entries))) F('AGSC-E201', `rel#ledger ${t.href}: agsc-ledger-length ${JSON.stringify(value)} is not the ${entries} entries of the fetched ledger (AGSC-06-44)`);
+  } catch (e) { F(e.code || 'AGSC-E907', `rel#ledger: ${e.message}`); }
 }
 
 /**
@@ -610,6 +681,7 @@ async function checkTarget(t, prev, rel, ext, doc) {
   // AGSC-11-20 forbids a gated node to publish, which are checked above instead.
   if (level >= 2 && rel === 'describedby' && /\/graph\.jsonld$/.test(h.pathname)) for (const a of LEVEL2_ATTRS) if (t[a] === undefined && !(gated && RESTRICTED_OMITTED.includes(a))) F('AGSC-E202', `describedby ${t.href}: ${a} is required at Level ≥ 2 (AGSC-06-08)`);
   if (level >= 2 && !gated && ext === 'ledger' && t['agsc-ledger-head'] === undefined) F('AGSC-E202', 'rel#ledger: agsc-ledger-head is required at Level ≥ 2 (AGSC-06-08)');
+  if (ext === 'ledger') await checkLedgerLength(t, doc);
   if (RELATED_ONLY.has(rel) && typeof t.type !== 'string') F('AGSC-E209', `related-system link ${rel} ${t.href} must carry type (AGSC-06-35)`);
   if (ext === 'peer') result.peers.push(t.href);
   if (ext === 'surface') await checkSurface(t, h, doc);

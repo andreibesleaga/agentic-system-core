@@ -45,8 +45,10 @@ const CALLS = [
   ['check', {}],
 ];
 /** The members a 1.0 chunk line may carry (AGSC-06-29); `x-` members aside. */
+// AGSC-06-29: the members of 1.0, and the three a 1.1 writer adds under their conditions
+// (`abstract`, `license_url`, `content_digest`); a 1.0 reader ignores those (AGSC-00-21).
 const CHUNK_MEMBERS = ['digest', 'id', 'iri', 'item', 'kind', 'license', 'links', 'ordinal', 'section',
-  'subkind', 'terms', 'text', 'title', 'trust', 'type'];
+  'subkind', 'terms', 'text', 'title', 'trust', 'type', 'abstract', 'license_url', 'content_digest'];
 
 const call = async (client, name, args) => (await client.callTool({ arguments: args, name })).structuredContent;
 

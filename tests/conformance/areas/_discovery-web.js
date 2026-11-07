@@ -10,12 +10,21 @@
 //   disc-0030  the A2A agent card of a node with a responder, as bytes;
 //   disc-0031  no card without both declarations, and AGSC-E210 for a card without an endpoint;
 //   disc-0032  the PROV-O terms appear in the home page's Dataset block and in no other file of a
-//              real build of the minimal fixture.
+//              real build of the minimal fixture;
+//   disc-0033  (AGSC-06-44, AGSC-09-93 (b)) `validate-wellknown --level 2` over a document and the
+//              files it names, written to a scratch build output and read by the checker from disk:
+//              the digest, count and set commitment of the chunks surface link are recomputed, and
+//              required only of a document of 1.1.0 or later.
 //
 // Each case calls the module the build calls, so the bytes a case proves are the bytes a node
 // publishes.
 
+const nodeFs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const LinkHeader = require('http-link-header');
+const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const headers = require('../../../src/distribution/headers.js');
 const { datasetBlock } = require('../../../src/distribution/front-page.js');
 const aiCatalog = require('../../../src/distribution/ai-catalog.js');
@@ -153,8 +162,42 @@ function provConfinedCase(vector, ctx) {
   });
 }
 
+/**
+ * One run of the checker, as a child process (a handler is synchronous and the checker's `run` is
+ * not), over a scratch build output holding the document and the files of the case.
+ */
+function checkerRun(input, root) {
+  const out = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'agsc-disc-0033-'));
+  try {
+    const document = path.join(out, '.well-known', 'knowledge-linkset');
+    nodeFs.mkdirSync(path.dirname(document), { recursive: true });
+    nodeFs.writeFileSync(document, `${canonicalize(input.document)}\n`);
+    for (const [route, text] of Object.entries(input.files)) nodeFs.writeFileSync(path.join(out, route), text);
+    const tool = path.join(root, 'tools', 'validate-wellknown');
+    const run = spawnSync(process.execPath, [tool, document, '--level', String(input.level), '--json'], { encoding: 'utf8' });
+    return JSON.parse(run.stdout);
+  } finally {
+    nodeFs.rmSync(out, { force: true, recursive: true });
+  }
+}
+
+/** disc-0033 (AGSC-06-44 with AGSC-09-93 (b)): the chunks surface link, recomputed by the checker. */
+function chunkSurfaceCase(vector, ctx) {
+  const wanted = byName(vector.expected.cases);
+  const list = [];
+  for (const input of vector.input.cases) {
+    const want = wanted.get(input.name) || {};
+    const envelope = checkerRun(input, (ctx && ctx.root) || '.');
+    const codes = [...new Set(envelope.findings.map((f) => f.code))].sort();
+    list.push([`${input.name} valid`, (envelope.status === 'pass') === want.valid, JSON.stringify(envelope.findings)]);
+    list.push([`${input.name} codes`, deepEqual(codes, want.codes_reported), JSON.stringify(codes)]);
+  }
+  return checks(list);
+}
+
 module.exports = {
   HANDLERS: {
+    'disc-0033': chunkSurfaceCase,
     'disc-0026': signpostingCase,
     'disc-0027': datasetCase,
     'disc-0028': catalogueCase('/.well-known/ai-catalog.json'),

@@ -11,11 +11,11 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Check | Rules it names |
 |---|---:|
 | Conformance vector | 211 |
-| Unit, integration or architecture test | 353 |
+| Unit, integration or architecture test | 355 |
 | Executed acceptance scenario | 102 |
-| Checker header | 38 |
+| Checker header | 39 |
 
-Acceptance scenarios: 159 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 102 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 160 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 102 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -42,7 +42,7 @@ Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name
 
 | Rule | Codes it names | Unit evidence |
 |---|---|---|
-| AGSC-00-21 | `AGSC-E004`, `AGSC-E201`, `AGSC-E203` +3 | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +3 |
+| AGSC-00-21 | `AGSC-E004`, `AGSC-E201`, `AGSC-E203` +3 | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +4 |
 | AGSC-00-23 | `AGSC-E004`, `AGSC-E203`, `AGSC-E207` +2 | `application/compatibility.test.js`, `tools/validate-wellknown-visibility.test.js` |
 | AGSC-01-07 | `AGSC-E205` | `distribution/graph-view.test.js`, `governance/lint-constructs.test.js` |
 | AGSC-01-17 | `AGSC-E004`, `AGSC-E901` | `interchange/import-verb.test.js`, `knowledge/fixture-minimal.test.js` |
@@ -125,7 +125,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-18 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-00-19 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-00-20 | VERIFIED | yes | `cli-0016` | `application/config/load.test.js`, `standard/declared-scope.test.js` | — | — |
-| AGSC-00-21 | VERIFIED | — | — | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +2 | — | `validate-wellknown` |
+| AGSC-00-21 | VERIFIED | — | — | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +3 | — | `validate-wellknown` |
 | AGSC-00-22 | VERIFIED | yes | `lint-0027` | `application/compatibility.test.js`, `application/plugin-examples.test.js` | — | — |
 | AGSC-00-23 | VERIFIED | — | — | `application/compatibility.test.js`, `tools/validate-wellknown-visibility.test.js` | — | — |
 | AGSC-00-24 | VERIFIED | — | — | `application/plugins.test.js`, `application/serve-command.test.js` | — | — |
@@ -329,7 +329,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-26 | VERIFIED | yes | `chk-0005` | `acceptance/steps/persona-h.js`, `knowledge/chunks.test.js` | — | — |
 | AGSC-06-27 | VERIFIED | yes | `chk-0002`, `chk-0004` | `knowledge/chunks.test.js` | — | — |
 | AGSC-06-28 | VERIFIED | yes | `chk-0011` | `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js`, `distribution/chunk-anchors.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework`, `persona-c-agent-mcp.feature#An agent cites a chunk back and the item page shows it at its heading` | — |
-| AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
+| AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks-1-1.test.js` +1 | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
 | AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +10 | — |
 | AGSC-06-31 | VERIFIED | yes | `chk-0013` | `composition/conform.test.js`, `distribution/content-version-stamps.test.js`, `distribution/page-tools-shards.test.js` +2 | — | — |
 | AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `acceptance/steps/persona-i.js`, `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js` +4 | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
@@ -337,14 +337,14 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-34 | VERIFIED | yes | `disc-0030`, `disc-0031` | `acceptance/steps/persona-c-card.js`, `boundary/surfaces.test.js`, `distribution/a2a-card.test.js` +1 | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +16 | — |
 | AGSC-06-35 | VERIFIED | yes | `bnd-0029` | `boundary/federation.test.js`, `distribution/discovery-facts.test.js`, `distribution/relations-rc6.test.js` +2 | — | `validate-wellknown` |
 | AGSC-06-36 | VERIFIED | yes | `build-0013`, `build-0035` | `acceptance/steps/persona-m.js`, `docs/agent-skill.test.js` | — | — |
-| AGSC-06-37 | VERIFIED | yes | `build-0037`, `chk-0010` | — | — | — |
+| AGSC-06-37 | VERIFIED | yes | `build-0037`, `chk-0010` | `acceptance/steps/persona-h-chunks.js`, `distribution/chunk-surface.test.js`, `knowledge/chunks-index.test.js` | — | — |
 | AGSC-06-38 | VERIFIED | yes | `build-0031`, `build-0032` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-i.js`, `distribution/clusters-page.test.js` +10 | `persona-a-reader.feature#Reader sees what a Concept is linked to and what links back to it`, `persona-a-reader.feature#Reader sees how the clusters connect and what each relation means`, `persona-i-maintainer.feature#A note's page, its page tool answer and its brief show its domain type, role, warrant and domain link` | — |
 | AGSC-06-39 | VERIFIED | yes | `build-0030` | `acceptance/steps/persona-a.js`, `distribution/headers.test.js`, `distribution/query-browser.test.js` +6 | `persona-a-reader.feature#Reader asks the published graph a question on the query page`, `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
 | AGSC-06-40 | VERIFIED | yes | `disc-0026` | `acceptance/steps/persona-n-web.js`, `arch/headers-unified.test.js`, `distribution/signposting.test.js` +2 | — | `validate-wellknown` |
 | AGSC-06-41 | VERIFIED | yes | `disc-0027`, `disc-0032` | `acceptance/steps/persona-n-web.js`, `distribution/dataset-block.test.js`, `distribution/well-known.test.js` | — | — |
 | AGSC-06-42 | VERIFIED | yes | `disc-0028`, `disc-0029` | `acceptance/steps/persona-c-card.js`, `distribution/ai-catalog.test.js`, `distribution/well-known.test.js` | — | — |
-| AGSC-06-44 | VERIFIED | yes | `chk-0014`, `chk-0015`, `disc-0033` | `distribution/dataset-block.test.js`, `knowledge/license-url.test.js` | — | — |
-| AGSC-06-45 | VERIFIED | yes | `chk-0016` | — | — | — |
+| AGSC-06-44 | VERIFIED | yes | `chk-0014`, `chk-0015`, `disc-0033` | `acceptance/steps/persona-h-chunks.js`, `distribution/chunk-surface.test.js`, `distribution/dataset-block.test.js` +3 | — | `validate-wellknown` |
+| AGSC-06-45 | VERIFIED | yes | `chk-0016` | `knowledge/chunks-1-1.test.js` | — | — |
 | AGSC-06-46 | VERIFIED | yes | `build-0033` | — | — | — |
 | AGSC-07-01 | VERIFIED | — | — | `distribution/compose-page-run.test.js`, `distribution/surfaces-eng2.test.js` | — | — |
 | AGSC-07-03 | VERIFIED | yes | `compose-0021` | `application/cli/verbs-wired.test.js`, `composition/compose.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
@@ -427,7 +427,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-09-14b | VERIFIED | yes | `cli-0018` | `acceptance/steps/persona-c.js`, `distribution/mcp-client.test.js`, `distribution/mcp-resources.test.js` +7 | `persona-c-agent-mcp.feature#Agent uses the node as memory and knowledge base over MCP`, `persona-c-agent-mcp.feature#An MCP client lists and gets the one prompt` | — |
 | AGSC-09-15 | VERIFIED | — | — | `standard/consistency.test.js` | — | — |
 | AGSC-09-16 | VERIFIED | yes | `cli-0008`, `cli-0026` | `acceptance/steps/persona-c.js`, `bench/kit.test.js`, `distribution/compose-page-run.test.js` +13 | `persona-c-agent-mcp.feature#A page agent calls the ten page tools without a browser`, `persona-c-agent-mcp.feature#A page agent calls the ten page tools in a browser through document.modelContext`, `persona-c-agent-mcp.feature#An MCP client composes a selection through the compose tool` | — |
-| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | `acceptance/steps/persona-h.js`, `interchange/export-manifest-cli.test.js`, `interchange/export-manifest.test.js` | — | — |
+| AGSC-09-17 | VERIFIED | yes | `export-0003`, `export-0004` | `acceptance/steps/persona-h.js`, `arch/headers-unified.test.js`, `interchange/export-manifest-cli.test.js` +1 | — | — |
 | AGSC-09-18 | VERIFIED | yes | `cli-0029`, `cli-0030`, `cli-0031` | `acceptance/steps/persona-c-http.js`, `application/cli/mcp-http-verb.test.js`, `distribution/mcp-http.test.js` | `persona-c-agent-mcp.feature#An agent on the same machine reaches the tool server over Streamable HTTP, and a page of another site is refused` | — |
 | AGSC-09-19 | VERIFIED | yes | `cli-0032`, `cli-0033`, `cli-0034` +1 | `acceptance/steps/persona-c-revisions.js`, `boundary/surfaces.test.js`, `distribution/mcp-client.test.js` +3 | `persona-c-agent-mcp.feature#An agent of the revision 2026-07-28 discovers the server and is answered with no handshake` | — |
 | AGSC-09-20 | VERIFIED | yes | — | `acceptance/steps/persona-i.js`, `application/cli/site-checks-verbs.test.js`, `knowledge/site-checks.test.js` | `persona-i-maintainer.feature#The site's own invariants and competency questions are checked by verify and ci, never by lint` | — |
@@ -474,7 +474,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-11-17 | VERIFIED | yes | `bnd-0021` | `boundary/surfaces.test.js`, `standard/tool-signatures.test.js` | — | — |
 | AGSC-11-18 | VERIFIED | yes | `bnd-0036`, `bnd-0042`, `bnd-0050` | `boundary/mcp-initialize-capabilities.test.js`, `boundary/surfaces.test.js`, `distribution/mcp-client.test.js` +3 | — | — |
 | AGSC-11-19 | VERIFIED | yes | `bnd-0013` | `boundary/surfaces.test.js` | — | — |
-| AGSC-11-20 | VERIFIED | yes | `bnd-0002`, `bnd-0038`, `bnd-0044` +2 | `acceptance/steps/persona-o.js`, `application/cli/env-reaches-build.test.js`, `application/cli/restricted-access.test.js` +12 | `persona-o-restricted.feature#A restricted node omits the bundle facts a public node shows`, `persona-o-restricted.feature#A restricted node's discovery document carries exactly one access link`, `persona-o-restricted.feature#Both checkers flag a restricted node without an access link` +1 | — |
+| AGSC-11-20 | VERIFIED | yes | `bnd-0002`, `bnd-0038`, `bnd-0044` +2 | `acceptance/steps/persona-o.js`, `application/cli/env-reaches-build.test.js`, `application/cli/restricted-access.test.js` +13 | `persona-o-restricted.feature#A restricted node omits the bundle facts a public node shows`, `persona-o-restricted.feature#A restricted node's discovery document carries exactly one access link`, `persona-o-restricted.feature#Both checkers flag a restricted node without an access link` +1 | — |
 | AGSC-11-21 | VERIFIED | yes | `bnd-0028` | `boundary/surfaces.test.js` | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +16 | — |
 | AGSC-11-22 | VERIFIED | yes | `bnd-0032`, `compose-0023` | `acceptance/steps/persona-i.js`, `boundary/visibility.test.js`, `composition/compose.test.js` +3 | `persona-i-maintainer.feature#A superseded item keeps its slug and its page, its old address redirects, and the slug is never reused` | — |
 | AGSC-11-23 | VERIFIED | yes | `bnd-0015` | `boundary/federation.test.js`, `distribution/routes.test.js` | — | — |

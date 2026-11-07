@@ -119,7 +119,7 @@ ls www www/.well-known
 ```
 
 ```text expect
-wrote: 58 files under www/
+wrote: 59 files under www/
 build: pass (0 error, 5 warn)
 index.html
 llms.txt
@@ -274,7 +274,7 @@ agsc verify --ledger
 
 ```text expect
 ci: pass (0 error, 7 warn)
-wrote: 59 files under www/
+wrote: 60 files under www/
 verify: pass (0 error, 0 warn)
 ```
 

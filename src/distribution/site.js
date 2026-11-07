@@ -3,9 +3,10 @@
 // Implements AGSC-06-01 (the route set), AGSC-06-02/04 (the machine views and the
 // generated `_headers`, `_redirects` and `/404.html`), AGSC-06-16/21 (the index and
 // its shards), AGSC-06-19 (`sitemap.xml`), AGSC-06-18 (the three licence dialects),
-// AGSC-06-26…31 (the chunk export), AGSC-08-20 (the ledger written ONLY into the
-// build output), AGSC-10-13 (the boards) and AGSC-04-01/02/04/07/09 (determinism:
-// LF, NFC, JCS, `SOURCE_DATE_EPOCH`, byte-identical rebuilds).
+// AGSC-06-26…31 (the chunk export), AGSC-06-37 (the tabular chunk index), AGSC-08-20
+// (the ledger written ONLY into the build output), AGSC-10-13 (the boards) and
+// AGSC-04-01/02/04/07/09 (determinism: LF, NFC, JCS, `SOURCE_DATE_EPOCH`, byte-identical
+// rebuilds).
 //
 // Distribution READS the other contexts' results and ADDS NOTHING to the content.
 // Everything that reaches a file does so through the injected FileSystem port, and
@@ -24,6 +25,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding, unencodable } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
+const chunksIndex = require('../knowledge/chunks-index.js');
 const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
 const domainLayer = require('../knowledge/domain.js');
@@ -1243,7 +1245,15 @@ function buildSite(bundle, ports, options, findings) {
   // own, and AGSC-06-30's published set is the status one `publishedItems` applied.
   for (const file of search.files(items).files) put(file.path, jsonBytes(file.value));
 
-  // ------------------------------------------------------------ chunks (AGSC-06-26…31)
+  // AGSC-06-18: whether the build writes `/legal/`, from the Bundle's own `LICENSE-CONTENT` (the
+  // licence dialects below); decided here because the chunks carry the licence URL it gives.
+  const licenseContent = options.licenseContent === undefined
+    ? readLicenseContent(ports)
+    : options.licenseContent;
+  const renderer = options.render === undefined ? markdown.render : options.render;
+  const hasLegal = full && typeof renderer === 'function' && licenseContent !== null;
+
+  // ------------------------------------------------------------ chunks (AGSC-06-26…31, AGSC-06-37)
   // "A Level ≥ 2 writer MUST emit /chunks.jsonl" — a Level-0 publisher emits none.
   const publishedSlugs = new Set(items.map((i) => String(i.slug)));
   const chunkRecords = !full ? [] : chunks.records(items.map((i) => withoutExcludedLinks(i, publishedSlugs)), {
@@ -1252,12 +1262,18 @@ function buildSite(bundle, ports, options, findings) {
     license: licenseProse,
     attachmentBytes: options.attachmentBytes,
     releases: config.releases,
+    // AGSC-06-44 / AGSC-06-29: the licence URL on every chunk, and the optional RFC 9530 member.
+    licenseUrl: chunks.licenseUrl(config, { legal: hasLegal }),
+    contentDigest: (config.chunks || {}).content_digest === true,
   }).records;
   if (full) {
     // AGSC-06-31: the shard manifest carries the content version.
     const chunkFiles = chunks.files(chunkRecords, canonicalize,
       { bundleVersion, generatedAt: instant });
     for (const file of chunkFiles.files) put(file.path, file.text);
+    // AGSC-06-37: the tabular index, which this writer chooses to emit wherever the rule lets it.
+    if (items.length <= chunks.ITEMS_PER_SHARD) put('/chunks-index.toon', chunksIndex.chunksIndexToon(chunkRecords));
+    else skipped.push('/chunks-index.toon (the published set holds more than 500 items, so /chunks.jsonl is sharded and the index has no shard; AGSC-06-37)');
   }
   // AGSC-06-28: each chunk that begins with a heading is an in-page anchor on it.
   const anchorsBySlug = html.chunkAnchors(chunkRecords);
@@ -1457,11 +1473,6 @@ function buildSite(bundle, ports, options, findings) {
   // without it is incomplete". A Bundle that ships no such file gets no `/legal/`
   // route AND no link to one, in any of the three dialects, so that no build ever
   // emits a dangling internal link.
-  const licenseContent = options.licenseContent === undefined
-    ? readLicenseContent(ports)
-    : options.licenseContent;
-  const renderer = options.render === undefined ? markdown.render : options.render;
-  const hasLegal = full && typeof renderer === 'function' && licenseContent !== null;
   if (full && licenseContent === null) {
     skipped.push('/legal/ (no LICENSE-CONTENT file in the Bundle root; AGSC-01-26, AGSC-06-18 —'
       + ' the Content Use Terms link is omitted from every page and from both text dialects'
@@ -1508,6 +1519,7 @@ function buildSite(bundle, ports, options, findings) {
   const known = wellKnown.files({
     bundleVersion, config, description: indexFrontmatter.description, emitted: files, generatedAt: instant,
     items, ledgerHead, legal: hasLegal, level, packs: packs.index.packs, pages: full && typeof renderer === 'function', specVersion,
+    chunkSet: chunks.commitment(chunkRecords),
   });
   findings.push(...known.findings);
   skipped.push(...known.skipped);

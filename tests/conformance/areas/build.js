@@ -474,10 +474,59 @@ function nowLineCase(vector) {
   return checks(list);
 }
 
+/** A Bundle of `item_count` copies of `item_template`, built in memory as chk-0008 builds its records. */
+function syntheticBundle(input) {
+  const items = Array.from({ length: Number(input.item_count) }, (_, i) => {
+    const slug = `i-${String(i + 1).padStart(4, '0')}`;
+    const frontmatter = { ...input.item_template, title: slug };
+    delete frontmatter.body;
+    return { body: input.item_template.body, frontmatter, path: `content/concepts/${slug}.md`, slug, type: 'concept' };
+  });
+  return {
+    config: { bundle: { id: 'synthetic' }, chunks: input.chunks, site: { ...input.site, title: 'Synthetic' } },
+    findings: [], index: { body: '', frontmatter: { title: 'Synthetic' } }, items, root: '',
+  };
+}
+
+/**
+ * build-0037 — AGSC-06-37: `/chunks-index.toon` only when the published set holds at most
+ * 500 items. This writer chooses to emit it whenever the rule lets it, so the three-item
+ * Bundle has it, with the header of the case and one row per line of `/chunks.jsonl`, in
+ * the same order; the 501-item Bundle has none, its build reports no finding for that and names
+ * the route among the ones it skipped.
+ */
+function chunkIndexBuildCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+  for (const input of vector.input.cases) {
+    const want = byName.get(input.name) || {};
+    const built = site.build(syntheticBundle(input), { clock }, { specVersion: '1.1.0' });
+    const index = built.files.get('/chunks-index.toon');
+    if (want.index_emitted === false) {
+      list.push([`${input.name} not emitted`, index === undefined, String(index)]);
+      // Its absence is no finding; the build says why it wrote none, as for every conditional route.
+      list.push([`${input.name} no fault`, built.findings.every((f) => !String(f.message).includes('chunks-index')),
+        JSON.stringify(built.findings)]);
+      list.push([`${input.name} named as skipped`, (built.skipped || []).some((why) => why.startsWith('/chunks-index.toon')),
+        JSON.stringify(built.skipped)]);
+      continue;
+    }
+    list.push([`${input.name} emitted`, (index !== undefined) === want.index_may_be_emitted, String(index)]);
+    const rows = String(index).split('\n').slice(1, -1);
+    const lines = String(built.files.get('/chunks.jsonl')).split('\n').slice(0, -1).map((l) => JSON.parse(l));
+    list.push([`${input.name} header`, String(index).split('\n')[0] === want.header_if_emitted, String(index).split('\n')[0]]);
+    list.push([`${input.name} rows follow the lines`, rows.length === lines.length
+      && rows.every((row, i) => row.trim().startsWith(`${lines[i].id.slice(0, 16)},`)), JSON.stringify(rows)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'build-0034': immutableCacheCase,
   'build-0035': securityPolicyCase,
   'build-0036': nowLineCase,
+  'build-0037': chunkIndexBuildCase,
   'build-0011': fragmentIndexCase,
   'build-0013': securityTxtCase,
   'build-0014': contentVersionCase,

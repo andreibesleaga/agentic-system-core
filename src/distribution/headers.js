@@ -11,7 +11,9 @@
 // the wildcard that the host adds by default) and AGSC-06-40 (the FAIR Signposting links of the
 // home page, in the one `Link` field of the block of `/`, after the `describedby` value of
 // AGSC-11-05; the blocks of the agent card and the two catalogue files when the build writes them,
-// AGSC-06-34, AGSC-06-42).
+// AGSC-06-34, AGSC-06-42; and the block of the tabular chunk index, AGSC-06-37). No block carries
+// `Content-Digest`, and none a static `Repr-Digest`, because the reference host compresses what it
+// serves and the bytes of a coded response are not those of the file (AGSC-09-17 (b), AGSC-06-17).
 //
 // AGSC-11-03 and AGSC-11-05 are the BOUNDARY chapter's rules and are implemented
 // once, in `boundary/visibility.js` — the anti-corruption layer that owns them. This
@@ -57,15 +59,17 @@ const PUBLIC_ARTEFACTS = Object.freeze([
 ]);
 
 /**
- * AGSC-06-34, AGSC-06-42: the well-known files a build writes only on a switch, and the content
- * type each is served with (`null`: the host's default for `.json`). Each is a public artefact
- * (AGSC-11-03), so its block exists only where the build wrote the file and no other node's
- * `_headers` changes.
+ * AGSC-06-34, AGSC-06-42, AGSC-06-37: the files a build writes only on a condition — the well-known
+ * files on a switch, the tabular chunk index by the size of the published set — and the content
+ * type each is served with (`null`: the host's default for `.json`; `text/toon` is the provisional
+ * media type the TOON specification names). Each is a public artefact (AGSC-11-03), so its block
+ * exists only where the build wrote the file and no other node's `_headers` changes.
  */
 const OPT_IN_FILES = Object.freeze([
   [A2A_CARD_ROUTE, null],
   [aiCatalog.ARD_PATH, aiCatalog.ARD_MEDIA_TYPE],
   [aiCatalog.AI_CATALOG_PATH, aiCatalog.AI_CATALOG_MEDIA_TYPE],
+  ['/chunks-index.toon', 'text/toon; charset=utf-8'],
 ]);
 
 /** AGSC-06-40: the files an `item` link names, in order, with the type each is served with. */
@@ -243,7 +247,7 @@ function headerSets(config = {}, routes = []) {
     if (NO_CACHE.includes(route)) headers.push(['Cache-Control', 'no-cache']);
     add(route, headers);
   }
-  // AGSC-06-34, AGSC-06-42: the opt-in well-known files, public artefacts, where the build wrote them.
+  // AGSC-06-34, AGSC-06-42, AGSC-06-37: the files written on a condition, public artefacts, where the build wrote them.
   for (const [route, type] of OPT_IN_FILES.filter(([one]) => routes.includes(one))) {
     add(route, [...(restricted ? [] : CORS), ...(type === null ? [] : [['Content-Type', type]])]);
   }

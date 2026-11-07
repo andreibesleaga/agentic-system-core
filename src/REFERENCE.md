@@ -678,7 +678,9 @@ drive them, `init` and `ci`.
 
 | Path | Context | Implements |
 |---|---|---|
-| `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards |
+| `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards; from 1.1 the members `abstract`, `license_url` and `content_digest` (AGSC-06-29, AGSC-06-44), the text that starts at its first line that is not blank (AGSC-06-45) and the count and set commitment of the chunks surface (AGSC-06-44) |
+| `knowledge/chunks-index.js` | Knowledge | AGSC-06-37 — the tabular chunk index `chunks-index.toon`, written by the pinned TOON encoder; one writer for the build's `/chunks-index.toon` and the `llm-context` adapter |
+| `knowledge/digest-field.js` | Knowledge | AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17 — the RFC 9530 value `sha-256=:<base64>:`, the RFC 9651 Dictionary written by `structured-headers` over a node:crypto SHA-256 |
 | `governance/ledger.js` | Governance | AGSC-08-20…24 — the derivation, the production of the git-log file, the chain, `verify --ledger` |
 | `governance/auto-merge.js` | Governance | AGSC-08-26(g) — the history check of a channel set to `auto`, read from the git-log file |
 | `governance/boards.js` | Governance | AGSC-10-13, AGSC-10-16…18 — the board exports, the derived `done` and `claimed_by`, the WIP limit |
@@ -708,7 +710,9 @@ drive them, `init` and `ci`.
 
 ```js
 // knowledge/chunks.js
-records(items, { base, maxBytes, license, attachmentBytes, releases }) -> { records, findings }
+records(items, { base, maxBytes, license, attachmentBytes, releases, licenseUrl, contentDigest }) -> { records, findings }
+commitment(records) -> { count, set }              // AGSC-06-44: agsc-chunk-count and agsc-chunk-set
+fromFirstLine(text) -> string                      // AGSC-06-45: the text from its first line that is not blank
 serialize(records, canonicalize) -> string        // one JCS line per chunk, one trailing LF
 files(records, canonicalize, { itemsPerShard }) -> { files: [{path, text}], manifest }
 sections(body); splitBySize(text, maxBytes); cutPoints(body)
@@ -771,6 +775,13 @@ datasetBlock({ config, description, hasLegal, instant, name, served }) -> object
 
 // knowledge/chunks.js (AGSC-06-44)
 licenseUrl(config, { legal }) -> string | null
+
+// knowledge/chunks-index.js (AGSC-06-37)
+chunksIndexToon(records) -> string                 // header chunks[<n>]{id,item,kind,section,ordinal,title,digest}: and one row per line
+indexRows(records); short(hex); INDEX_COLUMNS
+
+// knowledge/digest-field.js (RFC 9530, RFC 9651)
+sha256Field(bytes) -> 'sha-256=:<base64>:'
 
 // distribution/now.js
 state(items, config, { instant, allItems }) -> object
@@ -1027,7 +1038,8 @@ loadBundle(ports, { schemas }) -> Bundle
 | MCP server (both revisions) | `@modelcontextprotocol/server` | 2.4.0 | Apache-2.0 |
 | MCP Streamable HTTP for Node (`mcp --http`) | `@modelcontextprotocol/node` | 2.1.2 | Apache-2.0 |
 | A2A agent card (`/.well-known/agent-card.json`) | `@a2a-js/sdk` | 1.3.0 | Apache-2.0 |
-| TOON tabular encoding (`export --to llm-context`) | `@toon-format/toon` | 4.1.1 | MIT |
+| TOON tabular encoding (`/chunks-index.toon`, `export --to llm-context`) | `@toon-format/toon` | 4.4.0 | MIT |
+| RFC 9651 Structured Fields: the RFC 9530 digest value `sha-256=:<base64>:` | `structured-headers` | 2.1.1 | MIT |
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
 MIT, maintained, zero dependencies, `require()`-able although
@@ -1035,6 +1047,12 @@ the package is `type: module` (exactly as `commander@15` is), and free of any
 clock, network or environment read at runtime — which
 `tests/arch/pinned-dependencies.test.js` asserts by reading the installed file.
 `npm audit` reports 0 vulnerabilities with it in the tree.
+
+`structured-headers` (from 1.1) meets the same five: MIT, maintained (2.1.1, October 2026),
+zero dependencies, a CommonJS build beside its ES module, and no clock, network or
+environment read at run time (`tests/knowledge/digest-field.test.js` reads the installed
+file). It writes the RFC 9651 Dictionary of an RFC 9530 digest value, which the engine had
+written as a template string; the bytes are the same (G-REF of B08-WP4).
 
 The official SDK supplies the JSON-RPC framing, the initialize handshake and
 the version negotiation; nothing of the protocol is hand-rolled. *(1.0: the server spoke

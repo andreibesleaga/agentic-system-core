@@ -13,9 +13,9 @@ const headers = require('../../src/distribution/headers.js');
 const visibility = require('../../src/boundary/visibility.js');
 
 /** The header map `_headers` yields for one concrete route, glob rules applied. */
-function fromHeadersFile(config, route) {
+function fromHeadersFile(config, route, routes) {
   const out = {};
-  for (const set of headers.headerSets(config)) {
+  for (const set of headers.headerSets(config, routes)) {
     if (!matches(set.route, route)) continue;
     for (const [name, value] of set.headers) out[name] = value;
   }
@@ -50,6 +50,26 @@ for (const visibilityValue of ['public', 'restricted']) {
     }
   });
 }
+
+// The files a build writes only on a condition get their block only where the build wrote them
+// (AGSC-06-34, AGSC-06-37, AGSC-06-42); where it did, the block agrees with the boundary too.
+const CONDITIONAL = Object.freeze(['/.well-known/agent-card.json', '/.well-known/ard.json',
+  '/.well-known/ai-catalog.json', '/chunks-index.toon']);
+
+for (const visibilityValue of ['public', 'restricted']) {
+  test(`AGSC-11-03: a file written on a condition agrees with boundary/visibility where it is written (${visibilityValue})`, () => {
+    for (const route of CONDITIONAL) {
+      const fromFile = boundaryMembers(fromHeadersFile({ visibility: visibilityValue }, route, [route]));
+      const fromBoundary = boundaryMembers(visibility.headersFor(route, { level: 2, visibility: visibilityValue }));
+      assert.deepStrictEqual(fromFile, fromBoundary, `${route} (${visibilityValue})`);
+    }
+  });
+}
+
+test('AGSC-09-17 (b): no Content-Digest and no static Repr-Digest reaches _headers', () => {
+  const text = headers.headersFile({}, [...CONDITIONAL, '/chunks.jsonl', '/index.html']);
+  assert.doesNotMatch(text, /Content-Digest|Repr-Digest/iu);
+});
 
 test('the CORS pair and the no-cache list are ONE definition, not two', () => {
   assert.deepStrictEqual(Object.fromEntries(headers.CORS), visibility.CORS_HEADERS);
