@@ -15,6 +15,9 @@ The measured results are in [`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md)
 | `metrics.js` | the pure arithmetic both halves share — median, precision/recall/nDCG/MRR at k, detector precision and recall, rule coverage — and the statistics of the agent-side study: citation precision and recall on unit ids, a percentile bootstrap interval, a paired permutation test, Holm's correction and Cliff's delta. No file, clock or network; the resampling draws from a seeded generator, so a seed fixes the bytes. |
 | `gen-bundle.js` | the deterministic synthetic-Bundle generator behind the build curves. Item *n* is a pure function of *n*. It **refuses to write inside this repository**: point it at a scratch directory. |
 | `queries/bench-v2/` | the committed labelled query set in BEIR layout (`queries.jsonl`, `qrels/test.tsv`). Twenty hand-written intents over the two reference nodes, one gold item each, every gold item published on its node, every label readable by a reviewer. |
+| `queries/agent-study/` | the kit of the agent-side study, before its questions are written: the question template and gold labels in the BEIR layout (one example row), the gold index of the 149 chunks of the two public nodes, the datasheet to fill in at freeze, and the rules for writing the questions ([its README](queries/agent-study/README.md)). |
+| `queries/results-row.schema.json` | the results-row contract: the JSON Schema (draft 2020-12) of a results file, one row per reported number with its model, date, sample size, metric, value and confidence interval, and both configurations for a row that compares with another system. `tools/lint-claims` holds a results file to the same contract. |
+| `runners/` | the runners of the kit, compiled from strict TypeScript under `src-ts/bench/` (`src-ts/bench/kit.ts`) by `tools/build-ts` (never edited by hand). The folder `runners/` has no README of its own, because every file in it is a compiled runner (`tests/arch/typescript-parts.test.js`). `runners/kit.js` checks the agent-study kit for `tools/bench --dry-run` (the gold index against a build, the gold labels, the contract) and writes the gold index from builds: `node bench/runners/kit.js gold-index <node>=<built output>…`. Like `tools/bench`, a runner requires nothing of `src/`. |
 
 The retrieval runner itself is [`../tools/bench`](../tools/bench), standalone and independent of `src/` by the
 rule that governs every checker here (AGSC-09-90).
@@ -22,8 +25,10 @@ rule that governs every checker here (AGSC-09-90).
 ```sh
 node ../tools/bench --help
 node ../tools/bench --dry-run
+node ../tools/bench --set queries/agent-study --node <built output> --dry-run   # the agent-study kit against a build
 SOURCE_DATE_EPOCH=1767225600 node measure.js --layer conformance --scratch /tmp/bench
 ```
 
-Nothing in this kit needs a key, a network connection or a model. The parts that do — the retrieval and
-memory studies — are the work of the `tools/bench` program at 1.1 and are specified, not run, in `docs/BENCHMARKS.md`.
+Nothing in this kit needs a key, a network connection or a model. The parts that do — the scored runs of the
+retrieval, agent-side and memory studies — are the work of the `tools/bench` program at 1.1 and are specified,
+not run, in `docs/BENCHMARKS.md`; their question sets, gold labels and results contract are here.

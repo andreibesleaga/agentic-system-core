@@ -1,4 +1,4 @@
-# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
+# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, PRD-066, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
 @persona-n
 Feature: Researcher measures a node offline and cites exactly what was measured
   As P14 (researcher)
@@ -14,6 +14,17 @@ Feature: Researcher measures a node offline and cites exactly what was measured
     And a labelled query set in the BEIR layout whose gold items are "mcp", "a2a" and "tool-use-retries"
     When the researcher runs "tools/bench" over the built node with that set, twice, under the network trap
     Then both runs score recall and precision at 10 on the surfaces "chunks", "llms" and "search"
+    And the two reports are byte-identical
+    And no network call was attempted
+
+  @PRD-066 @NFR-05 @human @mode-0 @matrix-H19
+  Scenario: A researcher writes the gold index of a built node and checks the agent-study kit against it before any scored run
+    Given a fresh copy of the acceptance Bundle
+    And the Bundle is built
+    And a copy of the shipped agent-study set whose gold index "bench/runners/kit.js gold-index" writes from the build, with its example question labelled by the build's first chunk
+    When the researcher dry-runs "tools/bench" over the built node with that set, twice, under the network trap
+    Then both dry runs exit 0 and the results-row contract accepts its 1 example
+    And both find every row of the gold index among the chunks of the build
     And the two reports are byte-identical
     And no network call was attempted
 

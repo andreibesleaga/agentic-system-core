@@ -13,6 +13,22 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `bench/parity.js` hands the in-process tool servers the site vocabulary, as `agsc mcp` does, and on a
+  node with the domain layer runs the page tools through the page's own `install` and the page-tools
+  module with the domain facts the page script carries, so the call list compares the domain parts of
+  `search`, `read` and `brief` too (AGSC-09-13, AGSC-09-16, AGSC-07-25; test in `tests/bench/kit.test.js`).
+  No emitted byte changes.
+- `tools/lint-claims` holds a results row to the results-row contract (below) on two members it read
+  loosely: `date` must be a string (a list holding one date passed), and `system`, when present, must be
+  a string. A results file the 1.0 tool passed with such a row now fails with `AGSC-E202`; the tool is a
+  repository check of the benchmark kit, not a format rule.
+- `tools/build-ts` compiles a benchmark runner `src-ts/bench/<name>.ts` to `bench/runners/<name>.js`
+  (every other source still to `src/<context>/<name>.js`) and names a compiled runner whose source is gone;
+  `eslint.config.js`, `tsconfig.json` and `tests/arch/typescript-parts.test.js` follow the mapping.
+- `docs/MEASUREMENTS.md` §9 gains a dated paragraph with the install and the cold start measured again on
+  the 1.1 tree (87 packages; `agsc --version`, `lint` and `build` load no MCP or A2A module); the 1.0.0
+  figures stay as they were.
+
 - The local tool server speaks MCP revision 2026-07-28 beside 2025-11-25 (AGSC-09-19; vectors
   `cli-0032` to `cli-0035`): a request that carries its revision in `_meta` is served statelessly, with
   no `initialize` and no `Mcp-Session-Id`; `server/discover` answers `supportedVersions`
@@ -417,6 +433,34 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`tests/arch/pack-and-conform.test.js`). `npm audit` 0.
 
 ### Added
+
+- The kit of the agent-side study under `bench/queries/` (AGSC-00-20, the benchmark kit of 1.1;
+  PRD-066): `agent-study/` with the question template and gold labels in the BEIR layout (one example
+  row), `gold-index.tsv` (the 149 chunks of `agenticsystemcore.com` and `patterns.agenticsystemcore.com`;
+  the chunk-text column left empty, because that text is node prose under the Content Use Terms), the
+  datasheet to fill in at freeze and the rules for writing the set; and `results-row.schema.json`, the
+  results-row contract as a JSON Schema of draft 2020-12 (model, date, n, metric, value, interval; both
+  configurations for a cross-system row; `cited_unit_ids` and `gold_unit_ids`).
+- `tools/bench --dry-run` checks the kit, scoring nothing: the contract accepts its own examples; a set's
+  gold index parses (`AGSC-E201` per malformed row) and names every gold label (`AGSC-E301`); with
+  `--node`, every gold row of a node the build publishes names a chunk of that build (`AGSC-E301`, exit 1)
+  with the same digest prefix (warning `AGSC-E210`), a row of another node counted as a fixture id. The
+  envelope gains `kit` with the counts; two runs over the same inputs give the same bytes.
+- `bench/runners/kit.js`, the kit's runner, in strict TypeScript (`src-ts/bench/kit.ts`, compiled by
+  `tools/build-ts`; shipped, because `tools/bench` calls it): the checks above, validated through the pinned
+  `ajv` 8.20.0 and `ajv-formats` 3.0.1 (no new dependency), and `node bench/runners/kit.js gold-index
+  [--without-excerpts] <node>=<built output>…`, which writes the gold index from builds (it writes the
+  committed copy again byte for byte). Own code where no library applies: the tab-separated reading
+  (IANA `text/tab-separated-values`: a field holds no tab and no line break, so a split reads it) and
+  the statistics, which stay in `bench/metrics.js`.
+- The dependency rule `bench-runners-standalone` (`npm run arch`) and the fitness test
+  `tests/arch/bench-runners.test.js`: a benchmark runner and `tools/bench` require nothing of `src/`, and
+  every runner `tools/bench` requires ships.
+- Tests `tests/bench/agent-kit.test.js` (with two fast-check properties: every results row
+  `tools/lint-claims` accepts, the schema accepts; on the members the lint alone checks, they agree) and
+  the persona-n scenario "A researcher writes the gold index of a built node and checks the agent-study
+  kit against it before any scored run"; `docs/PRD.md` row PRD-066, `docs/BENCHMARKS.md` "The agent-side
+  study: its kit".
 
 - `/chunks-index.toon` (AGSC-06-37; `chk-0010`, `build-0037`): at Level 2 and above, when the published
   set holds at most 500 items, the tabular index of `/chunks.jsonl` in TOON 4.1 — the header

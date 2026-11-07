@@ -25,7 +25,7 @@ truth; the engine is one implementation of it.
 | `features/` | the persona scenarios in Gherkin, executed by the acceptance runner | [features/README.md](../features/README.md) |
 | `docs/` | explanations for every audience; none normative | [docs/README.md](README.md) |
 | `examples/` | connector examples, one plugin of each kind, a hosting profile | [examples/README.md](../examples/README.md) |
-| `bench/` | the benchmark kit: measurement script, query sets, the security corpus | [bench/README.md](../bench/README.md) |
+| `bench/` | the benchmark kit: measurement script, query sets, the kit of the agent-side study and its results-row contract, the runners compiled from `src-ts/bench/`, the security corpus | [bench/README.md](../bench/README.md) |
 | `packages/agsc-cli/` | the short-name alias package on npm | [packages/agsc-cli/README.md](../packages/agsc-cli/README.md) |
 | `internet-draft/`, `w3id/`, `w3c/` | the Internet-Draft, the persistent-identifier files, the community-group material | their READMEs |
 | `.github/workflows/` | the test lane and the release lane | [.github/workflows/README.md](../.github/workflows/README.md) |

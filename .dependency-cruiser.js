@@ -14,7 +14,8 @@
 //
 // The TypeScript parts under src-ts/<context>/ (docs/ENGINEERING.md, "TypeScript parts")
 // keep the same map: each rule reads `src(?:-ts)?/`, so a source and the file tsc compiles
-// from it into src/ are judged alike.
+// from it into src/ are judged alike. The benchmark runners under src-ts/bench/, which tsc
+// compiles into bench/runners/, belong to no context and require nothing of the engine.
 //
 // Every rule below is an error: a violation fails the gate.
 
@@ -92,6 +93,14 @@ module.exports = {
       severity: 'error',
       from: { path: '^(src|src-ts|bin)/|^index\\.js$' },
       to: { dependencyTypes: ['npm-no-pkg', 'npm-unknown', 'undetermined'] },
+    },
+    {
+      name: 'bench-runners-standalone',
+      comment: 'a benchmark runner under src-ts/bench/ measures what a consumer of the published files gets, so it '
+        + 'requires nothing of the engine under src/ or src-ts/ (the independence of AGSC-09-90; docs/BENCHMARKS.md)',
+      severity: 'error',
+      from: { path: '^src-ts/bench/' },
+      to: { path: '^src(?:-ts)?/', pathNot: '^src-ts/bench/' },
     },
     {
       name: 'no-unresolvable',

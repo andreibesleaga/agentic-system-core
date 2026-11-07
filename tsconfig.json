@@ -2,7 +2,8 @@
     "//": [
         "The TypeScript parts of the engine (docs/ENGINEERING.md, 'TypeScript parts'). Sources live under",
         "src-ts/<context>/, mirroring src/; tools/build-ts compiles each one to src/<context>/<name>.js as",
-        "CommonJS and the compiled file is committed, so neither an install nor a run needs TypeScript.",
+        "CommonJS (a benchmark runner src-ts/bench/<name>.ts to bench/runners/<name>.js) and the compiled",
+        "file is committed, so neither an install nor a run needs TypeScript.",
         "'tsc --noEmit' (npm run typecheck) checks the sources; 'npm run check:ts' proves the committed",
         "output is what this compiler writes. Target and lib follow the Node floor of package.json (22.13)."
     ],

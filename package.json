@@ -35,6 +35,7 @@
         "tools/count-artifacts",
         "tools/bench",
         "bench/queries/",
+        "bench/runners/",
         "index.js",
         "spec/",
         "schema/",

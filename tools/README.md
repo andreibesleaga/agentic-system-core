@@ -27,7 +27,7 @@ output with them.
 | `gen-dc-profile` | the table of AGSC-05-26 and `schema/item.schema.json` → `schema/dctap.csv`, the Dublin Core Tabular Application Profile; `--check` |
 | `gen-shapes` | `schema/item.schema.json`, the relation table of AGSC-03-01 and the table of AGSC-05-26 → `schema/item-shapes.ttl`, the SHACL shapes of the graph (informative; they run in a development lane, [docs/SHACL-SHAPES.md](../docs/SHACL-SHAPES.md)); `--check` |
 | `count-artifacts` | every published count, derived from the files (rules, codes, vectors, terms) |
-| `bench` | the retrieval benchmark over a built node's published surfaces (`docs/BENCHMARKS.md`) |
+| `bench` | the retrieval benchmark over a built node's published surfaces; `--dry-run` scores nothing and checks the kit of the agent-side study and the results-row contract, against a build with `--node` (`docs/BENCHMARKS.md`) |
 
 **What `validate-wellknown` does not check at 1.0.** Given a URL, it checks the
 response headers of the discovery document and of every same-origin public artefact

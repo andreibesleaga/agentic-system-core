@@ -123,6 +123,22 @@ describe('tools/build-ts', () => {
     assert.match(check.err, /src\/shared\/gone\.js was generated from src-ts\/shared\/gone\.ts, which is gone; delete it/u);
   });
 
+  it('a benchmark runner under src-ts/bench/ compiles to bench/runners/, and a runner whose source is gone is named', () => {
+    const root = scratch({ 'src-ts/bench/one.ts': ONE });
+    const write = runOn(root, []);
+    assert.equal(write.code, 0, write.err);
+    assert.equal(write.out, 'bench/runners/one.js: written\nsrc-ts/: 1 module compiled\n');
+    const text = fs.readFileSync(path.join(root, 'bench', 'runners', 'one.js'), 'utf8');
+    assert.ok(text.startsWith(`${HEADER.replace('shared', 'bench')}"use strict";\n`), text);
+    assert.ok(!fs.existsSync(path.join(root, 'src', 'bench')), 'nothing is written under src/bench/');
+    assert.equal(runOn(root, ['--check']).code, 0);
+
+    const orphan = scratch({ 'src-ts/bench/one.ts': ONE, 'bench/runners/gone.js': HEADER.replace('shared/one.ts', 'bench/gone.ts') });
+    const check = runOn(orphan, ['--check']);
+    assert.equal(check.code, 1);
+    assert.match(check.err, /bench\/runners\/gone\.js was generated from src-ts\/bench\/gone\.ts, which is gone; delete it/u);
+  });
+
   it('a missing tsconfig.json is exit 1', () => {
     const dir = tmpdir();
     assert.equal(buildTs.run(['--check'], { ...quiet, root: dir }), 1);

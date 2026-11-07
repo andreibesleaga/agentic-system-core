@@ -19,10 +19,13 @@
 // `date` (a calendar date, YYYY-MM-DD), its sample size `n` (a positive integer),
 // its `metric`, its `value` (a finite number) and a confidence interval
 // `ci: [low, high]` of finite numbers with low ≤ high. A row that
-// compares with another system (`system` other than "agentic-system-core") must
+// compares with another system (`system`, a string, other than "agentic-system-core") must
 // carry both configurations in `configs`, one per system, each an object with at
 // least one member (a placeholder such as `true` or `{}` publishes nothing). Each missing member is
-// a finding (AGSC-E202).
+// a finding (AGSC-E202). The same contract is the JSON Schema
+// bench/queries/results-row.schema.json, which every row this tool accepts passes
+// (tests/bench/agent-kit.test.js); the order of `ci` and the key of the other
+// system's configuration are the two checks only this tool makes.
 //
 // Exit 0 pass, 1 findings, 2 usage.
 'use strict';
@@ -155,7 +158,7 @@ function lintText(file, text) {
 function rowProblems(row) {
   const problems = [];
   if (typeof row.model !== 'string' || row.model === '') problems.push('names no model');
-  if (!isCalendarDate(row.date)) problems.push('carries no date (YYYY-MM-DD)');
+  if (typeof row.date !== 'string' || !isCalendarDate(row.date)) problems.push('carries no date (YYYY-MM-DD)');
   if (!Number.isInteger(row.n) || row.n < 1) problems.push('carries no sample size n');
   if (typeof row.metric !== 'string' || row.metric === '') problems.push('names no metric');
   if (!Number.isFinite(row.value)) problems.push('carries no numeric value');
@@ -163,7 +166,8 @@ function rowProblems(row) {
   if (!Array.isArray(ci) || ci.length !== 2 || !ci.every(Number.isFinite) || ci[0] > ci[1]) {
     problems.push('carries no confidence interval [low, high]');
   }
-  if (row.system !== undefined && row.system !== OWN_SYSTEM) {
+  if (row.system !== undefined && typeof row.system !== 'string') problems.push('names its system with something other than a string');
+  else if (row.system !== undefined && row.system !== OWN_SYSTEM) {
     const configs = row.configs && typeof row.configs === 'object' ? row.configs : {};
     for (const system of [OWN_SYSTEM, row.system]) {
       // Own members only: an inherited name such as `constructor` is no configuration.

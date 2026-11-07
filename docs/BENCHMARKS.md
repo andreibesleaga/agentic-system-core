@@ -26,6 +26,8 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --assemble --scratch /tmp/ben
 node tools/bench --help
 node tools/bench --dry-run                                    # validate the query set, score nothing
 node tools/bench --node <built-output-dir> --origin-node patterns --json
+node tools/bench --set bench/queries/agent-study --node <built-output-dir> --dry-run   # the agent-study kit against a build
+node bench/runners/kit.js gold-index <host>=<built-output-dir>   # the gold index of a build
 ```
 
 The synthetic Bundles behind the build curves are written by `bench/gen-bundle.js`, which **refuses to write inside this repository**: they are derived data, up to a quarter of a gigabyte, and they belong in a scratch directory.
@@ -66,6 +68,24 @@ Its design, fixed before any number exists:
 - Every model condition: temperature pinned, model id and date recorded, at least three seeded runs, medians with 95 % bootstrap intervals, paired tests with Holm correction, pass^k at k = 3, effect sizes as Cliff's δ.
 - Release in BEIR layout with a datasheet, machine-readable dataset metadata and an archival DOI. The corpus snapshot is fetched from the archive, never from the live site, and no comparator's live endpoint is ever a dependency: a comparator's published files are downloaded once, pinned by hash and dated.
 - `bench-v2` freezes at submission. A change makes `bench-v3`; a cited benchmark is never rewritten.
+
+## The agent-side study: its kit
+
+The second study asks whether an agent finds, checks and cites a node's published units better through the node's contract — its tool server, its chunk export and its discovery document (condition C2) — than over plain pages (C0) or over plain pages and `llms.txt` (C1). Its unit is a chunk, not an item: a question's gold labels are chunk ids, and an answer is scored on the chunk ids it cites (`bench/metrics.js#citationScore`, with the interval, paired test, correction and effect size of the list above). The model runs are not part of the engine and have not been run; what the engine ships is everything that must exist, dated, before any scored run:
+
+| File | What it is |
+|---|---|
+| `bench/queries/agent-study/queries.jsonl`, `qrels/test.tsv` | the question template and the gold labels in the BEIR layout; one example row until the questions are written |
+| `bench/queries/agent-study/gold-index.tsv` | every chunk of the two public nodes (`agenticsystemcore.com`, 21 chunks; `patterns.agenticsystemcore.com`, 128): node, chunk id, item, ordinal, kind, section, title and digest prefix. The question writer picks gold units from it. The repository copy leaves the chunk-text column empty, because that text is the nodes' prose, under their Content Use Terms; `node bench/runners/kit.js gold-index` writes the full index from the builds |
+| `bench/queries/agent-study/datasheet.md` | the datasheet, filled in when the set is frozen |
+| `bench/queries/agent-study/README.md` | the six rules for writing the set: gold labels before any run, no leakage, the counts, the split by item, one gold set per question, the freeze |
+| `bench/queries/results-row.schema.json` | the results-row contract (below) |
+
+**The results-row contract.** A results file is `{ "rows": [...] }`, one row per reported number. Each row names its `model`, its `date` (a calendar day), its sample size `n`, its `metric`, its `value` and a confidence interval `ci: [low, high]`; a row that compares with another system names it in `system` and publishes both configurations in `configs`. A row of the agent-side study also carries `cited_unit_ids` and `gold_unit_ids`. The contract is a JSON Schema of draft 2020-12. `tools/lint-claims --results <file>` holds a results file to the same contract and adds the two checks a schema cannot state: `low` is not above `high`, and the other system's configuration is keyed by its name. Every row the lint accepts, the schema accepts (a property test in `tests/bench/agent-kit.test.js`).
+
+**The dry run.** `tools/bench --dry-run` scores nothing and reads files only. With any set it checks that the contract is a schema of draft 2020-12 that accepts its own examples. With a set that carries a gold index it checks that each row of the index has its nine columns, a 64-digit chunk id, an ordinal and a 16-digit digest prefix, and names a chunk id once, and that every gold label names a chunk of the index. With `--node <built output>` it reads the build's `chunks.jsonl` and its shards: a gold row of a node the build publishes must name a chunk of that build (`AGSC-E301`, exit 1, otherwise), and its digest prefix must match (the warning `AGSC-E210` otherwise: the chunk changed, so its questions need a second look). A row of another node is a fixture id for that build, counted under `fixture_ids` and not checked, because only a build of its own node can check it. The report under `kit` gives the counts, and two runs over the same inputs give the same bytes. On 7 November 2026 a build of the demonstration node (`agsc-demo-node`) with this engine at the fixed epoch held all 128 chunk ids of `patterns.agenticsystemcore.com` with the digest prefixes the index records, and the 21 rows of the main node were fixture ids for it.
+
+The runner behind the dry run, `bench/runners/kit.js`, is compiled from strict TypeScript (`src-ts/bench/kit.ts`) and, like `tools/bench`, requires nothing of `src/`; it validates through Ajv, the JSON Schema validator the engine already pins. The statistics stay in `bench/metrics.js`. The maintained statistics package read on 7 November 2026, `simple-statistics` 8.0.0, has a permutation test for two independent samples drawn from `Math.random`, and none of the rest the study needs: a paired permutation test that is exact up to 16 pairs, a percentile bootstrap interval, Holm's correction and Cliff's delta, each reproducible from a seed.
 
 ## The memory-competency layer, and which benchmarks apply at all
 

@@ -11,7 +11,7 @@
 //                rounded up; a change may lower one, never raise it silently.
 //   TypeScript   the sources under src-ts/ get the strict rules of typescript-eslint,
 //                the same style and the engine's size budgets; the files tsc compiles
-//                from them into src/ are not linted, their source is (and
+//                from them into src/ and bench/runners/ are not linted, their source is (and
 //                tests/arch/typescript-parts.test.js proves them equal to it).
 //
 // Everything runs offline; every plugin is a pinned devDependency.
@@ -69,13 +69,18 @@ const STYLE = {
   '@stylistic/linebreak-style': ['warn', 'unix'],
 };
 
-/** src/<path>.js for every src-ts/<path>.ts: the files tools/build-ts compiles, linted at their source. */
+/**
+ * src/<path>.js for every src-ts/<path>.ts, and bench/runners/<path>.js for every
+ * src-ts/bench/<path>.ts: the files tools/build-ts compiles, linted at their source.
+ */
 function compiledFromTypeScript(dir = 'src-ts') {
   if (!fs.existsSync(path.join(__dirname, dir))) return [];
   return fs.readdirSync(path.join(__dirname, dir), { withFileTypes: true }).flatMap((entry) => {
     const rel = `${dir}/${entry.name}`;
     if (entry.isDirectory()) return compiledFromTypeScript(rel);
-    return rel.endsWith('.ts') ? [`src/${rel.slice('src-ts/'.length, -'.ts'.length)}.js`] : [];
+    if (!rel.endsWith('.ts')) return [];
+    const stem = rel.slice(0, -'.ts'.length);
+    return [stem.startsWith('src-ts/bench/') ? `bench/runners/${stem.slice('src-ts/bench/'.length)}.js` : `src/${stem.slice('src-ts/'.length)}.js`];
   });
 }
 

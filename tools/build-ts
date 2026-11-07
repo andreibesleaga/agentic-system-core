@@ -2,7 +2,8 @@
 'use strict';
 // tools/build-ts — compiles the TypeScript parts of the engine (docs/ENGINEERING.md,
 // "TypeScript parts"): every module under src-ts/<context>/ to CommonJS at
-// src/<context>/<name>.js, with the compiler and the options of tsconfig.json, and a
+// src/<context>/<name>.js, and every benchmark runner under src-ts/bench/ to
+// bench/runners/<name>.js, with the compiler and the options of tsconfig.json, and a
 // first line that names the source and the compiler:
 //
 //   // generated from src-ts/<path>.ts by tsc <version>; do not edit
@@ -18,7 +19,7 @@
 // nothing and exits 1 when a committed file is not what the compiler writes now. Both
 // refuse a type error (with its file, line, column and code), a compiled file whose
 // source is gone, and a hand-written module of src/ where a compiled one would go.
-// The compiler runs in memory: nothing is written outside src/.
+// The compiler runs in memory: nothing is written outside src/ and bench/runners/.
 //
 // A maintainer tool, kept in the repository only (package.json `files` does not list
 // it): it is the one tool that requires a development dependency, the compiler.
@@ -30,7 +31,8 @@ const path = require('node:path');
 
 const HELP = `build-ts [--check] [--help]
 
-  Compiles src-ts/**/*.ts to CommonJS under src/ with tsconfig.json, each file headed
+  Compiles src-ts/**/*.ts to CommonJS under src/ (src-ts/bench/ to bench/runners/)
+  with tsconfig.json, each file headed
   "generated from src-ts/<path> by tsc <version>; do not edit".
 
   --check  write nothing; exit 1 when a committed file is not what tsc writes now
@@ -63,8 +65,13 @@ function located(ts, root, d) {
   return `${toPosix(path.relative(root, d.file.fileName))}:${line + 1}:${character + 1} TS${d.code} ${message}`;
 }
 
-/** src-ts/<path>.ts -> src/<path>.js, root-relative POSIX paths. */
+/** The folder of the benchmark runners' sources, and the folder they compile to. */
+const BENCH_SOURCES = 'src-ts/bench/';
+const BENCH_RUNNERS = 'bench/runners/';
+
+/** src-ts/bench/<path>.ts -> bench/runners/<path>.js, any other src-ts/<path>.ts -> src/<path>.js. */
 function targetOf(source) {
+  if (source.startsWith(BENCH_SOURCES)) return `${BENCH_RUNNERS}${source.slice(BENCH_SOURCES.length, -'.ts'.length)}.js`;
   return `src/${source.slice('src-ts/'.length, -'.ts'.length)}.js`;
 }
 
@@ -72,7 +79,7 @@ function targetOf(source) {
  * Compile src-ts/ of `root` in memory.
  *
  * tsconfig.json says `noEmit`, so a bare `tsc` only checks; here the program emits, one
- * source at a time, into a callback, and the target is always src/<path>.js. The root and
+ * source at a time, into a callback, and the target is `targetOf` the source. The root and
  * output folders are names only, which the compiler needs because `allowJs` puts the
  * JavaScript modules a source imports into the program (a source reaches one as
  * `../../src/<context>/<file>.js`, the same path from src-ts/ and from src/); those are
@@ -97,7 +104,7 @@ function compile(root) {
   return { errors: [], files };
 }
 
-/** Every `.js` under src/ of `root` whose first line names a TypeScript source, as {target, source}. */
+/** Every `.js` under src/ or bench/runners/ of `root` whose first line names a TypeScript source, as {target, source}. */
 function committed(root) {
   const out = [];
   const walk = (dir) => {
@@ -112,6 +119,7 @@ function committed(root) {
     }
   };
   walk(path.join(root, 'src'));
+  walk(path.join(root, BENCH_RUNNERS));
   return out;
 }
 
@@ -182,4 +190,4 @@ function run(argv, io = {}) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, HEADER_LINE, compile, readConfig, run };
+module.exports = { HELP, HEADER_LINE, compile, readConfig, run, targetOf };

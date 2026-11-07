@@ -57,9 +57,11 @@ test('only the nine checkers, the two generators of 1.1, the counter and the ben
     assert.strictEqual(ships(`tools/${tool}`), shipped.includes(`tools/${tool}`),
       `tools/${tool} ${shipped.includes(`tools/${tool}`) ? 'must' : 'must not'} ship`);
   }
-  // The benchmark tool reads its committed query set; the measurement runners and
-  // their corpus are the maintainer's and stay in the repository.
+  // The benchmark tool reads its committed query sets and the results-row contract, and
+  // its dry run calls the kit's runner; the measurement scripts and their corpus are the
+  // maintainer's and stay in the repository.
   assert.ok(ships('bench/queries/'));
+  assert.ok(ships('bench/runners/kit.js'));
   assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js'));
 });
 

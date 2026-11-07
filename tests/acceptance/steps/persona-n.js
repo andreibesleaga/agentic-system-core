@@ -1,7 +1,8 @@
 'use strict';
 // verifies AGSC-05-06
 // Steps of features/persona-n-researcher.feature: a researcher who measures a node
-// with the shipped benchmark kit, offline, gets the same numbers twice, checks that
+// with the shipped benchmark kit, offline, gets the same numbers twice, checks the kit of the
+// agent-side study against a build before any scored run, checks that
 // the three graph dumps of a build hold one graph, and cites exactly what was
 // measured — the release (CITATION.cff), the node and its content version (the
 // graph dumps and the provenance header of llms.txt) and the conformance report.
@@ -19,6 +20,8 @@ const { ROOT } = require('./_world.js');
 
 const GENERATOR = path.join(ROOT, 'bench', 'gen-bundle.js');
 const BENCH = path.join(ROOT, 'tools', 'bench');
+const AGENT_STUDY = path.join(ROOT, 'bench', 'queries', 'agent-study');
+const KIT = path.join(ROOT, 'bench', 'runners', 'kit.js');
 const BENCH_SURFACES = ['chunks', 'llms', 'search'];
 
 /** One RDF term as a comparable string; literals keep their datatype or language. */
@@ -117,6 +120,54 @@ module.exports = [
             assert.ok(typeof s[measure] === 'number' && s[measure] >= 0 && s[measure] <= 1, `${name} ${measure}`);
           }
         }
+      }
+    },
+  },
+  {
+    pattern: 'a copy of the shipped agent-study set whose gold index "bench/runners/kit.js gold-index" writes from the build, with its example question labelled by the build\'s first chunk',
+    run(world) {
+      const set = world.temp('agsc-acc-agent-study-');
+      fs.cpSync(AGENT_STUDY, set, { recursive: true });
+      const host = new URL(JSON.parse(world.read('agsc.config.json')).site.base).host;
+      const r = spawnSync(process.execPath, [KIT, 'gold-index', `${host}=www`], { cwd: world.dir, encoding: 'utf8', env: world.offlineEnv() });
+      assert.strictEqual(r.status, 0, r.stderr);
+      fs.writeFileSync(path.join(set, 'gold-index.tsv'), r.stdout);
+      const first = r.stdout.split('\n')[1].split('\t')[1];
+      fs.writeFileSync(path.join(set, 'qrels', 'test.tsv'), `query-id\tcorpus-id\tscore\nq-example\t${first}\t1\n`);
+      world.state.querySet = set;
+      world.state.goldRows = r.stdout.split('\n').filter(Boolean).length - 1;
+    },
+  },
+  {
+    pattern: 'the researcher dry-runs "tools/bench" over the built node with that set, twice, under the network trap',
+    run(world) {
+      world.state.reports = [1, 2].map(() => {
+        const r = spawnSync(process.execPath, [BENCH, '--node', 'www', '--set', world.state.querySet, '--dry-run', '--json'],
+          { cwd: world.dir, encoding: 'utf8', env: world.offlineEnv() });
+        world.state.exits = [...(world.state.exits || []), r.status];
+        return r.stdout;
+      });
+    },
+  },
+  {
+    pattern: /^both dry runs exit 0 and the results-row contract accepts its (\d+) examples?$/u,
+    run(world, examples) {
+      assert.deepStrictEqual(world.state.exits, [0, 0]);
+      for (const text of world.state.reports) {
+        const report = JSON.parse(text);
+        assert.strictEqual(report.status, 'dry-run');
+        assert.strictEqual(report.counts.error, 0);
+        assert.strictEqual(report.kit.contract.examples, Number(examples));
+      }
+    },
+  },
+  {
+    pattern: 'both find every row of the gold index among the chunks of the build',
+    run(world) {
+      const rows = world.state.goldRows;
+      assert.ok(rows > 3, `${rows} gold rows`);
+      for (const text of world.state.reports) {
+        assert.deepStrictEqual(JSON.parse(text).kit.gold_index, { checked: rows, digest_changed: 0, fixture_ids: 0, found: rows, rows });
       }
     },
   },

@@ -1,6 +1,6 @@
 # `tests/bench/`
 
-**Summary.** Unit tests of the benchmark kit and its measurement script. Subject: `bench/, tools/bench`.
+**Summary.** Unit tests of the benchmark kit and its measurement script. Subject: `bench/` (its runners under `bench/runners/` included), `tools/bench`.
 
 **Read after:** [tests/README.md](../README.md) and [docs/TESTING.md](../../docs/TESTING.md).
 

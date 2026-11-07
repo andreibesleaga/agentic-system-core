@@ -237,6 +237,25 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(r.per_tool.remember.required_difference, 1);
   });
 
+  it('AGSC-09-13, AGSC-09-16: on a node with the domain layer the in-process servers read the site vocabulary, as `agsc mcp` does', async () => {
+    const { VALID } = require('../knowledge/_domain-fixtures.js');
+    const dir = path.join(tmpdir(), 'bundle-domain');
+    fs.cpSync(FIXTURE, dir, { recursive: true });
+    const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
+    fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({ ...config, domain: { vocabulary: 'domain/vocabulary.ttl' }, spec_version: '1.1.0' }, null, 2)}\n`);
+    fs.mkdirSync(path.join(dir, 'domain'));
+    fs.writeFileSync(path.join(dir, 'domain', 'vocabulary.ttl'), VALID);
+    const handoff = path.join(dir, 'content', 'concepts', 'handoff.md');
+    fs.writeFileSync(handoff, fs.readFileSync(handoff, 'utf8').replace('\nkind: pattern\n', '\nkind: pattern\ndomain_type: Engine\ndomain_links:\n  controlled-by:\n    - supervisor\n'));
+    const spec = { calls: [['brief', { selection: ['handoff', 'supervisor'] }], ['search', { query: 'handoff' }]], per_item: [['read', { slug: '$slug' }]] };
+    const r = await parity.run(dir, spec);
+    assert.equal(r.stdio_exit, 0);
+    assert.deepEqual(r.differing, [], 'the page, the module, the projected and the local server and the stdio process agree');
+    assert.equal(r.equal, r.calls);
+    const local = parity.inProcess(dir);
+    assert.ok(local.local.call('read', { slug: 'handoff' }).body.domain, 'the local server gives the item its domain parts');
+  });
+
   it('a difference that does not have the required shape stays a difference', () => {
     const server = { body: { code: 'AGSC-E003' }, type: 'error' };
     const page = { body: { findings: [{ code: 'AGSC-E506' }], frontmatter: { prov: { origin: 'ai-generated' } } }, type: 'proposal' };

@@ -73,6 +73,33 @@ function callList(spec, slugs) {
   return out;
 }
 
+/**
+ * The page-tools module called as it exports itself, over the build's routes. On a node whose
+ * listed items carry the domain layer it gets what the page script gets (AGSC-09-13, AGSC-09-16):
+ * the algebra's domain readers, a `briefOf` given the domain facts that no route carries (the
+ * listed contexts, the domain links between listed items, the withheld items;
+ * `distribution/domain-view.js#scripts`) and the domain parts on its answers
+ * (`tool-answers.js#toolDomainToolset`); on any other node, the 1.0 toolset.
+ */
+function moduleHost(bundle, model, sources, corpusOptions) {
+  const site = require(path.join(REPO, 'src', 'distribution', 'site.js'));
+  const pageTools = require(path.join(REPO, 'src', 'distribution', 'page-tools.js'));
+  const toolAnswers = require(path.join(REPO, 'src', 'distribution', 'tool-answers.js'));
+  const domainView = require(path.join(REPO, 'src', 'distribution', 'domain-view.js'));
+  const compose = require(path.join(REPO, 'src', 'composition', 'compose.js'));
+  const brief = require(path.join(REPO, 'src', 'composition', 'brief.js'));
+  const { selectionDigestInput } = require(path.join(REPO, 'src', 'composition', 'harness.js'));
+  const corpus = pageTools.pageCorpus(sources, corpusOptions);
+  const facts = domainView.scripts(site.publishedItems(bundle.items, bundle.config.releases), bundle.config, model, bundle.items);
+  if (facts === undefined) return pageTools.pageToolset(corpus, { briefOf: brief.briefOf, compose: compose.compose, selectionDigestInput });
+  const known = { contexts: facts.contexts, domainEdges: facts.edges, withheld: facts.withheld };
+  const core = {
+    briefOf: (result, options) => brief.briefDomainOf(result, { ...options, ...known }),
+    compose: compose.compose, domainOf: brief.domainOf, domainWithin: brief.domainWithin, selectionDigestInput,
+  };
+  return toolAnswers.toolDomainToolset(pageTools.pageToolset(corpus, core), corpus, core, facts.contexts, facts.withheld);
+}
+
 /** Build a Bundle in process and return the three in-process toolsets. */
 function inProcess(bundleDir, options = {}) {
   const { createFileSystem, readSchemas } = require(path.join(REPO, 'src', 'adapters', 'node-fs.js'));
@@ -81,10 +108,7 @@ function inProcess(bundleDir, options = {}) {
   const { loadBundle } = require(path.join(REPO, 'src', 'application', 'bundle.js'));
   const site = require(path.join(REPO, 'src', 'distribution', 'site.js'));
   const mcpTools = require(path.join(REPO, 'src', 'distribution', 'mcp-tools.js'));
-  const pageTools = require(path.join(REPO, 'src', 'distribution', 'page-tools.js'));
-  const compose = require(path.join(REPO, 'src', 'composition', 'compose.js'));
-  const { briefOf } = require(path.join(REPO, 'src', 'composition', 'brief.js'));
-  const { selectionDigestInput } = require(path.join(REPO, 'src', 'composition', 'harness.js'));
+  const { siteModel } = require(path.join(REPO, 'src', 'application', 'cli', 'verbs', 'lint.js'));
 
   const fs = createFileSystem(bundleDir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(REPO)) });
@@ -105,18 +129,21 @@ function inProcess(bundleDir, options = {}) {
   // takes the loaded shape, so the projection is the loaded items it names.
   const publishedSlugs = new Set(site.publishedItems(bundle.items, bundle.config.releases).map((i) => i.slug));
   const published = bundle.items.filter((i) => publishedSlugs.has(i.slug));
-  // The local server is handed the route map of its build, as the `mcp` verb hands it (the
-  // discovery document and the chunk lines of AGSC-09-13 come from there).
-  const artifacts = files;
+  // The local server is handed the route map of its build and the site vocabulary, as the `mcp`
+  // verb hands them (the discovery document and the chunk lines of AGSC-09-13 come from the
+  // routes; the domain parts of an answer and the brief's domain links from the vocabulary,
+  // AGSC-09-13, AGSC-07-25; `null` on a node without the domain layer).
+  const model = siteModel(bundle);
+  const served = { artifacts: files, domain: model };
   const licenseProse = api.LICENSE_PROSE;
   return {
     bundle,
-    local: mcpTools.tools(bundle, { artifacts }),
-    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, { artifacts }),
+    local: mcpTools.tools(bundle, served),
+    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, served),
     published: published.map((i) => i.slug).sort(),
-    module: pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId, licenseProse }),
-      { briefOf, compose: compose.compose, selectionDigestInput }),
-    page: api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse }), core),
+    module: moduleHost(bundle, model, sources, { bundleId, licenseProse }),
+    // `install` is the page's own entry: the domain parts on a node that has them (AGSC-09-16).
+    page: api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse }), core),
     slugs: bundle.items.map((i) => i.slug).sort(),
   };
 }

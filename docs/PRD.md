@@ -285,6 +285,13 @@ All requirements previously marked `should`, `v1.x`, `v1.1` or "schema-affecting
 
 *Note:* everything configurable from `.env` with a 10 USD cap over every model use is PRD-065, which also carries the budget sum, the planner cap and the dry run; the whole declared scope in the first standard, even where a feature ships at 1.1 or 2.0, is AGSC-00-20; Mode 5 is the **live board** of PRD-064 — the blackboard pattern is its cited lineage and Kanban its cited operating discipline (`docs/RELATED-WORK.md`).
 
+### 2.9g Amendment 13 — requirements added for 1.1 (2026-11-07)
+One row for each feature of 1.1 that no row above states; each is traced in `docs/REQUIREMENTS-MATRIX.md`. The rows above stay as written.
+
+| ID | Requirement (EARS) | Acceptance | Version |
+|---|---|---|---|
+| PRD-066 | THE SYSTEM SHALL ship the kit of the agent-side study under `bench/queries/` — the question template and gold labels in the BEIR layout, the gold index of the chunks of the two public nodes, the datasheet to fill in at freeze, the rules for writing the questions, and the results-row contract as a JSON Schema (draft 2020-12) — AND WHEN `tools/bench --dry-run` runs, with `--node <built output>` or without, THE SYSTEM SHALL check offline, scoring nothing, that the contract accepts its own examples, that the gold index parses and that every gold label names a chunk of it, that each gold row of a node the build publishes names a chunk of that build (a row of another node being counted as a fixture id), and report the same JSON on every run of the same inputs. | `tests/bench/agent-kit.test.js`; the persona-n scenario "A researcher writes the gold index of a built node and checks the agent-study kit against it before any scored run"; a gold chunk the build does not publish is `AGSC-E301` and exit 1. | v1.1 |
+
 ### 5.1 Note to the definition of done — `lint --self` is superseded
 
 §5's own sentence is unchanged. Item (2) of the definition of done reads

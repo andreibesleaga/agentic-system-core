@@ -31,6 +31,8 @@ const COVERED = Object.freeze({
   'src/ports': ['src/README.md', '`tests/ports/` holds the folder to exactly its four interface files'],
   'src-ts/shared': ['src-ts/README.md', 'Each context folder of `src-ts/` is described by the README of the same folder under `src/`'],
   'src-ts/distribution': ['src-ts/README.md', 'Each context folder of `src-ts/` is described by the README of the same folder under `src/`'],
+  'src-ts/bench': ['src-ts/README.md', 'and `bench/` by [bench/README.md](../bench/README.md)'],
+  'bench/runners': ['bench/README.md', 'The folder `runners/` has no README of its own'],
 });
 
 /** Folder names `.gitignore` sets aside (lines of the form `name/`), plus git's own. */

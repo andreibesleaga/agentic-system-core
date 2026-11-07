@@ -297,6 +297,14 @@ its source and the compiler:
 // generated from src-ts/shared/version-line.ts by tsc 6.0.3; do not edit
 ```
 
+The runners of the benchmark kit are the one exception to the folder of a context: a
+runner lives at `src-ts/bench/<name>.ts` and compiles to `bench/runners/<name>.js`, beside
+the kit it serves. It belongs to no context and requires nothing of `src/`, because it
+measures what a consumer of the published files gets, as `tools/bench` does
+(`npm run arch` rule `bench-runners-standalone`, `tests/arch/bench-runners.test.js`). The
+first, `src-ts/bench/kit.ts`, checks the kit of the agent-side study for
+`tools/bench --dry-run` (`docs/BENCHMARKS.md`).
+
 So running the engine, an install with `npm ci --omit=dev` and the published package
 need no TypeScript: what runs and what ships is the JavaScript under `src/`, and the
 sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
@@ -367,7 +375,7 @@ five that did when that check began (`bench/parity.js`, `src/application/plugins
 core), so a protocol module cannot pass by its name. And a compiled module that bears
 such a mark must require an official `@modelcontextprotocol/*` package: a TypeScript
 protocol module speaks through the official SDK, never through a JSON-RPC layer of its
-own. `tools/build-ts` compiles
-`src-ts/` into `src/` only, so the first runner of `bench/runners/` also extends it.
-The architecture scans of `tests/arch/` read the compiled files, which write
+own. `tools/build-ts` compiles `src-ts/bench/` into `bench/runners/` and the rest of
+`src-ts/` into `src/`, and the same test proves both mappings and that every file of
+`bench/runners/` is compiled. The architecture scans of `tests/arch/` read the compiled files, which write
 `require("…")` with double quotes, like every other module of `src/`.

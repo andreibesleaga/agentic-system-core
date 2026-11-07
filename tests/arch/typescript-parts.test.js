@@ -11,8 +11,8 @@
 //   * A TypeScript protocol module speaks through the official MCP SDK, never through a
 //     JSON-RPC layer of its own: every compiled module of src/ that bears a protocol mark
 //     requires one of the official `@modelcontextprotocol/*` packages.
-//   * The committed output under src/ is byte for byte what the pinned compiler writes
-//     from src-ts/ now (compiled in memory by tools/build-ts), and every compiled file
+//   * The committed output under src/ and bench/runners/ is byte for byte what the pinned
+//     compiler writes from src-ts/ now (compiled in memory by tools/build-ts), and every compiled file
 //     names its source, which exists.
 //   * The dependency rule and the linter keep reading src-ts/: `npm run arch` names it, and
 //     every source gets typescript-eslint's rules and the size budgets, while the files
@@ -127,6 +127,9 @@ test('the committed output of src-ts/ is what tsc writes now, and every compiled
     const source = generatedFrom(file);
     if (source !== null) assert.ok(targets.includes(file), `${file} names ${source}, which is not compiled`);
   }
+  for (const file of walk(path.join(ROOT, 'bench', 'runners')).map(rel)) {
+    assert.ok(generatedFrom(file) !== null && targets.includes(file), `${file} is not compiled from a source under src-ts/bench/`);
+  }
 });
 
 test('the compiler options stay strict and CommonJS, without maps or declarations, and a bare tsc writes nothing', () => {
@@ -141,8 +144,12 @@ test('the compiler options stay strict and CommonJS, without maps or declaration
   assert.equal(pkg.type, undefined, 'no "type" field: the package is CommonJS');
   assert.ok(fileNames.every((file) => rel(file).startsWith('src-ts/')), 'the sources are src-ts/ only');
   for (const { source, target } of buildTs.compile(ROOT).files) {
-    assert.equal(target, `src/${source.slice('src-ts/'.length, -'.ts'.length)}.js`, 'src-ts/<path>.ts compiles to src/<path>.js');
+    const expected = source.startsWith('src-ts/bench/')
+      ? `bench/runners/${source.slice('src-ts/bench/'.length, -'.ts'.length)}.js`
+      : `src/${source.slice('src-ts/'.length, -'.ts'.length)}.js`;
+    assert.equal(target, expected, 'src-ts/bench/<path>.ts compiles to bench/runners/<path>.js, any other src-ts/<path>.ts to src/<path>.js');
   }
+  assert.ok(buildTs.compile(ROOT).files.some(({ target }) => target.startsWith('bench/runners/')), 'the benchmark runners are compiled from src-ts/bench/');
 });
 
 test('TypeScript is needed by no install and no run', () => {
