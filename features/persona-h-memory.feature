@@ -124,7 +124,7 @@ Feature: Agent uses a node as external auditable memory
     Given the Bundle is built
     When the author runs "agsc export --closure" under the network trap
     Then the command exits 0
-    And "dist/export/closure.nt" holds triples that the OWL 2 RL rules entail, none of them in "www/graph.nq"
+    And "dist/export/closure.nt" is not empty, shares no triple with "www/graph.nq" and types a concept skos:Concept
     And "dist/export/closure.nt" is N-Quads that a second run writes again byte for byte
     And no file under "www" has "closure" in its name
     And no network call was attempted

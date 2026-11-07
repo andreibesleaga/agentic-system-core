@@ -206,7 +206,9 @@ function mean(rows) {
 function kitLine(report) {
   const examples = `${report.contract.examples} example${report.contract.examples === 1 ? '' : 's'}`;
   const g = report.gold_index;
-  const gold = g === null ? '' : `; gold index: ${g.rows} rows, ${g.checked} checked, ${g.found} found, ${g.fixture_ids} fixture ids`;
+  const i = report.index;
+  const labels = i === null ? '' : `; gold index: ${i.rows} rows, ${i.labels} gold label${i.labels === 1 ? '' : 's'} checked against it`;
+  const gold = g === null ? labels : `; gold index: ${g.rows} rows, ${g.checked} checked, ${g.found} found, ${g.fixture_ids} fixture ids`;
   return `bench: kit — results-row contract: ${examples} accepted${gold}\n`;
 }
 

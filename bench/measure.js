@@ -6,8 +6,9 @@
  * the generated record that `docs/MEASUREMENTS.md` reads from. It is NOT the
  * study: the retrieval and memory studies are the work of the
  * `tools/bench` program at 1.1 (docs/BENCHMARKS.md), and they need a corpus
- * and a judge model. The five layers here need no model, no network, no
- * dataset licence and no key, and they are the layers that carry the
+ * and a judge model. The layers here need no model, no dataset licence and
+ * no key, and every one but `install` (which installs the packed tarball from
+ * the npm registry) needs no network; they are the layers that carry the
  * specification's own property claims, so they run before GA and against
  * artefacts the engine already produces.
  *
@@ -15,6 +16,7 @@
  *   node bench/measure.js --layer perf        --scratch <dir>
  *   node bench/measure.js --assemble --scratch <dir> --out docs/measurements.json
  *   node bench/measure.js --all --scratch <dir>      # every layer the repository alone can run
+ *   node bench/measure.js --all --offline --scratch <dir>   # the same without the install layer
  *
  * `--assemble` merges: a layer found in the scratch directory replaces the layer of
  * that name in the record already at `--out`, and every other layer of that record is
@@ -22,7 +24,9 @@
  * the layers that need nothing outside this repository (conformance, determinism,
  * security, perf, package, install) and assembles them into `<scratch>/measurements.json`,
  * never into the repository's record unless `--out` names it, so a reader compares
- * the two files.
+ * the two files; `--offline` leaves out the one layer that needs the npm registry.
+ * The install layer is the strict-TypeScript runner bench/runners/install.js
+ * (src-ts/bench/install.ts), which this file hands its two timers.
  *
  * Every layer writes `<scratch>/measure-<layer>.json` and every number in it
  * carries the `command` that produced it, so a reader can re-run one line
@@ -49,7 +53,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const install = require('./install.js');
+const install = require('./runners/install.js');
 const metrics = require('./metrics.js');
 
 const REPO = path.resolve(__dirname, '..');
@@ -60,6 +64,8 @@ const EPOCH = '1767225600';   // 2026-01-01T00:00:00Z — the project's fixed cl
 const LAYERS = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'retrieval', 'parity', 'tokens', 'a11y', 'package', 'install']);
 /** The layers whose inputs the repository holds: `--all` runs these, in this order. */
 const SELF_CONTAINED = Object.freeze(['conformance', 'determinism', 'security', 'perf', 'package', 'install']);
+/** The layers of SELF_CONTAINED that reach the network: `--offline` leaves them out. */
+const NEEDS_NETWORK = Object.freeze(['install']);
 
 // The command each layer records, so a reader can re-run one line exactly as printed: every run
 // of this script needs the fixed clock (it reads no wall clock) and a scratch directory. One table,
@@ -79,7 +85,7 @@ const COMMANDS = Object.freeze({
 
 const HELP = `measure --layer <name> --scratch <dir> [--json]
 measure --assemble --scratch <dir> --out <file>
-measure --all --scratch <dir> [--out <file>] [--sizes <list>] [--runs <n>]
+measure --all --scratch <dir> [--offline] [--out <file>] [--sizes <list>] [--runs <n>]
 
   Runs one measurement layer of docs/MEASUREMENTS.md and writes
   <scratch>/measure-<layer>.json, or assembles every partial into one record.
@@ -89,6 +95,8 @@ measure --all --scratch <dir> [--out <file>] [--sizes <list>] [--runs <n>]
   --assemble       merge every partial found in <dir> into --out; the other
                    layers of the record already there are kept
   --all            run ${SELF_CONTAINED.join(', ')}, then assemble
+  --offline        with --all: leave out ${NEEDS_NETWORK.join(', ')}, the layer that
+                   needs the npm registry
   --out <file>     where --assemble writes (default docs/measurements.json;
                    with --all, <dir>/measurements.json)
   --nodes <list>   name=dir,… — Bundles (parity) or build outputs (tokens,
@@ -98,7 +106,8 @@ measure --all --scratch <dir> [--out <file>] [--sizes <list>] [--runs <n>]
   --runs <n>       runs per size for perf (default 3)
   --json           print the partial on stdout as well
 
-  SOURCE_DATE_EPOCH must be set; the script reads no wall clock.
+  SOURCE_DATE_EPOCH must be set; the script reads no wall clock. The perf and
+  install layers need GNU time at /usr/bin/time, and install Node 22.15 or later.
   Exit 0 measured, 1 a layer could not run, 2 usage.
 `;
 
@@ -555,7 +564,7 @@ function measureOne(layer, scratch, sizes, runsPerSize) {
   if (layer === 'security') return layerSecurity(scratch);
   if (layer === 'perf') return layerPerf(scratch, sizes, runsPerSize);
   if (layer === 'package') return layerPackage();
-  return install.layerInstall({ command: COMMANDS.install, epoch: EPOCH, scratch, timed, timedWithRss });
+  return install.layerInstall({ command: COMMANDS.install, epoch: EPOCH, repo: REPO, scratch, timed, timedWithRss });
 }
 
 function partialPath(scratch, layer) { return path.join(scratch, `measure-${layer}.json`); }
@@ -586,64 +595,99 @@ function assemble(scratch, out) {
   return record;
 }
 
+/**
+ * `--all`: measure each of `layers` with `measureOne(layer)` into its partial under `scratch`,
+ * then assemble them into `out`; `say` reports progress. The measurer is passed in, so a test
+ * can run the whole command with stand-in layers.
+ */
+function runAll({ layers, measureOne: measure, out, say, scratch }) {
+  for (const name of layers) {
+    say(`measure: ${name} ...\n`);
+    fs.writeFileSync(partialPath(scratch, name), `${JSON.stringify(measure(name), null, 2)}\n`);
+  }
+  return assemble(scratch, out);
+}
+
+/** The flags that take a value: each one's member of the options, and how its value is read. */
+const VALUED = Object.freeze({
+  '--exports': ['exportDirs', namedDirs],
+  '--layer': ['layer', String],
+  '--nodes': ['nodes', namedDirs],
+  '--out': ['target', String],
+  '--runs': ['runsPerSize', Number],
+  '--scratch': ['scratch', String],
+  '--sizes': ['sizes', (v) => String(v).split(',').map(Number)],
+});
+/** The switches: each one's member of the options. */
+const SWITCHES = Object.freeze({ '--all': 'all', '--assemble': 'doAssemble', '--json': 'json', '--offline': 'offline' });
+
+/** The command line as options, or `{ help }`, or `{ error }` for an unknown argument. */
+function parseArgs(argv) {
+  const options = {
+    all: false, doAssemble: false, exportDirs: [], json: false, layer: null, nodes: [], offline: false, outGiven: false,
+    runsPerSize: 3, scratch: null, sizes: [100, 500, 501, 1000, 5000, 10000], target: path.join(REPO, 'docs', 'measurements.json'),
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') return { help: true };
+    if (Object.hasOwn(VALUED, arg)) {
+      const [member, read] = VALUED[arg];
+      i += 1;
+      options[member] = read(argv[i]);
+      if (arg === '--out') options.outGiven = true;
+    } else if (Object.hasOwn(SWITCHES, arg)) options[SWITCHES[arg]] = true;
+    else return { error: `unknown argument ${arg}` };
+  }
+  return { options };
+}
+
+/** `--all`: the self-contained layers (without the network ones under --offline) into the scratch record or --out. */
+function runAllFromOptions(o, io, out, report) {
+  const layers = SELF_CONTAINED.filter((name) => !(o.offline && NEEDS_NETWORK.includes(name)));
+  if (o.offline) out(`measure: --offline: ${NEEDS_NETWORK.join(', ')} left out (it needs the npm registry)\n`);
+  const measure = (io && io.measure) || ((name) => measureOne(name, o.scratch, o.sizes, o.runsPerSize));
+  const where = o.outGiven ? o.target : path.join(o.scratch, 'measurements.json');
+  return report(runAll({ layers, measureOne: measure, out: where, say: out, scratch: o.scratch }), where);
+}
+
 function run(argv, io) {
   const out = (io && io.out) || ((s) => process.stdout.write(s));
   const err = (io && io.err) || ((s) => process.stderr.write(s));
   const usage = (message) => { err(`measure: ${message}\n${HELP}`); return 2; };
 
-  let layer = null;
-  let scratch = null;
-  let target = path.join(REPO, 'docs', 'measurements.json');
-  let json = false;
-  let doAssemble = false;
-  let all = false;
-  let outGiven = false;
-  let sizes = [100, 500, 501, 1000, 5000, 10000];
-  let runsPerSize = 3;
-  let nodes = [];
-  let exportDirs = [];
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    if (arg === '--help' || arg === '-h') { out(HELP); return 0; } else if (arg === '--layer') { i += 1; layer = argv[i]; } else if (arg === '--scratch') { i += 1; scratch = argv[i]; } else if (arg === '--out') { i += 1; target = argv[i]; outGiven = true; } else if (arg === '--sizes') { i += 1; sizes = String(argv[i]).split(',').map(Number); } else if (arg === '--runs') { i += 1; runsPerSize = Number(argv[i]); } else if (arg === '--nodes') { i += 1; nodes = namedDirs(argv[i]); } else if (arg === '--exports') { i += 1; exportDirs = namedDirs(argv[i]); } else if (arg === '--assemble') doAssemble = true;
-    else if (arg === '--all') all = true;
-    else if (arg === '--json') json = true;
-    else return usage(`unknown argument ${arg}`);
-  }
+  const parsed = parseArgs(argv);
+  if (parsed.help) { out(HELP); return 0; }
+  if (parsed.error) return usage(parsed.error);
+  const o = parsed.options;
   if (!process.env.SOURCE_DATE_EPOCH) return usage('SOURCE_DATE_EPOCH must be set; this script reads no wall clock');
-  if (typeof scratch !== 'string' || scratch === '') return usage('--scratch <dir> is required');
-  fs.mkdirSync(scratch, { recursive: true });
+  if (typeof o.scratch !== 'string' || o.scratch === '') return usage('--scratch <dir> is required');
+  fs.mkdirSync(o.scratch, { recursive: true });
 
-  const assembled = (where) => {
-    const record = assemble(scratch, where);
+  const report = (record, where) => {
     const kept = Object.keys(record.layers).filter((l) => !record.measured.includes(l));
     out(`measure: assembled ${Object.keys(record.layers).length} layers into ${where} (measured: ${record.measured.join(' ') || 'none'}; kept from the record: ${kept.join(' ') || 'none'})\n`);
     return 0;
   };
-  if (doAssemble) return assembled(target);
-  if (all) {
-    for (const name of SELF_CONTAINED) {
-      out(`measure: ${name} ...\n`);
-      fs.writeFileSync(partialPath(scratch, name), `${JSON.stringify(measureOne(name, scratch, sizes, runsPerSize), null, 2)}\n`);
-    }
-    return assembled(outGiven ? target : path.join(scratch, 'measurements.json'));
-  }
+  if (o.doAssemble) return report(assemble(o.scratch, o.target), o.target);
+  if (o.all) return runAllFromOptions(o, io, out, report);
+  const { layer, scratch } = o;
   if (!LAYERS.includes(layer)) return usage(`--layer must be one of: ${LAYERS.join(' ')}`);
 
   const finish = (partial) => {
     fs.writeFileSync(partialPath(scratch, layer), `${JSON.stringify(partial, null, 2)}\n`);
-    if (json) out(`${JSON.stringify(partial, null, 2)}\n`);
+    if (o.json) out(`${JSON.stringify(partial, null, 2)}\n`);
     else out(`measure: ${layer} written to ${partialPath(scratch, layer)}\n`);
     return 0;
   };
-  if (SELF_CONTAINED.includes(layer)) return finish(measureOne(layer, scratch, sizes, runsPerSize));
-  if (layer === 'tokens') return finish(layerTokens(nodes, exportDirs));
-  if (layer === 'retrieval') return finish(layerRetrieval(nodes));
-  if (layer === 'parity') return layerParity(nodes).then(finish);
-  return layerA11y(nodes).then(finish);
+  if (SELF_CONTAINED.includes(layer)) return finish(measureOne(layer, scratch, o.sizes, o.runsPerSize));
+  if (layer === 'tokens') return finish(layerTokens(o.nodes, o.exportDirs));
+  if (layer === 'retrieval') return finish(layerRetrieval(o.nodes));
+  if (layer === 'parity') return layerParity(o.nodes).then(finish);
+  return layerA11y(o.nodes).then(finish);
 }
 
 if (require.main === module) Promise.resolve(run(process.argv.slice(2))).then((code) => process.exit(code));
 
-module.exports = { COMMANDS, HELP, LAYERS, SELF_CONTAINED, assemble, run, specRules };
+module.exports = { COMMANDS, HELP, LAYERS, NEEDS_NETWORK, SELF_CONTAINED, assemble, run, runAll, specRules };
 
 /* c8 ignore stop */

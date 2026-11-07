@@ -1,4 +1,4 @@
-# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, PRD-066, PRD-068, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
+# Trace: PRD-010, PRD-020, PRD-022, PRD-024, PRD-047, PRD-060, PRD-066, PRD-067, PRD-068, NFR-04, NFR-05 · spec/04 canonicalization, spec/05 graph, spec/06 AGSC-06-40/41 (Signposting, Dataset), docs/BENCHMARKS.md
 @persona-n
 Feature: Researcher measures a node offline and cites exactly what was measured
   As P14 (researcher)
@@ -27,6 +27,14 @@ Feature: Researcher measures a node offline and cites exactly what was measured
     And both find every row of the gold index among the chunks of the build
     And the two reports are byte-identical
     And no network call was attempted
+
+  @PRD-067 @NFR-05 @human @mode-0 @matrix-H19
+  Scenario: A researcher runs every self-contained measurement layer with one command into a scratch record
+    Given a scratch directory outside the repository
+    When the researcher runs "bench/measure.js --all --offline" into it, each layer measured by a stand-in
+    Then the command exits 0 having measured conformance, determinism, security, perf and package, in that order, and said that it left out install
+    And the scratch directory's "measurements.json" holds exactly those layers in the layout of "docs/measurements.json"
+    And "docs/measurements.json" is unchanged
 
   @PRD-068 @NFR-05 @human @mode-0 @matrix-H19
   Scenario: A researcher holds the numbers of a results page to the measurement record before publishing it

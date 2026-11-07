@@ -2,7 +2,9 @@
 // verifies AGSC-05-06
 // Steps of features/persona-n-researcher.feature: a researcher who measures a node
 // with the shipped benchmark kit, offline, gets the same numbers twice, checks the kit of the
-// agent-side study against a build before any scored run, holds the numbers of a
+// agent-side study against a build before any scored run, runs every self-contained
+// measurement layer with one command into a scratch record (bench/measure.js --all, with
+// stand-in layers: the real ones take minutes), holds the numbers of a
 // results page to the measurement record (tools/lint-claims --record), checks that
 // the three graph dumps of a build hold one graph, and cites exactly what was
 // measured — the release (CITATION.cff), the node and its content version (the
@@ -24,6 +26,7 @@ const BENCH = path.join(ROOT, 'tools', 'bench');
 const AGENT_STUDY = path.join(ROOT, 'bench', 'queries', 'agent-study');
 const KIT = path.join(ROOT, 'bench', 'runners', 'kit.js');
 const LINT_CLAIMS = path.join(ROOT, 'tools', 'lint-claims');
+const RECORD = path.join(ROOT, 'docs', 'measurements.json');
 const BENCH_SURFACES = ['chunks', 'llms', 'search'];
 
 /** One RDF term as a comparable string; literals keep their datatype or language. */
@@ -171,6 +174,60 @@ module.exports = [
       for (const text of world.state.reports) {
         assert.deepStrictEqual(JSON.parse(text).kit.gold_index, { checked: rows, digest_changed: 0, fixture_ids: 0, found: rows, rows });
       }
+    },
+  },
+  {
+    pattern: 'a scratch directory outside the repository',
+    run(world) {
+      world.state.scratch = world.temp('agsc-acc-measure-');
+      world.state.recordBefore = fs.readFileSync(RECORD);
+    },
+  },
+  {
+    pattern: 'the researcher runs "bench/measure.js --all --offline" into it, each layer measured by a stand-in',
+    run(world) {
+      const measure = require(path.join(ROOT, 'bench', 'measure.js'));
+      const measured = [];
+      let printed = '';
+      const before = process.env.SOURCE_DATE_EPOCH;
+      process.env.SOURCE_DATE_EPOCH = '1767225600';
+      try {
+        world.state.measureExit = measure.run(['--all', '--offline', '--scratch', world.state.scratch], {
+          err: (s) => { printed += s; },
+          measure: (layer) => { measured.push(layer); return { stand_in: layer }; },
+          out: (s) => { printed += s; },
+        });
+      } finally {
+        if (before === undefined) delete process.env.SOURCE_DATE_EPOCH;
+        else process.env.SOURCE_DATE_EPOCH = before;
+      }
+      world.state.measuredLayers = measured;
+      world.state.measurePrinted = printed;
+    },
+  },
+  {
+    pattern: 'the command exits 0 having measured conformance, determinism, security, perf and package, in that order, and said that it left out install',
+    run(world) {
+      assert.strictEqual(world.state.measureExit, 0, world.state.measurePrinted);
+      assert.deepStrictEqual(world.state.measuredLayers, ['conformance', 'determinism', 'security', 'perf', 'package']);
+      assert.match(world.state.measurePrinted, /--offline: install left out/u);
+    },
+  },
+  {
+    pattern: 'the scratch directory\'s "measurements.json" holds exactly those layers in the layout of "docs/measurements.json"',
+    run(world) {
+      const record = JSON.parse(fs.readFileSync(path.join(world.state.scratch, 'measurements.json'), 'utf8'));
+      const committed = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
+      assert.deepStrictEqual(Object.keys(record).sort(), Object.keys(committed).sort());
+      assert.deepStrictEqual(Object.keys(record.layers), world.state.measuredLayers);
+      assert.deepStrictEqual(record.measured, world.state.measuredLayers);
+      assert.strictEqual(record.schema, committed.schema);
+    },
+  },
+  {
+    pattern: '"docs/measurements.json" is unchanged',
+    run(world) {
+      assert.ok(fs.readFileSync(RECORD).equals(world.state.recordBefore), 'docs/measurements.json changed');
     },
   },
   {

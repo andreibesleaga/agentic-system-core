@@ -20,7 +20,7 @@ In this repository the last column of `gold-index.tsv` is empty. The chunk text 
 node bench/runners/kit.js gold-index agenticsystemcore.com=<main build> patterns.agenticsystemcore.com=<demonstration build> > gold-index.tsv
 ```
 
-`--without-excerpts` before the node list writes the repository copy. The index was written on 26 October 2026 from the builds of the 1.0.1 engine. On 7 November 2026 the command above wrote the same bytes again, the copy here with `--without-excerpts` and the full index without it, from the committed build of the main site and a build of the demonstration node (`agsc-demo-node`, which publishes the chunks of `patterns.agenticsystemcore.com`) with the 1.1 engine at the fixed epoch.
+`--without-excerpts` before the node list writes the repository copy. The index was written on 26 October 2026 from the builds of the 1.0.1 engine. On 7 November 2026 the command above wrote the same bytes again, the copy here with `--without-excerpts` and the full index without it, from the committed build of the main site and a build of the demonstration node (`agsc-demo-node`, which publishes the chunks of `patterns.agenticsystemcore.com`) with the 1.1 engine at the fixed epoch. The main site's committed build was made with the 1.0.1 engine, so its 21 rows come from that build until the site is built with 1.1.
 
 ## Rules
 

@@ -228,6 +228,32 @@ describe('the gold index against a build', () => {
     const empty = tmpdir();
     assert.deepEqual(kit.readChunks(empty).findings.map((f) => f.code), ['AGSC-E901']);
   });
+
+  it('a chunk line that is not JSON or lacks a member the kit reads is a finding with its file and line', () => {
+    const node = tmpdir();
+    const good = fs.readFileSync(path.join(buildOutput(), 'chunks.jsonl'), 'utf8').split('\n')[0];
+    fs.writeFileSync(path.join(node, 'chunks.jsonl'), `${good}\n{"id":"x"\n{"id":"y","iri":"https://minimal.example/y"}\n`);
+    const read = kit.readChunks(node);
+    assert.equal(read.chunks.length, 1);
+    assert.deepEqual(read.findings.map((f) => [f.code, path.basename(f.file), f.line]), [['AGSC-E201', 'chunks.jsonl', 2], ['AGSC-E201', 'chunks.jsonl', 3]]);
+    assert.match(read.findings[1].message, /digest/u);
+    fs.writeFileSync(path.join(node, 'search.json'), JSON.stringify({ docs: [], terms: {} }));
+    const r = capture(bench, ['--node', node, '--set', SET, '--dry-run', '--json']);
+    assert.equal(r.code, 1);
+    assert.deepEqual(JSON.parse(r.out).findings.map((f) => f.code), ['AGSC-E201', 'AGSC-E201']);
+  });
+
+  it('a sharded export is read through its manifest, shard by shard (AGSC-06-31); a shard outside the export is refused', () => {
+    const node = tmpdir();
+    const lines = fs.readFileSync(path.join(buildOutput(), 'chunks.jsonl'), 'utf8');
+    fs.writeFileSync(path.join(node, 'chunks-01.jsonl'), lines);
+    fs.writeFileSync(path.join(node, 'chunks.jsonl'), `${JSON.stringify({ bundle_version: '1', lines_total: 1, shards: ['/chunks-01.jsonl'] })}\n`);
+    const read = kit.readChunks(node);
+    assert.deepEqual(read.findings, []);
+    assert.deepEqual(read.chunks, kit.readChunks(buildOutput()).chunks);
+    fs.writeFileSync(path.join(node, 'chunks.jsonl'), `${JSON.stringify({ bundle_version: '1', lines_total: 1, shards: ['/../secret.jsonl'] })}\n`);
+    assert.deepEqual(kit.readChunks(node).findings.map((f) => [f.code, f.line]), [['AGSC-E201', 1]]);
+  });
 });
 
 describe('tools/bench --dry-run with the kit', () => {
@@ -241,6 +267,10 @@ describe('tools/bench --dry-run with the kit', () => {
     assert.equal(envelope.status, 'dry-run');
     assert.equal(envelope.counts.error, 0);
     assert.deepEqual(envelope.kit.gold_index, { checked: 0, digest_changed: 0, fixture_ids: 149, found: 0, rows: 149 });
+    // No row of the shipped index names the fixture's node, so nothing was checked against it: a warning says so.
+    assert.deepEqual(envelope.findings.map((f) => [f.code, f.severity]), [['AGSC-E210', 'warn']]);
+    assert.match(envelope.findings[0].message, /no gold row names a node this build publishes \(minimal\.example\)/u);
+    assert.equal(envelope.counts.warn, 1);
     assert.equal(envelope.kit.contract.examples, 1);
     assert.equal(envelope.kit.contract.schema, 'results-row.schema.json');
   });
@@ -269,6 +299,15 @@ describe('tools/bench --dry-run with the kit', () => {
     const envelope = JSON.parse(capture(bench, ['--set', set, '--dry-run', '--json']).out);
     assert.equal(envelope.status, 'fail');
     assert.deepEqual(envelope.findings.map((f) => f.code), ['AGSC-E201', 'AGSC-E301']);
+    assert.equal(envelope.findings[1].line, 2, 'the gold-label finding names the line of qrels/test.tsv');
+  });
+
+  it('without a node, the report counts the gold rows and the gold labels it checked', () => {
+    const envelope = JSON.parse(capture(bench, ['--set', SET, '--dry-run', '--json']).out);
+    assert.equal(envelope.kit.gold_index, null);
+    assert.deepEqual(envelope.kit.index, { labels: 1, rows: 149 });
+    assert.match(capture(bench, ['--set', SET, '--dry-run']).out, /gold index: 149 rows, 1 gold label checked against it/u);
+    assert.equal(JSON.parse(capture(bench, ['--dry-run', '--json']).out).kit.index, null, 'a set with no gold index');
   });
 
   it('a set with a gold index and a node with no chunk export is a finding, not a pass', () => {

@@ -22,10 +22,12 @@ A few modules are written in TypeScript: their sources are under `../src-ts/`, a
 compiles to the CommonJS file of the same path here, committed with a first line that
 names its source (`// generated from src-ts/… by tsc …; do not edit`). Never edit such a
 file by hand; `docs/ENGINEERING.md` §8 says why the compiled files are committed and how
-to add one. Today there are four: `shared/version-line.js`, the proof of the chain,
+to add one. Today there are four here: `shared/version-line.js`, the proof of the chain,
 `distribution/mcp-core.js`, the MCP core of the tool server on the official SDK,
 `distribution/mcp-http.js`, its Streamable HTTP transport, and `distribution/a2a-card.js`,
-the A2A agent card written by the official A2A SDK.
+the A2A agent card written by the official A2A SDK. Two more TypeScript sources are the
+benchmark runners `src-ts/bench/kit.ts` and `src-ts/bench/install.ts`, which compile to
+`bench/runners/` outside `src/` and require nothing of it (`bench/README.md`).
 
 ---
 
@@ -216,8 +218,8 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | Need | Library | Version | Licence | Used in |
 |---|---|---|---|---|
 | YAML failsafe subset | `yaml` | 2.9.1 | ISC | `knowledge/yaml.js`, `knowledge/adopt.js`, `governance/fix.js` |
-| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT | `knowledge/schema.js`, `tools/validate-schemas` |
-| `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same two |
+| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT | `knowledge/schema.js`, `tools/validate-schemas`, `bench/runners/kit.js` (from `src-ts/bench/kit.ts`) |
+| `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same three |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
 | Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js`, `knowledge/skos-export.js`, `knowledge/domain.js` and the crosswalk reader of `boundary/federation.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |

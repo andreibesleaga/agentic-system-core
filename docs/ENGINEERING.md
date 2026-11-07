@@ -302,13 +302,17 @@ The runners of the benchmark kit are the one exception to the folder of a contex
 runner lives at `src-ts/bench/<name>.ts` and compiles to `bench/runners/<name>.js`, beside
 the kit it serves. It belongs to no context and requires nothing of `src/`, because it
 measures what a consumer of the published files gets, as `tools/bench` does
-(`npm run arch` rule `bench-runners-standalone`, `tests/arch/bench-runners.test.js`). The
-first, `src-ts/bench/kit.ts`, checks the kit of the agent-side study for
-`tools/bench --dry-run` (`docs/BENCHMARKS.md`).
+(`npm run arch` rule `bench-runners-standalone`, `tests/arch/bench-runners.test.js`). Two
+exist: `src-ts/bench/kit.ts` checks the kit of the agent-side study for
+`tools/bench --dry-run` (`docs/BENCHMARKS.md`), and `src-ts/bench/install.ts` is the
+`install` layer of `bench/measure.js` (the install of the packed tarball, the cold start and
+the module trace), which `measure.js` hands its timers so that every check of a run is
+tested with stand-in timers. `bench/measure.js` and its other layers stay JavaScript: they
+predate 1.1, and 1.1 rewrites no existing JavaScript module.
 
 So running the engine, an install with `npm ci --omit=dev` and the published package
-need no TypeScript: what runs and what ships is the JavaScript under `src/`, and the
-sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
+need no TypeScript: what runs and what ships is the JavaScript under `src/` and
+`bench/runners/`, and the sources under `src-ts/` do not ship. Two tests load the pinned compiler, a development
 dependency: `tests/tools/build-ts.test.js` and `tests/arch/typescript-parts.test.js`. The
 first module, `src-ts/shared/version-line.ts`, is the proof of the chain: it gives the
 line `agsc --version` prints, the command line prints that line through it

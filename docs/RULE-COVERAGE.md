@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 103 |
 | Checker header | 39 |
 
-Acceptance scenarios: 163 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 103 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 164 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 103 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -331,7 +331,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-28 | VERIFIED | yes | `chk-0011` | `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js`, `distribution/chunk-anchors.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework`, `persona-c-agent-mcp.feature#An agent cites a chunk back and the item page shows it at its heading` | — |
 | AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks-1-1.test.js` +1 | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
 | AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +10 | — |
-| AGSC-06-31 | VERIFIED | yes | `chk-0013` | `composition/conform.test.js`, `distribution/content-version-stamps.test.js`, `distribution/page-tools-shards.test.js` +2 | — | — |
+| AGSC-06-31 | VERIFIED | yes | `chk-0013` | `bench/agent-kit.test.js`, `composition/conform.test.js`, `distribution/content-version-stamps.test.js` +3 | — | — |
 | AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `acceptance/steps/persona-i.js`, `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js` +4 | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-06-33 | VERIFIED | yes | `build-0011` | `knowledge/nquads.test.js` | — | — |
 | AGSC-06-34 | VERIFIED | yes | `disc-0030`, `disc-0031` | `acceptance/steps/persona-c-card.js`, `boundary/surfaces.test.js`, `distribution/a2a-card.test.js` +1 | `persona-c-agent-mcp.feature#Agent starts the local stdio MCP server`, `persona-c-agent-mcp.feature#The server reads the local Bundle, never the network`, `persona-c-agent-mcp.feature#Agent calls search then read then links, all trust-labelled` +17 | — |

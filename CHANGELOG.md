@@ -23,7 +23,30 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `docs/MEASUREMENTS.md`: the 1.1 install and cold-start paragraph now quotes the record's `install`
   layer (86 packages; the module trace), between `measured` markers that `tools/lint-claims --record`
   holds to the record; the 1.0.0 install and cold-start lines keep their figures with a dated note; six
-  sentences no longer use the word "first", so the whole page passes the claims check.
+  sentences no longer use the word "first", so the whole page passes the claims check. Two of them say
+  again what they measured: "the earliest result painted 322 ms after typing" (a time to the first
+  result, not to the whole list) and "computed on their initial use".
+- `docs/MEASUREMENTS.md`, the 1.1 install paragraph: the ten largest packages are the record's ten, in its
+  order (`@tpluscode/rdf-ns-builders`, `@types/node` and `@traqula/chevrotain` were left out, `ajv` was in);
+  why `@types/node` is in a production install (`@rdfjs/types`, under `rdf-validate-shacl`, lists it); the
+  1.1 run-time packages listed in full (`oxigraph`, `rdf-validate-shacl` and `@traqula/parser-sparql-1-1`
+  were missing); the package count's method beside the 1.0.0 one (`npm ls --parseable` prints the
+  install root too); byte sizes describe the tree when it was measured. `tests/docs/quoted-counts.test.js`
+  now binds every figure of the paragraph to its member of the record, the ten largest in order, since
+  the claims check only proves that a number is somewhere in the record.
+- `docs/BENCHMARKS.md`: the measurements half and the layer list say that only the install layer reaches
+  a network; what the one-command run needs (GNU `time`, Node 22.15 or later for the install layer, whose
+  `module.registerHooks` Node added in 22.15.0); which figures can differ between machines; three outside
+  libraries and a Chromium binary (it said two, then four); parity reads Bundles; the layer-by-layer
+  `--assemble` line writes a scratch record; the 21 main-node rows of the gold index come from the 1.0.1
+  build of that site; `simple-statistics` draws its permutations from `Math.random` by default; the ACM
+  row "Artifacts Available" names the software's Zenodo concept DOI 10.5281/zenodo.23233817 (the DOI it
+  named, 10.5281/zenodo.23052709, is the specification archive and the paper).
+- `bench/measure.js`: the argument reading moved out of `run` (`parseArgs`), under the complexity budget.
+- The persona-h step on `dist/export/closure.nt` says what it checks (not empty, no triple of
+  `www/graph.nq`, a `skos:Concept` typing); the rules' entailments are checked rule by rule in
+  `tests/knowledge/closure.test.js`. `tests/README.md` links `tests/shapes/README.md` by its repository
+  URL, as it does `tests/standard/`, because the package does not ship that folder.
 
 - `bench/parity.js` hands the in-process tool servers the site vocabulary, as `agsc mcp` does, and on a
   node with the domain layer runs the page tools through the page's own `install` and the page-tools
@@ -453,13 +476,22 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   PRD-067): conformance, determinism, the security floor, the build curves, the package and the install,
   every layer whose inputs the repository holds, with no key, model, judge or dataset, assembled into
   `<dir>/measurements.json` for a reader to compare with `docs/measurements.json`.
-- The `install` layer of `bench/measure.js` (new `bench/install.js`): `npm pack`, `npm install --omit=dev`
+- The `install` layer of `bench/measure.js` (new `bench/runners/install.js`, compiled from strict
+  TypeScript `src-ts/bench/install.ts` like the other benchmark runner; shipped with `bench/runners/`,
+  requires only Node built-ins): `npm pack`, `npm install --omit=dev`
   of the tarball into an empty folder, the package folders and their sizes, five timed runs each of
   `node -e ""`, `agsc --version`, `lint` and `build` on the reference fixture, the load time of
   `@modelcontextprotocol/server`, `@modelcontextprotocol/node` and `@a2a-js/sdk`, and a module trace
   (`module.registerHooks`, Node's own resolve hook; no library needed) showing that `--version`, `lint`
   and `build` load no MCP or A2A package while `agsc mcp` loads the MCP ones. Measured into
   `docs/measurements.json` by that command on 7 November 2026; the nine layers of the 1.0.0 run are kept.
+  It checks the machine before it runs (GNU `time` at `/usr/bin/time`, `module.registerHooks`), gives the
+  install ten minutes, and turns a failed run into an error with its standard error: a failed traced run
+  no longer reads the trace of the verb before it, and a failed package load is no longer recorded as
+  0 ms. `measure.js` hands it its two timers, so these checks are tested with stand-in timers.
+- `node bench/measure.js --all --offline` leaves out the install layer, the one layer that needs the npm
+  registry (PRD-067); `--all` takes its measurer from the caller (`runAll`), so the command is tested
+  end to end with stand-in layers, and a persona-n scenario runs it.
 - `tools/lint-claims --record <file>` (PRD-068): every number written in digits inside a measured region
   (`<!-- measured:start -->` … `<!-- measured:end -->`, apart from the claims regions so that marking one
   never narrows the wording check) must be a number of the measurement record, at its written precision
@@ -468,9 +500,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `docs/BENCHMARKS.md`: "Run it yourself: one command"; the six studies E1 to E6 and the twelve
   statements they test, each "to be measured" (the model runs are planned for January 2027); and a table
   of the kit against the five ACM artifact badges (Artifacts Available, Artifacts Evaluated – Functional
-  and – Reusable, Results Reproduced, Results Replicated): what the kit offers and what it lacks. The ACM
-  criteria are marked "to be confirmed by the owner": acm.org refused a plain fetch, and no browser
-  connection was available when the table was written.
+  and – Reusable, Results Reproduced, Results Replicated): what the kit offers and what it lacks. The
+  badge names and criteria come from a secondary source; the table marks them as paraphrases not yet
+  checked against the policy page.
 - Tests `tests/bench/measure.test.js` (the merge, the module trace and the record's trace claim) and the
   `--record` cases of `tests/tools/lint-claims.test.js`; the persona-n scenario "A researcher holds the
   numbers of a results page to the measurement record before publishing it"; `tests/docs/quoted-counts.test.js`
@@ -495,6 +527,12 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   committed copy again byte for byte). Own code where no library applies: the tab-separated reading
   (IANA `text/tab-separated-values`: a field holds no tab and no line break, so a split reads it) and
   the statistics, which stay in `bench/metrics.js`.
+- `tests/docs/claims.test.js` runs `tools/lint-claims --record docs/measurements.json docs/BENCHMARKS.md
+  docs/MEASUREMENTS.md` on the committed pages and the wording check on the kit's READMEs, so an edit
+  that breaks the claims check fails the suite (PRD-068).
+- The dry-run report gains `kit.index`, the gold rows read and the gold labels checked, with or without
+  `--node`; with `--node`, the warning `AGSC-E210` when no gold row names a node the build publishes, so
+  a run against an unrelated build no longer passes having checked nothing (PRD-066).
 - The dependency rule `bench-runners-standalone` (`npm run arch`) and the fitness test
   `tests/arch/bench-runners.test.js`: a benchmark runner and `tools/bench` require nothing of `src/`, and
   every runner `tools/bench` requires ships.
@@ -1300,6 +1338,12 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `tools/bench --dry-run --node` and `kit.js gold-index` no longer stop on an uncaught exception when a
+  line of the chunk export is not JSON or lacks `id`, `digest`, `iri`, `item`, `ordinal` or `text`: each
+  such line is `AGSC-E201` with its file and line. A sharded export (AGSC-06-31) is read through the
+  shards its `chunks.jsonl` manifest lists, a shard path outside the export refused; before, the manifest
+  line was read as a chunk. Gold-label findings name their line of `qrels/test.tsv`, not line 1.
+  Repository and kit tools; no emitted byte changes.
 - `/.well-known/agent-card.json` is written only when every `responder` of `surfaces[]` is an
   Agent2Agent one (its version `a2a:<version>`) and the `a2a-card` version is a bare A2A version such
   as `1.0`; otherwise no card is written and the build warns `AGSC-E210`. The card lists every

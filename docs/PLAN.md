@@ -607,7 +607,9 @@ not from an environment variable `AGSC_GIT_LOG`; and the checkers are the extens
 `tools/validate-*`, `tools/gen-spec-html` and `tools/gen-ns`, not `.js` files. `src/README.md`
 holds the module map of the tree as it is. From 1.1 a module may have a TypeScript source under
 `src-ts/<context>/`, compiled into the same path of `src/` and committed there
-(`docs/ENGINEERING.md` §8); the module map lists the compiled file.
+(`docs/ENGINEERING.md` §8); the module map lists the compiled file. A benchmark runner has its
+source under `src-ts/bench/` and compiles to `bench/runners/` (`kit.js`, `install.js`), outside
+every context (ENGINEERING §8).
 
 **The browser bundle (§5, §6, §13).** The composition core the browser runs is served as
 `/compose/agsc-core.js`, beside `agsc-page-tools.js`, `agsc-compose.js` and `webmcp.js`; there
@@ -619,7 +621,9 @@ on the user's explicit command: `agsc-host serve` listens on `localhost:8080` by
 serves a build directory read-only, and `tools/validate-wellknown <https URL>` fetches the
 document it is given and its targets under the fetch rules of AGSC-11-07 to AGSC-11-10.
 `SECURITY.md` names both. *(1.1: `agsc mcp --http <port>` listens too, on a loopback address
-only, and reaches no network (AGSC-09-18); `SECURITY.md` names it.)*
+only, and reaches no network (AGSC-09-18); `SECURITY.md` names it. Outside the engine, the
+maintainer measurement `bench/measure.js --layer install` runs `npm install` of the packed
+tarball against the npm registry; `--all --offline` leaves it out.)*
 
 **Workflows and the secrets document (§7).** The engine repository has two workflows, `test.yml` (every
 push and pull request) and `release.yml` (a version tag); there is no engine `ci.yml`, and the
@@ -635,7 +639,8 @@ addendum above); read its "Accepted" in the table of §9 as "superseded".
 and refused with `AGSC-E004` (AGSC-05-06, AGSC-01-18); R2's "emitted when `build.rdfxml` is
 true" no longer holds. The optional LLM review lane is specified at 1.0 (AGSC-08-27) and no
 model client ships with this engine. The benchmark kit is the program `tools/bench` with
-`bench/measure.js`, not a verb (`agsc bench` is an unknown verb); the declared scope makes the
+`bench/measure.js` and, from 1.1, the runners `bench/runners/kit.js` and
+`bench/runners/install.js`, not a verb (`agsc bench` is an unknown verb); the declared scope makes the
 benchmark kit normative at 1.1 (AGSC-00-20), and there is no "v1.0.1 gate".
 
 **Restore-from-zero (§11 T6, T10; PRD-045).** The per-release archive deposit is the Zenodo

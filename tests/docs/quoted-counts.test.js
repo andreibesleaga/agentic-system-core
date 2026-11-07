@@ -210,3 +210,40 @@ test('the summary table of docs/MEASUREMENTS.md quotes the record', () => {
   assert.ok(text.includes(`| security floor: valid controls clean | ${s.clean} of ${s.controls} |`),
     'the summary row of the security controls is not the record\'s');
 });
+
+/** Lowest and highest of `values` as `a–b` once each is written with `format`; one value when the two are written alike. */
+function range(values, format) {
+  const low = format(Math.min(...values));
+  const high = format(Math.max(...values));
+  return low === high ? low : `${low}–${high}`;
+}
+
+test('every figure of the 1.1 install paragraph is its member of the record\'s install layer, the ten largest packages in the record\'s order', () => {
+  const text = flat(read('docs/MEASUREMENTS.md'));
+  const region = text.slice(text.indexOf('<!-- measured:start -->'), text.indexOf('<!-- measured:end -->'));
+  assert.ok(region.length > 0, 'the measured region of the install paragraph');
+  const i = RECORD.layers.install;
+  const mb = (bytes) => (bytes / 1e6).toFixed(2);
+  const sizes = Object.entries(i.package_bytes);
+  const own = JSON.parse(read('package.json')).name;
+  const named = sizes.slice(0, 10).map(([name, bytes]) => `${name === own ? 'the package' : `\`${name}\``} ${mb(bytes)} MB`);
+  assert.ok(region.includes(`The ten largest, each without the packages nested in it: ${named.slice(0, -1).join(', ')} and ${named.at(-1)}.`),
+    `the ten largest are not the record's, in its order: ${named.join(', ')}`);
+  for (const m of region.matchAll(/`([@\w./-]+)` (\d+\.\d\d) MB/gu)) {
+    assert.ok(Object.hasOwn(i.package_bytes, m[1]), `${m[1]} is no package of the install layer`);
+    assert.strictEqual(m[2], mb(i.package_bytes[m[1]]), `${m[1]}: ${m[2]} MB, the record says ${mb(i.package_bytes[m[1]])} MB`);
+  }
+  assert.ok(region.includes(`and ${(i.install_bytes / 1e6).toFixed(1)} MB of files`), 'the install size is not the record\'s');
+
+  const seconds = (ms) => (ms / 1000).toFixed(2);
+  const megabytes = (kb) => String(Math.round(kb / 1000));
+  const start = (verb) => `${range(i.cold_start[verb].ms_runs, seconds)} s and ${range(i.cold_start[verb].rss_kb_runs, megabytes)} MB`;
+  assert.ok(region.includes(`\`node -e ""\` alone ${start('node_alone')};`), 'node alone');
+  assert.ok(region.includes(`\`agsc --version\` ${start('version')}, ${i.cold_start.version.modules_loaded} modules loaded;`), '--version');
+  assert.ok(region.includes(`\`agsc lint\` ${start('lint')}, ${i.cold_start.lint.modules_loaded} modules;`), 'lint');
+  assert.ok(region.includes(`\`agsc build\` ${start('build')}, ${i.cold_start.build.modules_loaded} modules.`), 'build');
+  for (const [name, runs] of Object.entries(i.load_ms_runs)) {
+    assert.ok(region.includes(`${range(runs, String)} ms for \`${name}\``), `the load time of ${name} is not the record's`);
+  }
+  assert.ok(region.includes(`(GNU \`time -v\`, ${['zero', 'one', 'two', 'three', 'four', 'five'][i.runs]} runs each`), 'the run count');
+});

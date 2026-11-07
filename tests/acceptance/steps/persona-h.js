@@ -503,7 +503,8 @@ module.exports = [
     },
   },
   {
-    pattern: '"dist/export/closure.nt" holds triples that the OWL 2 RL rules entail, none of them in "www/graph.nq"',
+    // What each rule entails is checked rule by rule in tests/knowledge/closure.test.js; this step checks what a reader of the file sees.
+    pattern: '"dist/export/closure.nt" is not empty, shares no triple with "www/graph.nq" and types a concept skos:Concept',
     run(world) {
       const closure = world.read('dist/export/closure.nt');
       const asserted = new Set(world.read('www/graph.nq').split('\n'));

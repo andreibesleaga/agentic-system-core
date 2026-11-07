@@ -6,9 +6,11 @@
 //     from the chunk export of builds (`goldRows`, `formatGoldIndex`, the `gold-index` command
 //     below), and checked against a build (`checkGoldIndex`): a gold row of a node the build
 //     publishes must name a chunk of that build, and a row of another node is a fixture id,
-//     counted and not checked;
+//     counted and not checked (a warning when no row names a node of the build, since then
+//     nothing was checked); the chunk export is read line by line, a sharded one through its
+//     manifest (AGSC-06-31), and a line that is no chunk record is a finding with its line;
 //   * the gold labels (`qrels/test.tsv`): every gold unit is a chunk id of the gold index
-//     (`checkQrels`);
+//     (`checkQrels`, each finding at its line of the labels file);
 //   * the results-row contract (`bench/queries/results-row.schema.json`): a JSON Schema of draft
 //     2020-12 that accepts each of its own examples (`checkContract`), validated by Ajv, the
 //     JSON Schema validator the engine already pins (the official libraries rule of 1.1).
@@ -84,10 +86,17 @@ export interface GoldSummary {
   readonly rows: number;
 }
 
-/** The `kit` member of the dry run's envelope. */
+/** What the set's own files hold: the gold rows read and the gold labels checked against them. */
+export interface IndexSummary {
+  readonly labels: number;
+  readonly rows: number;
+}
+
+/** The `kit` member of the dry run's envelope: `index` for a set with a gold index, `gold_index` for a build. */
 export interface KitReport {
   readonly contract: { readonly examples: number; readonly schema: string };
   readonly gold_index: GoldSummary | null;
+  readonly index: IndexSummary | null;
 }
 
 const finding = (code: string, file: string, line: number, message: string, severity: 'error' | 'warn' = 'error'): Finding =>
@@ -167,21 +176,67 @@ export function formatGoldIndex(rows: readonly GoldRow[]): string {
     .map((line) => `${line}\n`).join('');
 }
 
-/** `chunks.jsonl` and its shards (`chunks-01.jsonl` …) of a build, in code-unit order of their names. */
-function chunkFiles(nodeDir: string): string[] {
-  if (!fs.existsSync(nodeDir)) return [];
-  return fs.readdirSync(nodeDir).filter((name) => /^chunks(?:-[0-9]+)?\.jsonl$/u.test(name)).sort().map((name) => path.join(nodeDir, name));
+/** The members of a chunk record the kit reads, each with the type it must have. */
+const CHUNK_MEMBERS: readonly [keyof Chunk, 'number' | 'string'][] = [
+  ['digest', 'string'], ['id', 'string'], ['iri', 'string'], ['item', 'string'], ['ordinal', 'number'], ['text', 'string'],
+];
+/** A shard path of the manifest (AGSC-06-31): a file of the chunk export at the root of the build. */
+const SHARD = /^\/chunks-[0-9]+\.jsonl$/u;
+
+/** One line of a chunk file parsed, or the parser's message when it is not JSON. */
+function parseLine(line: string): { readonly error: string } | { readonly value: unknown } {
+  try {
+    return { value: JSON.parse(line) as unknown };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
 }
 
-/** Every chunk a build publishes, or a finding when it publishes no chunk export. */
+/** Why a parsed line is no chunk record the kit can read (a member missing or of another type), or null. */
+function chunkProblem(value: unknown): string | null {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return 'is not a JSON object';
+  const record = value as Record<string, unknown>;
+  const bad = CHUNK_MEMBERS.find(([member, type]) => typeof record[member] !== type);
+  return bad === undefined ? null : `is no chunk record: its ${bad[0]} is not a ${bad[1]}`;
+}
+
+/** The chunks of one file of the export, and a finding for each line that is no chunk record. */
+function readChunkFile(file: string): { chunks: Chunk[]; findings: Finding[] } {
+  const chunks: Chunk[] = [];
+  const findings: Finding[] = [];
+  fs.readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+    if (line.trim() === '') return;
+    const parsed = parseLine(line);
+    const problem = 'error' in parsed ? `is not JSON: ${parsed.error}` : chunkProblem(parsed.value);
+    if (problem !== null) findings.push(finding('AGSC-E201', file, i + 1, `line ${i + 1} ${problem}`));
+    else if ('value' in parsed) chunks.push(parsed.value as Chunk);
+  });
+  return { chunks, findings };
+}
+
+/** The shard files a `chunks.jsonl` manifest names (AGSC-06-31), null when the file holds chunk lines. */
+function manifestShards(file: string, nodeDir: string): string[] | Finding | null {
+  const parsed = parseLine(fs.readFileSync(file, 'utf8').split('\n')[0] ?? '');
+  const value = 'value' in parsed ? parsed.value : null;
+  if (value === null || typeof value !== 'object' || !Array.isArray((value as { shards?: unknown }).shards)) return null;
+  const shards = (value as { shards: unknown[] }).shards;
+  const outside = shards.find((shard) => typeof shard !== 'string' || !SHARD.test(shard));
+  if (outside !== undefined) return finding('AGSC-E201', file, 1, `the manifest names ${JSON.stringify(outside)}, which is no shard of the chunk export (/chunks-<nn>.jsonl)`);
+  return (shards as string[]).map((shard) => path.join(nodeDir, shard.slice(1)));
+}
+
+/** Every chunk a build publishes, a sharded export through its manifest, or a finding when it publishes no chunk export. */
 export function readChunks(nodeDir: string): { chunks: Chunk[]; findings: Finding[] } {
-  const files = chunkFiles(nodeDir);
-  if (files.length === 0) {
-    return { chunks: [], findings: [finding('AGSC-E901', path.join(nodeDir, 'chunks.jsonl'), 1, 'the build publishes no chunk export, so no gold unit can be checked')] };
+  const main = path.join(nodeDir, 'chunks.jsonl');
+  if (!fs.existsSync(main)) {
+    return { chunks: [], findings: [finding('AGSC-E901', main, 1, 'the build publishes no chunk export, so no gold unit can be checked')] };
   }
-  const chunks = files.flatMap((file) => fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '')
-    .map((line) => JSON.parse(line) as Chunk));
-  return { chunks, findings: [] };
+  const shards = manifestShards(main, nodeDir);
+  if (shards !== null && !Array.isArray(shards)) return { chunks: [], findings: [shards] };
+  const missing = (shards ?? []).find((file) => !fs.existsSync(file));
+  if (missing !== undefined) return { chunks: [], findings: [finding('AGSC-E901', missing, 1, 'a shard the manifest names is not in the build')] };
+  const read = (shards ?? [main]).map(readChunkFile);
+  return { chunks: read.flatMap((r) => r.chunks), findings: read.flatMap((r) => r.findings) };
 }
 
 /** The node of a chunk: the host of its IRI. */
@@ -218,16 +273,36 @@ export function checkGoldIndex(rows: readonly GoldRow[], chunks: readonly Chunk[
   return { findings, summary: { checked, digest_changed: changed, fixture_ids: rows.length - checked, found, rows: rows.length } };
 }
 
-/** Every gold unit of the labels that the gold index does not name, as a finding. */
-export function checkQrels(qrels: ReadonlyMap<string, ReadonlySet<string>>, rows: readonly GoldRow[], file: string): Finding[] {
+/** The line of each (query, gold unit) pair of a labels file, the first one when a pair is repeated. */
+export function qrelsLines(text: string): Map<string, number> {
+  const lines = new Map<string, number>();
+  text.split('\n').forEach((line, i) => {
+    const [query = '', unit = ''] = line.split('\t');
+    const key = `${query}\t${unit}`;
+    if (!lines.has(key)) lines.set(key, i + 1);
+  });
+  return lines;
+}
+
+/** Every gold unit of the labels that the gold index does not name, as a finding at its line of `file` (`lines`, from `qrelsLines`). */
+export function checkQrels(qrels: ReadonlyMap<string, ReadonlySet<string>>, rows: readonly GoldRow[], file: string,
+  lines: ReadonlyMap<string, number> = new Map()): Finding[] {
   const ids = new Set(rows.map((row) => row.chunk_id));
   const findings: Finding[] = [];
   for (const query of [...qrels.keys()].sort()) {
     for (const unit of [...(qrels.get(query) ?? [])].sort()) {
-      if (!ids.has(unit)) findings.push(finding('AGSC-E301', file, 1, `query ${query} names gold unit ${unit}, which the gold index does not list`));
+      const line = lines.get(`${query}\t${unit}`) ?? 1;
+      if (!ids.has(unit)) findings.push(finding('AGSC-E301', file, line, `query ${query} names gold unit ${unit}, which the gold index does not list`));
     }
   }
   return findings;
+}
+
+/** The warning of a build whose node no gold row names: every row is a fixture id, so nothing was checked. */
+function noneChecked(summary: GoldSummary, chunks: readonly Chunk[], file: string): Finding[] {
+  if (summary.rows === 0 || summary.checked > 0) return [];
+  const hosts = [...new Set(chunks.map(hostOf))].filter((host) => host !== '').sort();
+  return [finding('AGSC-E210', file, 1, `no gold row names a node this build publishes (${hosts.join(', ') || 'no host'}); every row is a fixture id, so nothing was checked against the build`, 'warn')];
 }
 
 /** A validator of results files against the contract (Ajv, strict, with the formats `date` needs). */
@@ -280,14 +355,19 @@ export function checkSet(input: SetInput): { findings: Finding[]; kit: KitReport
   const contract = checkContract(input.contract);
   const report = { examples: contract.summary.examples, schema: path.basename(input.contract) };
   const indexFile = path.join(input.set, 'gold-index.tsv');
-  if (!fs.existsSync(indexFile)) return { findings: contract.findings, kit: { contract: report, gold_index: null } };
+  if (!fs.existsSync(indexFile)) return { findings: contract.findings, kit: { contract: report, gold_index: null, index: null } };
   const index = parseGoldIndex(fs.readFileSync(indexFile, 'utf8'), indexFile);
-  const findings = [...contract.findings, ...index.findings, ...checkQrels(input.qrels, index.rows, path.join(input.set, 'qrels', 'test.tsv'))];
-  if (input.node === null) return { findings, kit: { contract: report, gold_index: null } };
+  const qrelsFile = path.join(input.set, 'qrels', 'test.tsv');
+  const lines = fs.existsSync(qrelsFile) ? qrelsLines(fs.readFileSync(qrelsFile, 'utf8')) : new Map<string, number>();
+  const labels = [...input.qrels.values()].reduce((n, units) => n + units.size, 0);
+  const findings = [...contract.findings, ...index.findings, ...checkQrels(input.qrels, index.rows, qrelsFile, lines)];
+  const kit = { contract: report, index: { labels, rows: index.rows.length } };
+  if (input.node === null) return { findings, kit: { ...kit, gold_index: null } };
   const build = readChunks(input.node);
+  if (build.findings.length > 0) return { findings: [...findings, ...build.findings], kit: { ...kit, gold_index: null } };
   const against = checkGoldIndex(index.rows, build.chunks, indexFile);
-  const summary = build.findings.length === 0 ? against.summary : null;
-  return { findings: [...findings, ...build.findings, ...(summary === null ? [] : against.findings)], kit: { contract: report, gold_index: summary } };
+  const warned = noneChecked(against.summary, build.chunks, indexFile);
+  return { findings: [...findings, ...against.findings, ...warned], kit: { ...kit, gold_index: against.summary } };
 }
 
 export const HELP = `kit gold-index [--without-excerpts] <node>=<built output>... [--help]
