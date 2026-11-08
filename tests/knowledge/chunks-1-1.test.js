@@ -51,6 +51,14 @@ test('chunk 0 starts at its first line that is not blank; U+00A0 is not blank (A
   assert.equal(recordsOf([CONCEPT('Intro.\n\n\nMore.\n')])[0].text, 'Intro.\n\n\nMore.\n', 'blank lines inside stay');
 });
 
+test('fromFirstLine, as src/REFERENCE.md gives it: the text from its first line that is not blank (AGSC-06-45)', () => {
+  assert.equal(chunks.fromFirstLine('\n \t\n\nIntro.\n\nMore.\n'), 'Intro.\n\nMore.\n', 'leading blank lines go, inner ones stay');
+  assert.equal(chunks.fromFirstLine('Intro.\n'), 'Intro.\n', 'a text that starts on a line with text is unchanged');
+  assert.equal(chunks.fromFirstLine(' \nIntro.\n'), ' \nIntro.\n', 'U+00A0 is not blank');
+  assert.equal(chunks.fromFirstLine('\n \t\n'), '', 'a text of blank lines only is the empty string');
+  assert.equal(chunks.fromFirstLine(''), '');
+});
+
 test('a piece that Cut 2 starts on a blank line starts after it, and the ids do not move (AGSC-06-45)', () => {
   // After the paragraph boundary comes a line of one space: in 1.0 the second piece began
   // with that blank line.

@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-05-24, AGSC-05-41, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
+// verifies AGSC-05-24, AGSC-05-41, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14, AGSC-11-16
 // Steps of features/persona-j-standards.feature that run offline. The build
 // output stands in for the published site: what an implementer would fetch from
 // the node is read from `www/`, and the shipped validator is run in its
@@ -627,6 +627,31 @@ module.exports = [
           if (href.startsWith(BASE)) assert.ok(fs.existsSync(fileOf(world, href)), `${relation} names ${href}, which the build did not emit`);
         }
       }
+    },
+  },
+  {
+    pattern: /^the discovery document has one "…rel#surface" link whose "agsc-surface" is "webmcp", with the target "(\/[^"]*)" and the "agsc-surface-version" "(\d{4}-\d{2}-\d{2})", the WebMCP Draft Community Group Report of 27 October 2026 \(AGSC-11-16\)$/u,
+    run(world, route, version) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const webmcp = linkset(world).linkset[0][`${REL}surface`].filter((s) => s['agsc-surface'][0] === 'webmcp');
+      assert.strictEqual(webmcp.length, 1, JSON.stringify(webmcp));
+      assert.strictEqual(webmcp[0].href, new URL(route, base).href);
+      assert.deepStrictEqual(webmcp[0]['agsc-surface-version'], [version]);
+      assert.ok(fs.existsSync(path.join(world.dir, 'www', route, 'index.html')), `${route} is declared and not emitted`);
+    },
+  },
+  {
+    pattern: /^the shipped validate-wellknown passes that document at Level 1, and passes it as well with the date of an earlier report, "(\d{4}-\d{2}-\d{2})", because no rule pins one date \(AGSC-11-16\)$/u,
+    run(world, earlier) {
+      const file = path.join(world.dir, 'www', WELLKNOWN);
+      const check = () => world.tool('validate-wellknown', [file, '--level', '1', '--json']);
+      const first = check();
+      assert.strictEqual(first.exit, 0, `${first.stdout}${first.stderr}`);
+      const document = JSON.parse(fs.readFileSync(file, 'utf8'));
+      for (const s of document.linkset[0][`${REL}surface`]) if (s['agsc-surface'][0] === 'webmcp') s['agsc-surface-version'] = [earlier];
+      fs.writeFileSync(file, `${JSON.stringify(document)}\n`);
+      const second = check();
+      assert.strictEqual(second.exit, 0, `${second.stdout}${second.stderr}`);
     },
   },
 ];

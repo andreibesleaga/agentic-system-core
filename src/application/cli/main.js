@@ -879,7 +879,7 @@ function plainWhere(f) {
 }
 
 module.exports = {
-  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
+  main, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
   VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

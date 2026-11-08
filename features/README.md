@@ -37,8 +37,8 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |
 | `persona-g-team.feature` | P7 project team | 2, 5 | 7 | PRD-026, 028, 029, 030, 031, 064 |
 | `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 15 | PRD-021, 022, 026, 027, 061 |
-| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 19 | PRD-005, 017, 018, 021, 022, 044, 045, 048, 049, 056, NFR-01 |
-| `persona-j-standards.feature` | P11 standards implementer | 1 | 14 | PRD-022, 024, 025, 050, 054, 055, 057, 058 |
+| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 20 | PRD-003, 005, 017, 018, 021, 022, 044, 045, 048, 049, 056, NFR-01 |
+| `persona-j-standards.feature` | P11 standards implementer | 1 | 15 | PRD-022, 024, 025, 050, 054, 055, 057, 058 |
 | `persona-k-live-board.feature` | P12 self-driving team | 5 | 12 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 3 | PRD-010, 054, 055, NFR-02 |
 | `persona-m-security-reviewer.feature` | P13 security reviewer | 0, 1 | 12 | PRD-005, 023, 047, 050, 053, 062, 065, NFR-07 |

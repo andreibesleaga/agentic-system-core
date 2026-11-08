@@ -75,4 +75,4 @@ function createProcessRunner(options = {}) {
   };
 }
 
-module.exports = { createProcessRunner, DEFAULT_TIMEOUT_MS, GIT_HARDENING, SCRUBBED_ENV };
+module.exports = { createProcessRunner, DEFAULT_TIMEOUT_MS, SCRUBBED_ENV };

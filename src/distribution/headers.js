@@ -73,6 +73,15 @@ const OPT_IN_FILES = Object.freeze([
   ['/chunks-index.toon', 'text/toon; charset=utf-8'],
 ]);
 
+/**
+ * AGSC-07-19, AGSC-06-17: the JSON files under `/skills/`, typed as the discovery document declares
+ * `/skills/index.json` (its `rel#skills` link). The pattern names `.json` alone, because a `_headers`
+ * splat matches every character and `/skills/*` would also type the HTML page and the SKILL.md files.
+ * The block exists only where the build wrote the index, so a node with no skills keeps its `_headers`.
+ */
+const SKILLS_INDEX = '/skills/index.json';
+const SKILLS_JSON = Object.freeze(['/skills/*.json', 'application/json; charset=utf-8']);
+
 /** AGSC-06-40: the files an `item` link names, in order, with the type each is served with. */
 const SIGNPOSTED_ITEMS = Object.freeze([
   ['/graph.nq', 'application/n-quads'],
@@ -252,6 +261,8 @@ function headerSets(config = {}, routes = []) {
   for (const [route, type] of OPT_IN_FILES.filter(([one]) => routes.includes(one))) {
     add(route, [...(restricted ? [] : CORS), ['Content-Type', type]]);
   }
+  // AGSC-07-19: the skills index, served as the type the discovery document declares for it.
+  if (routes.includes(SKILLS_INDEX)) add(SKILLS_JSON[0], [['Content-Type', SKILLS_JSON[1]]]);
   // AGSC-06-06: the versioned copies never change; no other address of `/ns/` gets the value.
   for (const version of versionDirectories(routes)) add(`/ns/${version}/*`, [['Cache-Control', IMMUTABLE]]);
   // AGSC-06-39, AGSC-06-17: one policy on `/query/` and the files under it. The host joins

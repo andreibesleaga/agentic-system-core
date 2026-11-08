@@ -12,10 +12,10 @@ A rule counts as verified when at least one of these names it: a live conformanc
 |---|---:|
 | Conformance vector | 211 |
 | Unit, integration or architecture test | 356 |
-| Executed acceptance scenario | 104 |
+| Executed acceptance scenario | 106 |
 | Checker header | 39 |
 
-Acceptance scenarios: 164 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 104 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 166 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -363,7 +363,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-07-16 | VERIFIED | yes | — | `acceptance/steps/persona-f.js`, `composition/harness.test.js`, `standard/item-links-composition-wording.test.js` | `persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md` | — |
 | AGSC-07-17 | VERIFIED | — | — | `application/cli/eng2-verbs.test.js`, `composition/archive.test.js`, `composition/compose.test.js` +2 | — | — |
 | AGSC-07-18 | VERIFIED | yes | — | `application/cli/eng2-verbs.test.js`, `application/cli/verb-table-spec.test.js`, `application/cli/verbs-wired.test.js` +2 | — | — |
-| AGSC-07-19 | VERIFIED | yes | `build-0025` | `acceptance/steps/persona-f.js`, `application/cli/eng5-verbs.test.js`, `composition/skills.test.js` +2 | `persona-f-integrator.feature#Integrator installs packs into one of the three supported trees`, `persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md`, `persona-f-integrator.feature#Installed packs are content-only and lockfile-verified` +4 | — |
+| AGSC-07-19 | VERIFIED | yes | `build-0025` | `acceptance/steps/persona-f.js`, `application/cli/eng5-verbs.test.js`, `composition/skills.test.js` +3 | `persona-f-integrator.feature#Integrator installs packs into one of the three supported trees`, `persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md`, `persona-f-integrator.feature#Installed packs are content-only and lockfile-verified` +4 | — |
 | AGSC-07-20 | VERIFIED | yes | `build-0026` | `acceptance/steps/persona-f.js`, `composition/skills.test.js`, `e2e/modes/mode-3-skills.test.js` +1 | `persona-f-integrator.feature#Integrator installs packs into one of the three supported trees`, `persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md`, `persona-f-integrator.feature#Installed packs are content-only and lockfile-verified` +4 | — |
 | AGSC-07-21 | VERIFIED | yes | — | `acceptance/steps/persona-f.js`, `application/cli/eng5-verbs.test.js`, `composition/skills.test.js` +1 | `persona-f-integrator.feature#Integrator installs packs into one of the three supported trees` | — |
 | AGSC-07-22 | VERIFIED | yes | — | `acceptance/steps/persona-f.js`, `application/cli/eng5-verbs.test.js`, `composition/skill-format.test.js` +2 | `persona-f-integrator.feature#Each installed pack is a valid agentskills.io SKILL.md`, `persona-f-integrator.feature#Integrator's improved skill round-trips back as a Procedure` | — |
@@ -406,7 +406,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-08-28 | VERIFIED | yes | `prov-0001`, `prov-0002`, `prov-0013` | `application/cli/refresh-process-lane.test.js`, `application/cli/refresh-stops.test.js`, `application/cli/verbs-wired.test.js` +6 | `persona-k-live-board.feature#The agent lane cannot reach the slow lane`, `persona-k-live-board.feature#The NOW page shows the budget warning when a cap is reached` | — |
 | AGSC-08-29 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-08-30 | VERIFIED | yes | — | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-k.js`, `standard/rules.test.js` | `persona-b-contributor.feature#CI runs a lint-only review, no LLM call`, `persona-b-contributor.feature#The review lane labels the change and comments on its findings, with no model call`, `persona-k-live-board.feature#The build stays deterministic while the lane is non-deterministic` | — |
-| AGSC-08-31 | VERIFIED | yes | `lint-0051` | `governance/lint-min-sources.test.js` | — | — |
+| AGSC-08-31 | VERIFIED | yes | `lint-0051` | `acceptance/steps/persona-i-sources.js`, `governance/lint-min-sources.test.js` | `persona-i-maintainer.feature#lint warns about a pattern with fewer sources than the node asks for, and a source a model wrote does not count` | — |
 | AGSC-08-32 | VERIFIED | yes | `lint-0060` | `application/cli/compose-context-map.test.js`, `composition/context-map.test.js`, `distribution/domain-parity.test.js` +3 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#Titles are compared inside each bounded context, so one title may serve two contexts` | `validate-ontology` |
 | AGSC-09-01 | VERIFIED | — | — | `composition/conform.test.js`, `distribution/hosts/profiles.test.js`, `docs/release-wording.test.js` | — | — |
 | AGSC-09-02 | VERIFIED | yes | `conform-0006` | `acceptance/steps/persona-l.js`, `application/cli/verbs-wired.test.js`, `e2e/real-bundles.test.js` | `persona-l-port-implementer.feature#The reference engine's Level-3 report` | — |
@@ -470,7 +470,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-11-13 | VERIFIED | yes | `bnd-0024` | `arch/context-map.test.js`, `boundary/federation.test.js` | — | — |
 | AGSC-11-14 | VERIFIED | yes | `bnd-0010`, `bnd-0011` | `acceptance/steps/persona-b.js`, `acceptance/steps/persona-j.js`, `boundary/federation.test.js` +3 | `persona-b-contributor.feature#Contributor opens the fork-and-edit URL from the page footer`, `persona-j-standards.feature#A publisher advertises a contribute channel` | — |
 | AGSC-11-15 | VERIFIED | yes | `bnd-0034` | `boundary/federation.test.js` | — | — |
-| AGSC-11-16 | VERIFIED | yes | `bnd-0037` | `application/plugin-examples.test.js`, `boundary/surfaces.test.js`, `distribution/page-tools.test.js` +2 | — | `validate-wellknown` |
+| AGSC-11-16 | VERIFIED | yes | `bnd-0037` | `acceptance/steps/persona-j.js`, `application/plugin-examples.test.js`, `boundary/surfaces.test.js` +3 | `persona-j-standards.feature#The discovery document declares the WebMCP surface at the date of the reference Community Group Report` | `validate-wellknown` |
 | AGSC-11-17 | VERIFIED | yes | `bnd-0021` | `boundary/surfaces.test.js`, `standard/tool-signatures.test.js` | — | — |
 | AGSC-11-18 | VERIFIED | yes | `bnd-0036`, `bnd-0042`, `bnd-0050` | `boundary/mcp-initialize-capabilities.test.js`, `boundary/surfaces.test.js`, `distribution/mcp-client.test.js` +3 | — | — |
 | AGSC-11-19 | VERIFIED | yes | `bnd-0013` | `boundary/surfaces.test.js` | — | — |

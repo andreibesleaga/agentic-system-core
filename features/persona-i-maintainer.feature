@@ -1,4 +1,4 @@
-# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056, NFR-01 · PLAN §7
+# Trace: PRD-003, PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056, NFR-01 · PLAN §7
 @persona-i @mode-0
 Feature: Maintainer-as-operator keeps the site green with zero maintenance
   As P9 (maintainer-as-operator)
@@ -207,3 +207,18 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And every module under "src-ts/" has its compiled file under "src/", headed with its source and the compiler version, byte for byte what tsc writes now
     And TypeScript and its type packages are development dependencies only, and no module the package ships requires them
     And the compiled "src/shared/version-line.js" gives the line "agsc --version" prints (AGSC-09-09)
+
+  @PRD-003 @human @matrix-H5
+  Scenario: lint warns about a pattern with fewer sources than the node asks for, and a source a model wrote does not count
+    Given a fresh copy of the acceptance Bundle
+    And the configuration sets "lint.min_sources" to 1
+    And the item "content/concepts/handoff.md" cites "https://example.org/handoff-paper/" in "sources[]"
+    And the ai-generated term "content/concepts/ai-note.md" is added, and the item "content/concepts/supervisor.md" cites only its address in "sources[]"
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the "AGSC-E417" warnings name exactly "content/concepts/a2a.md", "content/concepts/mcp.md", "content/concepts/supervisor.md" and "content/concepts/tool-use-retries.md" (AGSC-08-31)
+    When the configuration sets "lint.min_sources" to 0
+    And the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the JSON envelope carries no "AGSC-E417"
+    And no network call was attempted

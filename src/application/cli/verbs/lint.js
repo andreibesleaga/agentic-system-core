@@ -388,4 +388,4 @@ function run(ctx) {
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, siteModel, suggestLinks, textFileFindings };
+module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, siteModel, textFileFindings };

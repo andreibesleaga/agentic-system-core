@@ -84,6 +84,19 @@ test('AGSC-06-01: only the board JSON exports are typed JSON; the HTML board pag
   assert.ok(covers('/boards/*.json', '/boards/project-board.json'));
 });
 
+test('AGSC-06-17, AGSC-07-19: /skills/*.json is typed JSON where the skills index is written; the skills pages keep their own type', () => {
+  const typed = (sets, route) => setFor(sets, route).filter(([k]) => k === 'Content-Type').map(([, v]) => v);
+  const routes = ['/skills/index.html', '/skills/index.json', '/skills/agent-patterns/SKILL.md'];
+  // The discovery document declares the index `application/json` (its `rel#skills` link), so it is served so.
+  assert.deepStrictEqual(typed(headers.headerSets({}, routes), '/skills/*.json'), ['application/json; charset=utf-8']);
+  assert.deepStrictEqual(typed(headers.headerSets({ visibility: 'restricted' }, routes), '/skills/*.json'),
+    ['application/json; charset=utf-8'], 'the type does not depend on the visibility');
+  assert.deepStrictEqual(typed(headers.headerSets({}, routes), '/skills/*'), [], 'a `/skills/*` type would also cover the HTML page and SKILL.md');
+  assert.deepStrictEqual(headers.headerSets({}, ['/index.html']).filter((s) => s.route === '/skills/*.json'), [],
+    'a node that writes no skills index gets no block, so its _headers is unchanged');
+  assert.ok(headers.headersFile({}, routes).includes('/skills/*.json\n  Content-Type: application/json; charset=utf-8\n'));
+});
+
 // Before the fix, the writer put the CORS pair and the content type
 // of fourteen addresses into two blocks each, and the reference host served only one of
 // two blocks written for the same address — so the discovery document and the thirteen other

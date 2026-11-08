@@ -213,6 +213,8 @@ graph TB
 | boundary | `federation.js` | peers and federation: the `rel#peer` links, peer provenance, results kept untrusted (AGSC-11-10 to AGSC-11-13); from 1.1 typed peers and the crosswalk reader of a context map (AGSC-11-24) | — | build lint compose |
 | *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
 
+*(Reconciliation note, 8 Nov 2026: the tools in the row above carry no `.js` extension. The real paths are `tools/validate-schemas`, `tools/validate-spec`, `tools/validate-ontology`, `tools/validate-vectors`, `tools/validate-wellknown`, `tools/validate-features`, `tools/validate-diagrams`, `tools/gen-spec-html` and `tools/gen-ns`, each run as `node tools/<name>`.)*
+
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
 **The nine command contracts, as shipped** *(The row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `tools/README.md` lists the same tools.)*

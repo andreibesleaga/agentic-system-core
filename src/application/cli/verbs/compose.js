@@ -544,6 +544,5 @@ function run(ctx) {
 }
 
 module.exports = {
-  name: 'compose', briefRequested, conflictMessage, contextPeers, emitHarness, emitterRefusal,
-  flatten, narrationRefusal, run, warningMessage,
+  name: 'compose', conflictMessage, emitHarness, emitterRefusal, flatten, run, warningMessage,
 };

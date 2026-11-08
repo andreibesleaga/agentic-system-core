@@ -1377,6 +1377,20 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   one block with every header it takes). Before, the card was served with the host's default type.
   Bytes change only on a node that publishes an agent card: its `_headers` gains that one line. No
   reference node declares a card.
+- `_headers` gives `/skills/*.json` a block with `Content-Type: application/json; charset=utf-8`, the
+  type the discovery document declares for `/skills/index.json` in its `rel#skills` link (AGSC-07-19,
+  AGSC-06-17). Before, the index was served with the host's default type. The pattern names `.json`
+  only, so the skills page and the `SKILL.md` files keep their own types. Bytes change only on a node
+  that writes `/skills/index.json`: its `_headers` gains that two-line block after the blocks of the
+  files written on a condition. All six reference builds (the minimal fixture, examples modes 2 to 5
+  and the demo node) write the index, so all six change in `_headers` and in no other file.
+- Seven functions and constants that nothing outside their own module used are no longer exported:
+  `GIT_HARDENING` (`adapters/node-proc.js`), `ENVIRONMENT_CLASS_CODES` and `RETIRED_FLAGS`
+  (`application/cli/main.js`), `suggestLinks` (`verbs/lint.js`), and `briefRequested`, `contextPeers`
+  and `narrationRefusal` (`verbs/compose.js`). The five that `src/REFERENCE.md` or `docs/PLUGINS.md`
+  name stay exported and now have tests of their own: `knowledge/questions.js#neverWith` and
+  `#replacedBy`, `knowledge/chunks.js#fromFirstLine`, `distribution/query-page.js#examplesSection` and
+  `application/plugins.js#PLUGIN_API_VERSION`. No emitted byte changes.
 - `agsc build` on a folder with no `content/index.md` reports the missing Bundle root (`AGSC-E901`)
   and no longer also warns that the description of that missing file is too short for the Dataset
   block (AGSC-06-41). Only standard error changes.

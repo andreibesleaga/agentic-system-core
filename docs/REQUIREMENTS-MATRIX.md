@@ -13,7 +13,7 @@ A rule that traces to a requirement brings its own checks with it: the vectors, 
 | Rule trace bracket | 73 |
 | Test file | 17 |
 | Live conformance vector | 1 |
-| Acceptance scenario | 62 |
+| Acceptance scenario | 63 |
 | Document | 53 |
 
 ## Requirements met in part
@@ -61,7 +61,7 @@ At most three names are shown per cell; test files and scenario files are listed
 |---|---|---|---|---|---|---|---|
 | PRD-001 | MAPPED | `AGSC-00-11`, `AGSC-09-07`, `AGSC-09-94` +1 | 3 vectors, 18 tests, 4 scenarios, 1 checkers | — | — | `persona-e-architect.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/scenario-map.md` |
 | PRD-002 | MAPPED | `AGSC-00-09`, `AGSC-00-21`, `AGSC-02-24` +3 | 6 vectors, 28 tests, 2 scenarios, 2 checkers | `tools/count-artifacts.test.js`, `tools/gen-spec-html.test.js`, `tools/helpers.js` +2 | — | `persona-a-reader.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
-| PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 4 vectors, 29 tests, 2 scenarios, 2 checkers | — | — | — | — |
+| PRD-003 | MAPPED | `AGSC-00-09`, `AGSC-04-19`, `AGSC-09-11` +1 | 4 vectors, 29 tests, 2 scenarios, 2 checkers | — | — | `persona-i-maintainer.feature` | — |
 | PRD-004 | MAPPED | `AGSC-00-10`, `AGSC-04-01`, `AGSC-04-02` +2 | 1 vectors, 30 tests, 2 scenarios, 0 checkers | `tools/validate-diagrams.test.js` | — | — | `docs/SPEC.md`, `docs/diagrams/README.md`, `docs/diagrams/algo-build-pipeline.md` |
 | PRD-005 | MAPPED | `AGSC-06-11`, `AGSC-08-20`, `AGSC-08-20a` +3 | 8 vectors, 10 tests, 2 scenarios, 0 checkers | `tools/gen-glossary.test.js`, `tools/linear-patterns.test.js`, `tools/public-hygiene.test.js` | — | `persona-i-maintainer.feature`, `persona-m-security-reviewer.feature` | `docs/PLAN.md`, `docs/SPEC.md`, `docs/diagrams/README.md` +2 |
 | PRD-006 | MAPPED | `AGSC-01-17`, `AGSC-01-18` | 1 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | `docs/SPEC.md` |
@@ -90,7 +90,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-029 | MAPPED | `AGSC-01-28` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-030 | ALLOWED | — | — | — | — | `persona-g-team.feature` | — |
 | PRD-031 | MAPPED | `AGSC-08-09`, `AGSC-08-10` | 1 vectors, 8 tests, 5 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
-| PRD-032 | MAPPED | `AGSC-02-15`, `AGSC-07-19` | 1 vectors, 6 tests, 7 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | `docs/SPEC.md`, `docs/diagrams/user-flows.md` |
+| PRD-032 | MAPPED | `AGSC-02-15`, `AGSC-07-19` | 1 vectors, 7 tests, 7 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | `docs/SPEC.md`, `docs/diagrams/user-flows.md` |
 | PRD-033 | MAPPED | `AGSC-07-21` | 0 vectors, 4 tests, 1 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | — |
 | PRD-034 | MAPPED | `AGSC-07-22` | 0 vectors, 5 tests, 2 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | — |
 | PRD-035 | MAPPED | `AGSC-07-15`, `AGSC-07-20` | 1 vectors, 7 tests, 7 scenarios, 0 checkers | — | — | `persona-f-integrator.feature` | `docs/PLAN.md` |

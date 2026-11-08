@@ -100,11 +100,14 @@ To see what the assistant sees without one, the package has a small script that 
 `agsc mcp`, makes one tool call and prints the answer:
 
 ```bash demo
+node "$ENGINE/examples/demos/agents/mcp-call.js" search '{"query":"handoff"}'
 node "$ENGINE/examples/demos/agents/mcp-call.js" ask '{"question":"who splits a task into parts"}'
 node "$ENGINE/examples/demos/agents/mcp-call.js" links '{"slug":"handoff"}'
 ```
 
 ```text expect
+        "title": "Handoff"
+  "type": "items"
   "body": "An agent that splits a task into parts and hands each part to another agent. Content Use Terms: LicenseRef-AgenticSystemCore-Content-Use-1.0.",
     "http://localhost/concepts/supervisor/"
   "trust": "untrusted",

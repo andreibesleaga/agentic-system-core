@@ -80,6 +80,13 @@ Feature: Standards implementer adopts the discovery format on their own site
     When the Bundle is built and served on loopback
     Then the shipped validate-wellknown passes at Level 1 over loopback
 
+  @PRD-024 @human @matrix-H15
+  Scenario: The discovery document declares the WebMCP surface at the date of the reference Community Group Report
+    Given a fresh copy of the acceptance Bundle
+    When the Bundle is built
+    Then the discovery document has one "…rel#surface" link whose "agsc-surface" is "webmcp", with the target "/compose/" and the "agsc-surface-version" "2026-10-27", the WebMCP Draft Community Group Report of 27 October 2026 (AGSC-11-16)
+    And the shipped validate-wellknown passes that document at Level 1, and passes it as well with the date of an earlier report, "2026-09-15", because no rule pins one date (AGSC-11-16)
+
   @PRD-024 @agent @matrix-H15
   Scenario: A discovery document served as application/json with a profile Link fails Level 2
     Given a fresh copy of the acceptance Bundle

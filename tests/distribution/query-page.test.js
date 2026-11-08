@@ -136,6 +136,16 @@ test('(b) the ten questions are offered as named examples, each with its query f
   assert.doesNotMatch(html, /id="examples-site"|id="vocabulary-site"/u, 'a node without the domain layer shows no part of it');
 });
 
+test('(b) examplesSection, called as src/REFERENCE.md gives it, is the examples section the built page carries', () => {
+  const items = site.pageItemsOf(loadFixture().items, undefined);
+  const values = queryExamples.exampleValues(items, '2026-01-01T00:00:00Z');
+  const iriOf = (slug) => `https://minimal.example/${{ cluster: 'clusters', concept: 'concepts' }[items.find((i) => i.slug === slug).type]}/${slug}/`;
+  const titleOf = (slug) => items.find((i) => i.slug === slug).title;
+  const section = queryPage.examplesSection(QUESTIONS, { iriOf, siteQuestions: [], titleOf, values });
+  assert.ok(section.startsWith('<section id="examples" aria-labelledby="examples-heading">') && section.endsWith('</section>'));
+  assert.ok(page().includes(section), 'the page holds the section examplesSection writes, byte for byte');
+});
+
 test('(b)(f) a node with competency questions and a site vocabulary: its questions after the ten, its terms after the fourteen', () => {
   const html = String(build({ files: LINT_0059 }).files.get('/query/index.html'));
   const examples = html.slice(html.indexOf('<h3 id="examples-site">'), html.indexOf('</section>', html.indexOf('<h3 id="examples-site">')));

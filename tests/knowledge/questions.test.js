@@ -50,6 +50,18 @@ describe('AGSC-05-34 — the ten questions', () => {
     assert.deepEqual(questions.missingPorts([], 'nope', []), []);
   });
 
+  it('questions 2 and 3 by name, as src/REFERENCE.md gives them: neverWith both ways, replacedBy through the chain', () => {
+    const items = [item('a', { excludes: ['b'] }), item('b'), item('c', { excludes: ['a'] }),
+      item('old'), item('mid', { supersedes: ['old'] }), item('new', { supersedes: ['mid'] })];
+    assert.deepEqual(questions.neverWith(items, 'a'), ['b', 'c'], 'the symmetric edge runs both ways (AGSC-03-05)');
+    assert.deepEqual(questions.neverWith(items, 'b'), ['a']);
+    assert.deepEqual(questions.replacedBy(items, 'old'), ['mid', 'new']);
+    assert.deepEqual(questions.replacedBy(items, 'new'), []);
+    for (const [number, fn, subject] of [[2, questions.neverWith, 'a'], [3, questions.replacedBy, 'old']]) {
+      assert.deepEqual(questions.answer(number, items, { subject }), fn(items, subject), `answer(${number}) is the named function`);
+    }
+  });
+
   it('question 4: a port the subject itself produces is provided; a selection member that is unknown adds nothing', () => {
     const items = [item('x', { consumes: ['a', 'b'], produces: ['a'] }), item('p', { produces: ['b'] })];
     assert.deepEqual(questions.missingPorts(items, 'x', []), ['b']);
