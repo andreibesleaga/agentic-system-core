@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 106 |
 | Checker header | 39 |
 
-Acceptance scenarios: 166 in `features/` (a Scenario Outline counts once), of which 11 are pending, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 166 in `features/` (a Scenario Outline counts once), of which 11 are pending and 12 conditional, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -124,7 +124,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-17 | VERIFIED | yes | `bundle-0016` | `application/bundle-root-consistency.test.js`, `application/cli/messages-and-help.test.js`, `knowledge/validate-major.test.js` +2 | — | — |
 | AGSC-00-18 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-00-19 | PROSE-ONLY | — | — | — | — | — |
-| AGSC-00-20 | VERIFIED | yes | `cli-0016` | `application/config/load.test.js`, `standard/declared-scope.test.js` | — | — |
+| AGSC-00-20 | VERIFIED | yes | `cli-0016` | `application/config/load.test.js`, `standard/declared-scope.test.js`, `standard/route-closure.test.js` | — | — |
 | AGSC-00-21 | VERIFIED | — | — | `application/compatibility.test.js`, `distribution/discovery-facts.test.js`, `distribution/reader-tolerance.test.js` +3 | — | `validate-wellknown` |
 | AGSC-00-22 | VERIFIED | yes | `lint-0027` | `application/compatibility.test.js`, `application/plugin-examples.test.js` | — | — |
 | AGSC-00-23 | VERIFIED | — | — | `application/compatibility.test.js`, `tools/validate-wellknown-visibility.test.js` | — | — |
