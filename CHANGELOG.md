@@ -1363,6 +1363,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The note `agsc build` and `agsc ci` print for the route `/feed.xml` no longer says "reserved to 1.1"
+  and "a 1.0 tool rejects": AGSC-00-20 as amended for 1.1.0 moves `build.feed` to a later MINOR, so
+  it now reads "reserved to a later MINOR (planned for 1.2, AGSC-00-20 as amended for 1.1.0)" and
+  "a 1.0 or 1.1 tool rejects" (`tests/standard/route-closure.test.js`). `src/REFERENCE.md` and two
+  code comments say the same. Only standard error changes; no emitted byte.
 - `agsc export --to <name>` names AGSC-01-26a once: an unknown adapter printed "(AGSC-01-26a)
   (AGSC-01-26a)". `export --to skos` no longer says that the adapter "exports no run() entry point":
   it says that `skos` is an import adapter (`agsc import --from skos`) and that the SKOS view is

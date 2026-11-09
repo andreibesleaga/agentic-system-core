@@ -134,3 +134,15 @@ test('/graph.rdf and /feed.xml are not emitted at 1.x', () => {
   assert.ok(!files.includes('graph.rdf'));
   assert.ok(!files.includes('feed.xml'));
 });
+
+test('the note on /feed.xml says the route is reserved to a later MINOR, as AGSC-00-20 amended for 1.1.0 says', () => {
+  const site = require('../../src/distribution/site.js');
+  const [, note] = site.UNPRODUCED_ROUTES.find(([route]) => route === '/feed.xml');
+  assert.match(note, /^reserved to a later MINOR \(planned for 1\.2, AGSC-00-20 as amended for 1\.1\.0\)/u);
+  assert.match(note, /a 1\.0 or 1\.1 tool rejects/u);
+  assert.doesNotMatch(note, /reserved to 1\.1/u);
+  // The engine's own reference and the comments that state the same reservation.
+  for (const rel of ['src/REFERENCE.md', 'src/application/config/load.js', 'src/knowledge/validate.js']) {
+    assert.doesNotMatch(fs.readFileSync(path.join(ROOT, rel), 'utf8'), /reserved to 1\.1/u, rel);
+  }
+});
