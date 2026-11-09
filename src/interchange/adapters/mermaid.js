@@ -182,5 +182,5 @@ function run(bundle, options) {
 
 module.exports = {
   CLAIMED_KEYS, ENTITY, FORMAT, READS,
-  clusterDiagram, itemDiagram, label, nodeId, run, subgraphId,
+  label, nodeId, run, subgraphId,
 };

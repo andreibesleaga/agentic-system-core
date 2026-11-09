@@ -1907,10 +1907,9 @@ function verify(bundle, ports, options = {}) {
 module.exports = {
   build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
   publishedItems, pageItemsOf, jsonBytes, paginate, readAttachment, readDiagramSource,
-  declaredSurfaces: wellKnown.declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
+  declaredSurfaces: wellKnown.declaredSurfaces, contributeEditUrl, skillPacks,
   budgets, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
-  bodyHrefResolver,
   BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, CLUSTER_MEMBERS_SHOWN,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

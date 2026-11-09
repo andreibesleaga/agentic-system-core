@@ -64,6 +64,14 @@ test('AGSC-07-22: description — 1 to 1024 characters; compatibility at most 50
   assert.deepEqual(codes(format.check(skillFile([GOOD[0], `description: ${'\u{1F600}'.repeat(1024)}`, GOOD[2]]), PACK)), []);
 });
 
+test('AGSC-07-22: COMPATIBILITY_MAX and DESCRIPTION_MAX, as src/REFERENCE.md names them, are the bounds the check holds', () => {
+  assert.equal(format.COMPATIBILITY_MAX, 500);
+  assert.equal(format.DESCRIPTION_MAX, 1024);
+  const at = (n) => codes(format.check(skillFile([...GOOD, `compatibility: ${'c'.repeat(n)}`]), PACK));
+  assert.deepEqual(at(format.COMPATIBILITY_MAX), []);
+  assert.deepEqual(at(format.COMPATIBILITY_MAX + 1), ['AGSC-E204 error']);
+});
+
 test('AGSC-07-22: a missing license is E202; metadata that is not a map of strings is E201', () => {
   assert.deepEqual(codes(format.check(skillFile(GOOD.slice(0, 2)), PACK)), ['AGSC-E202 error']);
   assert.deepEqual(codes(format.check(skillFile([...GOOD, 'metadata: flat']), PACK)), ['AGSC-E201 error']);

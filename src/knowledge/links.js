@@ -684,7 +684,6 @@ module.exports = {
   SYMMETRIC,
   SLUG_PATTERN,
   anchors,
-  bodyLineOf,
   bodyPathError,
   dirOf,
   domainEdges,

@@ -189,6 +189,14 @@ test('AGSC-01-42: every one of the fourteen Link keys is a class, and nothing el
   }
 });
 
+test('AGSC-01-42: REL_CLASS_PREFIX, as src/REFERENCE.md names it, is the prefix of every rel class', () => {
+  assert.equal(diagrams.REL_CLASS_PREFIX, 'agsc-rel-');
+  const result = compiled([ACCENT, 'line 20 200 300 200 rel=uses', 'text 20 150 "t" rel=covers']);
+  const classes = [...result.svg.matchAll(/class="([^"]+)"/gu)].flatMap((m) => m[1].split(' '))
+    .filter((c) => c !== 'agsc-accent');
+  assert.deepEqual(classes, [`${diagrams.REL_CLASS_PREFIX}uses`, `${diagrams.REL_CLASS_PREFIX}covers`]);
+});
+
 test('AGSC-01-42: a `rel=` value that is no Link key is refused on arrow, line and text, naming its line', () => {
   assert.deepEqual(refusedAt(['box a 20 20 60 30 "A" acc', 'box b 120 20 60 30 "B"', 'arrow a b rel=friend']), [3]);
   assert.deepEqual(refusedAt([ACCENT, 'line 10 100 50 100 rel=friend']), [2]);

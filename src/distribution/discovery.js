@@ -596,10 +596,8 @@ function peerCheck(nodes) {
 
 module.exports = {
   anchorOnOrigin,
-  KNOWN_ATTRIBUTES,
   OPEN_WHEN_RESTRICTED,
   linkset,
-  newerMinor,
   check,
   peerCheck,
   peersOf,

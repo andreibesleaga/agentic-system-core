@@ -578,6 +578,6 @@ function plan(files, options) {
 }
 
 module.exports = {
-  EXPORT_NAMES, FORMAT, FORMAT_NAMES, STATE_NAMES,
+  EXPORT_NAMES, FORMAT, FORMAT_NAMES,
   decodeRecord, encodeRecord, extensionsOf, isBoardFile, plan, redactEmails, run, stateOfWord, taskStateOf, wordFor,
 };

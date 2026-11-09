@@ -670,9 +670,7 @@ function altFrom(dslText, options = {}) {
 module.exports = {
   ACCENT_CLASS,
   ACCENT_STROKE_WIDTH,
-  GLYPH,
   MAX_SOURCE_LENGTH,
-  NOTE_MARGIN,
   REL_CLASS_PREFIX,
   STATEMENTS,
   TEXT_MARGIN,

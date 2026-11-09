@@ -1395,6 +1395,17 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   name stay exported and now have tests of their own: `knowledge/questions.js#neverWith` and
   `#replacedBy`, `knowledge/chunks.js#fromFirstLine`, `distribution/query-page.js#examplesSection` and
   `application/plugins.js#PLUGIN_API_VERSION`. No emitted byte changes.
+- Fifteen more functions and constants that nothing outside their own module used are no longer
+  exported: `KNOWN_ATTRIBUTES` and `newerMinor` (`distribution/discovery.js`), `IMMUTABLE`
+  (`distribution/headers.js`), `baseDirOf` and `resolveRelative` (`distribution/internal-links.js`),
+  `pageMarkdown`, `FORGE_EDIT_SEGMENT` and `bodyHrefResolver` (`distribution/site.js`), `WORKING`
+  (`governance/prov.js`), `STATE_NAMES` (`adapters/board.js`), `clusterDiagram` and `itemDiagram`
+  (`adapters/mermaid.js`), `GLYPH` and `NOTE_MARGIN` (`knowledge/diagrams.js`) and `bodyLineOf`
+  (`knowledge/links.js`). The two that `src/REFERENCE.md` names, `composition/skill-format.js#COMPATIBILITY_MAX`
+  and `knowledge/diagrams.js#REL_CLASS_PREFIX`, have tests of their own. A fitness function,
+  `tests/arch/dead-exports.test.js`, fails on any export of a `src/` module that no other file of the
+  tree names in its code, except a name the module lists as portable or that `src/REFERENCE.md` or
+  `docs/PLUGINS.md` documents. No emitted byte changes.
 - `agsc build` on a folder with no `content/index.md` reports the missing Bundle root (`AGSC-E901`)
   and no longer also warns that the description of that missing file is too short for the Dataset
   block (AGSC-06-41). Only standard error changes.
