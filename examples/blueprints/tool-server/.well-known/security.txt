@@ -1,0 +1,2 @@
+Contact: https://example.org/security
+Expires: 2027-06-01T00:00:00Z

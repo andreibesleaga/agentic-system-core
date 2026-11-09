@@ -1,0 +1,7 @@
+{
+  "build": { "out": "www" },
+  "bundle": { "id": "blueprint-engine", "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0", "license_schema": "CC0-1.0", "operator": "human:operator" },
+  "site": { "base": "https://engine-blueprint.example/", "tagline": "A blueprint of the AgenticSystemCore engine, kept as a knowledge node.", "tdm_crawlers": ["CCBot", "GPTBot"], "title": "Engine blueprint" },
+  "spec_version": "1.0.0",
+  "tags": { "allowed": ["architecture", "checks", "decisions", "engine", "outside"] }
+}

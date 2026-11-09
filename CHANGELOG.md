@@ -488,6 +488,18 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Three worked blueprints under `examples/blueprints/` (PRD-071; AGSC-07-29, AGSC-02-97): `engine/`, the
+  engine itself (its contexts and layers in the order `.dependency-cruiser.js` allows, the check that
+  proves each, six decisions, the outside systems), `linked-sites/`, two knowledge sites that name each
+  other as peers (built on the memory demo's nodes `a` and `b`), and `tool-server/`, the agent tool
+  server with a client, the page tools and the HTTP transport. Each is a Bundle with one saved
+  architecture; `agsc compose --from <slug> --brief` writes its blueprint (the C4 levels 1 to 3, one
+  decision record per decision, each quoting the options that were considered, and the build plan),
+  and its README ends with a "Build from this" dry run that needs no model.
+  `tests/examples/blueprints.test.js` proves, for each, that `lint`, `ci` and `conform --level 2` pass
+  with no warning, that two builds and two compositions write the same bytes, that the three C4 levels
+  agree, that every part names its check, and that the README's dry run prints what it quotes; `npm
+  test` runs it in CI. New examples only: no rule, no case and no emitted byte changes.
 - The page head and the reader's way around a node (PRD-069; the engine half of the 1.0 site review's
   findings on titles, icon, link previews, unreachable tag pages, empty type lists and the `:target`
   mark). Every page's `<title>` is its name followed by the node's name (`Handoff — Minimal Bundle`; the
