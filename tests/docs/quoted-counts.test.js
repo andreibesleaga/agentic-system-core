@@ -106,6 +106,15 @@ test('docs/MEASUREMENTS.md quotes its record', () => {
     'the parity totals are not the record\'s');
 });
 
+test('README.md quotes the rule ids and the active rules the counter gives', () => {
+  const row = flat(read('README.md')).match(/\(the standard itself: (\S+) rule ids, (\S+) of them active, in (\S+) chapters\)/u);
+  assert.ok(row, 'the README no longer quotes the rule counts in the specification row');
+  assert.equal(number(row[1]), COUNTS.rules, `README says ${row[1]} rule ids; count-artifacts gives ${COUNTS.rules}`);
+  assert.equal(number(row[2]), COUNTS.rules_active, `README says ${row[2]} active; count-artifacts gives ${COUNTS.rules_active}`);
+  const chapters = fs.readdirSync(path.join(ROOT, 'spec')).filter((f) => /^\d{2}-.*\.md$/u.test(f)).length;
+  assert.equal(number(row[3]), chapters);
+});
+
 test('every quoted count of populated areas is the number of populated areas', () => {
   for (const rel of ['docs/MEASUREMENTS.md', 'docs/BENCHMARKS.md', 'README.md', 'docs/CONFORMANCE-STATEMENTS.md']) {
     const text = flat(read(rel));
