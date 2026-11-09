@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-28
+// verifies AGSC-07-25, AGSC-07-26, AGSC-07-28
 // The composition brief (`src/composition/brief.js`) beyond the bytes of compose-0024 to
 // compose-0026: properties over generated graphs (the brief does not depend on the order of the
 // selection, two runs give the same bytes, the inputs are not changed, no file names an item
