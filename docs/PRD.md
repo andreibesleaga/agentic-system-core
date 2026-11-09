@@ -406,6 +406,11 @@ reading `v1.x`/`should` above READ AS `v1.0`" does not reach these cells, which 
   `--to mem0` are `AGSC-E203`); memories reach Mem0, Letta and Zep through the COGX archive that
   Cognee reads (`export --to cogx`, `docs/CONNECTORS.md`). Direct adapters and CSV are not
   planned for a version.
+  *Added 2026-11-09:* the owner decided on 9 November 2026 that the direct adapters for Mem0,
+  Letta, Zep and CSV, and for Basic Memory and Claude Code's memory files, ship in 1.1 as
+  capabilities of the reference distribution under AGSC-01-26a (a MAY); AGSC-00-20 is amended
+  the same day. Until they are in the tree the two sentences above describe the engine; no rule
+  and no case changes.
 - PRD-033, "Cursor/Copilot/Gemini/Codex/GABBE" and the `<site>` argument: `skills install`
   writes the three trees `.agents/skills`, `.claude/skills` and `.github/skills` from the local
   Bundle (AGSC-07-21) and refuses a URL with `AGSC-E003`; GABBE is reached by

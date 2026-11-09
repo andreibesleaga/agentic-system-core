@@ -13,6 +13,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- AGSC-00-20, amended 2026-11-09: the direct memory adapters for Mem0, Letta, Zep and CSV, and for
+  Basic Memory and Claude Code's memory files, move from the capabilities planned for a later MINOR
+  to the capabilities of the reference distribution in 1.1. They are adapters under AGSC-01-26a,
+  which already permits them; no rule, no case and no emitted byte changes.
 - The package ships the benchmark runner `tools/bench` calls, `bench/runners/kit.js`, by name, and no
   longer the install layer's runner `bench/runners/install.js`, whose only caller, `bench/measure.js`,
   stays in the repository: `files[]` lists `bench/runners/kit.js` instead of the folder

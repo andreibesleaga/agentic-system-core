@@ -63,27 +63,36 @@ test('AGSC-10-02: a Level-0 node is described by the routes it serves, and its c
   assert.match(rule, /not routes/u, 'the rule says that the files of the Bundle are not routes');
 });
 
-test('AGSC-00-20: the eleven capabilities of the reference distribution are planned for a later MINOR, and none is "not planned"', () => {
+test('AGSC-00-20: nine capabilities of the reference distribution are planned for a later MINOR, the direct memory adapters ship in 1.1, and none is "not planned"', () => {
   const rule = normative(ruleText(OVERVIEW, 'AGSC-00-20'));
   const at = rule.search(/Planned for a later MINOR as capabilities of the reference distribution/u);
   assert.ok(at >= 0, 'the list of capabilities planned for a later MINOR was not found');
   const list = rule.slice(at, rule.indexOf('**2.0**', at) > 0 ? rule.indexOf('**2.0**', at) : undefined);
-  const eleven = {
+  const nine = {
     'an ingest stub and channel adapters': [/ingest stub/u, /channel adapters/u],
     'init examples, type folders, forge workflow, init options': [/example Concepts/u, /type folders/u, /forge workflow/u, /--forge/u, /--host/u],
-    'direct memory adapters': [/Mem0/u, /Letta/u, /Zep/u, /CSV/u],
     'other skill install trees and install from a site': [/install trees/u, /from a published site/u],
     'a container image, Homebrew, Nix and a PyPI wrapper': [/container image/u, /Homebrew/u, /Nix/u, /PyPI/u],
     'git mirror and weekly attested snapshot': [/git mirror/u, /weekly attested snapshot/u],
     'a model client for the review lane': [/model client for the review lane/u],
     narrate: [/narrate/u],
-    'Basic Memory and Claude Code memory adapters': [/Basic Memory/u, /Claude Code/u],
     'Deno, Bun and Workers': [/Deno/u, /Bun/u, /Workers/u],
     'a model adapter for the agent lane': [/model adapter for the agent lane/u],
   };
-  for (const [name, patterns] of Object.entries(eleven)) {
+  for (const [name, patterns] of Object.entries(nine)) {
     for (const p of patterns) assert.match(list, p, `${name}: ${p} is not in the list planned for a later MINOR`);
   }
+  // Owner decision of 9 November 2026: the direct memory adapters are a capability of the
+  // reference distribution in 1.1 (AGSC-01-26a, a MAY), no longer planned for a later MINOR.
+  for (const p of [/Mem0/u, /Letta/u, /Zep/u, /CSV/u, /Basic Memory/u, /memory files/u]) {
+    assert.doesNotMatch(list, p, `${p} is still in the list planned for a later MINOR`);
+  }
+  const shipped = rule.slice(rule.search(/Capabilities of the reference distribution in 1\.1/u), at);
+  assert.match(shipped, /benchmark kit/u);
+  for (const p of [/Mem0/u, /Letta/u, /Zep/u, /CSV/u, /Basic Memory/u, /Claude Code's memory files/u, /AGSC-01-26a/u]) {
+    assert.match(shipped, p, `${p} is not among the capabilities of the reference distribution in 1.1`);
+  }
+  assert.match(ruleText(OVERVIEW, 'AGSC-00-20'), /\*\(Amended 2026-11-09 for 1\.1\.0: [^)]*memory adapters/u, 'the move carries a dated note');
   assert.doesNotMatch(OVERVIEW, /declared scope of (?:any|no) version|not planned/u);
 });
 

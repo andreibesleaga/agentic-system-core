@@ -119,7 +119,10 @@ shape it translates Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into w
 they are migrated into Cognee. One archive from a node is read by Cognee; the other
 systems reach Cognee through the same format, not the archive (Cognee's own
 documentation, docs.cognee.ai/examples/migrate-memory-systems, read 2026-09-24:
-migration works into Cognee only).
+migration works into Cognee only). Direct adapters for Mem0, Letta, Zep and CSV, and for
+Basic Memory and Claude Code's memory files, come with 1.1 as a capability of the reference
+distribution (AGSC-00-20 as amended on 2026-11-09, AGSC-01-26a); this route stays the one
+through Cognee.
 
 ```sh
 agsc export --to cogx       # writes dist/export/cogx/
@@ -544,7 +547,7 @@ whoever can change one can change the other.
 | Codex CLI | 1 (+ 3) | `examples/connectors/codex/connect.js` |
 | Cursor | 1 + 3 | `examples/connectors/cursor/connect.js` |
 | GitHub Copilot, Gemini CLI, Kiro, Windsurf, Cline, Aider | 1 | the matching `--target`; mind the Windsurf and Aider notes |
-| Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive |
+| Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive; direct adapters for Mem0, Letta and Zep come with 1.1 (AGSC-00-20) |
 | LangGraph / LangChain | 4, or the chunk corpus | `examples/connectors/frameworks/records.js … langgraph`, then `store.put` |
 | AutoGen | the chunk corpus | `records.js … autogen` gives `MemoryContent`-shaped records |
 | CrewAI | 2 + the chunk corpus | skills for procedures; keep the item IRI in the text, because CrewAI rewrites memories it consolidates |
