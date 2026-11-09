@@ -136,7 +136,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-062 | MAPPED | `AGSC-11-05` | 1 vectors, 5 tests, 0 scenarios, 1 checkers | — | — | `persona-m-security-reviewer.feature` | — |
 | PRD-063 | PARTLY | `AGSC-01-36`, `AGSC-08-28`, `AGSC-08-29` | 6 vectors, 10 tests, 2 scenarios, 0 checkers | — | — | `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
 | PRD-064 | MAPPED | `AGSC-10-16`, `AGSC-10-18` | 0 vectors, 1 tests, 1 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
-| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 5 vectors, 18 tests, 3 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
+| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 5 vectors, 19 tests, 3 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
 | PRD-066 | MAPPED | — | — | `bench/agent-kit.test.js` | — | `persona-n-researcher.feature` | `docs/diagrams/arch-c4-container.md` |
 | PRD-067 | MAPPED | — | — | `bench/measure.test.js` | — | `persona-n-researcher.feature` | — |
 | PRD-068 | MAPPED | — | — | `docs/claims.test.js`, `tools/lint-claims.test.js` | — | `persona-n-researcher.feature` | — |
