@@ -82,7 +82,7 @@ test('AGSC-00-20: nine capabilities of the reference distribution are planned fo
   for (const [name, patterns] of Object.entries(nine)) {
     for (const p of patterns) assert.match(list, p, `${name}: ${p} is not in the list planned for a later MINOR`);
   }
-  // Owner decision of 9 November 2026: the direct memory adapters are a capability of the
+  // Settled on 9 November 2026: the direct memory adapters are a capability of the
   // reference distribution in 1.1 (AGSC-01-26a, a MAY), no longer planned for a later MINOR.
   for (const p of [/Mem0/u, /Letta/u, /Zep/u, /CSV/u, /Basic Memory/u, /memory files/u]) {
     assert.doesNotMatch(list, p, `${p} is still in the list planned for a later MINOR`);
