@@ -488,6 +488,35 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The page head and the reader's way around a node (PRD-069; the engine half of the 1.0 site review's
+  findings on titles, icon, link previews, unreachable tag pages, empty type lists and the `:target`
+  mark). Every page's `<title>` is its name followed by the node's name (`Handoff — Minimal Bundle`; the
+  home page keeps the node's name alone; WCAG 2.4.2), and the visible `<h1>` is unchanged. Every page
+  with a canonical address carries the Open Graph properties `og:type` (`website` on the home page,
+  `article` elsewhere), `og:url`, `og:title`, `og:site_name` and, when the page has a description,
+  `og:description` (The Open Graph protocol, ogp.me); the 404 page carries none. `og:image` and
+  `og:image:alt` are written only when the build is given the new `ogImage` option of `site.build` (an
+  `https://` address, or a site path resolved against `site.base`; anything else throws): the
+  configuration schema closes `site` and no rule names an image, so no key is added and `agsc build`
+  writes none. Every page links `/assets/favicon.svg` (else `/assets/favicon.png`) as its icon when the
+  build publishes that asset, which AGSC-06-01 does when a published body references it; no file is
+  added to any route set (`build-0029` unchanged). An item page lists its tags, each linked to its
+  `/tags/<tag>/` page (AGSC-06-01), so every tag page has an incoming link; a tag with no page stays
+  text. An empty type folder, which still resolves and stays out of the navigation (AGSC-06-02), says
+  "This node publishes no <type>." and links `/search/` instead of "Nothing here yet.". The default
+  stylesheet marks the element a fragment link lands on with a dashed outline in the accent colour (a
+  chunk anchor marks its heading; `main`, the skip link's target, is not marked). Tests:
+  `tests/distribution/page-head.test.js` (22) and `page-head-browser.test.js` (browser lane, both
+  colour schemes, axe-core 0 violations); `docs/guides/publish.md` and `src/REFERENCE.md` say how to add
+  the icon and the image. Bytes: generated HTML pages are an implementation's own (AGSC-04-24 lists
+  the machine artefacts only), so every `.html` page of every node changes (fixture-minimal 18 of 18,
+  `index.html` `1f5cdaf6…8e3a` → `73fd55a7…3390`; agsc-demo-node 90 of 90, `index.html`
+  `47d31eef…b1e6` → `9e64bb1a…eb26`), and so does the default stylesheet `/assets/site.css`
+  (`3ef609c2…2654` → `9a79ba27…1266`, three rules and their comment added; a node that authors its own, as the Patterns
+  node does, keeps its bytes). No other file of any node moves: the graph exports, the per-item copies,
+  `search.json`, `chunks.jsonl`, `llms.txt`, `llms-full.txt`, the discovery document, the ledger, the
+  skill packs, `sitemap.xml` and every page script are byte-identical to 17974f2 on the seven reference
+  inputs; no Harness file and no archive byte is touched.
 - A fitness function for the benchmark runners: no runner under `bench/runners/` and no source under
   `src-ts/bench/` reads the clock or draws a random number, so the dry run's report cannot carry a day
   that a test comparing two runs made back to back would not see (`tests/arch/bench-runners.test.js`;

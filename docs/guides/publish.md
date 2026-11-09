@@ -91,6 +91,20 @@ grep -o '<link rel="[a-z]*" href="[^"]*" type="[^"]*">' www/concepts/sourdough/i
 <link rel="alternate" href="/pages/sourdough.md" type="text/markdown">
 ```
 
+From 1.1 a page also tells a person, or a site that shows a preview of a shared link, what
+it is. Its `<title>` is the page's name followed by the node's name (`Sourdough — <site
+title>`; the home page carries the node's name alone), and every page with an address of its
+own carries the Open Graph properties `og:type`, `og:url`, `og:title`, `og:site_name` and,
+when the page has a description, `og:description`. Two things are yours to add:
+
+- **An icon.** Put `favicon.svg` (or `favicon.png`) in `content/assets/` and show it as an
+  image in the body of a published item (the image's address is `../assets/favicon.svg` from
+  an item file). Only a file a published body references is published (AGSC-06-01), and
+  every page then links it as its icon.
+- **A preview image.** `og:image` is written only when the build is given one, through the
+  `ogImage` option of the engine's build function (`src/REFERENCE.md`, section 9); the
+  configuration file has no key for it, so `agsc build` writes none.
+
 `robots.txt` invites every crawler with `Allow: /`, keeps out the training crawlers that
 `site.tdm_crawlers` names (one group each, before this one) and repeats the same use
 policy in a `Content-Signal` line of every group. The line follows the Content Signals

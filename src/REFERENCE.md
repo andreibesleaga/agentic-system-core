@@ -698,6 +698,7 @@ drive them, `init` and `ci`.
 | `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
 | `distribution/domain-view.js` | Distribution | AGSC-06-38 (the domain sentences), AGSC-08-32 — on a node with a site vocabulary, the item's domain type, role, context and warrant in a definition list under the relations table, each with its label, and the columns "Domain type" and "Domain context" where a row's item has one; and whether the two page scripts carry the domain parts (only when a listed item states a key of AGSC-02-25) |
 | `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
+| `distribution/page-head.js` | Distribution | AGSC-06-01 (`/assets/<path>`) — the icon a page links and the `og:image` build option (1.1; no rule names either) |
 | `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
 | `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
 | `distribution/query-examples.js` | Distribution | AGSC-06-39 (b), (f), AGSC-05-34, AGSC-05-41, AGSC-05-38 — the examples of `/query/` filled in from the node, the node's competency questions and its site vocabulary's terms |
@@ -813,6 +814,9 @@ pages({ bundle, config, items, model, routeOf }) -> { views, itemSection(item) -
 scripts(items, config, model, all?) -> { contexts: [cluster slug], edges, withheld } | undefined   // the `domain` option of the two page-script bundles: the declared contexts that are listed, links.js#domainEdges over the listed items and brief.js#domainWithheld over every item; undefined when no listed item states a domain key or a domain link
 ROLE_WORDS   // the five roles of AGSC-02-25, as words
 
+// distribution/page-head.js (pure)
+iconOf(files) -> { href, type } | null; ogImageOf(option, base) -> { url, alt? } | null   // throws on a url that is neither https:// nor a site path
+
 // distribution/clusters-page.js (pure)
 view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
 ROUTE = '/clusters/'
@@ -856,6 +860,9 @@ queryWorkerMain(scope, ox, graphRoute); queryMain(win, api)          // engine.j
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }
+//   options.ogImage = { url, alt? }: the image every page with an address announces as og:image — an https:// address,
+//   or a site path ('/assets/card.png') resolved against site.base; anything else throws. No config key sets it.
+//   Every page links /assets/favicon.svg (else /assets/favicon.png) as its icon when the build publishes that asset.
 write(files, ports) -> string[]; verify(bundle, ports, options) -> Finding[]   // AGSC-E602
 routeOf(item); sitemap(base, routes, instant); robots(base); tdmrep(base); securityTxt(base, expires)
 

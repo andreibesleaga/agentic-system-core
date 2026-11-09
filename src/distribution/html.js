@@ -206,6 +206,43 @@ function withChunkAnchors(body, anchors) {
     ? `${open}<span id="${escapeHtml(bySection.get(id))}"></span>` : open));
 }
 
+/** A present, non-blank string. */
+function hasText(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+/**
+ * The `<title>` of a page (WCAG 2.4.2, Page Titled): the page's own name, then the
+ * site's name, so a reader with several tabs or a history list can tell the pages of
+ * this node from those of another. A page named like the site — the home page —, a page
+ * with no name and a build with no site name keep the page name alone. The visible `<h1>`
+ * is never changed.
+ */
+function documentTitle(page) {
+  return !hasText(page.title) || !hasText(page.siteTitle) || page.siteTitle === page.title
+    ? page.title : `${page.title} — ${page.siteTitle}`;
+}
+
+/**
+ * The Open Graph properties of a page, so a shared link shows a preview (The Open Graph protocol,
+ * ogp.me): only on a page with a canonical address of its own, because `og:url` is that
+ * address, so the 404 page and a build with no site base carry none. `og:image` (with
+ * `og:image:alt`) only when the build is given an image (`site.js` option `ogImage`); no
+ * rule of the specification and no configuration key names one, so nothing is invented.
+ */
+function openGraph(page, canonical) {
+  if (canonical === null) return [];
+  const meta = (property, content) => `<meta property="og:${property}" content="${escapeHtml(content)}">`;
+  const lines = [meta('type', page.route === '/' ? 'website' : 'article'), meta('url', canonical), meta('title', page.title)];
+  if (hasText(page.description)) lines.push(meta('description', page.description));
+  if (hasText(page.siteTitle)) lines.push(meta('site_name', page.siteTitle));
+  if (page.ogImage != null) {
+    lines.push(meta('image', page.ogImage.url));
+    if (hasText(page.ogImage.alt)) lines.push(meta('image:alt', page.ogImage.alt));
+  }
+  return lines;
+}
+
 function shell(page) {
   const head = [
     '<!doctype html>',
@@ -213,7 +250,7 @@ function shell(page) {
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    `<title>${escapeHtml(page.title)}</title>`,
+    `<title>${escapeHtml(documentTitle(page))}</title>`,
     `<meta name="description" content="${escapeHtml(page.description)}">`,
     `<link rel="describedby" href="${WELLKNOWN_PATH}" type="${MEDIA_TYPE}">`,
     // AGSC-06-46: the llms.txt file that covers the page, after the discovery document's
@@ -232,6 +269,9 @@ function shell(page) {
       head.push(`<link rel="alternate" href="${escapeHtml(alt.href)}" type="${escapeHtml(alt.type)}">`);
     }
   }
+  // The node's icon, when the build publishes one (`site.js#iconOf`).
+  if (page.icon != null) head.push(`<link rel="icon" href="${escapeHtml(page.icon.href)}" type="${escapeHtml(page.icon.type)}">`);
+  head.push(...openGraph(page, canonical));
   if (page.jsonld !== undefined) {
     // Serialised by the caller with JCS so the bytes are reproducible (AGSC-04-04).
     head.push(`<script type="application/ld+json">${page.jsonld}</script>`);
@@ -399,6 +439,14 @@ function itemMeta(item, options) {
     rows.push(`<dt>Cluster</dt><dd>${clusters.map((c) => (c.href
       ? `<a href="${escapeHtml(c.href)}">${escapeHtml(c.title)}</a>` : escapeHtml(c.title))).join(', ')}</dd>`);
   }
+  // The item's tags, each linked to its `/tags/<tag>/` page (AGSC-06-01), so
+  // every tag page is reachable; a tag with no page (`options.tagRoutes` lacks it) stays text.
+  const tags = Array.isArray(item.tags) ? item.tags.map(String) : [];
+  if (tags.length > 0) {
+    const routes = options.tagRoutes instanceof Map ? options.tagRoutes : new Map();
+    rows.push(`<dt>Tags</dt><dd>${tags.map((t) => (routes.has(t)
+      ? `<a href="${escapeHtml(routes.get(t))}">${escapeHtml(t)}</a>` : escapeHtml(t))).join(', ')}</dd>`);
+  }
   // AGSC-02-99: a task shows its state (UNSPECIFIED when none is authored).
   if (item.type === 'concept' && item.kind === 'task') {
     rows.push(`<dt>Task state</dt><dd><code>${escapeHtml(item.task_state == null ? 'TASK_STATE_UNSPECIFIED' : item.task_state)}</code></dd>`);
@@ -509,10 +557,13 @@ function entryList(entries) {
 /**
  * An index page — a type folder, a cluster list or a tag list (AGSC-06-01). `after` is
  * markup the caller wrote whole, placed after the list (the overview, the legend and the
- * explorer of `/clusters/`, `clusters-page.js`).
+ * explorer of `/clusters/`, `clusters-page.js`). `empty`, also the caller's markup, replaces
+ * the empty list when there are no entries (an empty type folder, which
+ * AGSC-06-02 keeps resolving, says what it is instead of showing an empty list).
  */
-function indexPage({ title, description, entries, after }, options = {}) {
-  return shell({ ...options, title, description, body: after ? `${entryList(entries)}\n${after}` : entryList(entries) });
+function indexPage({ title, description, entries, after, empty }, options = {}) {
+  const list = entries.length === 0 && hasText(empty) ? `<p>${empty}</p>` : entryList(entries);
+  return shell({ ...options, title, description, body: after ? `${list}\n${after}` : list });
 }
 
 /**

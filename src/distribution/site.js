@@ -49,6 +49,7 @@ const html = require('./html.js');
 const pageGraph = require('./graph-view.js');
 const domainView = require('./domain-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
+const { iconOf, ogImageOf } = require('./page-head.js');
 const wellKnown = require('./well-known.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
@@ -1130,6 +1131,11 @@ function skillPacks(bundle, options, config) {
  * @param {Array<object>} [options.bundleVersionFindings] the findings of that
  *   derivation when the caller did it — an `AGSC-E506` for an unusable git tag.
  * @param {string} [options.contentTree] the git tree hash of `content/`.
+ * @param {{url:string, alt?:string}} [options.ogImage] the image every page with an address
+ *   of its own announces as `og:image` (The Open Graph protocol): an `https://` address, or a site
+ *   path (`/assets/card.png`) resolved against `site.base`. A build option, not a key of
+ *   `agsc.config.json`: the configuration schema closes `site`, so the command line never
+ *   sets it, and without it no page carries `og:image`. Anything else is refused (`Error`).
  * @returns {{files:Map<string,string>, findings:Array<object>, skipped:Array<string>}}
  */
 /**
@@ -1151,6 +1157,27 @@ function unencodableInputs(bundle) {
     }
   }
   return out;
+}
+
+/**
+ * AGSC-06-01: the `/tags/<tag>/` index of the listed items — each tag with the entries that
+ * carry it, in the order first met — and each tag's route, which an item page links so that
+ * every tag page is reachable.
+ */
+function tagIndex(items, entryOf) {
+  const tags = new Map();
+  for (const item of items) {
+    for (const tag of Array.isArray(item.tags) ? item.tags.map(String) : []) {
+      if (!tags.has(tag)) tags.set(tag, []);
+      tags.get(tag).push(entryOf(item));
+    }
+  }
+  return { tags, routes: new Map([...tags.keys()].map((tag) => [tag, `/tags/${tag}/`])) };
+}
+
+/** What an empty type folder says instead of an empty list; the folder still resolves (AGSC-06-02). */
+function emptyFolder(plural) {
+  return `This node publishes no ${plural}. <a href="/search/">The search page</a> lists every item it publishes.`;
 }
 
 /**
@@ -1197,6 +1224,7 @@ function buildSite(bundle, ports, options, findings) {
   const config = bundle.config || {};
   const site = config.site || {};
   const base = withoutTrailingSlashes(String(site.base || ''));
+  const ogImage = ogImageOf(options.ogImage, base);
   const level = options.level == null ? 2 : Number(options.level);
   // AGSC-10-02 / AGSC-10-04: a Level-0 publisher emits the four Level-0 artefacts
   // and nothing this specification asks only of a writer.
@@ -1595,10 +1623,14 @@ function buildSite(bundle, ports, options, findings) {
         ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search'], ...(query.on ? [[queryPage.ROUTE, 'Query']] : [])],
       siteTitle: site.title == null ? indexFrontmatter.title : site.title,
       siteBase: base, // `<link rel="canonical">` on every page with a route of its own
+      icon: iconOf(files), // the node's icon: the published assets are written above
+      ogImage, // `og:image` only when the build is given one
       render,
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
+    // AGSC-06-01: one `/tags/<tag>/` page per tag a listed item carries; an item page links each of its tags.
+    const { tags, routes: tagRoutes } = tagIndex(items, entryOf);
     const publishedBySlug = new Map();
     for (const i of pageItems) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
     // AGSC-06-38: the graph view reads the listed items only (AGSC-06-30); `domain-view.js` adds the domain parts.
@@ -1610,7 +1642,7 @@ function buildSite(bundle, ports, options, findings) {
     // and is reported by the dangling-link guard.
     const publishedByPath = new Map(pageItems.map((i) => [pathOf(i), i]));
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
-    const putIndex = (route, title, description, entries, render = html.indexPage) => {
+    const putIndex = (route, title, description, entries, render = html.indexPage, empty = undefined) => {
       for (const page of paginate(route, entries)) {
         const jsonld = schemaOrg({
           '@context': SCHEMA_ORG, '@type': 'Dataset',
@@ -1618,7 +1650,7 @@ function buildSite(bundle, ports, options, findings) {
           name: title == null ? '' : title,
           url: discovery.href(base, page.route),
         });
-        put(`${page.route}index.html`, render({ description, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
+        put(`${page.route}index.html`, render({ description, empty, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
       }
     };
 
@@ -1661,6 +1693,7 @@ function buildSite(bundle, ports, options, findings) {
         pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
         // AGSC-11-14: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
+        tagRoutes,
         // A cluster page lists the published items that name it, in the published order, up to the bound above.
         ...(item.type === 'cluster' ? { ...clusterMembers(membersOf(item)), clusterMap: clusterMap.html } : {}),
         // The metadata list's Cluster row: each named cluster, linked when published.
@@ -1691,16 +1724,10 @@ function buildSite(bundle, ports, options, findings) {
     for (const plural of Object.values(TYPE_PLURAL).slice().sort(compareCodePoint)) {
       putIndex(`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1), `Every published ${plural.slice(0, -1)} of this node.`,
         items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural)
-          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))), plural === 'clusters' ? clusters.render : undefined);
+          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))), plural === 'clusters' ? clusters.render : undefined,
+          emptyFolder(plural));
     }
-    // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used.
-    const tags = new Map();
-    for (const item of items) {
-      for (const tag of Array.isArray(item.tags) ? item.tags : []) {
-        if (!tags.has(String(tag))) tags.set(String(tag), []);
-        tags.get(String(tag)).push(entryOf(item));
-      }
-    }
+    // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used (`tags` above).
     for (const tag of [...tags.keys()].sort(compareCodePoint)) {
       putIndex(`/tags/${tag}/`, tag, `Every item tagged "${tag}".`, tags.get(tag));
     }

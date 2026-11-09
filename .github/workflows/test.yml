@@ -236,7 +236,7 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: |
           set -euo pipefail
-          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js tests/distribution/explorer-browser.test.js tests/distribution/query-browser.test.js tests/distribution/compose-browser.test.js tests/distribution/domain-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
+          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js tests/distribution/explorer-browser.test.js tests/distribution/query-browser.test.js tests/distribution/compose-browser.test.js tests/distribution/domain-browser.test.js tests/distribution/page-head-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
           # A browser that failed to start would make these tests skip, not fail.
           grep -qx '# skipped 0' "$RUNNER_TEMP/browser.tap" || { echo "a browser test skipped: the browser lane did not run"; exit 1; }
       - name: the acceptance scenarios, with the browser present
