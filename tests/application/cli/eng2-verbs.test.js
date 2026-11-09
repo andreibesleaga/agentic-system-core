@@ -486,6 +486,28 @@ test('an unknown adapter is one honest finding, not a crash and not a silent suc
   assert.ok(!exists(dir, 'dist'));
 });
 
+test('AGSC-01-26a: an unknown adapter names the rule once, not twice', () => {
+  const dir = workspace();
+  const [finding] = exportVerb.run(ctxFor(dir, { verbFlags: { to: 'nope' } })).findings;
+  assert.strictEqual(finding.message, 'export --to nope: no adapter named "nope" is installed (AGSC-01-26a)');
+  for (const name of ['A', 'no-such-adapter']) {
+    const refusal = exportVerb.refusalOf(name, exportVerb.adapterOf(name));
+    assert.strictEqual(refusal.match(/\(AGSC-01-26a\)/gu).length, 1, refusal);
+  }
+});
+
+test('AGSC-01-26a: export --to an import-only adapter names the import, and for skos the SKOS view', () => {
+  const dir = workspace();
+  const [skos] = exportVerb.run(ctxFor(dir, { verbFlags: { to: 'skos' } })).findings;
+  assert.strictEqual(skos.code, 'AGSC-E203');
+  assert.strictEqual(skos.message,
+    'export --to skos: "skos" is an import adapter (`agsc import --from skos`); the SKOS view is `agsc export --skos` (AGSC-01-26a)');
+  // Any other adapter with no run(): the import route only, the rule named once.
+  assert.strictEqual(exportVerb.refusalOf('probe', { module: {}, reason: null }),
+    '"probe" is an import adapter (`agsc import --from probe`) (AGSC-01-26a)');
+  assert.ok(!exists(dir, 'dist'));
+});
+
 test('instantOf reads the Clock port and never a wall clock', () => {
   const dir = workspace();
   assert.strictEqual(exportVerb.instantOf(ctxFor(dir)), INSTANT);

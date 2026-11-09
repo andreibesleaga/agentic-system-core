@@ -1363,6 +1363,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `agsc export --to <name>` names AGSC-01-26a once: an unknown adapter printed "(AGSC-01-26a)
+  (AGSC-01-26a)". `export --to skos` no longer says that the adapter "exports no run() entry point":
+  it says that `skos` is an import adapter (`agsc import --from skos`) and that the SKOS view is
+  `agsc export --skos`; any other installed adapter with no `run()` names its import the same way.
+  Still `AGSC-E203` and exit 1; only standard error changes.
 - A cross-implementation claim (AGSC-04-24, as amended for 1.1.0) now accepts the files that 1.1 adds
   to the obligation, each under the name the expected-byte cases that pin it use: `skos.ttl`
   (`graph-0040`), `closure.nt` (`graph-0041`, `graph-0042`), `dist/suggestions.json` (`lint-0046` to

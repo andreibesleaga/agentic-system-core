@@ -111,6 +111,21 @@ function adapterOf(name) {
   }
 }
 
+/**
+ * Why `export --to <name>` writes nothing, naming AGSC-01-26a once. A module that is
+ * installed but has no `run()` is an import adapter: the message names the import, and
+ * for `skos` also the SKOS view, which is the flag `export --skos` (AGSC-05-36).
+ *
+ * @param {string} name
+ * @param {{module:(object|null), reason:(string|null)}} found what `adapterOf` returned.
+ * @returns {string}
+ */
+function refusalOf(name, found) {
+  const view = name === 'skos' ? '; the SKOS view is `agsc export --skos`' : '';
+  const reason = found.reason === null ? `"${name}" is an import adapter (\`agsc import --from ${name}\`)${view}` : found.reason;
+  return reason.includes('(AGSC-01-26a)') ? reason : `${reason} (AGSC-01-26a)`;
+}
+
 /** Write one file under `dist/export/` and note its SHA-256 (AGSC-09-10). */
 function writeExport(ctx, path, text) {
   const at = `${EXPORT_DIR}/${path}`;
@@ -365,7 +380,7 @@ function adapterExport(ctx, bundle, name) {
       files: [],
       findings: [{
         code: 'AGSC-E203', severity: 'error',
-        message: `export --to ${name}: ${found.reason === null ? 'the adapter exports no run() entry point' : found.reason} (AGSC-01-26a)`,
+        message: `export --to ${name}: ${refusalOf(name, found)}`,
       }],
       root: null,
       written: [],
@@ -638,6 +653,7 @@ module.exports = {
   licenseContentOf,
   name: 'export',
   readOptional,
+  refusalOf,
   run,
   sourcesOf,
   targetsOf,
