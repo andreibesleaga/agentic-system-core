@@ -231,12 +231,12 @@ function scenario(text, id) {
   return flat(text.slice(start, next < 0 ? text.length : start + 4 + next));
 }
 
-test('use cases: what is not built names 1.1 or says it is not planned for a fixed version', () => {
+test('use cases: what is not built names a later MINOR or says it is not planned for a fixed version', () => {
   const text = read('docs/USE-CASES.md');
   assert.doesNotMatch(flat(text), /\b(wraps it|not runnable|not built) yet\b/u);
   assert.match(scenario(text, 'D2'), /no command wraps it, and none is planned for a fixed version/u);
-  assert.match(scenario(text, 'M3'), /channel adapters are planned for 1\.1/u);
-  assert.match(scenario(text, 'M5'), /runtime renderings[^.]*are planned for 1\.1/u);
+  assert.match(scenario(text, 'M3'), /channel adapters are planned for a later MINOR/u);
+  assert.match(scenario(text, 'M5'), /runtime renderings[^.]*are planned for a later MINOR/u);
 });
 
 // --- the seven file KINDS of a Harness (AGSC-07-12) ----------------------------------------

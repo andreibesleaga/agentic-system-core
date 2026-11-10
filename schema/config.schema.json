@@ -162,7 +162,7 @@
       }
     },
     "build": {
-      "description": "rdfxml and feed are RESERVED names of 1.1 and are rejected here with AGSC-E004 (AGSC-00-20, AGSC-01-18; feed is reserved to 1.1 because no 1.0 rule pins the bytes of /feed.xml).",
+      "description": "rdfxml and feed are names reserved to a later MINOR and are rejected here with AGSC-E004 (AGSC-00-20, AGSC-01-18; feed is reserved because no 1.0 rule pins the bytes of /feed.xml).",
       "type": "object",
       "additionalProperties": false,
       "properties": {

@@ -405,7 +405,7 @@ function plan(input, options) {
     license_schema: options.licenseSchema === undefined ? 'CC0-1.0' : options.licenseSchema,
     operator: options.operator,
   };
-  // AGSC-01-18: `build.feed` is a RESERVED name of 1.1 and is `AGSC-E004` here,
+  // AGSC-01-18: `build.feed` is a name reserved to a later MINOR and is `AGSC-E004` here,
   // because no 1.0 rule pins the bytes of `/feed.xml`. `out` is the whole of
   // `build` an importer may write — an operator's own `out` is kept, every other
   // member of `build` goes.

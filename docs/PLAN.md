@@ -744,6 +744,8 @@ shipped at 1.0"), and the git mirror and a weekly attested snapshot of a node th
 capabilities of the reference distribution planned for 1.1 are listed in AGSC-00-20 and in the
 PRD's "Notes at 1.0.0". Each adds behaviour, which `1.0.0` does not.
 
+*(Reconciliation, 2026-11-11, for 1.1.0: AGSC-00-20 as amended for 1.1.0 is the list. The direct memory adapters ship in 1.1 (AGSC-01-26a); every other item this section and the two notes below call "planned for 1.1" (language variants, `build.rdfxml`, `build.feed`, the reserved names `weights`, `routing` and `executable`, the channel adapters, the runtime emitters, the unchanged Cursor rule) is planned for a later MINOR and is not part of 1.1.)*
+
 **Further items planned for 1.1 (note of 2026-10-12).** AGSC-00-20 also names six items
 decided for 1.1 while `1.0.0` was prepared: the AI-assistance statement of AGSC-06-15
 reworded, because the `Assisted-by:` line of AGSC-08-07 is optional (at `1.0.0` the

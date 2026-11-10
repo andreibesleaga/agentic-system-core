@@ -148,7 +148,7 @@ To add a module:
    `cli/verbs/run.js`, and `fs` in one module: `src/application/hosting.js`, the
    deployment profiles and local server of `agsc-host`, is the one exception that
    reads and writes files directly instead of through the FileSystem port. Moving it
-   behind the port is deferred to a later MINOR (planned for 1.1; the 1.1 HTTP transport put
+   behind the port is deferred to a later MINOR (the 1.1 HTTP transport put
    its socket in the adapter, so the move is no longer on the path). `tests/arch/application-builtins.test.js` holds
    this list, and fails when a module loads anything else or when an exception is no
    longer used.

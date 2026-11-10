@@ -279,7 +279,7 @@ Bundle's own folder.
 - **Proven by:** `tests/governance/agents.test.js` (the agent-lane conditions) and
   `tests/distribution/forge.test.js` (the enforcement files a forge needs). The merges
   run on the forge; **no channel adapter ships** at 1.0, so the channel itself does
-  not run: channel adapters are planned for 1.1 (AGSC-00-20).
+  not run: channel adapters are planned for a later MINOR (AGSC-00-20).
 
 ### M4 — Cost that cannot run away
 
@@ -314,7 +314,7 @@ Bundle's own folder.
 - **Commands:** `agsc compose <slug> [<slug>…]` writes `dist/harness/<name>/`; add
   `--zip` for one archive. The runtime emitters (`--emit crewai` and the other five
   names) are named by the specification and refused at 1.0 with `AGSC-E203`; their
-  runtime renderings are planned for 1.1 (AGSC-00-20).
+  runtime renderings are planned for a later MINOR (AGSC-00-20).
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ### M6 — The same page, answered by the browser's own agent

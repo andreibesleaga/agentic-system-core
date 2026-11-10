@@ -22,10 +22,10 @@ A rule or a check stands behind each of these, but not behind the whole requirem
 
 | Requirement | Reason | Why |
 |---|---|---|
-| PRD-009 | deferred | AGSC-02-94 checks the four files init writes; the three example Concepts, the type folders and the forge workflow the row names are planned for 1.1, and ci passes only after the three steps init prints, as the note to PRD-009 in docs/PRD.md says |
-| PRD-043 | host | its one rule, AGSC-01-30, carries no check: running pull requests from forks lint-only and without secrets is done by the forge, and the cap of five open Proposals binds a channel adapter, which the reference distribution does not ship at 1.0 (planned for 1.1, as the note on the capabilities planned for 1.1 in docs/PRD.md says) |
-| PRD-056 | deferred | the channel rules, the channels[] keys and the channel-adapter plugin kind are specified and checked, and the ask half is the ask tool; no channel adapter, ingest option or reference stub ships at 1.0, and they are planned for 1.1, as the note to PRD-056 in docs/PRD.md says |
-| PRD-063 | deferred | the rules of the agent lane are checked and refresh --agent runs with --dry-run; a live run is made by an agent outside the engine, as a client of the local tool server or the page tools, and the model adapter for the agent lane is planned for 1.1, as the note to PRD-063 in docs/PRD.md says |
+| PRD-009 | deferred | AGSC-02-94 checks the four files init writes; the three example Concepts, the type folders and the forge workflow the row names are planned for a later MINOR (AGSC-00-20), and ci passes only after the three steps init prints, as the note to PRD-009 in docs/PRD.md says |
+| PRD-043 | host | its one rule, AGSC-01-30, carries no check: running pull requests from forks lint-only and without secrets is done by the forge, and the cap of five open Proposals binds a channel adapter, which the reference distribution does not ship at 1.0 (planned for a later MINOR, AGSC-00-20) |
+| PRD-056 | deferred | the channel rules, the channels[] keys and the channel-adapter plugin kind are specified and checked, and the ask half is the ask tool; no channel adapter, ingest option or reference stub ships at 1.0, and they are planned for a later MINOR (AGSC-00-20), as the note to PRD-056 in docs/PRD.md says |
+| PRD-063 | deferred | the rules of the agent lane are checked and refresh --agent runs with --dry-run; a live run is made by an agent outside the engine, as a client of the local tool server or the page tools, and the model adapter for the agent lane is planned for a later MINOR (AGSC-00-20), as the note to PRD-063 in docs/PRD.md says |
 
 ## Requirements unmapped for a reason
 
@@ -136,7 +136,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-062 | MAPPED | `AGSC-11-05` | 1 vectors, 5 tests, 0 scenarios, 1 checkers | — | — | `persona-m-security-reviewer.feature` | — |
 | PRD-063 | PARTLY | `AGSC-01-36`, `AGSC-08-28`, `AGSC-08-29` | 6 vectors, 10 tests, 2 scenarios, 0 checkers | — | — | `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
 | PRD-064 | MAPPED | `AGSC-10-16`, `AGSC-10-18` | 0 vectors, 1 tests, 1 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-k-live-board.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
-| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 5 vectors, 20 tests, 3 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
+| PRD-065 | MAPPED | `AGSC-00-20`, `AGSC-01-37`, `AGSC-01-38` +1 | 5 vectors, 21 tests, 3 scenarios, 0 checkers | — | — | `persona-k-live-board.feature`, `persona-m-security-reviewer.feature` | `docs/diagrams/README.md`, `docs/diagrams/workflow-agent-lane.md` |
 | PRD-066 | MAPPED | — | — | `bench/agent-kit.test.js` | — | `persona-n-researcher.feature` | `docs/diagrams/arch-c4-container.md` |
 | PRD-067 | MAPPED | — | — | `bench/measure.test.js` | — | `persona-n-researcher.feature` | — |
 | PRD-068 | MAPPED | — | — | `docs/claims.test.js`, `tools/lint-claims.test.js` | — | `persona-n-researcher.feature` | — |

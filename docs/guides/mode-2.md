@@ -243,7 +243,7 @@ export --steer: 3 targets (agents, claude, cursor), identical bytes at each path
 Copy `dist/export/steer/AGENTS.md`, `CLAUDE.md` and `.cursor/rules/agsc.mdc` into the
 repository the assistants work in. The file states the current state of the project and
 quotes the items as data, not as instructions; run the command again after a change.
-At 1.0.0 the Cursor rule carries no front matter (it is planned for 1.1, AGSC-01-28),
+The Cursor rule carries no front matter (it is planned for a later MINOR, AGSC-01-28),
 so Cursor may not apply it to every chat on its own; mention the rule where you need it.
 
 ## 4. The board

@@ -52,7 +52,7 @@ direction is specified for implementations and is not implemented by this engine
 **The `responder` surface at 1.0.** A node may declare a `responder` surface through the
 `surfaces[]` entry of `agsc.config.json` (AGSC-11-16, AGSC-11-21). No remote tool responder ships
 with this engine and no sample opens a network listener: a responder plugin, with its own
-security text and tests, is planned for 1.1.
+security text and tests, is planned for a later MINOR (AGSC-00-20).
 
 There is no ninth. If what you want to add is not one of these eight, it is a
 change to the specification and the place for it is a proposal against

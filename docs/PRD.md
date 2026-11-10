@@ -507,6 +507,8 @@ image, Homebrew formula or Nix package "is planned for a version", read "planned
 keeps that non-goal for the engine read the same way: at 1.0 the PyPI package is the
 independent Python checker, and a wrapper of the engine is planned for 1.1.
 
+*(Reconciliation, 2026-11-11, for 1.1.0: AGSC-00-20 as amended for 1.1.0 governs. The direct memory adapters (items 3 and 9) ship in 1.1 as capabilities of the reference distribution under AGSC-01-26a; the other nine, and the model-adapter plugin kind named below, are planned for a later MINOR, so wherever this document says "planned for 1.1" of one of them, read "planned for a later MINOR".)*
+
 **Note to PRD-063 (a live run of an agent lane at 1.0).** The Mode 5 note above says that the
 engine implements the agent lane, "channels, refresh" included. At 1.0 the reference engine
 ships no model adapter and no channel adapter: `refresh --agent <name>` runs only with

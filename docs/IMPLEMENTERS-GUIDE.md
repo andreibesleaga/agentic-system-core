@@ -130,7 +130,7 @@ Read these in this order. Each one assumes the ones before it.
    across versions: what to ignore and preserve (AGSC-00-21), what must survive a
    round trip (AGSC-00-22), what you may not emit for a version you do not claim
    (AGSC-00-23), the closed list of eight plugin kinds (AGSC-00-24) and the names
-   reserved to 1.1 (AGSC-00-25). Read §0.6 before you write a reader: it is the
+   reserved to a later MINOR (AGSC-00-25). Read §0.6 before you write a reader: it is the
    difference between refusing a document you could have read and running with half
    of it silently dropped. Twenty-five minutes.
 2. **`tests/vectors/README.md`** — the vector file format. Read it before you read
@@ -420,7 +420,7 @@ consumer queries the dumps it downloaded (AGSC-11-13, section 5b). Loading a nod
 mechanical mapping: each item becomes a vertex whose literal values (label,
 definition, dates, `kind`) become vertex properties, and each Link becomes one edge
 labelled with its key. At 1.0 a Link carries no property of its own — weighted Links
-are reserved to 1.1 (AGSC-00-20, AGSC-00-25) — so the edges need none, and nothing is
+are reserved to a later MINOR (AGSC-00-20, AGSC-00-25) — so the edges need none, and nothing is
 lost either way.
 
 ## 4c. What composition costs (Level 3)
@@ -650,11 +650,11 @@ and agents learn that it exists and where to ask for access, and nothing more
   `agsc-access` as `AGSC-E202` and one with any value other than `credential` as
   `AGSC-E210`, and, at Levels 0 and 1, a missing `agsc-generated-at` or
   `agsc-spec-version` as `AGSC-E202`.
-- **Known gap at 1.0.0.** The reference engine still writes the content version, which
+- **Known gap at 1.0.0, closed in 1.1.** The 1.0.0 reference engine wrote the content version, which
   carries the commit count and a commit hash, into `/llms.txt` (the line
   `bundle_version:`) and into the NOW page (`content version …`) of a restricted node,
-  and `/llms.txt` is part of the unauthenticated view; leaving it out on a restricted
-  node is planned for 1.1.
+  and `/llms.txt` is part of the unauthenticated view. From 1.1 the engine leaves the
+  content version out of both on a restricted node (AGSC-11-20).
 
 ---
 

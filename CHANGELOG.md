@@ -13,6 +13,23 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Wording errata of the register, each a dated note of 2026-11-11 in `spec/` that states what the engine does
+  and changes no rule, case or emitted byte: AGSC-02-21 (the three sections `trace` writes), the registry rows
+  of `AGSC-E301`, `AGSC-E302`, `AGSC-E506`, `AGSC-E512` and `AGSC-E603` (the uses they gained), AGSC-06-32
+  (the graph of one node), AGSC-05-38 (c), AGSC-02-25, AGSC-05-09 (sort by the full IRI), AGSC-05-41 (the
+  engine's readings), AGSC-07-30 (a `peers` entry), AGSC-11-24, AGSC-06-38 (the table, its bound, its order, the
+  labels), AGSC-06-01 (the explorer's files), AGSC-06-20 (the repeated `members` id, left as it is), AGSC-09-13
+  (`check`), AGSC-07-29, AGSC-07-25, AGSC-09-16, AGSC-08-32 (the context of a domain part), AGSC-06-45,
+  AGSC-07-22, AGSC-06-37 (TOON 4.4.0), AGSC-09-17, AGSC-06-42, AGSC-09-14 (`verify` judges reproducibility
+  only), AGSC-01-42 (the diagram grammar) and AGSC-00-20 (the query-page switch). In AGSC-00-20 the phrase
+  that gave the later MINOR a version number now says "not in 1.1".
+- A sweep of the public text for sentences that stopped being true: what AGSC-00-20 defers (language variants,
+  `build.rdfxml`, `build.feed`, the reserved names, the channel adapters, the runtime emitters, the Cursor rule's
+  front matter, the model adapters) is "a later MINOR" and no longer "1.1" in `docs/`, `tools/README.md`, the
+  description of `build` in `schema/config.schema.json` and a code comment; the restricted node's content version
+  and the home-page check of `validate-wellknown` are described as done in 1.1. `docs/PLAN.md` and `docs/PRD.md`,
+  which record the plan of 1.0.0, gain one dated reconciliation each. The published `schema/config.schema.json`
+  changes by its description text only. `tests/docs/stale-sentences.test.js` finds the phrases.
 - Errata to the 1.1 rules, each with a dated note of 2026-11-10 in `spec/`, its test or case
   first, and the bytes it moves named here:
   - AGSC-05-34: the SPARQL texts of questions 3, 6 and 7 gain `FILTER (?item != ?x)`, so a cycle

@@ -128,7 +128,7 @@ return records. Everything else that reaches the outside world does so through a
 port, and only the application layer and `bin/` may construct an adapter, with one
 exception: `application/hosting.js`, the deployment profiles and local server of
 `agsc-host`, reads and writes files with `node:fs` directly. Moving it behind the
-FileSystem port is deferred to a later MINOR (it was planned for 1.1; the 1.1 HTTP
+FileSystem port is deferred to a later MINOR (the 1.1 HTTP
 transport put its socket in the adapter instead, so the move is no longer on the path). `tests/arch/core-purity.test.js` enforces the
 purity of the three contexts, `tests/arch/never-touches.test.js` the "Never touches"
 column of `docs/ARCHITECTURE-DDD.md` §2, and `tests/arch/application-builtins.test.js`

@@ -29,11 +29,11 @@ output with them.
 | `count-artifacts` | every published count, derived from the files (rules, codes, vectors, terms) |
 | `bench` | the retrieval benchmark over a built node's published surfaces; `--dry-run` scores nothing and checks the kit of the agent-side study and the results-row contract, against a build with `--node` (`docs/BENCHMARKS.md`) |
 
-**What `validate-wellknown` does not check at 1.0.** Given a URL, it checks the
-response headers of the discovery document and of every same-origin public artefact
-it fetches. It does not read the home page `/`, so the `describedby` response header
-that AGSC-11-05 recommends there goes unchecked; that rule is a recommendation, not a
-requirement. Checking it, with one more fetch, is planned for 1.1.
+**What `validate-wellknown` reads from a URL.** It checks the response headers of the
+discovery document and of every same-origin public artefact it fetches. From 1.1 it
+also reads the `Link` header of the home page `/` and warns (`AGSC-E202`) when it
+carries no `describedby` link to the discovery document (AGSC-06-25, AGSC-06-40); that
+rule is a recommendation, not a requirement.
 
 ## Kept in the repository only
 
