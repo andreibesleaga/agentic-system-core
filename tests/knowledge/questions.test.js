@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-074 (docs/PRD.md).
 // tests/knowledge/questions.test.js — the ten questions of AGSC-05-34 as pure functions.
 //
 // Deterministic: fixed instants, the shared fixture of the ten vectors graph-0030 to

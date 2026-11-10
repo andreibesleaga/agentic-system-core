@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-08-32, AGSC-11-24, AGSC-01-41
 // The bounded contexts of a node as every reader of them sees them: the contexts `domain.contexts`
 // declares (AGSC-01-41), the context of an item (its `domain_context` when that names a declared

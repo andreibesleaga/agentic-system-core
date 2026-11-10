@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-082 (docs/PRD.md).
 // verifies AGSC-07-29
 // The blueprint outputs (`src/composition/blueprint.js`) beyond the bytes of compose-0028 to
 // compose-0030: properties over generated graphs (the files do not depend on the order of the

@@ -29,15 +29,15 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | File | Persona | Mode | Scenarios | PRD ids covered |
 |---|---|---|---|---|
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
-| `persona-a-reader.feature` | P1 human reader | 0 | 10 | PRD-002, 011, 013, 014, 015, 022, 025, 069 |
+| `persona-a-reader.feature` | P1 human reader | 0 | 10 | PRD-002, 011, 013, 014, 015, 025, 069, 077, 078, NFR-06, NFR-08 |
 | `persona-b-contributor.feature` | P2 human contributor | 0 | 7 | PRD-013, 039, 040, 041, 042, 050 |
-| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 20 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
+| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 20 | PRD-019, 023, 024, 025, 036, 051, 056, 061, 080, 081 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |
-| `persona-e-architect.feature` | P5 architect/combiner | 4 | 14 | PRD-001, 022, 036, 037, 038, 071 |
+| `persona-e-architect.feature` | P5 architect/combiner | 4 | 14 | PRD-001, 036, 037, 038, 071, 076, 082 |
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |
 | `persona-g-team.feature` | P7 project team | 2, 5 | 7 | PRD-026, 028, 029, 030, 031, 064 |
-| `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 16 | PRD-021, 022, 026, 027, 061, 070 |
-| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 20 | PRD-003, 005, 017, 018, 021, 022, 044, 045, 048, 049, 056, NFR-01 |
+| `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 16 | PRD-021, 026, 027, 061, 070, 075, 079, 083 |
+| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 20 | PRD-003, 005, 017, 018, 021, 044, 045, 048, 049, 056, 076, 084, NFR-01 |
 | `persona-j-standards.feature` | P11 standards implementer | 1 | 15 | PRD-022, 024, 025, 050, 054, 055, 057, 058 |
 | `persona-k-live-board.feature` | P12 self-driving team | 5 | 12 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 3 | PRD-010, 054, 055, NFR-02 |

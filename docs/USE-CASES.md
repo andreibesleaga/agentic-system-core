@@ -314,7 +314,10 @@ Bundle's own folder.
 - **Commands:** `agsc compose <slug> [<slug>…]` writes `dist/harness/<name>/`; add
   `--zip` for one archive. The runtime emitters (`--emit crewai` and the other five
   names) are named by the specification and refused at 1.0 with `AGSC-E203`; their
-  runtime renderings are planned for a later MINOR (AGSC-00-20).
+  runtime renderings are planned for a later MINOR (AGSC-00-20). From 1.1, `--brief`
+  also writes the brief beside the Harness, never in it: why each concept is there, a
+  dependency order, the gaps and a checklist (AGSC-07-25); `/compose/` shows the same
+  brief.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ### M6 — The same page, answered by the browser's own agent

@@ -48,7 +48,7 @@ Feature: Architect turns Concepts into a starting architecture
     And separately runs "www/compose/agsc-core.js" as "/compose/" does, over the published "/graph.jsonld", in a context that holds nothing but the language
     Then the Harness files from both paths are the same files, byte for byte (AGSC-07-13)
 
-  @PRD-037 @PRD-022 @human
+  @PRD-076 @human
   Scenario: A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes
     Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)
     And the peer "https://b.example/.well-known/knowledge-linkset" is a "translation-layer" whose crosswalk "domain/b.ttl" maps "handoff" to "https://b.example/concepts/handover/" (AGSC-11-24)
@@ -58,7 +58,7 @@ Feature: Architect turns Concepts into a starting architecture
     And the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)
     And no network call was attempted
 
-  @PRD-037 @human
+  @PRD-082 @human
   Scenario: The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes
     When the operator runs "agsc compose handoff --brief" under the network trap
     Then the command exits 0
@@ -67,7 +67,7 @@ Feature: Architect turns Concepts into a starting architecture
     And the same composition without "--brief" writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-25)
     And no network call was attempted
 
-  @PRD-037 @human
+  @PRD-082 @human
   Scenario: A narration is not written by this distribution, and the brief still is
     When the operator runs "agsc compose handoff --brief --narrate writer --json" under the network trap
     Then the command exits 1
@@ -75,7 +75,7 @@ Feature: Architect turns Concepts into a starting architecture
     And the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)
     And no network call was attempted
 
-  @PRD-037 @human
+  @PRD-082 @human
   Scenario: A brief above the bound of derived keeps its first readings and says how many there are
     Given the Bundle holds a chain of 145 Concepts, "chain-144" requiring "chain-143" and so on down to "chain-0"
     When the operator runs "agsc compose chain-144 --brief --json" under the network trap
@@ -83,7 +83,7 @@ Feature: Architect turns Concepts into a starting architecture
     And the brief holds the first readings of derived and derived_total counts them all (AGSC-07-25)
     And no network call was attempted
 
-  @PRD-037 @human
+  @PRD-082 @human
   Scenario: A saved architecture gets its blueprint beside the Harness, and its page shows the brief
     Given the Bundle holds the saved architecture "agent-team" selecting "supervisor" and "handoff", and the node is rebuilt
     When the operator runs "agsc compose --from agent-team --brief" under the network trap
@@ -92,13 +92,13 @@ Feature: Architect turns Concepts into a starting architecture
     And the page "/concepts/agent-team/" shows the brief of the composition and links "/compose/?from=agent-team" (AGSC-07-25, AGSC-07-24)
     And no network call was attempted
 
-  @PRD-037 @PRD-038 @human
+  @PRD-082 @PRD-038 @human
   Scenario: The architect reads the brief of a selection on "/compose/" and downloads it
     When the architect opens "/compose/" to take downloads and ticks the Concept "handoff"
     Then the page shows the verdict in words and the brief, whose dependency order puts "supervisor" before "handoff" (AGSC-07-25, AGSC-07-26)
     And "Download the brief (.zip)" gives, byte for byte, the archive of the four files "agsc compose handoff --brief" writes (AGSC-07-13)
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: Titles are compared inside each bounded context, so one title may serve two contexts
     Given the clusters "agent-patterns" and "protocols" are declared contexts, and "supervisor" moves to "protocols" by its "domain_context" (AGSC-01-41, AGSC-08-32)
     And the item "supervisor" takes the title of "handoff"

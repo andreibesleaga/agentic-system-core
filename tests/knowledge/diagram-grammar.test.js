@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-077 (docs/PRD.md).
 // tests/knowledge/diagram-grammar.test.js — the diagram grammar of AGSC-01-42, one
 // statement at a time, byte for byte.
 //

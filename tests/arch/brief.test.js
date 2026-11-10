@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-082 (docs/PRD.md).
 // Fitness function: the brief stays beside the Harness and runs the same source in both hosts.
 //
 // Two rules of 1.1 that a later change could break without failing a vector:

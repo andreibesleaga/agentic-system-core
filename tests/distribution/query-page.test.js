@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-078 (docs/PRD.md).
 // verifies AGSC-06-39, AGSC-06-01, AGSC-06-17, AGSC-06-19, AGSC-06-21, AGSC-06-05, AGSC-01-18
 // The `/query/` page as the build writes it (src/distribution/query-page.js, wired by
 // site.js), over the minimal fixture at its fixed instant:

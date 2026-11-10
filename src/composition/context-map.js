@@ -18,7 +18,7 @@
  * The members `bundle_version`, `generated_at`, `license`, `selection`, `selection_digest`,
  * `spec_version` and `terms_statement` are those of `harness.jsonld`, computed by the same
  * functions of `harness.js`, so the two files cannot disagree.
- * Requirements: PRD-037.
+ * Requirements: PRD-076 (the domain layer), beside PRD-037 (the Harness it stands beside).
  *
  * PURE: the verdict, the items and the options in, a JSON object and a text out. The caller
  * (`application/cli/verbs/compose.js`) hashes the selection, reads the crosswalk files and writes

@@ -12,4 +12,4 @@
 
 **Hooks for later.** A node can be public or restricted at 1.0. A remote MCP responder is in scope at 1.0; the reference engine ships none. A responder that speaks another protocol is only declared at 1.0 (live Agent2Agent boards are planned for 2.0), and encrypted Bundles and per-item visibility are planned for a later MINOR, under the reserved profile name `agsc-profile-encrypted`. A retired item keeps its address; a node that stops publishing leaves a tombstone.
 
-Rules: `spec/11-boundary.md`, `AGSC-11-01` … `AGSC-11-23`. Threats and what stays open: `docs/SECURITY-CONSIDERATIONS.md`.
+Rules: `spec/11-boundary.md`, `AGSC-11-01` … `AGSC-11-24`. Threats and what stays open: `docs/SECURITY-CONSIDERATIONS.md`.

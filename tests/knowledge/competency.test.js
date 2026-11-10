@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-05-41
 // The competency questions of a site (AGSC-05-41), as `src/knowledge/competency.js` checks and
 // answers them: the questions file is a JSON array of `{expected, id, query, question}`; each

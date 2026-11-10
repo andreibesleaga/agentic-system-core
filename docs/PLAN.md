@@ -250,8 +250,8 @@ Reconciliation (1.1): the application layer (`src/application/`) wires the adapt
 | `ContentStore` | the Bundle | local git working tree | GitHub API, Obsidian, Solid (v2) |
 | `Renderer` | items → HTML | built-in templates | *(internal module boundary rather than a port; "theme packs" serve no v1.0 requirement)* |
 | `GraphExport` | items → RDF | JSON-LD/Turtle/N-Quads (RDF/XML = should S1) | SPARQL dump, Wikibase |
-| `ToolTransport` | tools to agents | local stdio MCP, 7 tools (10 from 1.1) | remote MCP Worker (v2) |
-| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools (10 from 1.1), degrading to plain JS | — |
+| `ToolTransport` | tools to agents | local stdio MCP, 7 tools (10 from 1.1, PRD-080) | remote MCP Worker (v2) |
+| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools (10 from 1.1, PRD-080), degrading to plain JS | — |
 | `Reviewer` | Proposal verdict | **lint-only** (no LLM on a gating lane, C6) | the OPTIONAL non-gating LLM review lane of AGSC-08-27 — v1.0, off by default, provider-capped |
 | `Host` | where `www/` lands | Cloudflare Pages | GitHub/GitLab Pages, Netlify (v1.x) |
 | `Forge` | PR/CI shim | GitHub (`templates/github/*.yml`, ≤20 lines) | GitLab/Forgejo (v1.x) |
@@ -504,7 +504,7 @@ Sixteen performance recommendations and eight benchmark hypotheses (with baselin
 *ADR numbering continues from ADR-011.*
 
 **ADR-012 Plugins are declared surfaces.** Every agent surface is declared in the discovery document under the four-rule contract declare · pin · inherit · prove (AGSC-11-16…19). *Consequence:* the Boundary context is an anti-corruption layer; an external draft moving changes a version string, never the core. *Confirmation:* `bnd-0037`, `bnd-0013`, `bnd-0021`.
-**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`. *(As shipped at 1.0: the local server speaks MCP revision 2025-11-25 and advertises the extension identifier in its `initialize` result; see the addendum "The tree as shipped at 1.0" below.)*
+**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`. *(As shipped at 1.0: the local server speaks MCP revision 2025-11-25 and advertises the extension identifier in its `initialize` result; see the addendum "The tree as shipped at 1.0" below.)* *(1.1, 2026-11-11: ten tools on both transports; both revisions over standard input and output, 2026-07-28 over `--http` on loopback; confirmed by `cli-0026` and `cli-0032` to `cli-0035`, `cli-0003` being withdrawn; PRD-080, PRD-081.)*
 **ADR-014 The agent federates; nodes never call nodes.** Nine static, client-side parts (spec/11 §11.3); citation, never a cross-Bundle Link. *Consequence:* the `Federation` port of §5.2 has a v1 adapter — the walk in `validate-wellknown --peer` and the site client — while `Identity` and `PersonalStore` stay v2. *Confirmation:* `bnd-0003`, `bnd-0004`, `bnd-0006`…`0011`, `bnd-0030`, `bnd-0019`, `disc-0005`.
 **ADR-015 Visibility and dynamic hooks specified now, built later.** `visibility` public/restricted with the discovery document always readable; `solid` and a non-MCP `responder` declaration-only, a remote MCP `responder` served (AGSC-11-21). *Confirmation:* `bnd-0002`, `bnd-0016`.
 **ADR-016 Ports wired verdict-neutrally in Step 5.** `produces`/`consumes` on items, matched by exact name after the four verdict steps, warnings only. *Confirmation:* `compose-0011`, `compose-0012`, `graph-0017`.
@@ -653,8 +653,8 @@ model client ships with this engine. The benchmark kit is the program `tools/ben
 benchmark kit normative at 1.1 (AGSC-00-20), and there is no "v1.0.1 gate".
 
 **Restore-from-zero (§11 T6, T10; PRD-045).** The per-release archive deposit is the Zenodo
-record of each final release (1.0.0 and later); release candidates get none and are kept by
-their tags. A git mirror and a weekly attested snapshot are not in place at 1.0.0
+record of the software, one version per GitHub release (concept DOI 10.5281/zenodo.23233817);
+the specification archive and the paper are 10.5281/zenodo.23052709 (the note to PRD-045). A git mirror and a weekly attested snapshot are not in place at 1.0.0
 and are planned for later, with no version fixed; read "attested weekly snapshot" in T6 and
 "mirrors + attested snapshot" in T10 as planned, and the rebuild from a clone (`verify`, the
 double build of `ci`) as the known-good path at 1.0.
@@ -686,7 +686,7 @@ which every pull request must pass. The golden-thread half is `node tools/requir
 not claimed: the licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license`
 field of `package.json` and the SPDX header of every browser script, and a REUSE layout is a
 1.1 item (the PRD's note to PRD-047 and NFR-10). *(Amended for 1.1.0: the layout is adopted —
-`REUSE.toml` and `LICENSES/`; `reuse lint` is compliant with REUSE 3.3, docs/ENGINEERING.md §7.)*
+`REUSE.toml` and `LICENSES/`; `reuse lint` is compliant with REUSE 3.3, docs/ENGINEERING.md §7.)* *(Note of 2026-11-11: the vendored query engine of `/query/` is the one browser script with no SPDX header; `docs/COMPLIANCE-CROSSWALK.md`.)*
 
 **R7 and T7 (§11, §12).** "Index-based state machines not regexes" and "a seeded fuzz lane on
 tags" do not describe the tree: the engine reads its formats through maintained libraries

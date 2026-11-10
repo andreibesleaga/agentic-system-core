@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-084 (docs/PRD.md).
 // tests/composition/skill-format.test.js — AGSC-07-22, the Agent Skills check a writer makes
 // before it writes a `SKILL.md` (agentskills.io/specification, read again 2026-11-07).
 //

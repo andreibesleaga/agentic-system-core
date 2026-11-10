@@ -33,7 +33,7 @@ Feature: Agent uses a node as external auditable memory
     And a second run writes nothing and reports every item unchanged
     And "npx agentic-system-core lint" finds no error in the imported items except a concept "kind" the foreign bundle never declared
 
-  @PRD-021 @PRD-026 @human @matrix-A5
+  @PRD-021 @PRD-026 @PRD-075 @human @matrix-A5
   Scenario: A thesaurus kept as SKOS arrives as drafts and imports idempotently
     Given a SKOS thesaurus "thesaurus.ttl" with a scheme, a collection and two concepts
     When the author imports "thesaurus.ttl" with "--from skos" into a copy of the Bundle that holds no item
@@ -48,7 +48,7 @@ Feature: Agent uses a node as external auditable memory
     When the author imports "licensed-bundle" with "--from okf" into a copy of the Bundle that holds no item
     Then every item the OKF import wrote is a draft, with one "AGSC-E506" warning each that names the status it replaced
 
-  @PRD-026 @human @matrix-A5
+  @PRD-083 @human @matrix-A5
   Scenario: A folder exported with a manifest is checked when it is imported
     Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
     When the author runs "agsc export --okf --manifest" under the network trap
@@ -100,7 +100,7 @@ Feature: Agent uses a node as external auditable memory
     Then each shape gives one record per chunk, and every record keeps the item IRI, the chunk digest, the licence, the terms and the trust mark "untrusted"
     And no network call was attempted
 
-  @PRD-061 @agent
+  @PRD-061 @PRD-079 @agent
   Scenario: An agent checks the chunks it holds against what the node states about them
     Given a fresh copy of the acceptance Bundle
     And the Bundle is built and served on loopback
@@ -118,7 +118,7 @@ Feature: Agent uses a node as external auditable memory
     And each line of "dist/export/items.jsonl" is the node of the item's "www/pages/<slug>.jsonld", one line per item in slug order
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-075 @human
   Scenario: A taxonomy tool reads the SKOS export with no inference step
     Given the Bundle is built
     When the author runs "agsc export --skos" under the network trap
@@ -127,7 +127,7 @@ Feature: Agent uses a node as external auditable memory
     And "dist/export/skos.ttl" is Turtle that a second run writes again byte for byte
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-075 @human
   Scenario: The author asks which notes should be linked and no note is touched
     Given a note "alpha" that links to the note "beta" in its body, with no Link between them
     When the author runs "agsc lint --suggest" under the network trap
@@ -137,7 +137,7 @@ Feature: Agent uses a node as external auditable memory
     And "dist/suggestions.json" is canonical JSON that a second run writes again byte for byte
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-075 @human
   Scenario: The author reads what the graph entails and the answer is never published
     Given the Bundle is built
     When the author runs "agsc export --closure" under the network trap

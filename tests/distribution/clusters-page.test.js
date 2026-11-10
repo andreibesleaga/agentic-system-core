@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-077 (docs/PRD.md).
 // verifies AGSC-06-38, AGSC-06-01, AGSC-06-17, AGSC-06-21
 // The `/clusters/` page of a build (src/distribution/clusters-page.js): below the list of
 // clusters, the overview of how they connect with its relation filter, the legend of the

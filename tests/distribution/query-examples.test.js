@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-078 (docs/PRD.md).
 // verifies AGSC-06-39, AGSC-05-34, AGSC-05-41, AGSC-05-38
 // The examples of the `/query/` page filled in from the node (src/distribution/query-examples.js).
 // The SPARQL text of each of the ten questions (AGSC-05-34, docs/ontology-questions.json)

@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-05-41
 // The SHACL Core subset of AGSC-05-41, as `src/knowledge/shacl-core.js` evaluates it with the
 // pinned library `rdf-validate-shacl`. The fixtures are in `tests/shapes/core/`, shared with the

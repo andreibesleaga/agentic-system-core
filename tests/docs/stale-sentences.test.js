@@ -39,7 +39,6 @@ const SKIPPED = new Map([
   ['CHANGELOG.md', 'records what each change said on its day'],
   ['docs/PLAN.md', 'the plan of 1.0.0 with dated 1.1 notes'],
   ['docs/PRD.md', 'the requirements of 1.0.0 with dated 1.1 notes'],
-  ['docs/ROADMAP.md', 'rewritten by the documentation package of this run'],
   ['docs/diagrams-rendered', 'generated pictures'],
   ['tests/vectors', 'frozen conformance cases'],
   ['tests/docs/stale-sentences.test.js', 'this file names the phrases'],

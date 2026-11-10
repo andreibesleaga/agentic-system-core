@@ -324,6 +324,18 @@ the error `-32022` naming 2025-11-25, and after a request of 2026-07-28, `initia
 `server/discover` probe decides nothing). A client that wants the other revision starts the
 server again.
 
+A tool call over standard input and output carries the same `_meta` as the HTTP one, and needs
+no headers:
+
+```bash
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"handoff"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+  | agsc mcp
+```
+
+A line that is not a JSON-RPC request, such as a line of plain text or a request with `_meta`
+outside `params`, gets no answer and nothing on standard error; the official SDK the server is
+built on behaves the same. If a hand-written line gets no answer, check that it is valid JSON.
+
 If you see a JSON line naming `agentic-system-core`, the server works and any remaining
 problem is in your assistant's configuration. Two things to check first: the working
 directory must be the Bundle (the folder with `agsc.config.json`), and the assistant has

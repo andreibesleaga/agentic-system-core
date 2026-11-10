@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-079 (docs/PRD.md).
 // AGSC-06-37: `/chunks-index.toon`, the tabular index of `/chunks.jsonl`, written by the pinned
 // TOON encoder (`@toon-format/toon`) and read back by its decoder. Beyond chk-0010: the quoting
 // the encoder applies to a title, the row order and the determinism of the bytes.

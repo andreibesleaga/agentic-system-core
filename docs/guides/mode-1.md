@@ -9,7 +9,9 @@ agent, or its operator, reading someone else's node.
 computer, needs no key and writes nothing (over standard input and output, or from 1.1 with
 `agsc mcp --http <port>` over HTTP on the loopback address, see
 [USING-WITH-ASSISTANTS.md](../USING-WITH-ASSISTANTS.md)); two nodes that list each other as peers and a
-shipped checker that confirms it; the commands to verify any published node by hand.
+shipped checker that confirms it; the commands to verify any published node by hand; and,
+if you want it, a domain layer: your own classes, relations and rules, checked by `verify` and
+`ci` (§5, "The domain layer").
 
 **Read after:** [Mode 0](mode-0.md). **Next:** [Mode 2](mode-2.md).
 

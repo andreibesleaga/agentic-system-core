@@ -43,13 +43,14 @@ kind of reader down one path.
 | [RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md) | how this relates to other systems, with dates |
 | [DUBLIN-CORE-PROFILE.md](DUBLIN-CORE-PROFILE.md) | the Dublin Core Tabular Application Profile `schema/dctap.csv`: which key becomes which property, and how it is generated |
 | [SHACL-SHAPES.md](SHACL-SHAPES.md) | the SHACL shapes of the graph: what they check, how to run them in the development lane, and what that lane has run |
+| [ONTOLOGY-PIPELINE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ONTOLOGY-PIPELINE.md) | the six stages of building an ontology, what the engine does at each, and why the 1.0 vocabulary has no warrant field |
 | [TESTING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/TESTING.md) | the test levels and how to run them |
 | [RULE-COVERAGE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RULE-COVERAGE.md) | for every rule, the checks that verify it (generated) |
 | [REQUIREMENTS-MATRIX.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/REQUIREMENTS-MATRIX.md) | for every requirement of the PRD, the rules that trace to it and the checks behind them (generated) |
 | [ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) | the gates, the size limits, the dependency rule, and how the four public repositories are checked |
 | [MEASUREMENTS.md](MEASUREMENTS.md), [BENCHMARKS.md](BENCHMARKS.md) | the measured numbers and the method behind them |
 | [diagrams/](diagrams/README.md) | the diagram pack: Mermaid sources and rendered SVG |
-| [ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) | what composition and the graph do today, and what is planned for the next version |
+| [ROADMAP.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ROADMAP.md) | what 1.0 and 1.1 do, and the ideas after 1.1 |
 
 Generated pages (`GLOSSARY.md`, `ONTOLOGY-QUESTIONS.md`, `RULE-COVERAGE.md`, `REQUIREMENTS-MATRIX.md`, `measurements.json`) are never
 edited by hand; the command that writes each is named at its top.

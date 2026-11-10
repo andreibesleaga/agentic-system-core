@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-074 (docs/PRD.md).
 // AGSC-03-01 (the relation table, 1.1.0 columns included): `knowledge/relations.js`
 // is the ONE server-side copy; every former copy now reads it and must yield exactly
 // the list it held at 1.0.1. The page-script copies (compose, browser, harness, brief,

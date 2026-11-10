@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-082 (docs/PRD.md).
 // tests/distribution/compose-page-run.test.js — the `/compose/` page, RUN.
 //
 // The three scripts a Level-2 build emits are loaded into a fresh `node:vm` context

@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-080 (docs/PRD.md).
 // verifies AGSC-09-13, AGSC-09-16
 // One tool contract over two transports, for the ten tools of 1.1: every call of the
 // committed call list (`bench/corpus/parity-calls.json`, which covers the ten tools) is asked

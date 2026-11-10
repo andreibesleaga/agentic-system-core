@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-084 (docs/PRD.md).
 // AGSC-01-40 and AGSC-04-05 (1.1): names and paths that only some file systems refuse,
 // and Unicode noncharacters in authored text, are the warning AGSC-E423 and nothing is
 // refused. The conformance cases bundle-0013..0015 and bundle-0021 pin the main paths;

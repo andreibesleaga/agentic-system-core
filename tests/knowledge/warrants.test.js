@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-05-40, AGSC-02-25
 // The warrant of a term as the graph writer and the display read it: a `source` plus one of
 // the three kinds of warrant of ANSI/NISO Z39.19-2005 (R2010), `literary`, `user` and

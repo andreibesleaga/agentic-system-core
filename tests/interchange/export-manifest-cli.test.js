@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-083 (docs/PRD.md).
 // verifies AGSC-09-17, AGSC-09-08, AGSC-01-26
 // tests/interchange/export-manifest-cli.test.js — `export --manifest` and the check `import`
 // runs on the folder it wrote (AGSC-09-17 (a)), through the real verbs over the real

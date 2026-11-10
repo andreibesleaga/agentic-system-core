@@ -1,22 +1,20 @@
 # Roadmap
 
 **Summary.** Version 1.0 checks a selection of items against their typed Links and
-writes a small, deterministic set of files called a Harness. It does that correctly
-and the same way in the browser and on the command line, but what it hands back is
-thin: mostly titles and one-line descriptions. Version 1.1, the next version, plans to give Links a
-stated formal meaning, to check that meaning, and to add a richer, still deterministic
-**composition brief** beside the Harness: a dependency order, the relations explained, the
-gaps, a checklist and a context file for agents. An optional service layer can offer
-the same answers through the local tool server. Nothing here changes what a 1.0 Bundle
-builds or composes. This page is informative; where it disagrees with a rule in
-[`spec/`](../spec/README.md), the rule wins.
+writes a small, deterministic set of files called a Harness. Version 1.1 gives every
+Link a stated meaning and checks it, writes a **composition brief** beside the Harness,
+shows the graph on every page, adds a query page, an optional domain layer and more
+ways for agents and other tools to read a node. A Bundle that conforms to 1.0 builds
+the same graph and the same seven Harness files under 1.1. This page is informative;
+where it disagrees with a rule in [`spec/`](../spec/README.md), the rule wins, and the
+complete list of what each version specifies is AGSC-00-20.
 
-**Who this is for:** anyone deciding whether to use composition today, and anyone who
-wants to help shape the next version. **Read after:**
+**Who this is for:** anyone deciding whether to use composition and the graph today,
+and anyone who wants to help shape what comes next. **Read after:**
 [USE-CASES.md](USE-CASES.md) (scenario M5) and
 [spec/07-composition.md](../spec/07-composition.md).
 
-## What 1.0 does today
+## What 1.0 does
 
 - **Typed Links.** An item may point to others with fourteen closed Link keys
   (AGSC-03-01). Five carry composition meaning: `requires` pulls items in, `excludes`
@@ -38,111 +36,108 @@ wants to help shape the next version. **Read after:**
   (AGSC-07-13).
 - **Honest limits.** The output is only as rich as the Links authored. A Bundle whose
   items use only `related` composes to a valid but nearly empty result: nothing is
-  added, nothing is flagged, the diagram has few or no edges, and the digest carries
-  each item's description rather than its text.
+  added, nothing is flagged, and the diagram has few or no edges.
 
-## Planned for 1.1, the next version
+## What 1.1 does
 
-1.1 is a MINOR release: it adds, and removes nothing (AGSC-00-14). The
-list below is a plan, not a promise of dates.
+1.1 is a MINOR release: it adds and removes nothing (AGSC-00-14). New checks are
+warnings, so a Bundle that passes its gate under 1.0 still passes.
 
-### A stated meaning for every Link
+- **A stated meaning for every Link.** The relation table of AGSC-03-01 gives each key
+  its inverse, whether it is symmetric or may be read transitively, and the kinds of
+  item it is expected to point to. `lint` warns about a Link from an item to itself,
+  two keys on one pair that cannot both hold, a target of an unexpected kind and a
+  `supersedes` of a stable item (AGSC-E313 to AGSC-E316). Derived readings carry the
+  steps that make them hold (AGSC-05-33), and the graph answers ten written questions
+  ([ONTOLOGY-QUESTIONS.md](ONTOLOGY-QUESTIONS.md)). `lint --suggest` proposes Links
+  from the content into `dist/suggestions.json` and never writes under `content/`.
+- **Vocabulary and ontology tools.** `export --skos` writes the SKOS view with its
+  concept scheme; `import <file.ttl> --from skos` turns a thesaurus into draft items;
+  `export --closure` writes what the OWL 2 RL subset entails, never as a published
+  file; SHACL shapes ([SHACL-SHAPES.md](SHACL-SHAPES.md)) and a Dublin Core
+  application profile ([DUBLIN-CORE-PROFILE.md](DUBLIN-CORE-PROFILE.md)) are generated
+  from the schemas. [ONTOLOGY-PIPELINE.md](ONTOLOGY-PIPELINE.md) maps these to the six
+  stages of a common ontology method.
+- **The domain layer, optional.** A node may add its own classes and relations, domain
+  keys on items, warrants, invariants and competency questions that `verify` and `ci`
+  check, bounded contexts and context maps between nodes
+  ([guides/mode-1.md](guides/mode-1.md#the-domain-layer)). A node that does not use it
+  builds the bytes it built before.
+- **A composition brief.** `compose --brief` writes `brief.json`, `BRIEF.md`,
+  `context.md` and `brief.mmd` beside the Harness and never inside it: why each item is
+  there, its relations, a dependency order, gaps and a checklist. It names listed items
+  only, so it never lists a draft as a gap, and `brief.mmd` draws the Links inside the
+  selection. `/compose/` shows the same brief, with filters by cluster and tag and the
+  verdict in words. A saved architecture also gets C4 levels, decision records and a
+  build plan (AGSC-07-29); [`examples/blueprints/`](../examples/blueprints/README.md)
+  holds three worked ones. This distribution ships no model, so `--narrate` answers
+  `AGSC-E001` and the brief is written without it.
+- **The graph on the page.** An item page shows its Links in both directions as a
+  figure and a table with the meaning of each key; a cluster page maps its members;
+  `/clusters/` adds an overview, a legend and an explorer that works from the keyboard
+  (AGSC-06-38). Per-item Mermaid text stays `agsc export --to mermaid`. `/query/` runs
+  SPARQL 1.1 over the node's own graph in the browser, with no server
+  ([guides/mode-0.md](guides/mode-0.md)).
+- **Agents and other tools.** The tool server and the page tools serve ten tools
+  (`brief`, `explain` and `check` join the seven); the tool server speaks MCP revision
+  2026-07-28 beside 2025-11-25, and `mcp --http` serves it on your own machine
+  ([USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md)). The chunk export gains a
+  digest, a count and a set commitment, and a tabular index
+  ([CITING-A-CHUNK.md](CITING-A-CHUNK.md)). The home page sends FAIR Signposting
+  links and a fuller Dataset block; a node may opt in to a DCAT catalogue block, the
+  `ard.json` and `ai-catalog.json` files and, with a responder, an A2A agent card.
+  `export --manifest` adds file digests that `import` checks.
+- **Capabilities of this distribution**, not format parts: direct memory adapters for
+  Mem0, Letta, Zep, CSV, Basic Memory and Claude Code's memory files
+  ([CONNECTORS.md](CONNECTORS.md)); the benchmark kit ([BENCHMARKS.md](BENCHMARKS.md));
+  and the Python checker at the parity of the 1.1 engine, except the domain layer.
 
-- One table giving, for each Link key, its inverse, whether it is symmetric, whether
-  it may be read transitively (for example a chain of `broader` or `supersedes`), and
-  which kinds of item it is expected to point to.
-- New lint **warnings**: a Link from an item to itself; two Links on one pair that
-  cannot both hold (for example `requires` and `excludes`); a Link whose target is an
-  unexpected kind of item; an item that is replaced but not marked deprecated.
-- Derived relations computed by plain code, each with the reason it holds — "this
-  follows from X `supersedes` Y and Y `supersedes` Z" — so every derived fact can be
-  explained.
-- A written list of questions the graph must answer ("if I choose X, what else must I
-  take?", "what replaced X?", "what blocks this task?"), each answered by the engine and
-  pinned by a test vector.
-- Validation shapes generated from the schemas and the Link table and run in a
-  development lane, as the specification already plans (AGSC-05-24).
-- A deterministic **suggestion** step that proposes Links from the content — shared
-  sources, inline mentions, item titles found in other items' text — and never writes
-  them. A person accepts a suggestion by editing the item, or an agent offers it as a
-  Proposal through the agent lane.
+## Ideas after 1.1
 
-### A richer composition output
+Nothing on this list is promised, and it carries no version and no date. An idea
+becomes work only when a release names it in AGSC-00-20; the names the specification
+reserves stay as AGSC-00-20 states them.
 
-A **composition brief**, written beside the seven Harness files and never inside
-them, and shown directly on `/compose/`:
-
-- a plain summary of the verdict;
-- every selected item with its relations resolved — authored, inverse, symmetric and
-  derived — and the reason for each;
-- a dependency order: what an item needs comes before it;
-- gaps and open questions: items used but not selected, related items worth a look,
-  items with no sources, stale or draft items, items a newer one replaces;
-- a checklist derived from the relations: what to adopt first, what to provide, which
-  contradictions to decide;
-- a context file for agents with the items' text, in dependency order, marked as data;
-- a diagram of the selection and its nearest neighbours.
-
-The brief needs no model. An optional narration step, off by default, may use a
-configured model within the node's spend cap (AGSC-01-38); its output is a separate,
-labelled file and never affects the verdict or any other file.
-
-The `/compose/` page is also planned to gain search and filters, a visible list of
-warnings, and the verdict in plain words.
-
-### An optional service endpoint
-
-- The local tool server and the in-page tools (AGSC-09-13, AGSC-09-16) gain tools that
-  return the brief, explain why a relation holds, and run the new checks over a
-  selection.
-- A node operator may offer the same tools over a network transport through the
-  `responder` surface the specification already declares (AGSC-11-21). The project
-  itself hosts no service.
-- Rules that do not change: no network and no clock at build, no embeddings or
-  similarity scores as stored relations (AGSC-03-21), and an agent changes content
-  only through the agent lane of §8.6 (AGSC-08-28), never around it.
-
-### A graph view
-
-- A graph view: each item page shows a small drawing of its direct links with each
-  relation named and explained, each cluster gets a map, and the same neighbourhood is
-  also published as Mermaid text; drawn at build time, no third-party script.
-
-### Working with vocabulary and ontology tools
-
-Version 1.0 already publishes each node's graph as Turtle, N-Quads and JSON-LD. Items
-carry SKOS preferred and alternative labels, definitions, and `broader`, `narrower` and
-`related` links; clusters list their members with `skos:member`; dates and source
-records use Dublin Core terms; and a `derived-from` Link becomes a PROV-O derivation.
-The files load in standard RDF tools and answer SPARQL queries. The graph types items
-with the vocabulary's own classes, which the vocabulary declares as subclasses of the
-SKOS and PROV-O classes, so a tool that looks for `skos:Concept` needs to load the
-vocabulary and apply RDFS inference first. Planned: an export that writes the SKOS
-types, top concepts and a titled concept scheme directly; an import that reads a SKOS
-vocabulary written in Turtle into a Bundle; SHACL shapes; and a Dublin Core
-application profile for item metadata. The semantic layer over the typed links is
-planned to follow the six stages of the
-[Ontology Pipeline framework](https://www.ontologypipeline.com/) by J. Talisman (the name is a mark of its owner) —
-controlled vocabulary, metadata schema, taxonomy, thesaurus, ontology, knowledge
-graph. This names the method the work plans to follow; it claims no compatibility
-with the framework and no certification by its author.
+1. **The domain layer in the Python checker.** The layer is optional and the engine
+   checks it; the Python checker reports its cases as not run.
+2. **A public node about the system itself**, beside the main site and the
+   demonstration node. Nothing in 1.1 depends on it.
+3. **Two more worked blueprints.** The three in `examples/blueprints/` cover the
+   engine, two linked sites and the tool server with a client.
+4. **"Download all" on `/skills/` and an index of the exports.** It would change the
+   bytes of the published skills page of every node.
+5. **`ask` offering a Proposal.** The bytes of its answer are pinned by a 1.0 case
+   (`cli-0007`).
+6. **`agsc-host` behind the file-system port**, as the engine's other commands are.
+   An internal change with no effect on any file.
+7. **Content Use Terms in plain words, opted into per node.** The rule slot is
+   reserved; the wording is the owner's to write.
+8. **Skills import extras:** `--replace` with no loss of data, and one route for the
+   two import paths.
+9. **Discovery extras:** an `/.well-known/api-catalog` route (RFC 9727), a lint warning
+   for a pair of licences that do not fit together, a newer WebMCP report, and WebMCP as
+   a condition of the benchmark kit.
+10. **Mode 4 renderings for agent runtimes** (kaiban, GABBE) and narration as a
+    rendering. Each needs a model or a runtime this distribution does not ship.
+11. **Installers and runtimes:** Homebrew, Nix, a container image, Deno, Bun and
+    Cloudflare Workers, a TypeScript port and a PyPI wrapper of the engine.
+12. **Smaller items:** domain links on item pages and in the `links` tool; reports to
+    the MCP SDK of the places where the tool server needs its own code; the patterns
+    node rebuilt on 1.1.
 
 ## Compatibility promise
 
-- A Bundle that conforms to 1.0 keeps building and composing under the next version,
-  with the same bytes for its graph and its seven Harness files; its item pages change only by the added views.
+- A Bundle that conforms to 1.0 builds and composes under 1.1 with the same bytes for
+  its graph and its seven Harness files; its pages change only by the added views and
+  by the files AGSC-00-20 names.
 - The five composition steps and every verdict stay as they are. The brief is an extra
   rendering, not a new step.
-- New checks start as warnings, so a 1.0 Bundle that passes its gate today still
-  passes.
-- A 1.0 tool that meets something from the next version ignores it or refuses it with
-  a registered code, as AGSC-00-21 already requires.
+- A 1.0 tool that meets something from 1.1 ignores it or refuses it with a registered
+  code, as AGSC-00-21 requires.
 
 ## How to follow or contribute
 
 Changes to the specification follow the process in
-[CONTRIBUTING.md](../CONTRIBUTING.md): open an issue that names the rule, the
-wording you propose and the test vector that would prove it. Examples of compositions that felt empty, and the Links that would
-have made them useful, are especially helpful. The list of what belongs to each
-version is kept in the specification itself (AGSC-00-20); an item on this page that it
-does not yet name is a proposal until a release adds it there.
+[CONTRIBUTING.md](../CONTRIBUTING.md): open an issue that names the rule, the wording
+you propose and the test vector that would prove it. Examples of compositions that
+felt empty, and the Links that would have made them useful, are especially helpful.

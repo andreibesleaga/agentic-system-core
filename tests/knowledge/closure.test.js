@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-075 (docs/PRD.md).
 // verifies AGSC-05-37, AGSC-05-23
 // AGSC-05-37 — the closure of the graph under the RL subset of OWL 2 Profiles: the rules as
 // data, run by the Reasoner of the pinned `n3`. Offline and deterministic: fixed seed, no

@@ -10,4 +10,4 @@
 
 **Attachments, ports and citations.** Attachments are nodes with a SHA-256; ports and task states are datatype properties; a citation of another node becomes `rdfs:seeAlso` plus `asc:peerOrigin`.
 
-Rules: `spec/05-graph.md`, `AGSC-05-01` … `AGSC-05-32`.
+Rules: `spec/05-graph.md`, `AGSC-05-01` … `AGSC-05-41`.

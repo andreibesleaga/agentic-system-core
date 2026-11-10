@@ -1,4 +1,4 @@
-# User flows — the five richest journeys
+# User flows — the richest journeys
 
 ## 1. Reader find-pattern (P1, Mode 0)
 
@@ -54,6 +54,11 @@ flowchart TD
   K -- no --> M["Download files one by one (fallback)"]
 ```
 
+From 1.1 the page also shows the verdict in words and, once the page tools have read the
+published pages, the brief of the selection inline (dependency order, gaps, checklist),
+with "Download the brief (.zip)" and "Download the skills (.zip)" beside the Harness
+archive; none of them enters the Harness archive (AGSC-07-13a, AGSC-07-25).
+
 ## 4. Integrator skills install (P6, Mode 3)
 
 ```mermaid
@@ -75,6 +80,18 @@ flowchart TD
 
 Trace: PRD-011/013/014 (flow 1), PRD-039–042/050 (flow 2), PRD-036–038 (flow 3), PRD-032–035 (flow 4);
 PLAN.md §6(b), §6(c).
+
+## 5. Reader asks the graph a question (P1, Mode 0; from 1.1)
+
+1. Open `/query/`; the page loads the vendored query engine and the node's `/graph.nq`
+   from its own origin.
+2. Pick one of the ten example questions, or write a SPARQL 1.1 query.
+3. Run it: the page refuses an update or a `SERVICE` clause before the engine runs, then
+   shows up to 200 rows, and draws a graph result as a picture.
+4. Download the result as CSV or JSON, or copy "Link to this query", which keeps the query
+   in the fragment of the address and sends it to no server.
+
+Trace: AGSC-06-39, AGSC-05-34.
 
 ## Flow 0 — Drop-in user (PRD-053; the front-door scenario)
 

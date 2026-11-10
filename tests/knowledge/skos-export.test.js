@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-075 (docs/PRD.md).
 // AGSC-05-36: the SKOS view written by `export --skos`. The whole-file bytes are pinned
 // by vector graph-0040; these tests add what a byte comparison cannot say — the view is
 // read back with the pinned `n3` and checked as RDF, it is a function of the graph and

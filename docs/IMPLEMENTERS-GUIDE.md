@@ -105,12 +105,14 @@ typed here, because a later version adds cases.
 
 **Cases that belong to a higher Level.** Some cases sit in an area a lower Level runs but
 test what only a higher Level does — a writer's refusal, an agent lane, a Level-2 digest,
-the four lints, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
-belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `bundle-0009`, `bundle-0010`, `disc-0005`
-and `disc-0019` belong to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
-`disc-0018`, `disc-0020`, `disc-0021` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
-`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `adopt-0007`,
-`adopt-0008` and `adopt-0009` to Level 3. A claim at a lower Level neither runs them nor fails for them.
+the lints, the `init` and `ci` verbs. The table of AGSC-10-15 lists each with the Level it
+belongs to and what it exercises; a claim at a lower Level neither runs them nor fails for
+them. The withdrawn `bundle-0008`, `disc-0019` and `disc-0027` keep their rows and count
+in no claim.
+
+* **Level 1:** `bundle-0001`, `bundle-0006`, `bundle-0007`, `bundle-0009`, `bundle-0010`, `bundle-0012`, `bundle-0013`, `bundle-0014`, `bundle-0015`, `bundle-0016`, `bundle-0017`, `bundle-0020`, `bundle-0021`, `fm-0021`, `fm-0022`, `fm-0023`, `fm-0024`, `fm-0025`, `fm-0026`, `fm-0027`, `disc-0005`, `disc-0019` and `disc-0023`.
+* **Level 2:** `bundle-0008`, `bundle-0011`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`, `disc-0018`, `disc-0020`, `disc-0021`, `disc-0026`, `disc-0027`, `disc-0028`, `disc-0029`, `disc-0030`, `disc-0031`, `disc-0032`, `disc-0033`, `disc-0035`, `disc-0036`, `disc-0037`, `disc-0038` and `lint-0026`.
+* **Level 3:** `bundle-0003`, `bundle-0004`, `bundle-0005`, `bundle-0018`, `bundle-0019`, `lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `lint-0046`, `lint-0047`, `lint-0048`, `lint-0049`, `lint-0050`, `lint-0057`, `lint-0058`, `lint-0059`, `lint-0063`, `adopt-0007`, `adopt-0008`, `adopt-0009`, `imp-0006`, `imp-0007`, `imp-0008`, `bnd-0046`, `bnd-0047`, `bnd-0048` and `bnd-0050`.
 
 **What the claim states.** The implementation and its version, the Level, the full
 `spec_version`, the areas and how many cases ran and passed (every failed one by id), the
@@ -491,7 +493,14 @@ it used (AGSC-09-90). Neither is a certification.
 
 *(AGSC-11-13.)* A node's query surface is its published dumps, and a
 consumer federates on its own side: download the dumps, load them together, query.
-No node fetches another, and no node answers queries. In `graph.nq` every triple sits
+No node fetches another, and no node answers queries. From 1.1 a writer that serves `/graph.nq` also emits
+`/query/` unless `site.query_page` is `false` (AGSC-06-39): a page that runs a visitor's
+query over that one node's graph in the browser, so the node still answers nothing. Its
+obligations are the ones `build-0030` asserts: the page is listed in the sitemap and linked
+from every page, stays within the page budget (the engine files are page assets outside it),
+requests nothing outside the origin, stores nothing, and carries one policy with the
+directives of AGSC-06-17, `'wasm-unsafe-eval'` admitted on that route only. `build-0029`
+checks the whole route set of AGSC-06-01, conditional routes included. In `graph.nq` every triple sits
 in a named graph whose name is the node's Bundle IRI, so loading two nodes' files into
 one dataset keeps them apart. This SPARQL 1.1 query counts the Concepts of every node
 loaded, with the node it came from:

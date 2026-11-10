@@ -45,7 +45,7 @@ Feature: Human reader finds a pattern with evidence
     And they show the item counts, the stale item "tool-use-retries" and the open Lesson
     And both were generated purely from stored state, with no hand edit surviving a rebuild
 
-  @PRD-002 @PRD-013 @human @matrix-H3
+  @PRD-077 @NFR-06 @human @matrix-H3
   Scenario: Reader sees what a Concept is linked to and what links back to it
     Given the draft "unreleased-idea" also requires "mcp" and the Bundle is built again
     When the reader navigates to "/concepts/mcp/"
@@ -56,7 +56,7 @@ Feature: Human reader finds a pattern with evidence
     When the reader navigates to "/clusters/agent-patterns/"
     Then the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link
 
-  @PRD-002 @PRD-013 @human @matrix-H3
+  @PRD-077 @human @matrix-H3
   Scenario: Reader sees how the clusters connect and what each relation means
     Given the concept "handoff" also uses "mcp" and the Bundle is built again
     When the reader navigates to "/clusters/"
@@ -64,7 +64,7 @@ Feature: Human reader finds a pattern with evidence
     And a radio button for each relation in the table filters it through the page's own stylesheet, with no script
     And the legend lists the fourteen relations in the order of AGSC-03-01, each with its meaning
 
-  @PRD-002 @human @matrix-H3
+  @PRD-077 @NFR-08 @human @matrix-H3
   Scenario: Reader explores the graph with the keyboard alone
     Given the concept "tool-use-retries" is retired and the Bundle is built again
     When the reader opens the explorer on "/clusters/"
@@ -72,7 +72,7 @@ Feature: Human reader finds a pattern with evidence
     And the arrow keys move through the explorer's list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings
     And Escape closes the tooltip first and then clears the selection
 
-  @PRD-011 @PRD-022 @human @matrix-H3
+  @PRD-078 @human @matrix-H3
   Scenario: Reader asks the published graph a question on the query page
     When the reader opens the query page "/query/"
     Then the page loads the node's own graph into the engine it ships and requests nothing from another origin (AGSC-06-39)
@@ -80,7 +80,7 @@ Feature: Human reader finds a pattern with evidence
     And the share link of that query opens it in the editor of a new page without running it, and no request carries the query
     And a SERVICE clause after an escaped name or an IRI with a code point escape is refused before anything runs, and a SELECT of RAND() shows the same value in the table, the CSV file and the JSON file
 
-  @PRD-011 @PRD-022 @human @matrix-H3
+  @PRD-078 @NFR-08 @human @matrix-H3
   Scenario: Reader runs one of the ten questions of the graph on the query page with the keyboard alone
     When the reader opens the query page "/query/"
     Then the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)

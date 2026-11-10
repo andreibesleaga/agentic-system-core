@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-082 (docs/PRD.md).
 // verifies AGSC-07-25, AGSC-07-26, AGSC-07-28
 // The composition brief (`src/composition/brief.js`) beyond the bytes of compose-0024 to
 // compose-0026: properties over generated graphs (the brief does not depend on the order of the

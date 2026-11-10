@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-078 (docs/PRD.md).
 /* global document, getComputedStyle */
 // verifies AGSC-06-39, AGSC-06-17, AGSC-06-05, AGSC-06-20
 // tests/distribution/query-browser.test.js — the `/query/` page in a REAL browser, the part

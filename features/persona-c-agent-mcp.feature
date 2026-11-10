@@ -116,7 +116,7 @@ Feature: Agent reader queries structured knowledge without scraping
     Then every chunk that begins with a heading is an in-page anchor "chunk-" and the first 16 hex characters of its "id" on that heading of its item page (AGSC-06-28)
     And every other chunk is cited at the top of its page, and no page carries a chunk anchor that names no chunk (AGSC-06-30)
 
-  @PRD-023 @PRD-061 @agent @mode-1 @matrix-A2
+  @PRD-023 @PRD-080 @PRD-061 @agent @mode-1 @matrix-A2
   Scenario: An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk
     Given the item "handoff" lists itself under "related", the Link warning "AGSC-E313" (AGSC-03-23)
     And "npx agentic-system-core mcp" is running over the acceptance Bundle
@@ -130,7 +130,7 @@ Feature: Agent reader queries structured knowledge without scraping
     When the agent calls tool "read" with argument "{slug: \"a2a\"}"
     Then each citation record of the answer carries the digest and id of its line in "/chunks.jsonl" and the content version of the build (AGSC-09-13)
 
-  @PRD-023 @agent @mode-1
+  @PRD-023 @PRD-080 @agent @mode-1
   Scenario: A search that matches more than a hundred items is bounded and says how many matched
     Given the acceptance Bundle holds 120 more concepts that all mention "widget"
     When the agent calls tool "search" with the query "widget" on the local tool server
@@ -144,21 +144,21 @@ Feature: Agent reader queries structured knowledge without scraping
     Then the verdict equals the one "agsc compose handoff" prints for the same selection (AGSC-09-16)
     And nothing is written to the Bundle by the server
 
-  @PRD-023 @agent @mode-1 @matrix-A2
+  @PRD-080 @agent @mode-1 @matrix-A2
   Scenario: A missing resource is answered with -32002 under 2025-11-25
     Given the node is built
     When an MCP client that speaks the revision 2025-11-25 reads the resource "memory://agenticsystemcore/no-such-item"
     Then the server negotiated the revision "2025-11-25"
     And the answer is the JSON-RPC error -32002, "Resource not found", that revision defines, and not a tool envelope
 
-  @PRD-023 @agent @mode-1 @matrix-A2
+  @PRD-080 @agent @mode-1 @matrix-A2
   Scenario: An agent of the revision 2026-07-28 discovers the server and is answered with no handshake
     Given the node is built
     When an MCP client that speaks the revision 2026-07-28 asks "server/discover" and reads the resource "memory://agenticsystemcore/no-such-item", with no "initialize"
     Then the server names the revisions "2026-07-28" and "2025-11-25", and its answer is complete and may not be cached (AGSC-09-19)
     And the missing resource is the JSON-RPC error -32602 that revision defines
 
-  @PRD-023 @agent @mode-1 @matrix-A2
+  @PRD-081 @agent @mode-1 @matrix-A2
   Scenario: An agent on the same machine reaches the tool server over Streamable HTTP, and a page of another site is refused
     Given the node is built
     When "agsc mcp --http 0" serves the acceptance Bundle and an MCP client of the revision 2026-07-28 calls tool "search" with the query "protocol" over HTTP

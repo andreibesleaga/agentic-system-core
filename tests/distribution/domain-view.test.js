@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-06-38
 // The domain parts of item pages (`src/distribution/domain-view.js`) beyond build-0031: each
 // label (the vocabulary's class label, else the local name; the context cluster's title, linked

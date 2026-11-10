@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-074 (docs/PRD.md).
 // AGSC-05-33 — the readings of the Link graph: computed, each with its reasons, never stored.
 // Offline and deterministic: fixed seed, no clock, no network.
 

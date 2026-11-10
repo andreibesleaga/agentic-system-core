@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-077 (docs/PRD.md).
 // verifies AGSC-06-38, AGSC-06-30, AGSC-02-13, AGSC-01-07, AGSC-06-21, AGSC-06-03
 // The graph view of item and cluster pages (AGSC-06-38, src/distribution/graph-view.js):
 // a figure of the neighbourhood drawn from published items only, with a relations table

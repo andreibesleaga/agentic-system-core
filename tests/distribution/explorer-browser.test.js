@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-077 (docs/PRD.md).
 /* global document, window, getComputedStyle */
 // verifies AGSC-06-38, AGSC-06-20, AGSC-06-17, AGSC-06-05
 // tests/distribution/explorer-browser.test.js — the explorer of `/clusters/` in a REAL

@@ -38,5 +38,10 @@ flowchart TD
   K --> S
 ```
 
+From 1.1 Knowledge also holds the domain layer (the site vocabulary, warrants and the
+checks of a node's invariants and questions); Composition the brief, the blueprint outputs
+and the context map; Distribution `/query/`, the graph view and the ten tools. The arrows
+are unchanged.
+
 Trace: AGSC-04-01 and AGSC-04-03 (determinism: the pure core, no network), AGSC-00-24
 (where each plugin kind attaches), AGSC-09-07.

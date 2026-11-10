@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-079 (docs/PRD.md).
 // The chunk surface of a 1.1 build, on the minimal fixture: the tabular index
 // `/chunks-index.toon` (AGSC-06-37) and its `_headers` block (AGSC-11-03), the digest, count
 // and set commitment of the chunks surface link and the ledger length (AGSC-06-44), what a

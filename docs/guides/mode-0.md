@@ -287,6 +287,8 @@ warning asks for a `PRIVACY.md` beside `LICENSE-CONTENT`, which `/legal/` then s
 Upload `www/` to any host that serves files over HTTPS; `agsc-host list` names the
 profiles the engine can write host settings for, and the [publishing guide](publish.md)
 takes the node from here to a live address and checks it there.
+The site `agsc build` writes is a Level 2 node, the Level a published node claims (spec/10);
+the publishing guide checks it at its address with `validate-wellknown --level 2`.
 
 ## 6. Link two notes, and draw one
 

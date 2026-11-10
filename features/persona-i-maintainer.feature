@@ -99,7 +99,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the imported Bundle passes "agsc ci"
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A site vocabulary is published with the graph, and every note keeps its item type
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
     When the maintainer runs "agsc lint --json" under the network trap
@@ -110,7 +110,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And no per-item view under "www/pages" names a term of "domain/vocabulary.ttl" (AGSC-05-38)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Widget" is a subclass of no item class, named by "domain.vocabulary" (AGSC-01-41)
     When the maintainer runs "agsc lint --json" under the network trap
@@ -122,7 +122,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A site vocabulary whose inverse is a term the file does not define cannot write that term into the graph
     Given a site vocabulary "domain/vocabulary.ttl" whose property "typeOf" is declared the inverse of rdf:type, named by "domain.vocabulary" (AGSC-01-41)
     When the maintainer runs "agsc lint --json" under the network trap
@@ -134,7 +134,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A note states its domain type, its role and a domain link the site vocabulary defines
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
     And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
@@ -145,7 +145,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And "www/graph.nq" holds the domain link "controlled-by" from "handoff" to "supervisor" and the inverse "controls" the vocabulary declares back (AGSC-03-27)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A domain type or a domain link the site vocabulary does not define is refused by lint and by the build
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
     And the item "content/concepts/handoff.md" states the domain type "Turbine", the role "entity" and the domain link "owns" to "supervisor" (AGSC-02-25, AGSC-03-27)
@@ -158,7 +158,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And the Bundle does not hold "www/graph.nq"
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: The site's own invariants and competency questions are checked by verify and ci, never by lint
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
     And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
@@ -173,7 +173,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And "dist/gate.json" fails its "verify" check with "AGSC-E421" and "AGSC-E422" (AGSC-08-10, AGSC-09-20)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A term states its warrant, and the graph carries its source and its kind of warrant
     Given a fresh copy of the acceptance Bundle
     And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)
@@ -185,7 +185,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And "www/graph.jsonld", expanded with "www/ns/context.jsonld" and compacted again, is the same document (AGSC-06-32)
     And no network call was attempted
 
-  @PRD-022 @human
+  @PRD-076 @human
   Scenario: A note's page, its page tool answer and its brief show its domain type, role, warrant and domain link
     Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
     And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
@@ -208,7 +208,7 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And TypeScript and its type packages are development dependencies only, and no module the package ships requires them
     And the compiled "src/shared/version-line.js" gives the line "agsc --version" prints (AGSC-09-09)
 
-  @PRD-003 @human @matrix-H5
+  @PRD-003 @PRD-084 @human @matrix-H5
   Scenario: lint warns about a pattern with fewer sources than the node asks for, and a source a model wrote does not count
     Given a fresh copy of the acceptance Bundle
     And the configuration sets "lint.min_sources" to 1

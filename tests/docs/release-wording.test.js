@@ -278,12 +278,14 @@ test('the reference engine\'s claim is written once, in the form of AGSC-09-01, 
   const chunks = liveCases('chunks');
   assert.ok(chunks.length > 0);
   assert.ok(claim.includes(`chunks (proved by ${chunks.join(', ')})`), 'the chunks surface does not name every live chunks case');
-  assert.ok(claim.includes('llms-txt (proved by disc-0013, disc-0014)'));
-  assert.ok(claim.includes('webmcp (proved by cli-0003)'));
-  for (const [area, id] of [['discovery', 'disc-0013'], ['discovery', 'disc-0014'], ['cli', 'cli-0003']]) {
+  // 1.1 withdrew disc-0013, disc-0014 and cli-0003; their successors prove the surfaces
+  // (disc-0024, disc-0025; cli-0026 for the ten tools, AGSC-11-21 as amended for 1.1.0).
+  assert.ok(claim.includes('llms-txt (proved by disc-0024, disc-0025)'));
+  assert.ok(claim.includes('webmcp (proved by cli-0026)'));
+  for (const [area, id] of [['discovery', 'disc-0024'], ['discovery', 'disc-0025'], ['cli', 'cli-0026']]) {
     assert.equal(caseLevel(area, id), 'required', `${id} proves a surface and must be a required case`);
   }
-  assert.doesNotMatch(claim, /\bmcp \(proved/u, 'a 1.0 writer does not declare mcp (AGSC-11-16)');
+  assert.doesNotMatch(claim, /\bmcp \(proved/u, 'the engine does not declare mcp (AGSC-11-16)');
   // No word that suggests the project vouches for itself.
   assert.doesNotMatch(claim, /certif|approved|official/iu);
 

@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-083 (docs/PRD.md).
 // verifies AGSC-09-17
 // tests/interchange/export-manifest.test.js — the export manifest of AGSC-09-17 (a): the
 // pure module that writes it and the check `import` runs against a folder that holds one.

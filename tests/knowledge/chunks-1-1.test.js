@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-079 (docs/PRD.md).
 // The chunk record of 1.1 beyond chk-0009…chk-0016: the `abstract`, `license_url` and
 // `content_digest` members (AGSC-06-29, AGSC-06-44), the text that never begins with a
 // line feed (AGSC-06-45), the count and set commitment of the chunks surface link

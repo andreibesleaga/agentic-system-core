@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-05-38, AGSC-01-41
 // The site vocabulary (AGSC-05-38) and the configuration of the domain layer (AGSC-01-41):
 // the rules (a) to (g) a vocabulary file meets, the model the graph writer reads from it,

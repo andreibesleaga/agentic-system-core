@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-075 (docs/PRD.md).
 // verifies AGSC-05-35
 // AGSC-05-35 — `lint --suggest`: the five generators G1 to G5, as a pure function of the
 // items. Offline and deterministic: fixed seed, no clock, no network. The whole-file cases

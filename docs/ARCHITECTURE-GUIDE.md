@@ -107,6 +107,12 @@ instant comes from `SOURCE_DATE_EPOCH` or the last commit, never the wall clock
 (AGSC-04-09), which is why two builds, on two machines, give the same bytes
 (AGSC-04-01, AGSC-04-02).
 
+From 1.1 the pages also carry the graph view, the build writes `/query/` and the
+tabular chunk index, and a node that uses the domain layer adds its own vocabulary to the
+graph; `verify` and `ci` check the node's invariants and questions. The picture shows the
+steps of 1.0, which keep their order. What 1.1 adds is listed in
+[ROADMAP.md](ROADMAP.md).
+
 ## 4. One page tool call
 
 ![A browser agent calls a page tool](diagrams-rendered/flow-page-tool-call-1.svg)

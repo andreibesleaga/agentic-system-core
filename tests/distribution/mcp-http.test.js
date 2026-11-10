@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-081 (docs/PRD.md).
 // tests/distribution/mcp-http.test.js — the Streamable HTTP transport of the tool server
 // (src-ts/distribution/mcp-http.ts, compiled to src/distribution/mcp-http.js; AGSC-09-18).
 //

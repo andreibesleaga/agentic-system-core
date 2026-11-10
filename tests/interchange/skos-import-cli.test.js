@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-075 (docs/PRD.md).
 // verifies AGSC-01-39, AGSC-01-23, AGSC-01-26a, AGSC-09-09
 // tests/interchange/skos-import-cli.test.js — `import <file.ttl> --from skos` through the
 // real command line, over the real filesystem, with a fixed clock. The mapping itself is

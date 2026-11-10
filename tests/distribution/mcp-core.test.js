@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-080 (docs/PRD.md).
 // tests/distribution/mcp-core.test.js — the MCP core on the official SDK (src-ts/distribution/mcp-core.ts,
 // compiled to src/distribution/mcp-core.js): the two revisions of AGSC-09-19 over standard input
 // and output, in process, with the frames a client writes.

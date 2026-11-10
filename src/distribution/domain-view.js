@@ -33,7 +33,8 @@
 // against the site vocabulary (`knowledge/links.js#domainEdges`), because a page cannot read
 // the vocabulary. Every other node's scripts keep their bytes (AGSC-01-41).
 //
-// Requirements: PRD-002 (the relations shown to a reader), PRD-022 (the node's own vocabulary).
+// Requirements: PRD-002 (the relations shown to a reader), PRD-022 (the node's own vocabulary),
+// PRD-076 (the domain layer and its display).
 //
 // Pure: no fs, no clock, no network.
 

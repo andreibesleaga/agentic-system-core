@@ -79,7 +79,9 @@ The DAWN landscape survey (Jimenez, Feng, Arkko, Kühlewind, Kandoi — Ericsson
 | NLWeb | complement | a consumer: a query endpoint over Schema.org data; every instance an MCP server |
 | IETF aipref (vocab/attach drafts; revisions move monthly — re-check before the I-D) | complement, hard boundary | AI-usage preferences; this specification emits TDMRep + robots signals and **no** aipref field at 1.x (AGSC-06-18) |
 | IETF webbotauth | complement | bot identity by HTTP message signatures; this specification defines no agent identity |
-| SCITT — RFC 9943, *An Architecture for Trustworthy and Transparent Digital Supply Chains* (Standards Track, June 2026; checked 10 October 2026) | compare | in its abstract, an architecture "for single-issuer signed statement transparency": an issuer registers a signed statement with a transparency service, which records it in an append-only log and returns a COSE receipt. The derived ledger here (AGSC-08-20) is a different object: a per-site hash chain recomputed from the Bundle's own git history by every build, with no third-party service and no receipt; at 1.x no rule pins a signature format (the optional signature link of AGSC-06-10). A publisher who wants an outside witness can register a digest of its discovery document with such a service; no rule here asks for it |
+| SCITT — RFC 9943, *An Architecture for Trustworthy and Transparent Digital Supply Chains* (Standards Track, June 2026; checked 10 October 2026) | compare | in its abstract, an architecture "for single-issuer signed statement transparency": an issuer registers a signed statement with a transparency service, which records it in an append-only log and returns a COSE receipt. The derived ledger here (AGSC-08-20) is a different object: a per-site hash chain recomputed from the Bundle's own git history by every build, with no third-party service and no receipt; at 1.x no rule pins a signature format (the optional signature link of AGSC-06-10). A publisher who wants an outside witness can register a digest of its discovery document with such a service; no rule here asks for it. The nearest SCITT-world idea to the digests here is `draft-jangra-scitt-digest-evidence-00` (individual draft, 8 October 2026; checked 11 November 2026): an evidence log that keeps only salted digests of records, as leaves of an RFC 9162 Merkle tree |
+| WIMSE AIMS — `draft-ietf-wimse-aims-01`, *AI Identity Management System* (WIMSE working-group draft, 2 November 2026; checked 11 November 2026) | complement | in its abstract, "best practices for authentication and authorization of AI agent interactions" with existing standards (WIMSE, OAuth 2.0). A node does not authenticate agents: it serves public files, and the tool server answers only on the machine it runs on (AGSC-09-18) |
+| IEEE 7001-2021 *Transparency of Autonomous Systems* and IEEE 2807-2022 *Framework of Knowledge Graphs* (both "Active Standard" on the IEEE SA pages, checked 11 November 2026); ISO/IEC 22989:2022 *Artificial intelligence concepts and terminology* | compare | sources of terms for transparency, knowledge graphs and AI systems; this specification claims conformance to none of them |
 | C2PA Technical Specification 2.4 (Coalition for Content Provenance and Authenticity, April 2026; checked 10 October 2026) | compare | signed manifests bound to one media asset, recording how it was made and changed, validated against X.509 certificates and trust lists; 2.4 adds manifests embedded in HTML documents and in structured text. Provenance of one asset by signature, where a Bundle carries a provenance block on every item and a digest on every artefact link, with no signature format pinned at 1.x. C2PA manifests on attachments are planned for a later MINOR; until a rule pins their bytes a node MAY declare them as an `x-` surface (AGSC-00-20) |
 | IETF DAWN (proposed WG; charter revision 00-10, state "External Review (Message to Community, Selected by Secretariat)", on the agenda of the IESG telechat of 22 October 2026; checked 10 October 2026) | complement | initial discovery of *agents and AI resources* and their minimum public properties; the charter will consider DNS and mDNS and puts catalogues of capabilities out of scope. This specification discovers a published document set on a known origin through an HTTP well-known path and needs no naming layer — it is a stand-alone application of RFC 8615, 8288 and 9264, written up as an individual Internet-Draft |
 | IETF agentproto (working group, active since 2026-10-08; charter revision 01, state "Approved"; checked 10 October 2026) | complement | an agentic dialog management protocol — dialog identifiers, lifecycle and the propagation of dialog context over existing IETF protocols, for long-lived agent sessions; its charter leaves conversation memory and retrieved documents outside the dialog context; no overlap |
@@ -110,3 +112,20 @@ The DAWN landscape survey (Jimenez, Feng, Arkko, Kühlewind, Kandoi — Ericsson
 5. The **agent-retrieval chunk export** (AGSC-06-26…31) gives agents stable, citable, pre-split units with provenance, without embeddings.
 
 These are property claims about the specification's text and vectors, not performance claims.
+
+## 6. Standards status, checked 11 November 2026
+
+The engine pins RDF 1.1, SPARQL 1.1, SHACL 1.0 (W3C Recommendation, 20 July 2017) and
+JSON-LD 1.1, because none of their successors was a W3C Recommendation when checked:
+
+- *RDF 1.2 Concepts and Abstract Data Model*: Candidate Recommendation Snapshot,
+  7 April 2026; *RDF 1.2 Semantics*: Candidate Recommendation Draft, 24 September 2026.
+- *SPARQL 1.2 Query Language*: Working Draft, 1 November 2026.
+- *SHACL 1.2 Core*: Working Draft, 10 November 2026.
+- JSON-LD 1.2: no published draft; the charter of the JSON-LD Working Group
+  (6 January 2026 to 31 January 2028) plans its Recommendation for the fourth quarter
+  of 2027.
+
+The RDF & SPARQL Working Group is chartered until 30 April 2027. This section is checked
+again then, and when JSON-LD 1.2 becomes a Recommendation. Sources: the W3C publication
+history of each document, the two working groups' pages and the JSON-LD charter.

@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-076 (docs/PRD.md).
 // verifies AGSC-07-30, AGSC-08-32, AGSC-11-24
 // The context map of a composition (AGSC-07-30): for a node that declares contexts, one JSON object
 // in JCS form and one LF, `context-map.json`, written in the companion directory beside the Harness

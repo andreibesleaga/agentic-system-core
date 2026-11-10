@@ -13,6 +13,24 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The documents follow what 1.1 does; no rule, case or emitted byte changes. `docs/ROADMAP.md` is rewritten
+  as "What 1.1 does" and twelve "Ideas after 1.1", with no version and no date (AGSC-00-20); new
+  `docs/ONTOLOGY-PIPELINE.md` maps the engine to six common stages of building an ontology and says why the
+  1.0 vocabulary has no warrant field (AGSC-05-40); `docs/RELATED-WORK.md` gains a dated standards status
+  (checked 2026-11-11) and rows for `draft-jangra-scitt-digest-evidence`, WIMSE AIMS, IEEE 7001, IEEE 2807
+  and ISO/IEC 22989; `docs/SECURITY-CONSIDERATIONS.md` gains the threat rows of the query page, the brief
+  and the HTTP transport (AGSC-06-39, AGSC-07-25, AGSC-09-18); `docs/SPEC.md` gains the SPARQL row, a row
+  for the protocols 1.1 adds and the 1.1 routes; `docs/PRD.md` gains PRD-074 to PRD-084, one EARS row for
+  each 1.1 feature no row stated, each mapped in `docs/REQUIREMENTS-MATRIX.md`, the persona P10 note on the
+  domain layer, and the Zenodo records as they stand; the implementer's guide names every case of the
+  AGSC-10-15 table; the reference engine's claim is re-run on this tree (374 of 374; `webmcp` proved by
+  `cli-0026`, `llms-txt` by `disc-0024` and `disc-0025`); the plain-language pages, the guides, the
+  architecture pages, `TESTING.md` and `USING-WITH-ASSISTANTS.md` (a tool call over standard input and
+  output) name the 1.1 parts. The trace brackets of AGSC-05-38 to AGSC-05-41, AGSC-01-41, AGSC-02-25,
+  AGSC-03-27, AGSC-08-32, AGSC-09-20, AGSC-07-30, AGSC-11-24, AGSC-06-38, AGSC-06-39 and AGSC-07-25 to
+  AGSC-07-29 name those rows, each with a dated note of 2026-11-11. The test of the Internet-Draft's
+  attributes lists the three of AGSC-06-44 that its posted revision predates, until the next revision names
+  them.
 - Wording errata of the register, each a dated note of 2026-11-11 in `spec/` that states what the engine does
   and changes no rule, case or emitted byte: AGSC-02-21 (the three sections `trace` writes), the registry rows
   of `AGSC-E301`, `AGSC-E302`, `AGSC-E506`, `AGSC-E512` and `AGSC-E603` (the uses they gained), AGSC-06-32

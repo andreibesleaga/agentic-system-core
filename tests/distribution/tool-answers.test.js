@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-080 (docs/PRD.md).
 // verifies AGSC-09-13, AGSC-09-16, AGSC-05-33, AGSC-03-23, AGSC-03-24, AGSC-03-25, AGSC-03-26
 // The portable answers of the tools of 1.1 (`src/distribution/tool-answers.js`), held to the
 // engine's own modules they restate for the page: the relation table to

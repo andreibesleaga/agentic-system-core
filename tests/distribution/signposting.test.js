@@ -1,4 +1,5 @@
 'use strict';
+// Requirement: PRD-079 (docs/PRD.md).
 // tests/distribution/signposting.test.js — AGSC-06-40: the FAIR Signposting links of the home
 // page, in the one `Link` field of the `_headers` block of `/` (AGSC-06-17).
 //

@@ -91,7 +91,9 @@ The paths below say what to read, in order, for each of these readers and a few 
 2. [plain/modes.md](plain/modes.md) — the six modes, including the live board.
 3. [spec/07-composition.md](../spec/07-composition.md) — how selected items become a
    Harness: seven kinds of file an architect or a runtime starts from; and
-   [guides/mode-4.md](guides/mode-4.md) to try it.
+   [guides/mode-4.md](guides/mode-4.md) to try it. From 1.1 a brief and, for a saved
+   architecture, C4 levels, decision records and a build plan come beside it;
+   [examples/blueprints/](../examples/blueprints/README.md) holds three worked ones.
 4. [spec/11-boundary.md](../spec/11-boundary.md) — the boundary chapter: federation,
    visibility, the agent surfaces and their plugin contract.
 5. [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md) — threats, the rules that
