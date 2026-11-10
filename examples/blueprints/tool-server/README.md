@@ -31,30 +31,13 @@ part it is drawn to.
 
 ## Build from this
 
-Every command below runs offline, needs no model and no account, and is run by
-`tests/examples/blueprints.test.js` with the build instant fixed: each block prints at least the lines
-quoted after it (other lines are left out). `$ENGINE` is the folder of this repository,
-or of the installed `agentic-system-core` package from 1.1 on (a 1.0 release has no
-`compose --from` and no `--http`); `agsc` is its command line. A commit needs a git
-identity, so the opening block sets one for this shell.
-
-Copy the folder, give it a git history, and run the three checks a node must pass. The
-lint and ci checks are also step 2 of the plan, `check-the-bundle`:
+Set the folder and the architecture, run the two blocks of
+[the common steps](../README.md#the-common-steps) (copy the folder and check it, then show
+that two runs write the same bytes) (the lint and ci checks there are also step 2 of the plan,
+`check-the-bundle`), and go on below in the same shell:
 
 ```bash demo
-export SOURCE_DATE_EPOCH=1789380000
-export GIT_AUTHOR_NAME=Operator GIT_AUTHOR_EMAIL=operator@example.org GIT_COMMITTER_NAME=Operator GIT_COMMITTER_EMAIL=operator@example.org
-cp -r "$ENGINE/examples/blueprints/tool-server" . && cd tool-server
-git init -q -b main && git add -A && git commit -q -m 'tool server blueprint'
-agsc lint | tail -1
-agsc ci | tail -1
-agsc conform --level 2 | tail -1
-```
-
-```text expect
-lint: pass (0 error, 0 warn)
-ci: pass (0 error, 0 warn)
-conform: pass (0 error, 0 warn)
+export BLUEPRINT=tool-server ARCHITECTURE=tool-server-and-client
 ```
 
 Write the blueprint. The two warnings are the forge and the protocol packages, each named
@@ -86,25 +69,6 @@ compose: pass (0 error, 2 warn)
 ### Step 10 — adopt `tool-client`
 ### Step 11 — adopt `call-a-tool`
 ```
-
-The same input writes the same bytes. Compose again and build twice, and compare:
-
-```bash demo
-cp -r "$blueprint" ../blueprint-1 && cp dist/harness/*.zip ../harness-1.zip
-rm -rf dist/harness && agsc compose --from tool-server-and-client --brief --zip > /dev/null 2>&1
-diff -r ../blueprint-1 "$blueprint" && cmp ../harness-1.zip dist/harness/*.zip && echo "blueprint and archive: same bytes"
-agsc build > /dev/null 2>&1 && mv www ../www-1 && agsc build > /dev/null 2>&1
-diff -r ../www-1 www && echo "site: same bytes"
-```
-
-```text expect
-blueprint and archive: same bytes
-site: same bytes
-```
-
-On the built site, the page of the architecture links
-`/compose/?from=tool-server-and-client`, where a browser shows the same brief and offers
-it, with the blueprint, as an archive to download.
 
 Now follow the plan, with this Bundle as the knowledge the agent works on. Steps 4 and 7:
 start the tool server and list its tools with the three lines every Model Context

@@ -31,7 +31,7 @@
 // byte is invented.
 
 const site = require('../../../distribution/site.js');
-const stdio = require('../../../distribution/mcp-stdio.js');
+const { serveStdio } = require('../../../distribution/mcp-core.js');
 const mcpHttp = require('../../../distribution/mcp-http.js');
 const { isLoopbackLiteral } = require('../../../boundary/federation.js');
 const httpServer = require('../../../adapters/node-http-server.js');
@@ -115,8 +115,8 @@ function run(ctx) {
     version: ctx.version,
   };
   if (address !== null) return serveHttp(ctx, bundle, options, address);
-  // The process streams are the host's; the application layer hands them in.
-  return stdio.serve({ ...options, bundle, stdin: ctx.stdin || process.stdin, stdout: ctx.stdout || process.stdout });
+  // The process streams are the host's; the application layer hands them in (AGSC-09-13).
+  return serveStdio({ ...options, bundle, stdin: ctx.stdin || process.stdin, stdout: ctx.stdout || process.stdout });
 }
 
 module.exports = { artifactsOf, httpAddress, name: 'mcp', run };

@@ -32,29 +32,12 @@ cross-site read in `site-a`.
 
 ## Build from this
 
-Every command below runs offline, needs no model and no account, and is run by
-`tests/examples/blueprints.test.js` with the build instant fixed: each block prints at least the lines
-quoted after it (other lines are left out). `$ENGINE` is the folder of this repository,
-or of the installed `agentic-system-core` package from 1.1 on (a 1.0 release has no
-`compose --from` and no `--http`); `agsc` is its command line. A commit needs a git
-identity, so the opening block sets one for this shell.
-
-Copy the folder, give it a git history, and run the three checks a node must pass:
+Set the folder and the architecture, run the two blocks of
+[the common steps](../README.md#the-common-steps) (copy the folder and check it, then show
+that two runs write the same bytes), and go on below in the same shell:
 
 ```bash demo
-export SOURCE_DATE_EPOCH=1789380000
-export GIT_AUTHOR_NAME=Operator GIT_AUTHOR_EMAIL=operator@example.org GIT_COMMITTER_NAME=Operator GIT_COMMITTER_EMAIL=operator@example.org
-cp -r "$ENGINE/examples/blueprints/linked-sites" . && cd linked-sites
-git init -q -b main && git add -A && git commit -q -m 'linked sites blueprint'
-agsc lint | tail -1
-agsc ci | tail -1
-agsc conform --level 2 | tail -1
-```
-
-```text expect
-lint: pass (0 error, 0 warn)
-ci: pass (0 error, 0 warn)
-conform: pass (0 error, 0 warn)
+export BLUEPRINT=linked-sites ARCHITECTURE=two-linked-sites
 ```
 
 Write the blueprint. The four warnings are the forge and the static host, each named
@@ -84,33 +67,13 @@ compose: pass (0 error, 4 warn)
 ### Step 8 — adopt `read-across-the-sites`
 ```
 
-The same input writes the same bytes. Compose again and build twice, and compare:
-
-```bash demo
-cp -r "$blueprint" ../blueprint-1 && cp dist/harness/*.zip ../harness-1.zip
-rm -rf dist/harness && agsc compose --from two-linked-sites --brief --zip > /dev/null 2>&1
-diff -r ../blueprint-1 "$blueprint" && cmp ../harness-1.zip dist/harness/*.zip && echo "blueprint and archive: same bytes"
-agsc build > /dev/null 2>&1 && mv www ../www-1 && agsc build > /dev/null 2>&1
-diff -r ../www-1 www && echo "site: same bytes"
-cd ..
-```
-
-```text expect
-blueprint and archive: same bytes
-site: same bytes
-```
-
-On the built site, the page of the architecture links `/compose/?from=two-linked-sites`,
-where a browser shows the same brief and offers it, with the blueprint, as an archive to
-download.
-
 Now follow the plan on two real nodes. Steps 1 to 3: the memory demo holds node `a`,
 which names `b` as a peer, node `b`, which names `a`, and node `c`, which names `a`
 when `a` does not name it. Give each a history and build it; `b` carries the Content Use
 Terms, so it builds a `/legal/` page and warns once:
 
 ```bash demo
-cp -r "$ENGINE/examples/demos/mode-1-memory" sites && cd sites && cp "$ENGINE/LICENSE-CONTENT" b/
+cd .. && cp -r "$ENGINE/examples/demos/mode-1-memory" sites && cd sites && cp "$ENGINE/LICENSE-CONTENT" b/
 for n in a b c; do (cd $n && git init -q -b main && git add -A && git commit -q -m "node $n" && agsc build | tail -1); done
 ```
 

@@ -1,5 +1,5 @@
 'use strict';
-// The library tables of src/README.md (section 4) and src/REFERENCE.md follow package.json.
+// The one library table, src/README.md section 4, follows package.json; src/REFERENCE.md links to it.
 //
 // Each table whose header names a `Library` and a `Version` column is read row by row. The
 // packages of a row are the backticked names in its Library cell that package.json pins (a
@@ -43,7 +43,11 @@ function libraryRows(rel) {
   return rows;
 }
 
-for (const rel of ['src/README.md', 'src/REFERENCE.md']) {
+test('src/REFERENCE.md carries no library table of its own: it links to the one in src/README.md', () => {
+  assert.deepEqual(libraryRows('src/REFERENCE.md'), []);
+});
+
+for (const rel of ['src/README.md']) {
   test(`${rel}: each library row's Version cell is the version package.json pins`, () => {
     const rows = libraryRows(rel);
     assert.ok(rows.length > 0, `${rel} has no library table`);

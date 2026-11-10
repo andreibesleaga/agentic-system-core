@@ -15,8 +15,9 @@
 //   * the page of the architecture links the browser compose page, which offers the
 //     blueprint as an archive;
 //   * the authored text keeps the public-text rules;
-//   * the "Build from this" dry run of the folder's README runs, offline, and prints the
-//     lines the README quotes (tests/docs/_page-runner.js).
+//   * the "Build from this" dry run of the folder's README, with the common steps of
+//     examples/blueprints/README.md run after its first block, runs offline and prints the
+//     lines the two pages quote (tests/docs/_page-runner.js).
 //
 // No network, no model: the page runner refuses every network call, and the commands run
 // this repository's own command line.
@@ -123,13 +124,14 @@ test('examples/blueprints/ holds the three blueprints and its README names each'
   for (const { folder } of BLUEPRINTS) assert.match(readme, new RegExp(`\\[${folder}/\\]\\(${folder}/README\\.md\\)`, 'u'));
 });
 
-test('each blueprint README promises only what its runner checks: the quoted lines, among others', () => {
+test('the blueprint pages promise only what their runner checks: the quoted lines, among others', () => {
   // tests/docs/_page-runner.js checks that every quoted line appears in the block's output, not
-  // that the output holds nothing else; the README says the same (as docs/guides/mode-1.md does).
-  for (const { folder } of BLUEPRINTS) {
-    const text = fs.readFileSync(path.join(FOLDER, folder, 'README.md'), 'utf8').replace(/\s+/gu, ' ');
-    assert.doesNotMatch(text, /the lines a reader sees/u, `${folder}/README.md says the quoted lines are all a reader sees`);
-    assert.match(text, /prints at least the lines quoted after it \(other lines are left out\)/u, `${folder}/README.md does not say that other lines are left out`);
+  // that the output holds nothing else; the common steps say the same (as docs/guides/mode-1.md does).
+  const common = fs.readFileSync(path.join(FOLDER, 'README.md'), 'utf8').replace(/\s+/gu, ' ');
+  assert.match(common, /prints at least the lines quoted after it \(other lines are left out\)/u, 'README.md does not say that other lines are left out');
+  for (const rel of ['README.md', ...BLUEPRINTS.map(({ folder }) => `${folder}/README.md`)]) {
+    const text = fs.readFileSync(path.join(FOLDER, rel), 'utf8').replace(/\s+/gu, ' ');
+    assert.doesNotMatch(text, /the lines a reader sees/u, `${rel} says the quoted lines are all a reader sees`);
   }
 });
 
@@ -247,10 +249,14 @@ for (const { folder, architecture } of BLUEPRINTS) {
       }
     });
 
-    await t.test('the README\'s "Build from this" dry run runs offline and prints what it quotes', () => {
+    await t.test('the README\'s "Build from this" dry run, with the common steps, runs offline and prints what it quotes', () => {
       const [walk] = parse(fs.readFileSync(path.join(source, 'README.md'), 'utf8'), { whole: `${folder}/README.md` });
-      assert.ok(walk && walk.steps.length >= 4, 'the README holds no runnable dry run');
-      check(walk, { epoch: EPOCH, prefix: `agsc-blueprint-readme-${folder}-` });
+      const [common] = parse(fs.readFileSync(path.join(FOLDER, 'README.md'), 'utf8'), { whole: 'README.md' });
+      assert.ok(walk && walk.steps.length >= 3, 'the README holds no runnable dry run');
+      assert.equal(walk.steps[0].script, `export BLUEPRINT=${folder} ARCHITECTURE=${architecture}`, 'the first block names the folder and the architecture');
+      assert.equal(common.steps.length, 2, 'the common steps are two blocks');
+      check({ heading: walk.heading, steps: [walk.steps[0], ...common.steps, ...walk.steps.slice(1)] },
+        { epoch: EPOCH, prefix: `agsc-blueprint-readme-${folder}-` });
     });
   });
 }

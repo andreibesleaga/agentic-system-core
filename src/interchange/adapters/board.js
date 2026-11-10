@@ -45,17 +45,16 @@ const slugs = require('../../knowledge/slug.js');
 const { TASK_STATES, TERMINAL_STATES } = require('../../governance/boards.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
-const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const ownRecord = require('../own-record.js');
 const { encodeRecord } = ownRecord;
-const { isObject, itemText, plain } = require('../records.js');
+const { exportHeader, isObject, itemText, plain } = require('../records.js');
 const pii = require('../../governance/pii.js');
 const { FORMATS } = require('../board-formats.js');
-const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withoutTrailingFeeds } = require('../../shared/trailing.js');
 const { withArticle } = require('../../shared/article.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
@@ -203,15 +202,7 @@ function run(bundle, options) {
     };
   }
   const writer = FORMATS[format];
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const header = provenanceLines({
-    bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms: chunks.termsFor(license),
-  });
-  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  const { config, base, header, bundleVersion } = exportHeader(bundle, options);
 
   const published = ((bundle && bundle.items) || [])
     .filter((item) => item && item.frontmatter)

@@ -24,7 +24,7 @@ in silence; and from 1.1 every item a foreign source brings arrives as a draft.
 | `trace.js` | `trace <file.json>`: an agent-run record to an Episode item |
 | `own-record.js` | when an import may trust a line this node wrote itself; the record's base64 codec |
 | `licences.js` | the licences an import recognises, shared by the skills adapter and the OKF reader (AGSC-01-22) |
-| `records.js` | the helpers every adapter shares: safe JSON objects, one-line text, the lint-normalized item bytes |
+| `records.js` | the helpers every adapter shares: safe JSON objects, one-line text, the lint-normalized item bytes, and what an export starts from (`exportScope`: the configuration, Bundle IRI and licence; `exportHeader`: with the provenance lines and their content version) |
 | `board-formats.js` | eleven project-board file formats, read and written through one table |
 | `import.js`, `oldsite.js`, `mapping.js`, `sources.js`, `status.js`, `clusters.js`, `cleanroom-rewrite.js`, `selection.js` | `import --from old-site`, the retired pattern site's format |
 | `adapters/llm-context.js` | `export --to llm-context`: a compact context file for a model |

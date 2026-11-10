@@ -74,7 +74,6 @@ const frontmatterModule = require('../../knowledge/frontmatter.js');
 const yaml = require('../../knowledge/yaml.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
-const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
@@ -82,8 +81,8 @@ const okf = require('../okf.js');
 const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
-const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
-const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { exportHeader, isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingFeeds } = require('../../shared/trailing.js');
 const { lineText } = require('../../shared/key-value-line.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
@@ -204,15 +203,7 @@ function continuityEntry(item, record) {
  * @returns {{files:Array<{path:string, text:string, sha256:string}>, findings:Array<object>}}
  */
 function run(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const header = provenanceLines({
-    bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms: chunks.termsFor(license),
-  });
-  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  const { config, base, header, bundleVersion } = exportHeader(bundle, options);
 
   const entries = ((bundle && bundle.items) || [])
     .filter((item) => item && item.frontmatter)

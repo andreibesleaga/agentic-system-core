@@ -206,7 +206,7 @@ graph TB
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
 | distribution | `init.js` `refresh.js` | scaffold; staleness + link checks | — | init refresh |
-| distribution | `mcp-stdio.js` `mcp-core.js` `mcp-http.js` `mcp-tools.js` `mcp-resources.js` `tool-answers.js` | the tool server: 7 tools at 1.0 (+ask, +remember), 10 from 1.1 (+brief, +explain, +check); from 1.1 on the official MCP SDK, both revisions (AGSC-09-19); standard input and output, and Streamable HTTP on a loopback address through `adapters/node-http-server.js#listenWith` (AGSC-09-18); `mcp-core.js` and `mcp-http.js` compiled from `src-ts/` | — | mcp |
+| distribution | `mcp-core.js` `mcp-http.js` `mcp-tools.js` `mcp-resources.js` `tool-answers.js` | the tool server: 7 tools at 1.0 (+ask, +remember), 10 from 1.1 (+brief, +explain, +check); from 1.1 on the official MCP SDK, both revisions (AGSC-09-19); standard input and output, and Streamable HTTP on a loopback address through `adapters/node-http-server.js#listenWith` (AGSC-09-18); `mcp-core.js` and `mcp-http.js` compiled from `src-ts/` | — | mcp |
 | interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
 | interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
@@ -597,7 +597,7 @@ under other names: closure, hiding, mutual exclusion, warnings and port wiring a
 `gate.js`); proposals and review are the verbs `src/application/cli/verbs/propose.js` and
 `review.js`, and `verify`, `refresh` and `export` are verbs in the same folder (no
 `proposal.js`, `review.js`, `verify.js`, `refresh.js` or `export.js` in a bounded context);
-the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
+the tool server is `src/distribution/mcp-tools.js` with
 `mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
 transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core.ts`), the
 server on the official MCP SDK that both MCP transports build, and `mcp-http.js` (compiled from

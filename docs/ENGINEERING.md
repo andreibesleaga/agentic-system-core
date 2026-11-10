@@ -372,8 +372,8 @@ committed file differs, when the compiler options lose a strict flag, when TypeS
 becomes a run-time dependency, and when a new agent-facing protocol module is plain
 JavaScript: a file `src/distribution/mcp-*.js`, `src/distribution/a2a*.js`,
 `src/application/hosting-http*.js` or under `bench/runners/` must be compiled from a
-source under `src-ts/`, except the three MCP modules that predate this rule
-(`mcp-stdio.js`, `mcp-tools.js`, `mcp-resources.js`). A plain JavaScript module anywhere
+source under `src-ts/`, except the two MCP modules that predate this rule
+(`mcp-tools.js`, `mcp-resources.js`; `mcp-stdio.js` was the third until the `mcp` verb called the core). A plain JavaScript module anywhere
 else in `src/` or `bench/` fails too when it requires an official MCP package
 (`@modelcontextprotocol/sdk`, `server`, `core`, `node` or `client`) or names
 `jsonrpc`, `registerTool` or `MCP-Protocol-Version`, except the four that still do of the

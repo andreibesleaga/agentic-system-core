@@ -23,6 +23,7 @@
 | `theme.js` | the default look of every engine-built page and the theme switcher |
 | `front-page.js` | the front page `/`: the Bundle's own introduction, a Browse block with each non-empty type index and its count, and the footer's peer links; its Dataset block (1.1, AGSC-06-41): the licence URL, the creator with an ORCID iD, free access, one download per machine file, and the PROV-O generation time and attribution, which appear in this block and nowhere else |
 | `page-head.js` | what the build hands the page template for every page's head (1.1): the node's icon, linked only when the build publishes `/assets/favicon.svg` or `/assets/favicon.png`, and the `og:image` of the `ogImage` build option; the title with the node's name and the other Open Graph properties are written by `html.js` |
+| `site-views.js` | the views 1.1 adds to a build, kept out of `site.js#buildSite` (pure): what an item page shows beyond its body (tag links, the Cluster row, a cluster's members and map, the relations with the domain parts, an architecture's brief), the site vocabulary, the `/tags/<tag>/` index, the sentence of an empty type folder and the facts of `/query/` |
 | `internal-links.js` | the build's dangling-link check: every internal link a built page carries resolves to a route the same build emits (AGSC-06-01) |
 | `discovery.js` | the discovery document (`/.well-known/knowledge-linkset`) and its checker |
 | `well-known.js` | the well-known files of a build, in the order each needs the one before: the agent card, the discovery document (with the surfaces it declares, derived from what the build emits) and the two catalogue files, whose entries carry the digests of the other two |
@@ -36,8 +37,7 @@
 | `compose-page.js` | the `/compose/` page: filters by text, cluster and tag, the verdict in words, the brief inline with its downloads and the blueprint of a saved architecture, the Harness and skills archives; no element inside `<main>` moves while it loads (the footer moves as the page grows, cumulative layout shift under 0.1) |
 | `architecture-brief.js` | the brief on a saved architecture's item page, written by the build (AGSC-07-25) |
 | `forge.js` | `dist/forge/`: files a forge needs |
-| `mcp-stdio.js` | the `mcp` verb's entry: checks the Bundle and the two streams, starts the core |
-| `mcp-core.js` | compiled from `src-ts/distribution/mcp-core.ts` (do not edit): the MCP core on the official SDK (`@modelcontextprotocol/server`) — one server for the ten tools, the resources and the prompt, revision 2026-07-28 and, over stdio, 2025-11-25 (AGSC-09-19) |
+| `mcp-core.js` | compiled from `src-ts/distribution/mcp-core.ts` (do not edit): the MCP core on the official SDK (`@modelcontextprotocol/server`) — one server for the ten tools, the resources and the prompt, revision 2026-07-28 and, over stdio, 2025-11-25 (AGSC-09-19); `serveStdio` is what the `mcp` verb starts on the two process streams |
 | `mcp-http.js` | compiled from `src-ts/distribution/mcp-http.ts` (do not edit): the Streamable HTTP transport of `agsc mcp --http` on the official SDK (`createMcpHandler`) and its Node adapter (`@modelcontextprotocol/node`) — `/mcp` only, the `Host` and `Origin` checks, revision 2026-07-28 only (AGSC-09-18); it opens no socket, the application layer listens |
 | `mcp-tools.js` | the ten tools |
 | `mcp-resources.js` | the MCP resources and prompts beside the tools |

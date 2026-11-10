@@ -40,7 +40,8 @@ const { INDEX_COLUMNS, chunksIndexToon, indexRows, short } = require('../../know
 const { singleLine } = require('../../knowledge/unicode.js');
 const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { fenceProse } = require('../../knowledge/markdown.js');
-const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { withOneTrailingFeed } = require('../../shared/trailing.js');
+const { exportScope } = require('../records.js');
 
 /** The keys this adapter claims, for the implementer documentation of AGSC-01-26a. */
 const CLAIMED_KEYS = Object.freeze(['digest', 'id', 'item', 'kind', 'links', 'ordinal',
@@ -103,10 +104,7 @@ function llmsCtxTxt(records, options) {
  *   findings:Array<object>}}
  */
 function run(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
+  const { config, site, base, license } = exportScope(bundle);
   const items = (bundle && bundle.items ? bundle.items : []).map((item) => (
     item && item.frontmatter
       ? { ...item.frontmatter, body: item.body, path: item.path, slug: item.slug, type: item.type }

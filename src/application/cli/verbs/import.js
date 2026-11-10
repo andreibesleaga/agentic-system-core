@@ -636,15 +636,7 @@ function importCogx(ctx, source, identityOptions) {
       status: 'fail',
     };
   }
-  const planned = cogx.plan(files, {
-    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    toolSpecVersion: ctx.specVersion,
-  });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, cogx.plan(files, planOptions(ctx, identityOptions)));
 }
 
 /**
@@ -673,13 +665,7 @@ function importGabbe(ctx, source, identityOptions) {
   const findings = [];
   const files = Object.create(null);
   const paths = typeof fs.walk === 'function' && fs.exists('agents') ? fs.walk('agents') : [];
-  for (const file of paths.filter(gabbe.isKitFile)) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter(gabbe.isKitFile), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -689,16 +675,7 @@ function importGabbe(ctx, source, identityOptions) {
       status: 'fail',
     };
   }
-  const planned = gabbe.plan(files, {
-    allowNewer: verbFlags['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
-  });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, gabbe.plan(files, planOptions(ctx, identityOptions, stated)));
 }
 
 /**
@@ -727,19 +704,7 @@ function importMemory(ctx, source, identityOptions, adapter) {
   const files = Object.create(null);
   // A folder that is not there, or a path that is not a folder, lists nothing, and the
   // E901 below says so.
-  let listed;
-  try {
-    listed = cloneFiles(fs);
-  } catch (e) {
-    listed = [];
-  }
-  for (const file of listed.filter(adapter.isSourceFile)) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, (listClone(fs) || []).filter(adapter.isSourceFile), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -748,27 +713,68 @@ function importMemory(ctx, source, identityOptions, adapter) {
       status: 'fail',
     };
   }
-  const planned = adapter.plan(files, {
-    allowNewer: verbFlags['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
-  });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, adapter.plan(files, planOptions(ctx, identityOptions, stated)));
 }
 
 /**
- * The origins whose own-record lines an import may trust: this node's
- * `site.base` and its declared `peers[]`.
+ * The options every adapter's `plan` takes: `--allow-newer`, the item schema, this Bundle's
+ * operator, the origins whose own-record lines an import may trust (this node's `site.base`
+ * and its declared `peers[]`, as their addresses), the stated `--source-version` and the
+ * tool's own specification version.
  *
+ * @param {object} ctx
  * @param {object} identityOptions the target Bundle's identity.
- * @returns {{origin:string, peers:string[]}} the peers as their addresses.
+ * @param {string} [stated] `--source-version`, already checked by `sourceVersionRefusal`.
+ * @returns {object}
  */
-function trustOptions(identityOptions) {
-  return { origin: identityOptions.base, peers: peerUrls(identityOptions.peers) };
+function planOptions(ctx, identityOptions, stated) {
+  return {
+    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    origin: identityOptions.base,
+    peers: peerUrls(identityOptions.peers),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  };
+}
+
+/** The shared tail of a lane whose plan may refuse the whole source: a refusal fails, anything else is `finish`ed. */
+function finishPlanned(ctx, findings, planned) {
+  const all = [...findings, ...planned.findings];
+  return planned.refused ? { findings: all, status: 'fail' } : finish(ctx, all, planned);
+}
+
+/**
+ * Read each of `paths` through `fs` into `files` as text; a file that cannot be read is named in
+ * `findings` (AGSC-01-22) and left out.
+ */
+function readListed(fs, paths, files, findings) {
+  for (const file of paths) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+}
+
+/** The refusal of a source that is not a folder this import can read. */
+function notAFolder(source) {
+  return {
+    findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
+      + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+    status: 'fail',
+  };
+}
+
+/** `cloneFiles(fs)`, or `null` when the source is not a folder that can be listed. */
+function listClone(fs) {
+  try {
+    return cloneFiles(fs);
+  } catch (e) {
+    return null;
+  }
 }
 
 /** Directories of a local clone that hold no skill and are never walked. */
@@ -835,33 +841,12 @@ function importSkills(ctx, source, identityOptions) {
   }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths;
-  try {
-    paths = cloneFiles(fs);
-  } catch (e) {
-    return {
-      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
-        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
-      status: 'fail',
-    };
-  }
+  const paths = listClone(fs);
+  if (paths === null) return notAFolder(source);
   const files = Object.create(null);
-  for (const file of paths.filter(skills.isRelevant)) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter(skills.isRelevant), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
-  const options = {
-    allowNewer: verbFlags['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
-  };
+  const options = planOptions(ctx, identityOptions, stated);
   if (verbFlags.list === true) {
     const listed = skills.catalogue({ files, paths }, options);
     for (const line of listed.lines) helpers.note(ctx, line);
@@ -886,9 +871,7 @@ function importSkills(ctx, source, identityOptions) {
   }
   helpers.note(ctx, `import: skills layout ${chosen}${layout === undefined ? ' (detected)' : ''}`
     + `${detected.length > 1 ? `; also found: ${detected.filter((l) => l !== chosen).join(', ')}` : ''}`);
-  const planned = skills.plan({ files, paths }, { ...options, cluster, layout: chosen });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, skills.plan({ files, paths }, { ...options, cluster, layout: chosen }));
 }
 
 /**
@@ -922,24 +905,10 @@ function importBoard(ctx, source, identityOptions) {
   }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths;
-  try {
-    paths = cloneFiles(fs);
-  } catch (e) {
-    return {
-      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
-        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
-      status: 'fail',
-    };
-  }
+  const paths = listClone(fs);
+  if (paths === null) return notAFolder(source);
   const files = Object.create(null);
-  for (const file of paths.filter((p) => board.isBoardFile(format, p))) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter((p) => board.isBoardFile(format, p)), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -950,24 +919,18 @@ function importBoard(ctx, source, identityOptions) {
   }
   const own = ctx.ports.fs;
   const planned = board.plan(files, {
-    allowNewer: verbFlags['allow-newer'] === true,
+    ...planOptions(ctx, identityOptions, stated),
     format,
     hasCluster: (slug) => own.exists(`content/clusters/${slug}.md`),
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
   });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  if (planned.totals.items === 0) {
+  if (!planned.refused && planned.totals.items === 0) {
     return {
       findings: [...findings, ...planned.findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds`
         + ` no row this adapter could read as a ${format} task (AGSC-01-22)`, { file: String(source), line: 1 })],
       status: 'fail',
     };
   }
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, planned);
 }
 
 /**

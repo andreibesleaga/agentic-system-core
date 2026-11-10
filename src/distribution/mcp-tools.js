@@ -57,12 +57,11 @@ const { briefDomainOf, domainOf, domainWithheld, domainWithin } = require('../co
 const { selectionDigestInput, terms } = require('../composition/harness.js');
 const chunks = require('../knowledge/chunks.js');
 const links = require('../knowledge/links.js');
-const slugs = require('../knowledge/slug.js');
 const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
 const {
-  pageBoardMove, pageClaimants, pageFlatItem, pageKeptSources, pageRememberFault, pageRememberFindings,
+  pageBoardMove, pageClaimants, pageFlatItem, pageRememberFault, pageToolset,
 } = require('./page-tools.js');
 const answers = require('./tool-answers.js');
 const boardLanes = require('../governance/board-lanes.js');
@@ -193,7 +192,7 @@ function tools(bundle, options) {
   const flatItems = () => (bundle.items || [])
     .map((i) => Object.assign({}, i.frontmatter, { slug: i.slug, type: i.type }));
   // The Bundle a server serves is loaded once and never changes while it runs
-  // (mcp-stdio.js), so the two derivations that `search`/`ask` and `links` repeated
+  // (`mcp-core.js`), so the two derivations that `search`/`ask` and `links` repeated
   // over the whole node on every call — one token set per item, the resolved edge
   // list — are computed on first use and kept. Measured on a 5,000-item node: a
   // `search` or `links` call cost about 1.5 s each; now the first does, and the rest
@@ -451,55 +450,19 @@ function tools(bundle, options) {
     if (operator === null) {
       return errorEnvelope('remember', 'AGSC-E003', 'remember needs the declared human operator, `operator`, or the `agent` of a declared lane (AGSC-09-14b)');
     }
-    const title = typeof args.title === 'string' ? args.title : '';
-    const findings = pageRememberFindings(args).map(Object.freeze);
-    const taken = new Set(byslug.keys());
-    const slug = slugs.dedupe(slugs.slugify(title), taken);
-    const frontmatter = { title, type };
-    if (type === 'concept') frontmatter.kind = args.kind === 'task' ? 'task' : 'explainer';
-    // AGSC-10-16: a new task on a board — SUBMITTED, filed in the cluster named.
-    if (args.kind === 'task') {
-      frontmatter.task_state = 'TASK_STATE_SUBMITTED';
-      if (typeof args.cluster === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.cluster)) frontmatter.clusters = [args.cluster];
-    }
-    // A comment on a task (or any item) links to it.
-    if (typeof args.about === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/u.test(args.about)) frontmatter.related = [args.about];
-    if (type === 'episode') {
-      // AGSC-09-14b: `at` supplies `started`; a clock is NEVER read (AGSC-04-11).
-      frontmatter.started = args.at;
-      frontmatter.outcome = args.outcome === undefined ? 'partial' : args.outcome;
-      // No `severity` here: the episode branch has no such key, and a defaulted one
-      // would be reported by lint as unknown (AGSC-09-14b).
-    }
-    // AGSC-09-14b's `severity` default reaches the lesson alone, the one kind whose
-    // schema branch carries the key — without it the item was not conforming.
-    if (type === 'lesson') frontmatter.severity = args.severity === undefined ? 'info' : args.severity;
-    if (typeof args.actor === 'string') frontmatter.actor = args.actor;
-    // AGSC-09-14b / AGSC-02-14: `usage` is carried onto the episode verbatim, so a
-    // responder or a lane records its spend and AGSC-08-25's rollup counts it.
-    if (type === 'episode' && args.usage !== null && typeof args.usage === 'object' && !Array.isArray(args.usage)) {
-      frontmatter.usage = args.usage;
-    }
-    frontmatter.prov = {
-      agent: args.agent,
-      model: args.model,
-      operator,
-      origin: args.origin === 'human' ? 'human' : 'ai-generated',
-    };
-    // A `sources` that is not a list carries no entry; it never throws into the
-    // transport (AGSC-09-13a).
-    const sources = pageKeptSources(args.sources, findings).map(Object.freeze);
-    if (sources.length > 0) frontmatter.sources = Object.freeze(sources);
+    // AGSC-09-16: the item is the page tool's own `remember` (the source text a page runs), so
+    // both transports synthesize one item; this server adds what a page cannot know, the lane.
+    const taken = Object.fromEntries([...byslug.keys()].map((slug) => [slug, true]));
+    const answer = pageToolset({ bySlug: taken }).call('remember', { ...args, operator });
+    if (answer.type === 'error') return errorEnvelope('remember', answer.body.code, answer.body.message);
+    const made = answer.body;
     const refused = boardLanes.createRefusal(config, {
-      agent: args.agent, path: `content/${plural(type)}/${slug}.md`, task: args.kind === 'task' ? 'plan' : undefined, type,
+      agent: args.agent, path: made.path, task: args.kind === 'task' ? 'plan' : undefined, type,
     });
     if (refused !== null) return errorEnvelope('remember', refused.code, refused.message);
+    if (made.frontmatter.sources !== undefined) made.frontmatter.sources = Object.freeze(made.frontmatter.sources.map(Object.freeze));
     return envelope('remember', 'proposal', Object.freeze({
-      body: typeof args.body === 'string' ? args.body.normalize('NFC') : '',
-      findings: Object.freeze(findings),
-      frontmatter: Object.freeze(frontmatter),
-      path: `content/${plural(type)}/${slug}.md`,
-      slug,
+      ...made, findings: Object.freeze(made.findings.map(Object.freeze)), frontmatter: Object.freeze(made.frontmatter),
     }));
   };
 

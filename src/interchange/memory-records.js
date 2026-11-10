@@ -42,15 +42,13 @@ const slugs = require('../knowledge/slug.js');
 const yaml = require('../knowledge/yaml.js');
 const { canonicalize } = require('../knowledge/jcs.js');
 const { compareCodePoint, nfc } = require('../knowledge/unicode.js');
-const { provenanceLines } = require('../knowledge/provenance-header.js');
 const { titleFor } = require('../knowledge/adopt.js');
 const { LINK_PROPERTIES, itemIri } = require('../knowledge/nquads.js');
 const { finding } = require('../knowledge/validate.js');
 const { neutraliseSingleLine } = require('./mapping.js');
 const okf = require('./okf.js');
 const ownRecord = require('./own-record.js');
-const { isObject, itemText, oneLine, plain, yamlString } = require('./records.js');
-const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { exportHeader, isObject, itemText, oneLine, plain, yamlString } = require('./records.js');
 
 /** AGSC-04-25's content-version grammar. */
 const VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u;
@@ -68,16 +66,7 @@ const MARKER = /^<!-- agsc-item ([A-Za-z0-9+/]+={0,2}) -->$/gmu;
  * @returns {{header:string[], base:string, entries:Array<{item:object, record:object}>}}
  */
 function exportRecords(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const terms = chunks.termsFor(license);
-  const header = provenanceLines({
-    bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms,
-  });
-  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  const { config, base, license, terms, header, bundleVersion } = exportHeader(bundle, options);
   const entries = ((bundle && bundle.items) || [])
     .filter((item) => item && item.frontmatter)
     .map((item) => ({ authored: item.frontmatter,

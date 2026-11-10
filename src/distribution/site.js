@@ -28,9 +28,7 @@ const chunks = require('../knowledge/chunks.js');
 const chunksIndex = require('../knowledge/chunks-index.js');
 const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
-const domainLayer = require('../knowledge/domain.js');
 const linksModule = require('../knowledge/links.js');
-const linkGraph = require('../knowledge/link-graph.js');
 const internalLinksModule = require('./internal-links.js');
 const { internalLinks, resolvesTo } = internalLinksModule;
 const markdown = require('../knowledge/markdown.js');
@@ -46,8 +44,6 @@ const search = require('./search.js');
 const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
-const pageGraph = require('./graph-view.js');
-const domainView = require('./domain-view.js');
 const { frontPage, peerSites } = require('./front-page.js');
 const { iconOf, ogImageOf } = require('./page-head.js');
 const wellKnown = require('./well-known.js');
@@ -56,7 +52,7 @@ const composePage = require('./compose-page.js');
 const queryPage = require('./query-page.js');
 const searchPage = require('./search-page.js');
 const clustersPage = require('./clusters-page.js');
-const architectureBrief = require('./architecture-brief.js');
+const siteViews = require('./site-views.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
 const federation = require('../boundary/federation.js');
@@ -172,19 +168,6 @@ function publishedItems(items, releases) {
  */
 function pageItemsOf(items, releases) {
   return (items || []).map(flatten).filter((item) => chunks.keepsPage(item, releases));
-}
-
-/**
- * AGSC-06-39: what `/query/` is built from — the engine's files and the ten questions the
- * application layer hands in, the vocabulary terms, and, to fill the examples in from the
- * node, the items `/graph.nq` holds (AGSC-06-30), the build's instant and `site.base`; on a
- * node with a domain layer, the text of its competency questions and its site vocabulary.
- */
-function queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }) {
-  return {
-    ...options.queryPage, base, instant, items: pageItems, ontologyTerms: options.ontologyTerms, specVersion,
-    domain: bundle.domain ? { questions: bundle.domain.questions, vocabulary: siteVocabulary } : null,
-  };
 }
 
 /**
@@ -1004,12 +987,6 @@ const BUDGET_HTML_BYTES = 100000;
  * on its own.
  */
 const BUDGET_INDEX_DOC_BYTES = 1000000;
-/**
- * How many members a cluster page lists. AGSC-06-21 paginates an INDEX route above 500 entries
- * and says an item page "is never paginated"; a cluster page is an item page under the same 100 KB
- * budget (1,000 members in full measured 158 KB), so the list stops at the rule's bound.
- */
-const CLUSTER_MEMBERS_SHOWN = search.ITEMS_PER_SHARD;
 
 /** AGSC-06-21: the routes the index budget measures, one document at a time. */
 const INDEX_DOCUMENT_ROUTE = /^\/search(?:-[0-9]+)?\.json$/u;
@@ -1157,27 +1134,6 @@ function unencodableInputs(bundle) {
     }
   }
   return out;
-}
-
-/**
- * AGSC-06-01: the `/tags/<tag>/` index of the listed items — each tag with the entries that
- * carry it, in the order first met — and each tag's route, which an item page links so that
- * every tag page is reachable.
- */
-function tagIndex(items, entryOf) {
-  const tags = new Map();
-  for (const item of items) {
-    for (const tag of Array.isArray(item.tags) ? item.tags.map(String) : []) {
-      if (!tags.has(tag)) tags.set(tag, []);
-      tags.get(tag).push(entryOf(item));
-    }
-  }
-  return { tags, routes: new Map([...tags.keys()].map((tag) => [tag, `/tags/${tag}/`])) };
-}
-
-/** What an empty type folder says instead of an empty list; the folder still resolves (AGSC-06-02). */
-function emptyFolder(plural) {
-  return `This node publishes no ${plural}. <a href="/search/">The search page</a> lists every item it publishes.`;
 }
 
 /**
@@ -1377,11 +1333,8 @@ function buildSite(bundle, ports, options, findings) {
   // omitted; a reference to any other host stays a plain `dcterms:source` literal.
   const citations = peerCitationsOf(pageItems, `${base}/`, config.peers, findings);
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
-  // AGSC-05-38/05-39: a node that uses the domain layer publishes its site vocabulary in
-  // the graph files and its items' domain triples; with no vocabulary nothing is added.
-  const siteVocabulary = bundle.domain && typeof bundle.domain.vocabulary === 'string'
-    ? domainLayer.load(bundle.domain.vocabulary, { contexts: (config.domain || {}).contexts })
-    : null;
+  // AGSC-05-38/05-39: the site vocabulary of a node that uses the domain layer, else null.
+  const siteVocabulary = siteViews.siteVocabularyOf(bundle, config);
   const graphBase = {
     ...(siteVocabulary === null ? {} : { domain: siteVocabulary }),
     citations,
@@ -1629,14 +1582,8 @@ function buildSite(bundle, ports, options, findings) {
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    // AGSC-06-01: one `/tags/<tag>/` page per tag a listed item carries; an item page links each of its tags.
-    const { tags, routes: tagRoutes } = tagIndex(items, entryOf);
-    const publishedBySlug = new Map();
-    for (const i of pageItems) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
-    // AGSC-06-38: the graph view reads the listed items only (AGSC-06-30); `domain-view.js` adds the domain parts.
-    const { views, ...domainPages } = domainView.pages({ bundle, config, items, model: siteVocabulary, routeOf });
-    const membersOf = (cluster) => linkGraph.membersOf(cluster, items).map(entryOf);
-    const clusterMembers = (all) => ({ members: all.slice(0, CLUSTER_MEMBERS_SHOWN), membersTotal: all.length });
+    // AGSC-06-01, AGSC-06-38, AGSC-07-25: the tags, members, relations and brief of the item pages (site-views.js).
+    const { itemParts, membersOf, scripts: domainScripts, tags, views } = siteViews.itemViews({ bundle, config, entryOf, instant, items, pageItems, routeOf, siteVocabulary });
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
     // and is reported by the dangling-link guard.
@@ -1673,9 +1620,8 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
-      const relations = domainPages.itemSection(item);
-      const clusterMap = item.type === 'cluster' ? pageGraph.clusterSection(item, views) : { findings: [], html: '' };
-      findings.push(...relations.findings, ...clusterMap.findings);
+      const parts = itemParts(item);
+      findings.push(...parts.findings);
       // AGSC-06-01: every attachment the item names is a route of its own.
       putAttachments(ports, item, { findings, put, refused: refusedAttachments, report: options.publication !== false });
       // the body's references are rendered as the ROUTES this build emits,
@@ -1693,18 +1639,8 @@ function buildSite(bundle, ports, options, findings) {
         pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
         // AGSC-11-14: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
-        tagRoutes,
-        // A cluster page lists the published items that name it, in the published order, up to the bound above.
-        ...(item.type === 'cluster' ? { ...clusterMembers(membersOf(item)), clusterMap: clusterMap.html } : {}),
-        // The metadata list's Cluster row: each named cluster, linked when published.
-        clusters: (Array.isArray(item.clusters) ? item.clusters : []).map((slug) => {
-          const cluster = publishedBySlug.get(String(slug));
-          return cluster === undefined || cluster.type !== 'cluster' ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
-        }),
+        ...parts.options,
         ...(diagramSource === null ? {} : { diagramSource }),
-        // AGSC-06-38: the figure and the relations table, with the backlinks, under `#links`.
-        relations: relations.html,
-        brief: architectureBrief.section(item, { instant, items, route: routeOf }), // AGSC-07-25 on an architecture's page
       }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.
@@ -1725,7 +1661,7 @@ function buildSite(bundle, ports, options, findings) {
       putIndex(`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1), `Every published ${plural.slice(0, -1)} of this node.`,
         items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural)
           .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))), plural === 'clusters' ? clusters.render : undefined,
-          emptyFolder(plural));
+          siteViews.emptyFolder(plural));
     }
     // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used (`tags` above).
     for (const tag of [...tags.keys()].sort(compareCodePoint)) {
@@ -1798,12 +1734,12 @@ function buildSite(bundle, ports, options, findings) {
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
     // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence; both scripts carry the domain parts only on a node whose listed items state a domain key or a domain link.
-    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, domain: domainPages.scripts, specVersion })));
-    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, domain: domainPages.scripts, licenseProse, specVersion })));
+    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, domain: domainScripts, specVersion })));
+    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, domain: domainScripts, licenseProse, specVersion })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
     // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).
-    const queryFiles = query.on ? queryPage.files(queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }), pageOptions) : [];
+    const queryFiles = query.on ? queryPage.files(siteViews.queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }), pageOptions) : [];
     for (const [route, bytes] of queryFiles) put(route, typeof bytes === 'string' ? textBytes(bytes) : bytes);
 
     // AGSC-10-13 + Q18: the HUMAN board page beside the JSON export.
@@ -1938,6 +1874,6 @@ module.exports = {
   declaredSurfaces: wellKnown.declaredSurfaces, contributeEditUrl, skillPacks,
   budgets, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
-  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, CLUSTER_MEMBERS_SHOWN,
+  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, CLUSTER_MEMBERS_SHOWN: siteViews.CLUSTER_MEMBERS_SHOWN,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

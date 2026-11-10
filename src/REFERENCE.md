@@ -212,16 +212,8 @@ Standard formats are not reimplemented here. Every dependency is pinned to an ex
 version, is permissively licensed, reaches neither the network nor the clock at
 runtime, and is loadable from CommonJS.
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| YAML failsafe subset | `yaml` | 2.9.1 | ISC |
-| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT |
-| `format` keyword | `ajv-formats` | 3.0.1 | MIT |
-| RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT |
-| property tests (dev) | `fast-check` | 4.10.2 | MIT |
-| TypeScript compiler, Node types, lint rules (dev) | `typescript`, `@types/node`, `typescript-eslint` | 6.0.3, 22.20.5, 8.72.1 | Apache-2.0, MIT, MIT |
-| ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
-| RFC 4180 CSV, read and written by `export --to csv` / `import --from csv` (1.1) | `csv-parse`, `csv-stringify` | 7.0.3, 6.9.0 | MIT, MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `yaml`, `ajv`, `ajv-formats`, `json-canonicalize`, `fast-check`, `typescript`, `@types/node`, `typescript-eslint`, `fflate`, `csv-parse`, `csv-stringify`.
 
 What the engine writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or
@@ -359,10 +351,8 @@ construct an adapter.
 
 ### Libraries (ADR-019)
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| `.env` raw tokenising | `dotenv` (`.parse()` only, never `.config()`) | 18.0.9 | BSD-2-Clause |
-| argv parsing | `commander` | 15.0.0 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `dotenv`, `commander`.
 
 **`.env`** — `application/config/env.js#parseDotenv` calls `dotenv.parse(text)` for
 the raw `NAME=value` tokenising; the `^AGSC_[A-Z0-9_]+$` name filter, the
@@ -513,10 +503,8 @@ checkClaims(config, proposal, board) -> { accepted, findings, held_after }
 
 ### Libraries
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| Markdown (CommonMark 0.31.2 + GFM tables) | `markdown-it` | 15.0.3 | MIT |
-| XML/SVG allow-list | `fast-xml-parser` | 5.11.2 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `markdown-it`, `fast-xml-parser`.
 
 `markdown-it` runs `{html:false, linkify:false, typographer:false}`: raw HTML never
 passes through, a bare URL is never turned into a link behind the author's back, and
@@ -593,13 +581,8 @@ escapeXml(s); qname(iri); propertyElement(p, o); serialize(quads); toRdfXml(item
 
 ### Libraries
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| RDF parsing (Turtle, N-Quads) | `n3` | 2.7.12 | MIT |
-| JSON-LD processing (the round-trip proof only) | `jsonld` | 9.0.0 | BSD-3-Clause |
-| SHACL Core validation (a site's invariants only) | `rdf-validate-shacl` | 0.6.5 | MIT |
-| SPARQL 1.1 parsing (a site's competency questions only) | `@traqula/parser-sparql-1-1` | 1.4.0 | MIT |
-| SPARQL 1.1 evaluation (a site's competency questions; its WebAssembly build is the vendored engine of `/query/`) | `oxigraph` | 0.5.13 | MIT OR Apache-2.0 |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `n3`, `jsonld`, `rdf-validate-shacl`, `@traqula/parser-sparql-1-1`, `oxigraph`.
 
 `n3` is the reader everywhere this engine reads RDF: the vocabulary file behind the
 context generator, the blank-node check of AGSC-05-08, and the round-trip test that
@@ -700,6 +683,7 @@ drive them, `init` and `ci`.
 | `distribution/domain-view.js` | Distribution | AGSC-06-38 (the domain sentences), AGSC-08-32 — on a node with a site vocabulary, the item's domain type, role, context and warrant in a definition list under the relations table, each with its label, and the columns "Domain type" and "Domain context" where a row's item has one; and whether the two page scripts carry the domain parts (only when a listed item states a key of AGSC-02-25) |
 | `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
 | `distribution/page-head.js` | Distribution | AGSC-06-01 (`/assets/<path>`) — the icon a page links and the `og:image` build option (1.1; no rule names either) |
+| `distribution/site-views.js` | Distribution | AGSC-06-01, AGSC-06-02, AGSC-06-38, AGSC-06-39, AGSC-07-25, AGSC-05-38 — the 1.1 views of a build that `site.js#buildSite` writes: `itemViews` (an item page's tags, Cluster row, members, map, relations and brief), `siteVocabularyOf`, `queryPageFacts`, `emptyFolder` (pure) |
 | `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
 | `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
 | `distribution/query-examples.js` | Distribution | AGSC-06-39 (b), (f), AGSC-05-34, AGSC-05-41, AGSC-05-38 — the examples of `/query/` filled in from the node, the node's competency questions and its site vocabulary's terms |
@@ -818,6 +802,10 @@ ROLE_WORDS   // the five roles of AGSC-02-25, as words
 // distribution/page-head.js (pure)
 iconOf(files) -> { href, type } | null; ogImageOf(option, base) -> { url, alt? } | null   // throws on a url that is neither https:// nor a site path
 
+// distribution/site-views.js (pure)
+itemViews({ bundle, config, entryOf, instant, items, pageItems, routeOf, siteVocabulary }) -> { itemParts(item) -> { findings, options }, membersOf, scripts, tags, views }
+siteVocabularyOf(bundle, config); queryPageFacts(options, facts); emptyFolder(plural); CLUSTER_MEMBERS_SHOWN
+
 // distribution/clusters-page.js (pure)
 view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
 ROUTE = '/clusters/'
@@ -918,7 +906,7 @@ asks for, on the artefacts the implementations share.
 ## 10. Composition, the node boundary and the two tool transports
 
 The Composition context (`composition/`), the Boundary context (`boundary/`) and the
-tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-stdio.js`,
+tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`,
 `mcp-resources.js`, `webmcp.js`, `page-tools.js`). The Bundle loader they share is
 `application/bundle.js` (§11.3).
 
@@ -939,7 +927,6 @@ tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`, `mcp-
 | `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
 | `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
 | `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise; the first request fixes the revision of the process |
-| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 — the `mcp` verb's entry: the Bundle and the two streams checked, then `mcp-core.serveStdio` |
 | `distribution/mcp-http.js` | Distribution | compiled from `src-ts/distribution/mcp-http.ts` — AGSC-09-18 with AGSC-09-19 for its results: the Streamable HTTP transport of `mcp --http`, wiring only — the SDK's `createMcpHandler` (`legacy: 'reject'`: revision 2026-07-28 only, stateless, one server per request from `mcp-core.serverFactory`, the header checks, 405, 202, 404) and `@modelcontextprotocol/node` (`toNodeHandler`, the `Host` and `Origin` guards over `allowedHosts(bind)`); own code only for the path `/mcp` and for `subscriptions/listen` as an unknown method. Opens no socket |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
@@ -1019,10 +1006,9 @@ RELATIONSHIPS; CROSSWALK_MATCHES
 // distribution/mcp-tools.js
 tools(bundle, {config, artifacts, domain}) -> { call(name, args) -> envelope, manifest() }   // artifacts: the build's route map; domain: the site vocabulary (knowledge/domain.js#load), for the brief's domain links
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
-// distribution/mcp-stdio.js
-createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
 // distribution/mcp-core.js — serverFactory shares one toolset and catalogue among the servers it makes
-serverFactory(bundle, options) -> () => { resources, server, toolset };  createServer(bundle, options)
+serverFactory(bundle, options) -> () => { resources, server, toolset };  createServer(bundle, options) -> { resources, server, toolset }
+serveStdio({bundle, stdin, stdout, artifacts, config, domain, version}) -> { close() }   // the `mcp` verb's stdio entry
 // distribution/mcp-http.js — AGSC-09-18; the application layer listens and hands each request to `handle`
 createHttpHandler(bundle, {artifacts, config, domain, version, bind}) -> { handle(req, res) -> Promise<void>, close() }
 allowedHosts(bind?) -> ['127.0.0.1', 'localhost', '[::1]', <bind as a URL host>];  MCP_HTTP_PATH = '/mcp'
@@ -1050,14 +1036,8 @@ loadBundle(ports, { schemas }) -> Bundle
 
 ### Libraries (ADR-019)
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| MCP server (both revisions) | `@modelcontextprotocol/server` | 2.4.0 | Apache-2.0 |
-| MCP Streamable HTTP for Node (`mcp --http`) | `@modelcontextprotocol/node` | 2.1.2 | Apache-2.0 |
-| A2A agent card (`/.well-known/agent-card.json`) | `@a2a-js/sdk` | 1.3.0 | Apache-2.0 |
-| TOON tabular encoding (`/chunks-index.toon`, `export --to llm-context`) | `@toon-format/toon` | 4.4.0 | MIT |
-| RFC 9651 Structured Fields: the RFC 9530 digest value `sha-256=:<base64>:` | `structured-headers` | 2.1.1 | MIT |
-| RFC 8288 `Link` header, read back by the shipped conformance handler of `disc-0026` | `http-link-header` | 1.1.4 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@a2a-js/sdk`, `@toon-format/toon`, `structured-headers`, `http-link-header`.
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
 MIT, maintained, zero dependencies, `require()`-able although
@@ -1182,7 +1162,7 @@ built node.
 | `review` | AGSC-08-27 | `verbs/review.js` → the lint lane | wired, **lint-only**; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `verbs/refresh.js` → `governance/agents.js#checkProposal` | `--agent <name> --dry-run` wired; without `--dry-run` the lane needs a model adapter and a channel adapter, which this distribution does not offer (`AGSC-E001`, exit 1) |
 | `skills` | AGSC-07-19…22, AGSC-07-15 | `verbs/skills.js` → `composition/skills.js`; `distribution/site.js#skillPacks` emits the same bytes at `/skills/**` | wired — the packs into `dist/skills/`, `skills install [<target>]`, `skills import <file>`; `--zip` writes the packs and their lockfile as one archive beside `dist/skills/` |
-| `mcp` | AGSC-09-13, AGSC-09-18 | `verbs/mcp.js` → `distribution/mcp-stdio.js` → `mcp-tools.js`; with `--http <port> [--bind <address>]`, `distribution/mcp-http.js` behind `adapters/node-http-server.js#listenWith` | wired; **streaming** — see 11.4; over HTTP stdout stays empty and the address goes to stderr; a bad `--http` or `--bind` is `AGSC-E003`, exit 2 |
+| `mcp` | AGSC-09-13, AGSC-09-18 | `verbs/mcp.js` → `distribution/mcp-core.js` → `mcp-tools.js`; with `--http <port> [--bind <address>]`, `distribution/mcp-http.js` behind `adapters/node-http-server.js#listenWith` | wired; **streaming** — see 11.4; over HTTP stdout stays empty and the address goes to stderr; a bad `--http` or `--bind` is `AGSC-E003`, exit 2 |
 | `run` | AGSC-09-94, AGSC-02-22 | `verbs/run.js` → `knowledge/runblocks.js`, the ProcessRunner port | wired — gate, parse, allow-list, `--dry-run`, comparison; it EXECUTES only against a runner that declares network isolation, which the shipped adapter does not; otherwise it refuses with `AGSC-E001`, exit 1 |
 | `trace` | AGSC-09-94, AGSC-02-14 | `verbs/trace.js` → `interchange/trace.js` | wired — a captured agent-run record to an Episode, checked against the item schema before it is written; opt-in |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `verbs/conform.js` → `application/conformance.js`, `composition/conform.js` | wired |
@@ -1301,8 +1281,8 @@ AGSC-09-13 forbids a non-protocol byte on stdout. The CLI shell knows it: for
 `mcp` alone, `application/cli/main.js` prints no diagnostic line and no envelope
 on stdout, writes any configuration finding to stderr (which the rule allows),
 and returns 0 when stdin reaches EOF. No stream is monkey-patched, and
-`distribution/mcp-stdio.js` requires the application layer to hand it a loaded
-Bundle rather than reading one itself.
+`distribution/mcp-core.js#serveStdio` is handed the Bundle and the two streams by the
+application layer (`verbs/mcp.js`) rather than reading or opening them itself.
 
 ### 11.5 What this engine does not do, and where it says so
 

@@ -137,8 +137,8 @@ test('under 2025-11-25 a missing resource is -32002, the code of that revision (
   assert.strictEqual(code, 0);
 });
 
-test('serve writes protocol frames to the stdout it is given, and nothing else (AGSC-09-13)', async () => {
-  const { serve } = require('../../src/distribution/mcp-stdio.js');
+test('serveStdio writes protocol frames to the stdout it is given, and nothing else (AGSC-09-13)', async () => {
+  const { serveStdio } = require('../../src/distribution/mcp-core.js');
   const { PassThrough } = require('node:stream');
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
   const stdin = new PassThrough();
@@ -148,7 +148,7 @@ test('serve writes protocol frames to the stdout it is given, and nothing else (
   stdout.on('data', (d) => frames.push(d));
   // No stream is monkey-patched any more: `application/cli/main.js` knows `mcp`
   // is a streaming verb and prints nothing on stdout.
-  await serve({ bundle, stdin, stdout });
+  serveStdio({ bundle, stdin, stdout });
   stdin.write(`${JSON.stringify(INITIALIZE)}\n`);
   await new Promise((resolve) => { stdout.once('data', resolve); });
   assert.match(frames.join(''), /"protocolVersion":"2025-11-25"/u);
@@ -156,15 +156,10 @@ test('serve writes protocol frames to the stdout it is given, and nothing else (
   stdin.end();
 });
 
-test('serve refuses to run without a Bundle: the application layer loads it', () => {
-  const { serve } = require('../../src/distribution/mcp-stdio.js');
-  assert.throws(() => serve({}), /ctx\.bundle is required/u);
-});
-
 test('createServer wires the shared toolset without touching any stream', () => {
-  const { createServer, SERVER_NAME, MCP_PROTOCOL_VERSION } = require('../../src/distribution/mcp-stdio.js');
   // The server is built by the core, on the official SDK (`distribution/mcp-core.js`).
-  assert.strictEqual(createServer, require('../../src/distribution/mcp-core.js').createServer);
+  const { createServer, SERVER_NAME } = require('../../src/distribution/mcp-core.js');
+  const { MCP_PROTOCOL_VERSION } = require('../../src/boundary/surfaces.js');
   const bundle = { config: {}, items: [{ body: '', frontmatter: {}, slug: 'a', type: 'concept' }] };
   const { server, toolset } = createServer(bundle, { version: '9.9.9' });
   assert.strictEqual(typeof server.connect, 'function');

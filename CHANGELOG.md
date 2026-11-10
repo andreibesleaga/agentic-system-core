@@ -13,6 +13,24 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Simpler code and documents, with no rule, no case and no emitted byte changed (a build, every
+  export and every import of the reference inputs compared byte for byte with the engine before the
+  change): the 1.1 views of a build (the tags, cluster members, relations, domain parts and brief of
+  an item page, the site vocabulary and the facts of `/query/`) move from `site.js#buildSite` to the
+  new pure module `src/distribution/site-views.js`, which leaves `buildSite` room under its size
+  budget; the seven export adapters take their configuration, Bundle IRI, licence and provenance
+  header from `interchange/records.js#exportHeader` (or `#exportScope`) instead of seven copies; the
+  `import` verb shares one reader, one listing, one set of plan options and one tail between its
+  lanes, with a new test that a source which is not a folder is refused (AGSC-01-22); the local
+  server's `remember` hands the item to the page tool's own `remember` (AGSC-09-16: one
+  implementation for both transports) and adds only the lane's operator and create rule;
+  `src/distribution/mcp-stdio.js`, a pass-through, is removed and `agsc mcp` starts
+  `mcp-core.js#serveStdio` itself (the tests of the module's own argument checks go with it); the
+  reader table is kept once, in `docs/START-HERE.md`, and `README.md` links to it; the steps the
+  three blueprints share are written once, in `examples/blueprints/README.md`, and each blueprint's
+  dry run runs them after the block that names its folder; the library table is kept once, in `src/README.md` §4,
+  and `src/REFERENCE.md` links to it, as `src/README.md` links to the tool table of
+  `src/REFERENCE.md` §11.2. The tests that kept the copies in step check the one place instead.
 - Tests: three more tests that start `bin/agsc.js` (`dataset-block`, `tool-server-wording`,
   `skos-import-cli`) pass it no `AGSC_` variable (AGSC-01-37), so they pass in the browser lane, and
   `tests/arch/child-env.test.js` refuses a test that hands the command an unfiltered `process.env`;

@@ -33,30 +33,12 @@ shows. Level 3 places each check inside the part it proves.
 
 ## Build from this
 
-Every command below runs offline, needs no model and no account, and is run by
-`tests/examples/blueprints.test.js` with the build instant fixed: each block prints at least the lines
-quoted after it (other lines are left out). `$ENGINE` is the folder of this repository,
-or of the installed `agentic-system-core` package from 1.1 on (a 1.0 release has no
-`compose --from` and no `--http`); `agsc` is its command line. A commit needs a git
-identity, so the opening block sets one for this shell.
-
-Copy the folder, give it a git history (a Level 2 node derives its ledger from it), and
-run the three checks a node must pass:
+Set the folder and the architecture, run the two blocks of
+[the common steps](../README.md#the-common-steps) (copy the folder and check it, then show
+that two runs write the same bytes), and go on below in the same shell:
 
 ```bash demo
-export SOURCE_DATE_EPOCH=1789380000
-export GIT_AUTHOR_NAME=Operator GIT_AUTHOR_EMAIL=operator@example.org GIT_COMMITTER_NAME=Operator GIT_COMMITTER_EMAIL=operator@example.org
-cp -r "$ENGINE/examples/blueprints/engine" . && cd engine
-git init -q -b main && git add -A && git commit -q -m 'engine blueprint'
-agsc lint | tail -1
-agsc ci | tail -1
-agsc conform --level 2 | tail -1
-```
-
-```text expect
-lint: pass (0 error, 0 warn)
-ci: pass (0 error, 0 warn)
-conform: pass (0 error, 0 warn)
+export BLUEPRINT=engine ARCHITECTURE=agenticsystemcore-engine
 ```
 
 Write the blueprint. The seven warnings are the six outside systems, each named under
@@ -90,26 +72,6 @@ decisions
 
 Each record is numbered in the order of its slug and quotes the decision's own text, so
 the options that were considered, and why the others lost, travel with it.
-
-The same input writes the same bytes. Compose again and build twice, and compare:
-
-```bash demo
-cp -r "$blueprint" ../blueprint-1 && cp dist/harness/*.zip ../harness-1.zip
-rm -rf dist/harness && agsc compose --from agenticsystemcore-engine --brief --zip > /dev/null 2>&1
-diff -r ../blueprint-1 "$blueprint" && cmp ../harness-1.zip dist/harness/*.zip && echo "blueprint and archive: same bytes"
-agsc build > /dev/null 2>&1 && mv www ../www-1 && agsc build > /dev/null 2>&1
-diff -r ../www-1 www && echo "site: same bytes"
-```
-
-```text expect
-blueprint and archive: same bytes
-site: same bytes
-```
-
-On the built site, the page of the architecture links `/compose/?from=agenticsystemcore-engine`,
-where a browser shows the same brief and offers it, with the blueprint, as an archive to
-download. `--zip` writes the Harness archive beside the Harness folder; the blueprint
-folder sits beside it, never inside it.
 
 Now follow the plan. Each step names the check that proves it. The checks below run
 against this engine, so a port shows what passing looks like; run the same commands with

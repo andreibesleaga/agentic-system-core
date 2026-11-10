@@ -182,7 +182,7 @@ which calls into the contexts.
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `governance/agents.js#checkProposal`; the live path needs a model and a channel adapter |
 | `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**`; from 1.1 every `SKILL.md` passes the Agent Skills check of `composition/skill-format.js` before it is written (AGSC-07-22), and `compose` runs it over the Harness skill files |
-| `mcp` | AGSC-09-13, AGSC-09-18, AGSC-09-19 | `distribution/mcp-stdio.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; with `--http <port>`, `distribution/mcp-http.js` (compiled from `src-ts/`) behind `adapters/node-http-server.js#listenWith` on a loopback address; a streaming verb, nothing but protocol bytes on stdout |
+| `mcp` | AGSC-09-13, AGSC-09-18, AGSC-09-19 | `verbs/mcp.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; with `--http <port>`, `distribution/mcp-http.js` (compiled from `src-ts/`) behind `adapters/node-http-server.js#listenWith` on a loopback address; a streaming verb, nothing but protocol bytes on stdout |
 | `run` | AGSC-09-94, AGSC-02-22 | `knowledge/runblocks.js` and the ProcessRunner port; off by default, and it executes only on a runner that declares network isolation, which the shipped adapter does not |
 | `trace` | AGSC-09-94, AGSC-02-14 | `interchange/trace.js`; off by default |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `application/conformance.js`, `composition/conform.js` |
@@ -200,13 +200,9 @@ over the local MCP server (`distribution/mcp-tools.js`) and as page tools in a b
 site (`distribution/page-tools.js`), and the two answer identically for the same
 input; vector `cli-0026` compares them call by call. What 1.1 adds — the bound on `search`
 and `ask`, the citation records of `read`, and `brief`, `explain` and `check` over the listed
-set — is in `distribution/tool-answers.js`, whose portable functions both call.
-
-| Tool | Local server | Page tool |
-|---|---|---|
-| `search`, `read`, `links`, `ask` | over the loaded Bundle | over the published files (`/search.json`, `/pages/<slug>.md`) |
-| `compose` | `composition/compose.js` | the same algebra, shipped to the page by `composition/browser.js` |
-| `propose`, `remember` | the caller may write `dist/proposal/<n>.{patch,md}` | the payload is returned and nothing is written |
+set — is in `distribution/tool-answers.js`, whose portable functions both call. Each tool's
+module on both transports is in the tool table of
+[REFERENCE.md §11.2](REFERENCE.md#112-verb--module).
 
 ## 4. Libraries
 

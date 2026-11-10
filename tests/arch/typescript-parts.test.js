@@ -42,7 +42,6 @@ const PROTOCOL_PLACES = Object.freeze([
 /** The plain JavaScript protocol modules that were there at 2327f33; the list never grows. */
 const PLAIN_AT_START = Object.freeze([
   'src/distribution/mcp-resources.js',
-  'src/distribution/mcp-stdio.js',
   'src/distribution/mcp-tools.js',
 ]);
 

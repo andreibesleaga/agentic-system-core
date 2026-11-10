@@ -76,15 +76,13 @@ const chunks = require('../../knowledge/chunks.js');
 const slugs = require('../../knowledge/slug.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc } = require('../../knowledge/unicode.js');
-const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { titleFor } = require('../../knowledge/adopt.js');
 const { LINK_PROPERTIES } = require('../../knowledge/nquads.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
 const okf = require('../okf.js');
 const ownRecord = require('../own-record.js');
-const { isObject, itemText, lessonText, oneLine, plain } = require('../records.js');
-const { withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { exportHeader, isObject, itemText, lessonText, oneLine, plain } = require('../records.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
 const FORMAT = 'cogx';
@@ -340,21 +338,9 @@ function sortedJson(value) {
  * @returns {{files:Array<{path:string, text:string, sha256:string}>, findings:Array<object>}}
  */
 function run(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const header = provenanceLines({
-    bundle: base,
-    bundleVersion: options.bundleVersion,
-    generatedAt: options.instant,
-    license,
-    specVersion: options.specVersion,
-    terms: chunks.termsFor(license),
-  });
   // The content version the header states is the one every record carries, so an
   // importer can record `prov.source_version` (AGSC-01-22) from any single record.
-  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  const { config, base, license, header, bundleVersion } = exportHeader(bundle, options);
   const common = {
     bundle: base,
     bundle_version: bundleVersion,

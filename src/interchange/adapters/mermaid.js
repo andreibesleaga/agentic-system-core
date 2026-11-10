@@ -52,8 +52,8 @@ const chunks = require('../../knowledge/chunks.js');
 const { LINK_KEYS } = require('../../knowledge/links.js');
 const { edgesOf, membersOf, titleOf, touching } = require('../../knowledge/link-graph.js');
 const { compareCodePoint, singleLine } = require('../../knowledge/unicode.js');
-const { provenanceLines } = require('../../knowledge/provenance-header.js');
-const { withOneTrailingFeed, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { exportHeader } = require('../records.js');
+const { withOneTrailingFeed } = require('../../shared/trailing.js');
 
 /** The name this adapter answers to on `export --to`. */
 const FORMAT = 'mermaid';
@@ -150,18 +150,7 @@ function clusterDiagram(cluster, items, edges, header) {
  * @returns {{files:Array<{path:string, text:string, sha256:string}>, findings:Array<object>}}
  */
 function run(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const header = provenanceLines({
-    bundle: base,
-    bundleVersion: options.bundleVersion,
-    generatedAt: options.instant,
-    license,
-    specVersion: options.specVersion,
-    terms: chunks.termsFor(license),
-  });
+  const { config, header } = exportHeader(bundle, options);
   const items = ((bundle && bundle.items) || [])
     .filter((item) => item && item.frontmatter)
     .map((item) => ({ ...item.frontmatter, path: item.path, slug: item.slug, type: item.type }))
