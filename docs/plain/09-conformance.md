@@ -8,6 +8,6 @@
 
 **Error codes.** `AGSC-E<nnn>` in blocks by area (0xx CLI, 1xx parse, 2xx schema and boundary configuration, 3xx links, 4xx lint, 5xx provenance and adoption, 6xx canonicalization and determinism, 7xx ledger, 8xx composition, 9xx I/O and federation), registered once each; every code used has a registry row that names the rule that raises it.
 
-**Validators.** A reference distribution ships standalone validators for the spec text, schemas, ontology, vectors, discovery file, features and diagrams, plus two generators — nine command contracts in all (AGSC-09-90) — so that an independent party can check every normative artefact.
+**Validators.** A reference distribution ships standalone validators for the spec text, schemas, ontology, vectors, discovery file, features and diagrams, plus four generators — eleven command contracts in all (AGSC-09-90) — so that an independent party can check every normative artefact.
 
 Rules: `spec/09-conformance.md`, `AGSC-09-01` … `AGSC-09-94`.

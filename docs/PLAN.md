@@ -219,6 +219,8 @@ graph TB
 
 **The nine command contracts, as shipped** *(The row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `tools/README.md` lists the same tools.)*
 
+*(Note, 10 Nov 2026, 1.1: the table below has eleven command contracts, seven validators and four generators, since 1.1 adds `tools/gen-dc-profile` and `tools/gen-shapes` (the 1.1.0 amendment of AGSC-09-90); "nine" above is the 1.0 count.)*
+
 | Tool | What it checks | Rules | Status |
 |---|---|---|---|
 | `tools/validate-spec` | rule-id uniqueness and resolution, the MUST/SHOULD grammar, trace brackets and their PRD/NFR ids, error-code closure against §9.4, version literals in `spec/`, `docs/` and `tests/vectors/**` | AGSC-09-90, AGSC-09-91 | ships; pass |
@@ -234,6 +236,8 @@ graph TB
 | `tools/gen-shapes` | writes `schema/item-shapes.ttl`, the SHACL shapes of the graph, from `schema/item.schema.json`, the relation table and the SKOS integrity rules; `--check` fails when the file is stale; the shapes run in a development lane ([SHACL-SHAPES.md](SHACL-SHAPES.md)) (1.1) | AGSC-09-90, AGSC-05-24 | ships; pass |
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
+
+Reconciliation (1.1): the application layer (`src/application/`) wires the adapters; `bin/agsc.js` builds the four ports.
 
 ### 5.2 Ports and v1 adapters
 

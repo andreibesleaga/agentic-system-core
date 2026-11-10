@@ -444,7 +444,7 @@ why the rule pins it, and why a depth-first walk is not conforming.
 
 ## 5. Checking your own output
 
-Nine command contracts check the normative artefacts and the output of any node
+Eleven command contracts check the normative artefacts and the output of any node
 (AGSC-09-90). You may run this distribution's implementations of them, or write your
 own with the same names, the same flags, the same envelope and the same codes; a
 conformance claim names which it ran.
