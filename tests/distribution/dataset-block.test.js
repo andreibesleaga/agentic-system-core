@@ -1,5 +1,5 @@
 'use strict';
-// tests/distribution/dataset-block.test.js — AGSC-06-41: the Dataset block of the home page.
+// tests/distribution/dataset-block.test.js — AGSC-06-41: the Dataset block of the home page (PRD-072).
 //
 //   * The block is plain data; the pinned `jsonld` library expands it against the official
 //     schema.org context (the extract below) and loses no member, so every member is a term a
@@ -23,7 +23,7 @@ const path = require('node:path');
 const fc = require('fast-check');
 const jsonld = require('jsonld');
 
-const { creatorOf, datasetBlock, datasetFindings } = require('../../src/distribution/front-page.js');
+const { catalogBlock, creatorOf, datasetBlock, datasetFindings } = require('../../src/distribution/front-page.js');
 const { canonicalize } = require('../../src/knowledge/jcs.js');
 
 /**
@@ -103,15 +103,26 @@ test('AGSC-06-41: the jsonld library expands the block against schema.org and lo
 });
 
 test('AGSC-06-41: creator from bundle.creator, else site.author with site.author_orcid; none is invented', () => {
-  assert.deepEqual(creatorOf({ bundle: { creator: { name: 'A', orcid: '0000-0001-2345-6789' } }, site: { author: 'B', author_orcid: '0000-0002-1825-0097' } }),
-    { '@type': 'Person', name: 'A', sameAs: 'https://orcid.org/0000-0001-2345-6789' });
-  assert.deepEqual(creatorOf({ bundle: { creator: { name: 'A' } }, site: { author: 'B', author_orcid: '0000-0002-1825-0097' } }),
-    { '@type': 'Person', name: 'A' }, 'bundle.creator wins whole: its missing orcid is not taken from site');
-  assert.deepEqual(creatorOf({ site: { author: 'B' } }), { '@type': 'Person', name: 'B' });
-  assert.equal(creatorOf({ site: { author_orcid: '0000-0002-1825-0097' } }), null);
-  const value = block({ bundle: { creator: { name: 'A' }, id: 'x' }, site: CONFIGURED.site });
-  assert.deepEqual(value['prov:wasAttributedTo'], value.creator);
-  assert.notEqual(value['prov:wasAttributedTo'], value.creator, 'two objects, so a later edit of one cannot change the other');
+  const base = 'https://a.example/';
+  assert.deepEqual(creatorOf({ bundle: { creator: { name: 'A', orcid: '0000-0001-2345-6789' } }, site: { author: 'B', author_orcid: '0000-0002-1825-0097' } }, base),
+    { '@id': 'https://orcid.org/0000-0001-2345-6789', '@type': 'Person', name: 'A', sameAs: 'https://orcid.org/0000-0001-2345-6789' });
+  assert.deepEqual(creatorOf({ bundle: { creator: { name: 'A' } }, site: { author: 'B', author_orcid: '0000-0002-1825-0097' } }, base),
+    { '@id': 'https://a.example/#creator', '@type': 'Person', name: 'A' }, 'bundle.creator wins whole: its missing orcid is not taken from site');
+  assert.deepEqual(creatorOf({ site: { author: 'B' } }, base), { '@id': 'https://a.example/#creator', '@type': 'Person', name: 'B' });
+  assert.equal(creatorOf({ site: { author_orcid: '0000-0002-1825-0097' } }, base), null);
+});
+
+test('AGSC-06-41 as amended 2026-11-10: the block is the Bundle IRI and its RDF holds one Person, the creator and the attributed agent', async () => {
+  for (const config of [CONFIGURED, { bundle: { creator: { name: 'A' }, id: 'x' }, site: CONFIGURED.site }]) {
+    const quads = await jsonld.toRDF(block(config), { documentLoader, format: 'application/n-quads' });
+    const people = new Set(quads.split('\n').filter((line) => line.includes('<http://schema.org/Person>')).map((line) => line.split(' ')[0]));
+    assert.equal(people.size, 1, quads);
+    const [person] = [...people];
+    assert.ok(!person.startsWith('_:'), 'the Person is a named node');
+    assert.ok(quads.includes(`<https://a.example/> <http://www.w3.org/ns/prov#wasAttributedTo> ${person} .`), quads);
+    assert.ok(quads.includes(`<https://a.example/> <http://schema.org/creator> ${person} .`), quads);
+    assert.ok(!/^_:\S+ <http:\/\/schema\.org\/name>/mu.test(quads), 'the name of the Bundle and of the Person are on named nodes');
+  }
 });
 
 test('AGSC-06-41 with AGSC-06-44: the licence is the versioned URL, else /legal/ under the Content Use Terms, else none', () => {
@@ -164,4 +175,39 @@ test('property: the block depends on the served set, not on its order, and is th
     assert.equal(canonicalize(block(config, [...served].reverse())), once);
     assert.equal(canonicalize(block(config, new Set(served))), once);
   }), { numRuns: 60, seed: 20261107 });
+});
+
+test('AGSC-06-41 as amended 2026-11-10: the DCAT block is written only on the switch, and it repeats the facts of the Dataset block', () => {
+  const facts = (dcat) => ({ config: { ...CONFIGURED, discovery: { dcat } }, description: 'd'.repeat(60), instant: '2026-01-01T00:00:00Z', name: 'T', served: ['/graph.nq', '/chunks.jsonl'] });
+  assert.equal(catalogBlock(facts(false)), null);
+  assert.equal(catalogBlock({ ...facts(true), config: { ...CONFIGURED } }), null, 'off by default');
+  const catalog = catalogBlock(facts(true));
+  const dataset = datasetBlock(facts(true));
+  assert.equal(catalog['dcat:dataset']['@id'], dataset['@id']);
+  assert.deepEqual(catalog['dcat:dataset']['dcat:distribution'].map((d) => d['dcat:downloadURL']['@id']), dataset.distribution.map((d) => d.contentUrl));
+  assert.deepEqual(catalog['dcat:dataset']['dcat:distribution'][1], { '@type': 'dcat:Distribution', 'dcat:downloadURL': { '@id': 'https://a.example/chunks.jsonl' }, 'dcterms:format': 'application/jsonl' });
+  const gated = catalogBlock({ ...facts(true), config: { ...CONFIGURED, discovery: { dcat: true }, visibility: 'restricted' } });
+  assert.equal(gated['dcat:dataset']['dcat:distribution'], undefined, 'a restricted node names no download');
+});
+
+test('AGSC-06-41 as amended 2026-11-10: a build with discovery.dcat writes both blocks into the one script of /', () => {
+  const root = path.resolve(__dirname, '..', '..');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-dcat-'));
+  try {
+    fs.cpSync(path.join(root, 'tests', 'fixtures', 'minimal'), dir, { recursive: true });
+    const configFile = path.join(dir, 'agsc.config.json');
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+    fs.writeFileSync(configFile, `${JSON.stringify({ ...config, discovery: { dcat: true } }, null, 2)}\n`);
+    const env = {};
+    for (const [name, value] of Object.entries(process.env)) if (!name.startsWith('AGSC_')) env[name] = value;
+    env.SOURCE_DATE_EPOCH = '1767225600';
+    const r = spawnSync(process.execPath, [path.join(root, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr);
+    const page = fs.readFileSync(path.join(dir, 'www', 'index.html'), 'utf8');
+    const scripts = [...page.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gsu)].map((m) => JSON.parse(m[1]));
+    assert.equal(scripts.length, 1);
+    assert.deepEqual(scripts[0].map((value) => value['@type']), ['Dataset', 'dcat:Catalog']);
+  } finally {
+    fs.rmSync(dir, { force: true, recursive: true });
+  }
 });

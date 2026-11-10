@@ -19,9 +19,9 @@
 //     with no published member would otherwise publish a page that lists nothing,
 //     and a draft is emitted on no surface at all (AGSC-06-30, AGSC-06-13a).
 //
-// It is a CONTENT operation and not a validator: it adds none of the nine command
+// It is a CONTENT operation and not a validator: it adds none of the eleven command
 // contracts of AGSC-09-90, no rule, no code and no vector. It is independent of
-// the engine by the same construction those nine are — Node built-ins only, no
+// the engine by the same construction those eleven are — Node built-ins only, no
 // import from `src/` — so a Bundle can be switched without the engine present.
 //
 // IDEMPOTENT: a file already carrying the right value is not rewritten, so a

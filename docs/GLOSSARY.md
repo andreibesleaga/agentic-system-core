@@ -87,8 +87,9 @@ Of the core nine, `uses`, `requires`, `excludes`, `contradicts` and `supersedes`
 | `asc:verifiedBy` | DatatypeProperty | verified by | `asc:Review` → `xsd:string` | Actor string of the human who recorded a Review. |
 | `asc:verifiedOn` | DatatypeProperty | verified on | `asc:Source` → `xsd:dateTime` | Instant at which a Source was last checked to resolve; an authored YYYY-MM-DD date is rendered as that day's midnight UTC instant. xsd:date is not in the OWL 2 datatype map, so xsd:dateTime keeps the ontology inside OWL 2 RL (AGSC-05-14, AGSC-05-22). |
 | `asc:verifies` | ObjectProperty | verifies | — → — | Mode-2 key 11: the subject checks that the object holds. Its computed inverse is asc:isVerifiedBy (the datatype property asc:verifiedBy carries a Review actor and is unrelated). Combiner semantics: none. |
+| `asc:warrant` | DatatypeProperty | warrant | — → `xsd:string` | The kind of ground of an item's warrant (AGSC-05-40): literary, user or organisational, the three warrants of ANSI/NISO Z39.19-2005 (R2010). The ground itself is the item's dcterms:source. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass). |
 
-12 classes · 19 object properties · 21 datatype properties (counts from the file, see `tools/count-artifacts`).
+12 classes · 19 object properties · 22 datatype properties (counts from the file, see `tools/count-artifacts`).
 
 ## 4. Boundary vocabulary (spec/11)
 

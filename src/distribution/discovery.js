@@ -396,6 +396,9 @@ function surfaceFindings(one, fail, warn) {
   if ((name === 'llms-txt' || name === 'chunks') && version !== undefined) {
     fail('AGSC-E210', `rel#surface ${one.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
   }
+  if (name === 'webmcp' && Array.isArray(version) && version.length === 1 && !/^\d{4}-\d{2}-\d{2}$/u.test(String(version[0]))) {
+    fail('AGSC-E210', `rel#surface ${one.href}: the agsc-surface-version of webmcp is a date YYYY-MM-DD, not ${JSON.stringify(version[0])} (AGSC-11-16)`);
+  }
   if (name === 'llms-txt' && !/\/llms\.txt$/u.test(String(one.href).split(/[?#]/u)[0])) {
     fail('AGSC-E210', 'rel#surface llms-txt must target /llms.txt (AGSC-11-16)');
   }

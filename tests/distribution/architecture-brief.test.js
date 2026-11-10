@@ -110,10 +110,10 @@ test('only an architecture page carries the brief; a list longer than the bound 
     /<li><a href="\/concepts\/bare\/">bare<\/a> \(<code>bare<\/code>\)<\/li>/u);
 });
 
-test('AGSC-07-25 (engine bound): an architecture whose brief is above the bound of derived says so, and the build goes on', () => {
+test('AGSC-07-25 as amended 2026-11-10: an architecture whose brief is above the bound of derived still gets its section', () => {
   const chain = Array.from({ length: 145 }, (_, i) => ({ ...(i > 0 ? { requires: [`c-${i - 1}`] } : {}), slug: `c-${i}`, title: `C ${i}`, type: 'concept' }));
   const plan = { body: '```yaml agsc-selection\n- c-144\n```\n', kind: 'architecture', slug: 'long', type: 'concept' };
   const html = architectureBrief.section(plan, { instant: '2026-01-01T00:00:00Z', items: [plan, ...chain], route: (i) => `/concepts/${i.slug}/` });
-  assert.match(html, /<h2 id="composition-brief">Brief of this architecture<\/h2>\n<p>No brief: .*1,000,000 steps.* \(AGSC-E904\)\.<\/p>/u);
-  assert.ok(!html.includes('<ol>') && !html.includes('/compose/?from='), 'a refused brief lists nothing and links no page that would refuse it too');
+  assert.match(html, /<h2 id="composition-brief">Brief of this architecture<\/h2>/u);
+  assert.ok(html.includes('/compose/?from=long'), 'the whole brief is offered on the compose page');
 });

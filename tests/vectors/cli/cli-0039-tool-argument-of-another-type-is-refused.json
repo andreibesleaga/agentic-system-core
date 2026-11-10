@@ -1,0 +1,73 @@
+{
+  "area": "cli",
+  "description": "AGSC-09-13a as amended 2026-11-10: a tool checks the JSON type of each argument it is given against the type its published `inputSchema` states, as MCP asks a server to validate tool inputs, and an argument of another type is `AGSC-E201` in the error envelope, never a JSON-RPC error and never an answer: `search` with an object `query`, `ask` with a number `question`, `read` with an array `slug`. The bytes are identical on the stdio and WebMCP transports (AGSC-09-16). Only the code is asserted.",
+  "expected": {
+    "jsonrpc_error": false,
+    "results": [
+      {
+        "body": {
+          "code": "AGSC-E201"
+        },
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "source": "search",
+        "trust": "untrusted",
+        "type": "error"
+      },
+      {
+        "body": {
+          "code": "AGSC-E201"
+        },
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "source": "ask",
+        "trust": "untrusted",
+        "type": "error"
+      },
+      {
+        "body": {
+          "code": "AGSC-E201"
+        },
+        "license": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+        "source": "read",
+        "trust": "untrusted",
+        "type": "error"
+      }
+    ],
+    "transports_byte_identical": true
+  },
+  "id": "cli-0039",
+  "input": {
+    "calls": [
+      {
+        "arguments": {
+          "query": {
+            "a": 1
+          }
+        },
+        "tool": "search"
+      },
+      {
+        "arguments": {
+          "question": 42
+        },
+        "tool": "ask"
+      },
+      {
+        "arguments": {
+          "slug": [
+            "handoff"
+          ]
+        },
+        "tool": "read"
+      }
+    ],
+    "transports": [
+      "stdio",
+      "webmcp"
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-09-13a"
+}

@@ -381,7 +381,7 @@ function toolLinkWarnings(edges, itemOf) {
  * A call the tool cannot fulfil answers `{fault: {code, message}}`, which each transport turns
  * into the error envelope of AGSC-09-13a: `AGSC-E901` when the host has no build instant, because
  * its discovery document (AGSC-06-08) is absent or unreadable and no instant or content version
- * may be invented; `AGSC-E904` when the brief is above the engine's bound
+ * may be invented. Above the engine's bound `derived` is capped, not refused
  * (`composition/brief.js#derivedBound`).
  *
  * @param {object} core the algebra, as `composition/browser.js` emits it with the brief.
@@ -396,22 +396,15 @@ function toolBrief(core, facts, selection, hash) {
       + '(/.well-known/knowledge-linkset) is absent or unreadable, and the brief carries its instant and content version (AGSC-07-25)' } };
   }
   const result = core.compose(facts.items, selection);
-  const finish = (digest) => {
-    try {
-      return { body: core.briefOf(result, {
-        base: facts.base,
-        bundleVersion: facts.host.bundleVersion === '' ? undefined : facts.host.bundleVersion,
-        instant: facts.host.instant,
-        items: facts.items,
-        licenseProse: facts.licenseProse,
-        selectionDigest: digest,
-        specVersion: facts.host.specVersion,
-      }) };
-    } catch (e) {
-      if (e.code !== 'AGSC-E904') throw e;
-      return { fault: { code: e.code, message: e.message } };
-    }
-  };
+  const finish = (digest) => ({ body: core.briefOf(result, {
+    base: facts.base,
+    bundleVersion: facts.host.bundleVersion === '' ? undefined : facts.host.bundleVersion,
+    instant: facts.host.instant,
+    items: facts.items,
+    licenseProse: facts.licenseProse,
+    selectionDigest: digest,
+    specVersion: facts.host.specVersion,
+  }) });
   const digest = hash(core.selectionDigestInput(result));
   return digest !== null && typeof digest === 'object' && typeof digest.then === 'function' ? digest.then(finish) : finish(digest);
 }

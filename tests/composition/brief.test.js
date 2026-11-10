@@ -156,30 +156,33 @@ const chainOf = (n) => Array.from({ length: n }, (_, i) => ({
 }));
 const steps = (readings) => readings.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
 
-test('AGSC-07-25 (engine bound): a brief whose `derived` would hold more than 1,000,000 steps is AGSC-E904, raised before it is built', () => {
+test('AGSC-07-25 as amended 2026-11-10: above 1,000,000 steps `derived` holds the first readings in their order, and `derived_total` counts them all', () => {
   assert.strictEqual(brief.derivedBound(), 1000000);
   const under = chainOf(144);
   const kept = compose(under, ['c-143']);
-  assert.strictEqual(steps(brief.briefOf(kept, optionsFor(kept, under, undefined)).derived), 994994, 'at the bound the brief is whole');
+  const whole = brief.briefOf(kept, optionsFor(kept, under, undefined));
+  assert.strictEqual(steps(whole.derived), 994994, 'at the bound the brief is whole');
+  assert.strictEqual(whole.derived_total, undefined, 'and has no derived_total: the bytes of a brief below the bound');
   const over = chainOf(145);
   const result = compose(over, ['c-144']);
-  const refused = (e) => e.code === 'AGSC-E904' && /1,000,000 steps/u.test(e.message);
-  assert.throws(() => brief.briefOf(result, optionsFor(result, over, undefined)), refused);
-  assert.throws(() => brief.briefFiles(result, optionsFor(result, over, undefined)), refused);
+  const capped = brief.briefOf(result, optionsFor(result, over, undefined));
+  assert.ok(steps(capped.derived) <= 1000000);
+  assert.strictEqual(capped.derived_total, 2 * ((145 * 144) / 2 - 144), 'every pair two or more steps apart, by requires and by required-by');
+  assert.ok(capped.derived.length < capped.derived_total);
+  assert.strictEqual(brief.briefFiles(result, optionsFor(result, over, undefined)).length, 4, 'the four files are written');
 });
 
-test('AGSC-07-25 (engine bound): the readings are refused exactly when they hold more steps than the bound, whatever the order of the edges', () => {
+test('AGSC-07-25 (engine bound): the kept readings are the longest prefix of the whole list within the bound, whatever the order of the edges', () => {
   fc.assert(fc.property(itemsArbitrary, fc.nat(40), fc.boolean(), (items, bound, reversed) => {
     const all = items.map((i) => ({ ...i, status: 'stable' }));
     const edges = brief.briefEdges(brief.listedIndex({ items: all }));
     const whole = brief.chainReadings(edges, SLUGS);
     const given = reversed ? [...edges].reverse() : edges;
-    try {
-      const kept = brief.chainReadings(given, SLUGS, bound);
-      return steps(whole) <= bound && JSON.stringify(kept) === JSON.stringify(whole);
-    } catch (e) {
-      return e.code === 'AGSC-E904' && steps(whole) > bound;
-    }
+    const kept = brief.chainReadings(given, SLUGS, bound);
+    const prefix = whole.readings.slice(0, kept.readings.length);
+    const next = whole.readings[kept.readings.length];
+    return JSON.stringify(kept.readings) === JSON.stringify(prefix) && kept.total === whole.readings.length
+      && steps(kept.readings) <= bound && (next === undefined || steps([...kept.readings, next]) > bound);
   }), RUNS);
 });
 

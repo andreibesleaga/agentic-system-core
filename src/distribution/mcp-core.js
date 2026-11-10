@@ -22,8 +22,9 @@
 //   1. `server/discover` lists both revisions of the stdio server; the SDK lists 2026-07-28 only.
 //   2. A request whose `_meta` names a revision other than 2026-07-28 is -32022 naming both
 //      revisions; the SDK names 2026-07-28 only, and serves such a request once the process has
-//      answered a first one. Once `initialize` has fixed 2025-11-25 (point 5), the error names
-//      that revision only, so that a client retrying with a revision the error names is served.
+//      answered a first one. Once a first request has fixed the revision of the process (point
+//      5), the error names that revision only, so that a client retrying with a revision the
+//      error names is served.
 //   3. `subscriptions/listen` is answered as an unknown method (-32601); the SDK serves it. Only a
 //      request that passes the checks before it is one: a listen request of another revision is
 //      the -32022 of point 2, and one whose `_meta` lacks `clientCapabilities` is the SDK's -32602.
@@ -214,6 +215,9 @@ class StdioRevisionGate {
             const revision = claimedRevision(message);
             if (message.method === 'server/discover')
                 this.#discover.add(message.id);
+            // Point 5 the other way: the first served request of 2026-07-28 fixes that revision too.
+            else if (revision === surfaces_js_1.MCP_PROTOCOL_VERSION)
+                this.fix([surfaces_js_1.MCP_PROTOCOL_VERSION]);
             if (message.method === 'resources/read' && revision === undefined)
                 this.#handshakeReads.add(message.id);
         }

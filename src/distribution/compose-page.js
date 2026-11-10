@@ -285,20 +285,9 @@ function controller(options) {
         specVersion: SPEC_VERSION
       };
       var from = architectureFrom();
-      var files;
-      var record;
-      try {
-        files = CORE.briefFiles(result, options);
-        if (from !== null) files = files.concat(CORE.blueprintFiles(result, Object.assign({ architecture: from }, options)));
-        record = CORE.briefOf(result, options);
-      } catch (e) {
-        // A brief above the engine's bound (brief.js#derivedBound) is refused, as on the command line.
-        if (e.code !== 'AGSC-E904') throw e;
-        state.brief = null;
-        text(el('brief-status'), 'No brief: ' + e.message + ' (' + e.code + ').');
-        paintBrief(null);
-        return null;
-      }
+      var files = CORE.briefFiles(result, options);
+      if (from !== null) files = files.concat(CORE.blueprintFiles(result, Object.assign({ architecture: from }, options)));
+      var record = CORE.briefOf(result, options);
       state.brief = { files: new Map(files), record: record };
       text(el('brief-status'), from === null
         ? 'The brief of this composition, as agsc compose --brief writes it:'

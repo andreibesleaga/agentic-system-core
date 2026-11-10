@@ -124,13 +124,13 @@ function irreflexiveViolations(store) {
 }
 
 /** The triples of the closed store that were not in the inputs, as quads of the Bundle's graph. */
-function derived(store, held, graph) {
+function derived(store, held) {
   const out = [];
   for (const q of store.getQuads(null, null, null, null)) {
     const terms = ownTriple(q);
     // A blank node or a literal subject cannot be written (AGSC-05-08, AGSC-05-37).
     if (terms === null || terms[0].termType === 'literal') continue;
-    if (!held.has(tripleKey(terms))) out.push(nq.quad(...terms, graph));
+    if (!held.has(tripleKey(terms))) out.push(nq.quad(...terms, null));
   }
   return out;
 }
@@ -141,9 +141,10 @@ function derived(store, held, graph) {
  * @param {string} nquadsText the text of `graph.nq`
  * @param {string[]} vocabularies Turtle texts of the vocabulary files in force
  * @returns {{text: string, warnings: Array<{code: string, severity: string, message: string}>}}
- *   `text` is the N-Quads of `closure.nt`: every entailed triple that `graph.nq` and the
- *   vocabularies do not hold, in the named graph of the Bundle, sorted, one LF at the end
- *   (empty when nothing is entailed); `warnings` are the `prp-irp` findings.
+ *   `text` is the N-Triples of `closure.nt`: every entailed triple that `graph.nq` and the
+ *   vocabularies do not hold, with no graph term (AGSC-05-37 as amended 2026-11-10), sorted,
+ *   one LF at the end (empty when nothing is entailed, or when `graph.nq` names no Bundle
+ *   graph); `warnings` are the `prp-irp` findings.
  */
 function closure(nquadsText, vocabularies = []) {
   const graphQuads = turtle.parse(nquadsText, { format: 'N-Quads' });
@@ -151,9 +152,8 @@ function closure(nquadsText, vocabularies = []) {
   const store = loadStore(graphQuads, vocabularies.flatMap((text) => turtle.parse(text)));
   const held = new Set(store.getQuads(null, null, null, null).map(ownTriple).filter(Boolean).map(tripleKey));
   new N3.Reasoner(store).reason(reasonerRules());
-  const graph = bundleGraph === undefined ? null : nq.iri(bundleGraph.graph.value);
   return {
-    text: graph === null ? '' : nq.serialize(derived(store, held, graph)),
+    text: bundleGraph === undefined ? '' : nq.serialize(derived(store, held)),
     warnings: irreflexiveViolations(store),
   };
 }

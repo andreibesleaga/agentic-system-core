@@ -22,16 +22,13 @@ const ROOT = path.resolve(__dirname, '..', '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const VECTORS = path.join(ROOT, 'tests', 'vectors', 'lint');
 /**
- * The files of a vector with one change: its vocabulary declares the inverse pair in one direction
- * only (`controls owl:inverseOf controlled-by`), so `controls`, which `ctl` authors, is not the
- * computed member of the pair (AGSC-03-27) and the node is clean for `lint` too. The vectors run
- * `verify` alone and declare the pair both ways, which makes `controls` computed.
+ * The files of a vector. Its vocabulary declares the inverse pair in one direction only
+ * (`controls owl:inverseOf controlled-by`), so `controls`, which `ctl` authors, is not the
+ * computed member of the pair (AGSC-03-27) and the node is clean for `lint` too.
  */
 function lintClean(file) {
   const files = { ...require(path.join(VECTORS, file)).input.add_files };
-  const vocabulary = files['domain/vocabulary.ttl'];
-  files['domain/vocabulary.ttl'] = vocabulary.replace('    owl:inverseOf dom:controls ;\n', '');
-  assert.notStrictEqual(files['domain/vocabulary.ttl'], vocabulary);
+  assert.ok(!files['domain/vocabulary.ttl'].includes('owl:inverseOf dom:controls ;'), 'the pair is declared one way');
   return files;
 }
 const INVARIANT = lintClean('lint-0057-invariant-violation-is-an-error.json');

@@ -92,10 +92,10 @@ test('the vocabulary reader finds every asc: term and its range (AGSC-06-32)', (
   assert.deepStrictEqual(terms.map((t) => t.term), [...terms.map((t) => t.term)].sort());
 });
 
-test('the reader counts the 12 classes and 40 properties the ontology declares (AGSC-05-28)', () => {
+test('the reader counts the 12 classes and 41 properties the ontology declares (AGSC-05-28)', () => {
   const terms = turtle.ontologyTerms(fixture.ontologyText());
   assert.strictEqual(terms.filter((t) => t.kind === 'class').length, 12);
-  assert.strictEqual(terms.filter((t) => t.kind !== 'class').length, 40);
+  assert.strictEqual(terms.filter((t) => t.kind !== 'class').length, 41);
 });
 
 test('n3 is the parser, and it is the pinned version', () => {

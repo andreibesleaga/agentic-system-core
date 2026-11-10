@@ -31,6 +31,19 @@ function siteVocabularyOf(bundle, config) {
 }
 
 /**
+ * AGSC-05-39 as amended 2026-11-10: the model the graph writer reads the domain keys with — the
+ * site vocabulary, or, on a node whose configuration has a `domain` object and no vocabulary
+ * file, an empty one, so that `domain_role` and `domain_context` still add their triples while
+ * `domain_type` and `domain_links`, which name terms of the vocabulary, add none. `null` with
+ * no `domain` object.
+ */
+function graphDomainOf(config, siteVocabulary) {
+  if (siteVocabulary !== null) return siteVocabulary;
+  const object = config.domain;
+  return object !== null && typeof object === 'object' ? domainLayer.load('', { contexts: object.contexts }) : null;
+}
+
+/**
  * AGSC-06-39: what `/query/` is built from — the engine's files and the ten questions the
  * application layer hands in, the vocabulary terms, and, to fill the examples in from the
  * node, the items `/graph.nq` holds (AGSC-06-30), the build's instant and `site.base`; on a
@@ -110,4 +123,4 @@ function itemViews({ bundle, config, entryOf, instant, items, pageItems, routeOf
   return { itemParts, membersOf, scripts: domainPages.scripts, tags, views };
 }
 
-module.exports = { CLUSTER_MEMBERS_SHOWN, emptyFolder, itemViews, queryPageFacts, siteVocabularyOf };
+module.exports = { CLUSTER_MEMBERS_SHOWN, emptyFolder, graphDomainOf, itemViews, queryPageFacts, siteVocabularyOf };

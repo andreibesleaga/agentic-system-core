@@ -66,8 +66,9 @@ module.exports = [
       const { licence, name, orcid } = world.state.dataset;
       assert.strictEqual(block['@type'], 'Dataset');
       assert.strictEqual(block.license, licence);
-      assert.deepStrictEqual(block.creator, { '@type': 'Person', name, sameAs: `https://orcid.org/${orcid}` });
-      assert.deepStrictEqual(block['prov:wasAttributedTo'], block.creator);
+      const person = `https://orcid.org/${orcid}`;
+      assert.deepStrictEqual(block.creator, { '@id': person, '@type': 'Person', name, sameAs: person });
+      assert.deepStrictEqual(block['prov:wasAttributedTo'], { '@id': person }, 'one Person, named by @id (AGSC-06-41)');
       assert.deepStrictEqual(block.distribution.map((d) => new URL(d.contentUrl).pathname),
         ['/graph.jsonld', '/graph.ttl', '/graph.nq', '/chunks.jsonl', '/.well-known/knowledge-linkset']);
     },

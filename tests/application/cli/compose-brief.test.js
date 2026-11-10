@@ -196,13 +196,13 @@ function chain() {
   return files;
 }
 
-test('AGSC-07-25 (engine bound): a brief above the bound of derived is AGSC-E904 at exit 1, and nothing is written', () => {
-  const plain = scratch(chain());
-  assert.strictEqual(run(plain, 'compose', 'c-144').exit, 0, 'without the brief the Harness is written');
+test('AGSC-07-25 as amended 2026-11-10: above the bound of derived the brief is written with its first readings and derived_total, exit 0', () => {
   for (const [dir, argv] of [[scratch(chain()), ['--brief']], [scratch(chain(), config({ compose: { brief: true } })), []]]) {
     const r = run(dir, 'compose', 'c-144', ...argv);
-    assert.strictEqual(r.exit, 1);
-    assert.deepStrictEqual(errors(r.findings), ['AGSC-E904']);
-    assert.ok(!fs.existsSync(path.join(dir, 'dist')), 'a run the brief stopped writes no Harness and no brief');
+    assert.strictEqual(r.exit, 0);
+    assert.deepStrictEqual(errors(r.findings), []);
+    const json = fs.readdirSync(path.join(dir, 'dist'), { recursive: true }).find((f) => String(f).endsWith('brief.json'));
+    const record = JSON.parse(fs.readFileSync(path.join(dir, 'dist', String(json)), 'utf8'));
+    assert.ok(record.derived_total > record.derived.length);
   }
 });

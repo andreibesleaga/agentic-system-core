@@ -119,3 +119,15 @@ test('AGSC-00-21 / AGSC-09-93: a newer MINOR\'s relation and attribute are warne
   assert.strictEqual(result.both_resolve, true);
   assert.strictEqual(result.mutual, true);
 });
+
+test('AGSC-11-16 as amended 2026-11-10: the engine\'s own check refuses a webmcp version that is not a date, as the checker does (disc-0036)', () => {
+  const doc = (version) => ({
+    linkset: [{
+      anchor: 'https://b.example/',
+      describedby: [{ href: 'https://b.example/graph.jsonld', type: 'application/ld+json' }],
+      [`${REL}surface`]: [{ 'agsc-access': ['consent'], 'agsc-surface': ['webmcp'], 'agsc-surface-version': [version], href: 'https://b.example/compose/' }],
+    }],
+  });
+  assert.deepStrictEqual(discovery.check(doc('2026-10-27'), { level: 0 }), []);
+  assert.deepStrictEqual(discovery.check(doc('2026-13-45x'), { level: 0 }).map((f) => [f.code, f.severity]), [['AGSC-E210', 'error']]);
+});

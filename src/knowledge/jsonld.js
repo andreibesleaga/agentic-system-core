@@ -103,8 +103,17 @@ function termName(compact, ascNames, externalLocals) {
  */
 function context(ontologyTerms, externalProperties = []) {
   const wanted = new Set(externalProperties || []);
-  return contextFrom(ontologyTerms, EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact)));
+  const ofContextVersion = (ontologyTerms || []).filter((entry) => !TERMS_AFTER_CONTEXT_VERSION.includes(entry.term));
+  return contextFrom(ofContextVersion, EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact)));
 }
+
+/**
+ * AGSC-06-32: the context is generated from the vocabulary file of the context version
+ * (`ontology/agsc.ttl` as it stood at 1.0.0); these are the terms the file gained later,
+ * so the context leaves them out and `graph.jsonld` writes them as compact IRIs.
+ * `tools/gen-ns` keeps the same list (`tests/tools/gen-ns.test.js` holds the two equal).
+ */
+const TERMS_AFTER_CONTEXT_VERSION = Object.freeze(['warrant']);
 
 /**
  * The same derivation over EXPLICIT external rows `[compact, type]`, rather than
@@ -349,6 +358,7 @@ module.exports = {
   contextFrom,
   allExternalProperties,
   CONTEXT_VERSION,
+  TERMS_AFTER_CONTEXT_VERSION,
   persistentContextUrl,
   resolveMemory,
   restrictTo,

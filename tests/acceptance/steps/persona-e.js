@@ -484,9 +484,11 @@ module.exports = [
     },
   },
   {
-    pattern: 'no Harness and no brief was written (AGSC-07-25)',
+    pattern: 'the brief holds the first readings of derived and derived_total counts them all (AGSC-07-25)',
     run(world) {
-      assert.ok(!world.exists('dist/harness'), 'a run the brief stopped wrote a Harness or a brief');
+      const record = JSON.parse(companionFiles(world).get('brief.json'));
+      const steps = record.derived.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
+      assert.ok(steps <= 1000000 && record.derived_total > record.derived.length, `${record.derived.length} of ${record.derived_total}`);
     },
   },
   {

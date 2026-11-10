@@ -592,7 +592,7 @@ test('AGSC-07-25, AGSC-07-13: the page shows the brief inline and offers the fil
   assert.match(page.document.nodes.get('brief-status').textContent, /appears here once items are selected/u);
 });
 
-test('AGSC-07-25 (engine bound): above the bound of derived the page says why there is no brief and offers no file', async () => {
+test('AGSC-07-25 as amended 2026-11-10: above the bound of derived the page shows the brief with its first readings', async () => {
   const added = {};
   for (let i = 0; i < 145; i += 1) {
     added[`content/concepts/c-${i}.md`] = ['---', 'type: concept', `title: Chain item ${i}`, `description: Item ${i} of a chain of 145, added by this test.`,
@@ -605,10 +605,9 @@ test('AGSC-07-25 (engine bound): above the bound of derived the page says why th
   await state.start();
   await state.whenPagesRead();
   state.selection = ['c-144'];
-  assert.strictEqual(await state.refreshBrief(), null);
-  assert.match(page.document.nodes.get('brief-status').textContent, /^No brief: .*1,000,000 steps.*\(AGSC-E904\)\.$/u);
-  assert.strictEqual(page.document.nodes.get('brief-files').children.length, 0);
-  assert.strictEqual(page.document.nodes.get('brief-order').hidden, true);
+  await state.refreshBrief();
+  assert.ok(state.brief.record.derived_total > state.brief.record.derived.length);
+  assert.ok(page.document.nodes.get('brief-files').children.length > 0, 'the files are offered');
 });
 
 test('AGSC-07-29, AGSC-07-13: /compose/?from=<architecture> offers the blueprint agsc compose --from writes; another selection has none', async () => {

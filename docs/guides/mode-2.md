@@ -214,7 +214,7 @@ node -e 'console.log(JSON.stringify(require("./dist/forge/ruleset.json").rules.m
 ```
 
 ```text expect
-ci: pass (0 error, 2 warn)
+ci: pass (0 error, 1 warn)
 ["determinism","links","provenance","review","schema"]
 ["pull_request","required_status_checks"]
 ```
@@ -254,7 +254,7 @@ node -e 'const b = require("./www/boards/login.json"); console.log("done:", b.do
 ```
 
 ```text expect
-build: pass (0 error, 2 warn)
+build: pass (0 error, 1 warn)
 done: false
 task-login-form TASK_STATE_SUBMITTED blocked by: -
 task-login-tests TASK_STATE_SUBMITTED blocked by: task-login-form

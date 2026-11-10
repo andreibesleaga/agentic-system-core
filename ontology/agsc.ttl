@@ -473,3 +473,11 @@ asc:verifies
     rdfs:label "verifies" ;
     owl:inverseOf asc:isVerifiedBy ;
     skos:definition "This item checks that the target holds."@en .
+
+asc:warrant
+    a owl:DatatypeProperty ;
+    rdfs:comment "The kind of ground of an item's warrant (AGSC-05-40): literary, user or organisational, the three warrants of ANSI/NISO Z39.19-2005 (R2010). The ground itself is the item's dcterms:source. No domain is declared, for the reason given on asc:contradicts (AGSC-05-13: no asc:Item superclass)." ;
+    rdfs:isDefinedBy <https://w3id.org/agentic-system-core/ns> ;
+    rdfs:label "warrant" ;
+    rdfs:range xsd:string ;
+    skos:definition "The kind of ground on which this term belongs to the vocabulary."@en .

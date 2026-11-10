@@ -1188,9 +1188,6 @@ function pageToolset(corpus, core, hash) {
 
     // AGSC-09-13 `brief`: the content of brief.json over the listed set, writing nothing.
     brief: (args) => {
-      if (!Array.isArray(args.selection)) {
-        return pageErrorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
-      }
       if (hash === undefined && (typeof crypto === 'undefined' || !crypto.subtle)) {
         return pageErrorEnvelope('brief', 'AGSC-E901', 'this page has no Web Crypto (a secure context) to compute the selection digest');
       }
@@ -1223,10 +1220,7 @@ function pageToolset(corpus, core, hash) {
     },
 
     compose: (args) => {
-      // AGSC-09-13a: a selection that is not an array is not the empty one.
-      if (!Array.isArray(args.selection)) {
-        return pageErrorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
-      }
+      // AGSC-09-13a: a selection that is not an array is not the empty one (`pageArgumentTypeFault`).
       const selection = args.selection;
       const result = core.compose(model.items.map(pageFlatItem), selection);
       return pageEnvelope('compose', 'verdict', {
@@ -1393,6 +1387,8 @@ function pageToolset(corpus, core, hash) {
       if (missing.length > 0) {
         return pageErrorEnvelope(name, 'AGSC-E003', `missing required argument: ${missing.join(', ')}`);
       }
+      const mistyped = pageArgumentTypeFault(name, supplied);
+      if (mistyped !== null) return pageErrorEnvelope(name, 'AGSC-E201', mistyped);
       const cap = 1024 * 1024;
       const oversized = pageArguments()[name].filter((key) => typeof supplied[key] === 'string'
         && new TextEncoder().encode(supplied[key]).length > cap);
@@ -1617,6 +1613,27 @@ function pageRequiredArguments() {
 }
 
 /**
+ * AGSC-09-13a as amended 2026-11-10: the first supplied argument of `name` whose JSON type is
+ * not the one the tool's `inputSchema` publishes (`mcp-tools.js#ARGUMENT_TYPES`; every other
+ * argument is a string), as the message of `AGSC-E201`, or null. A missing argument is not
+ * judged here: that is `AGSC-E003`.
+ */
+function pageArgumentTypeFault(name, supplied) {
+  const types = { selection: 'array', sources: 'array', usage: 'object' };
+  const keys = pageArguments()[name];
+  for (let i = 0; i < keys.length; i += 1) {
+    const value = supplied[keys[i]];
+    const type = types[keys[i]] || 'string';
+    if (value === undefined || value === null) continue;
+    const isArray = Array.isArray(value);
+    const ok = type === 'array' ? isArray : (type === 'object' ? typeof value === 'object' && !isArray : typeof value === 'string');
+    if (!ok && keys[i] === 'selection') return 'selection must be an array of slugs (AGSC-09-13)';
+    if (!ok) return `${keys[i]} must be ${type === 'string' ? 'a string' : `an ${type}`}, as the tool's inputSchema states (AGSC-09-13a)`;
+  }
+  return null;
+}
+
+/**
  * AGSC-05-04b + AGSC-05-01: the slug an IRI names, with the code to answer when it
  * names none. `memory://<bundle-id>/<slug>` resolves only for THIS Bundle's own id
  * and is `AGSC-E309` for any other, "because a node has no registry of other nodes'
@@ -1654,7 +1671,7 @@ const PORTABLE = Object.freeze(['pageTerms', 'pageNoAnswer', 'pageLinkKeys',
   'pageParseMap', 'pageParseValue', 'pageParseSeq', 'pageKeyEnd', 'pageScalar',
   'pageBlockScalar', 'pageShardRoutes', 'pageIndexOf', 'pageCorpus', 'pageClaimants', 'pageDeclaresBoards', 'pageBaseOf', 'pageEdges', 'pageCompare', 'pageHeadingText', 'pageAnchors',
   'pageInlineTargets', 'pageLinkTail', 'pageResolveBodyReference', 'pageToolset', 'pageArguments',
-  'pageRequiredArguments', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
+  'pageRequiredArguments', 'pageArgumentTypeFault', 'pageSlugOfIri', 'pageTaskStates', 'pageQuoteTemporal', 'pageSetLine', 'pageUnifiedDiff', 'pageBoardMove']);
 
 const SOURCE = Object.freeze({
   pageTerms,
@@ -1705,6 +1722,7 @@ const SOURCE = Object.freeze({
   pageToolset,
   pageArguments,
   pageRequiredArguments,
+  pageArgumentTypeFault,
   pageSlugOfIri,
   pageTaskStates,
   pageQuoteTemporal,
@@ -1872,6 +1890,7 @@ ${domain.length === 0 ? '' : `
 module.exports = {
   PORTABLE,
   bundle,
+  pageArgumentTypeFault,
   pageLinkKeys,
   pageInverseKeys,
   pageBaseIri,

@@ -18,6 +18,8 @@ const ONTOLOGY = fs.readFileSync(path.join(__dirname, '..', '..', 'ontology', 'a
 const G = '<https://t.example/>';
 const ex = (name) => `<https://t.example/${name}>`;
 const line = (s, p, o) => `${s} ${p} ${o} ${G} .\n`;
+/** A line of `closure.nt`: a triple with no graph term (AGSC-05-37 as amended 2026-11-10). */
+const triple = (s, p, o) => `${s} ${p} ${o} .\n`;
 const vocab = (turtle) => `@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n${turtle}\n`;
 const RDF_TYPE = '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>';
 
@@ -35,15 +37,15 @@ test('no graph and no vocabulary entail nothing: an empty file', () => {
   assert.strictEqual(closure.closure(line(ex('a'), ex('p'), ex('b')), []).text, '');
 });
 
-test('cax-sco: a type is carried up the subclass axioms, in the Bundle graph', () => {
+test('cax-sco: a type is carried up the subclass axioms, written as a triple with no graph term', () => {
   const out = closure.closure(line(ex('x'), RDF_TYPE, ex('Dog')), [vocab('<https://t.example/Dog> rdfs:subClassOf <https://t.example/Animal> .')]);
-  assert.strictEqual(out.text, line(ex('x'), RDF_TYPE, ex('Animal')));
+  assert.strictEqual(out.text, triple(ex('x'), RDF_TYPE, ex('Animal')));
 });
 
 test('prp-dom and prp-rng: the domain types the subject, the range types an IRI object', () => {
   const rules = vocab('<https://t.example/p> rdfs:domain <https://t.example/D> ; rdfs:range <https://t.example/R> .');
   const out = closure.closure(line(ex('x'), ex('p'), ex('y')), [rules]);
-  assert.strictEqual(out.text, `${line(ex('x'), RDF_TYPE, ex('D'))}${line(ex('y'), RDF_TYPE, ex('R'))}`);
+  assert.strictEqual(out.text, `${triple(ex('x'), RDF_TYPE, ex('D'))}${triple(ex('y'), RDF_TYPE, ex('R'))}`);
 });
 
 test('prp-rng: a literal is never the subject of a triple, so the range of a datatype property adds nothing', () => {
@@ -60,7 +62,7 @@ test('prp-spo1, prp-symp, prp-inv1 and prp-inv2 each add the triple they entail'
   ].join('\n'));
   const graph = line(ex('a'), ex('sub'), ex('b')) + line(ex('a'), ex('sym'), ex('b')) + line(ex('a'), ex('fwd'), ex('b')) + line(ex('c'), ex('back'), ex('d'));
   const expected = [
-    line(ex('a'), ex('super'), ex('b')), line(ex('b'), ex('back'), ex('a')), line(ex('b'), ex('sym'), ex('a')), line(ex('d'), ex('fwd'), ex('c')),
+    triple(ex('a'), ex('super'), ex('b')), triple(ex('b'), ex('back'), ex('a')), triple(ex('b'), ex('sym'), ex('a')), triple(ex('d'), ex('fwd'), ex('c')),
   ].join('');
   assert.strictEqual(closure.closure(graph, [rules]).text, expected);
 });
@@ -69,7 +71,7 @@ test('prp-trp: a chain of a transitive property is closed, and the result is sor
   const rules = vocab('<https://t.example/t> a owl:TransitiveProperty .');
   const graph = line(ex('a'), ex('t'), ex('b')) + line(ex('b'), ex('t'), ex('c')) + line(ex('c'), ex('t'), ex('d'));
   const text = closure.closure(graph, [rules]).text;
-  assert.strictEqual(text, [['a', 'c'], ['a', 'd'], ['b', 'd']].map(([s, o]) => line(ex(s), ex('t'), ex(o))).join(''));
+  assert.strictEqual(text, [['a', 'c'], ['a', 'd'], ['b', 'd']].map(([s, o]) => triple(ex(s), ex('t'), ex(o))).join(''));
   assert.deepStrictEqual(text.split('\n').slice(0, -1), [...text.split('\n').slice(0, -1)].sort());
 });
 
@@ -80,7 +82,7 @@ test('rules chain: a sub-property that is symmetric and has an inverse reaches a
   ].join('\n'));
   const text = closure.closure(line(ex('a'), ex('s'), ex('b')), [rules]).text;
   assert.deepStrictEqual(text.split('\n').slice(0, -1).sort(), [
-    line(ex('a'), ex('u'), ex('b')), line(ex('b'), ex('u'), ex('a')), line(ex('b'), ex('w'), ex('a')), line(ex('a'), ex('w'), ex('b')),
+    triple(ex('a'), ex('u'), ex('b')), triple(ex('b'), ex('u'), ex('a')), triple(ex('b'), ex('w'), ex('a')), triple(ex('a'), ex('w'), ex('b')),
   ].map((l) => l.trimEnd()).sort());
 });
 

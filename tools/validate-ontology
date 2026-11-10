@@ -275,8 +275,14 @@ const SITE_LINK_PROPERTIES = [`${SKOS}related`, `${SKOS}broader`, `${SKOS}narrow
 /** AGSC-05-25: the one type triple a site vocabulary states about another vocabulary's entity it names. */
 const SITE_DECLARATIONS = new Set([...DECLARATIONS, `${OWL}ObjectProperty`]);
 const SITE_CLASS_POSITIONS = new Set([`${RDFS}subClassOf`, `${OWL}disjointWith`, `${OWL}equivalentClass`]);
+/** AGSC-05-26a: the link properties that take no super-property, so no site property is equivalent to one. */
+const SITE_NO_SUPER = [`${NS}uses`, `${NS}excludes`, `${NS}contradicts`];
 
-/** The site vocabulary's statements by named subject, its types, its two hierarchies and its ontologies. */
+/**
+ * The site vocabulary's statements by named subject, its types, its two hierarchies and its ontologies.
+ * An `owl:equivalentClass` or `owl:equivalentProperty` statement is an edge of its hierarchy both
+ * ways, as OWL 2 RL entails (`scm-eqc1`, `scm-eqp1`; AGSC-05-38 (e), (f)).
+ */
 function siteIndex(quads) {
   const bySubject = new Map();
   const typeSets = new Map();
@@ -287,10 +293,14 @@ function siteIndex(quads) {
     if (!bySubject.has(s)) bySubject.set(s, []);
     bySubject.get(s).push(quad);
     if (quad.object.termType !== 'NamedNode') continue;
+    const add = (map, key, value) => (map.has(key) ? map.get(key) : map.set(key, new Set()).get(key)).add(value);
+    const equivalence = { [`${OWL}equivalentClass`]: `${RDFS}subClassOf`, [`${OWL}equivalentProperty`]: `${RDFS}subPropertyOf` }[quad.predicate.value];
+    if (equivalence !== undefined) {
+      add(supers[equivalence], s, quad.object.value);
+      add(supers[equivalence], quad.object.value, s);
+    }
     const target = quad.predicate.value === `${RDF}type` ? typeSets : supers[quad.predicate.value];
-    if (target === undefined) continue;
-    if (!target.has(s)) target.set(s, new Set());
-    target.get(s).add(quad.object.value);
+    if (target !== undefined) add(target, s, quad.object.value);
   }
   const typesOf = (iri) => typeSets.get(iri) || new Set();
   const ontologies = [...bySubject.keys()].filter((s) => typesOf(s).has(`${OWL}Ontology`)).sort(compareCodePoint);
@@ -341,6 +351,34 @@ function siteInverseFaults(index, own, fault) {
   }
 }
 
+/** The named objects of `predicate` on `term`. */
+function siteObjects(index, term, predicate) {
+  return index.bySubject.get(term).filter((q) => q.predicate.value === predicate && q.object.termType === 'NamedNode').map((q) => q.object.value);
+}
+
+/** (e): exactly one item class above a class the file defines, and no equivalence to an item class itself. */
+function siteClassFaults(index, term, fault) {
+  const itemClasses = [...ancestors(term, index.subClassOf)].filter((c) => SITE_ITEM_CLASSES.includes(c)).length;
+  if (itemClasses !== 1) fault('(e)', `<${term}> is a subclass of ${itemClasses} of the six item classes; it is a subclass of exactly one`);
+  for (const other of siteObjects(index, term, `${OWL}equivalentClass`).filter((c) => SITE_ITEM_CLASSES.includes(c))) {
+    fault('(e)', `<${term}> is stated equivalent to the item class <${other}>; a class of the site vocabulary is a subclass of one`);
+  }
+}
+
+/** (f): under a link property; every super-property a link property or a property of the file; no equivalence to uses, excludes, contradicts. */
+function sitePropertyFaults(index, term, isOwnProperty, fault) {
+  const supers = [...ancestors(term, index.subPropertyOf)];
+  if (!(index.typesOf(term).has(`${OWL}ObjectProperty`) && supers.some((p) => SITE_LINK_PROPERTIES.includes(p)))) {
+    fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
+  }
+  for (const other of supers.filter((p) => !SITE_LINK_PROPERTIES.includes(p) && !isOwnProperty(p)).sort(compareCodePoint)) {
+    fault('(f)', `<${term}> has the super-property <${other}>, which is neither a link property nor an object property the site vocabulary defines`);
+  }
+  for (const other of siteObjects(index, term, `${OWL}equivalentProperty`).filter((p) => SITE_NO_SUPER.includes(p))) {
+    fault('(f)', `<${term}> is stated equivalent to <${other}>, which takes no super-property (AGSC-05-26a)`);
+  }
+}
+
 /** (b), (d), (e) and (f) over every term the file defines (all subjects but the ontology and the declarations). */
 function siteTermFaults(index, contextNamespaces, fault) {
   const allowed = [...(index.namespace === null ? [] : [index.namespace]), ...contextNamespaces];
@@ -362,14 +400,8 @@ function siteTermFaults(index, contextNamespaces, fault) {
     const isClass = types.has(`${OWL}Class`);
     const isProperty = [...types].some((t) => SITE_PROPERTY_TYPES.has(t));
     if (!isClass && !isProperty) fault('(e), (f)', `<${term}> is neither a class nor a property; a site vocabulary defines classes and object properties`);
-    if (isClass) {
-      const itemClasses = [...ancestors(term, index.subClassOf)].filter((c) => SITE_ITEM_CLASSES.includes(c)).length;
-      if (itemClasses !== 1) fault('(e)', `<${term}> is a subclass of ${itemClasses} of the six item classes; it is a subclass of exactly one`);
-    }
-    if (isProperty && !(types.has(`${OWL}ObjectProperty`)
-        && [...ancestors(term, index.subPropertyOf)].some((p) => SITE_LINK_PROPERTIES.includes(p)))) {
-      fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
-    }
+    if (isClass) siteClassFaults(index, term, fault);
+    if (isProperty) sitePropertyFaults(index, term, (iri) => own(iri) && index.typesOf(iri).has(`${OWL}ObjectProperty`), fault);
   }
   siteInverseFaults(index, index.namespace === null ? (iri) => !forbidden(iri) : own, fault);
   return {

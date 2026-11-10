@@ -178,9 +178,9 @@ Feature: Agent reader queries structured knowledge without scraping
     When the publisher runs "agsc build --json"
     Then the command exits 0
     And the JSON envelope carries the warning "AGSC-E210"
-    And the output names "the discovery document still declares a2a-card at https://agenticsystemcore.com/.well-known/agent-card.json, which this node does not serve"
+    And the output names "the discovery document does not declare a2a-card at https://agenticsystemcore.com/.well-known/agent-card.json either"
     And the Bundle does not hold "www/.well-known/agent-card.json"
-    And the shipped validate-wellknown warns "AGSC-E210" that the a2a-card target of the discovery file is not served
+    And the discovery file declares no a2a-card, so the shipped validate-wellknown has no a2a-card target to warn about (AGSC-11-16)
     Given the configuration declares a responder "https://agenticsystemcore.com/a2a" beside the a2a-card surface and switches discovery.ai_catalog on
     When the publisher runs "agsc build --json"
     Then the command exits 0

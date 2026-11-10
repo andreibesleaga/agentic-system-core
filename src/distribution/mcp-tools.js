@@ -61,7 +61,7 @@ const adopt = require('../knowledge/adopt.js');
 const { TOOL_NAMES, WEBMCP_ANNOTATIONS } = require('../boundary/surfaces.js');
 const search = require('./search.js');
 const {
-  pageBoardMove, pageClaimants, pageFlatItem, pageRememberFault, pageToolset,
+  pageArgumentTypeFault, pageBoardMove, pageClaimants, pageFlatItem, pageRememberFault, pageToolset,
 } = require('./page-tools.js');
 const answers = require('./tool-answers.js');
 const boardLanes = require('../governance/board-lanes.js');
@@ -287,9 +287,6 @@ function tools(bundle, options) {
   };
 
   implementations.brief = (args) => {
-    if (!Array.isArray(args.selection)) {
-      return errorEnvelope('brief', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
-    }
     const facts = listedFacts(listed());
     const core = {
       // The brief reads the listed items alone, as a page does, so it is handed the withheld list too.
@@ -347,10 +344,7 @@ function tools(bundle, options) {
   };
 
   implementations.compose = (args) => {
-    // AGSC-09-13a: a selection that is not an array is not the empty one.
-    if (!Array.isArray(args.selection)) {
-      return errorEnvelope('compose', 'AGSC-E201', 'selection must be an array of slugs (AGSC-09-13)');
-    }
+    // AGSC-09-13a: a selection that is not an array is not the empty one (`pageArgumentTypeFault`).
     const selection = args.selection;
     const result = compose((bundle.items || []).map(pageFlatItem), selection);
     return envelope('compose', 'verdict', Object.freeze({
@@ -486,6 +480,9 @@ function tools(bundle, options) {
     if (missing.length > 0) {
       return errorEnvelope(name, 'AGSC-E003', `missing required argument: ${missing.join(', ')}`);
     }
+    // AGSC-09-13a: an argument of another JSON type than the published `inputSchema` gives.
+    const mistyped = pageArgumentTypeFault(name, supplied);
+    if (mistyped !== null) return errorEnvelope(name, 'AGSC-E201', mistyped);
     // AGSC-01-16: the 1 MiB cap governs every text a tool parses, not only a
     // file read through the port. The check runs BEFORE dispatch, so an oversized
     // argument costs one length measurement and never a corpus scan.

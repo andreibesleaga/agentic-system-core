@@ -366,6 +366,32 @@ function runCompose0024(vector) {
   return checks(list);
 }
 
+/** compose-0035 — AGSC-07-25 as amended 2026-11-10: the flowchart lines of `brief.mmd`, after its comment lines. */
+function runBriefFlowchart(vector) {
+  return checks(vector.input.cases.map((entry, i) => {
+    const mmd = briefCase(entry, vector.input.fixed).files.get('brief.mmd');
+    const flowchart = mmd.slice(mmd.indexOf('flowchart TD'));
+    return [entry.name, flowchart === (vector.expected.cases[i] || {}).flowchart, JSON.stringify(flowchart)];
+  }));
+}
+
+/** compose-0036 — AGSC-07-25 as amended 2026-11-10: `derived` capped at 1,000,000 steps, with `derived_total`. */
+function runDerivedCap(vector) {
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const want = vector.expected.cases[i] || {};
+    const { derived, derived_total: total } = briefCase(entry, vector.input.fixed).record;
+    const triple = (r) => [r.source, r.key, r.target];
+    const steps = derived.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
+    list.push([`${entry.name} derived_total`, total === want.derived_total, String(total)]);
+    list.push([`${entry.name} length`, derived.length === want.derived_length, String(derived.length)]);
+    list.push([`${entry.name} steps`, steps === want.derived_steps, String(steps)]);
+    list.push([`${entry.name} first`, deepEqual(triple(derived[0]), want.derived_first), JSON.stringify(triple(derived[0]))]);
+    list.push([`${entry.name} last`, deepEqual(triple(derived[derived.length - 1]), want.derived_last), JSON.stringify(triple(derived[derived.length - 1]))]);
+  });
+  return checks(list);
+}
+
 /** compose-0025 — AGSC-07-26: the dependency order; compose-0026 — AGSC-07-27: the gaps and the checklist. */
 function runBriefMembers(members) {
   return (vector) => {
@@ -439,6 +465,8 @@ const HANDLERS = {
   'compose-0022': runVerdictVector,
   'compose-0023': runVerdictVector,
   'compose-0024': runCompose0024,
+  'compose-0035': runBriefFlowchart,
+  'compose-0036': runDerivedCap,
   'compose-0025': runBriefMembers(['order']),
   'compose-0026': runBriefMembers(['checklist', 'gaps']),
   'compose-0027': runCompose0027,

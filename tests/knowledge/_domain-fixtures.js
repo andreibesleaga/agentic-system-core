@@ -82,6 +82,18 @@ const FAULTS = Object.freeze([
     text: withExtra('dom:usedBy a owl:ObjectProperty ; rdfs:label "used by" ; rdfs:subPropertyOf asc:uses ; owl:inverseOf asc:uses .') },
   { name: 'an inverse that is a literal', rule: '(f)', count: 1,
     text: withExtra('dom:controls owl:inverseOf "controlled by" .') },
+  // Amended 2026-11-10 (AGSC-05-38 (e), (f)): equivalence counts both ways, and every super-property is
+  // a link property or a property of the file, so `prp-spo1` and `prp-eqp` state no other predicate.
+  { name: 'a class equivalent to an item class', rule: '(e)', count: 1,
+    text: withExtra('dom:Engine owl:equivalentClass asc:Concept .') },
+  { name: 'a class equivalent to a class under another item class', rule: '(e)', count: 2,
+    text: withExtra('dom:Run a owl:Class ; rdfs:label "Run" ; rdfs:subClassOf asc:Episode .\ndom:Engine owl:equivalentClass dom:Run .') },
+  { name: 'a property equivalent to asc:uses, which takes no super-property', rule: '(f)', count: 1,
+    text: withExtra('dom:employs a owl:ObjectProperty ; rdfs:label "employs" ; rdfs:subPropertyOf asc:uses ; owl:equivalentProperty asc:uses .') },
+  { name: 'a super-property that is rdf:type', rule: '(f)', count: 1,
+    text: withExtra('dom:typeOf a owl:ObjectProperty ; rdfs:label "type of" ; rdfs:subPropertyOf asc:uses , <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> .') },
+  { name: 'a property equivalent to rdf:type', rule: '(f)', count: 1,
+    text: withExtra('dom:typeOf a owl:ObjectProperty ; rdfs:label "type of" ; rdfs:subPropertyOf asc:uses ; owl:equivalentProperty <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> .') },
 ]);
 
 /**
@@ -96,6 +108,11 @@ const ACCEPTED = Object.freeze([
     text: withExtra('dom:throttles a owl:ObjectProperty ; rdfs:label "throttles" ; rdfs:subPropertyOf dom:controls .') },
   { name: 'a symmetric property and a property characteristic', contexts: [],
     text: withExtra('dom:pairedWith a owl:ObjectProperty , owl:SymmetricProperty ; rdfs:label "paired with" ; rdfs:subPropertyOf <http://www.w3.org/2004/02/skos/core#related> .') },
+  { name: 'two classes of the file under the same item class, stated equivalent', contexts: [],
+    text: withExtra('dom:Motor a owl:Class ; rdfs:label "Motor" ; rdfs:subClassOf asc:Concept ; owl:equivalentClass dom:Engine .') },
+  { name: 'a property equivalent to a property of the file and one equivalent to skos:related', contexts: [],
+    text: withExtra('dom:runs a owl:ObjectProperty ; rdfs:label "runs" ; owl:equivalentProperty dom:controls .\n'
+      + 'dom:near a owl:ObjectProperty ; rdfs:label "near" ; owl:equivalentProperty <http://www.w3.org/2004/02/skos/core#related> .') },
   { name: 'a class in a declared context namespace', contexts: [{ cluster: 'ops', namespace: 'https://minimal.example/ns/ops#' }],
     text: withExtra('<https://minimal.example/ns/ops#Valve> a owl:Class ; rdfs:label "Valve" ; rdfs:subClassOf asc:Concept .') },
 ]);

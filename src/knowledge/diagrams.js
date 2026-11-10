@@ -447,6 +447,12 @@ function compile(dslText, options = {}) {
           + ` L${fixed(p2.x)} ${fixed(p2.y)}`;
         poly = [p1, ...points, p2];
       } else {
+        // AGSC-01-42 as amended 2026-11-10: with no waypoint, two shapes that share a centre give the
+        // arrow no direction (the path was NaN, 1.0.1 too).
+        if (centreFrom.x === centreTo.x && centreFrom.y === centreTo.y) {
+          fail(`arrow ${String(t[1])} -> ${String(t[2])}: the two shapes share a centre, so the arrow has no direction; give it a via= waypoint`, line);
+          continue;
+        }
         const border1 = clip(from, centreFrom, centreTo);
         const border2 = clip(to, centreTo, centreFrom);
         poly = [border1, border2];

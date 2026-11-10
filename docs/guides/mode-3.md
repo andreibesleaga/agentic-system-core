@@ -156,7 +156,7 @@ node -e 'const c = require("node:crypto"), f = require("node:fs"); const i = JSO
 ```
 
 ```text expect
-build: pass (0 error, 2 warn)
+build: pass (0 error, 1 warn)
 served file equals its lock: true
 ```
 

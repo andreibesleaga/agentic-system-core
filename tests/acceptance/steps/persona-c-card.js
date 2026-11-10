@@ -65,9 +65,10 @@ module.exports = [
     },
   },
   {
-    pattern: 'the shipped validate-wellknown warns "AGSC-E210" that the a2a-card target of the discovery file is not served',
+    pattern: 'the discovery file declares no a2a-card, so the shipped validate-wellknown has no a2a-card target to warn about (AGSC-11-16)',
     run(world) {
-      assert.deepStrictEqual(cardTargetFindings(world).map((f) => f.severity), ['warn']);
+      assert.ok(!world.read('www/.well-known/knowledge-linkset').includes('"a2a-card"'), 'the card is not declared');
+      assert.deepStrictEqual(cardTargetFindings(world), []);
     },
   },
   {

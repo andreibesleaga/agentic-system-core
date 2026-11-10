@@ -79,7 +79,7 @@ const ENGINE = Object.freeze({
     Object.freeze({ bytes: 4324920, served: 'web_bg.wasm', sha256: '75e3f0f4de67921e88e3f6d587b2a8e7aa822abbe3a3b79873f2b97f20d52c24', source: 'web_bg.wasm' }),
     Object.freeze({ bytes: 1063, served: 'LICENSE-MIT.txt', sha256: '1f4f6736adc52ebfda18bb84947e0ef492bd86a408c0e83872efb75ed5e02838', source: 'LICENSE-MIT' }),
     Object.freeze({ bytes: 10847, served: 'LICENSE-APACHE.txt', sha256: 'a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2', source: 'LICENSE-APACHE' }),
-    Object.freeze({ bytes: 11429, served: 'THIRD-PARTY.txt', sha256: '751d2b0096efb48de8746ad06802c8d65e46d48fa344311dea834814db48ac41', source: 'THIRD-PARTY.txt' }),
+    Object.freeze({ bytes: 83361, served: 'THIRD-PARTY.txt', sha256: '52102a351fe22fcfffa96b5aee4246605c99800b754331bea85919f8bab7f2a8', source: 'THIRD-PARTY.txt' }),
   ]),
 });
 
@@ -357,7 +357,7 @@ function body({ questions, ontologyTerms, node, siteTerms }) {
 /** The line that names the engine the page runs and links the licence texts it serves beside it. */
 function engineLine() {
   const link = (served, words) => `<a href="${ENGINE.route}${served}">${words}</a>`;
-  return `<p class="query-engine">The query engine is ${ENGINE.name} ${ENGINE.version}, under ${link('LICENSE-MIT.txt', 'the MIT licence')} or ${link('LICENSE-APACHE.txt', 'the Apache License 2.0')}, at your option; ${link('THIRD-PARTY.txt', 'a list of the crates that may be compiled into it')} gives the licence expression of each.</p>`;
+  return `<p class="query-engine">The query engine is ${ENGINE.name} ${ENGINE.version}, under ${link('LICENSE-MIT.txt', 'the MIT licence')} or ${link('LICENSE-APACHE.txt', 'the Apache License 2.0')}, at your option; ${link('THIRD-PARTY.txt', 'the crates compiled into it')} are listed with the licence each is taken under and its licence text.</p>`;
 }
 
 /**

@@ -289,8 +289,9 @@ function emitHarness(ctx, bundle, result, items, peers = []) {
     ctx.ports.fs.writeFile(at, text);
     written.push(at);
   }
+  const listed = items.filter((item) => isPublished(item, config.releases)).map((item) => item.slug);
   const companion = writeCompanion(ctx, dir,
-    contextMap.contextMapFiles(result, { ...options, contexts: (config.domain || {}).contexts, peers }));
+    contextMap.contextMapFiles(result, { ...options, contexts: (config.domain || {}).contexts, listed, peers }));
   // `--zip` packages exactly the bytes that were just written, BESIDE the
   // directory — AGSC-07-12 closes the Harness at seven file kinds, so the archive is
   // never inside it. The entry bytes are the emission's, not a re-read of the disk,
@@ -332,8 +333,8 @@ function briefRequested(ctx, bundle) {
  * `from` names a saved architecture (AGSC-02-97), the blueprint outputs of AGSC-07-29 in the
  * subdirectory `blueprint/`. Both name the listed items only (AGSC-00-05): no draft, no retired
  * item, no item the `releases` switchboard holds back. They are computed before anything is
- * written, so a brief above the engine's bound (`brief.js#derivedBound`) stops the run with its
- * `AGSC-E904` finding and leaves no Harness behind it.
+ * written; above the engine's bound `derived` keeps its first readings and says how many there
+ * are (`brief.js#derivedBound`, AGSC-07-25 as amended 2026-11-10).
  *
  * @param {string} [from] the slug of `--from`, when the selection came from a saved item.
  * @returns {{dir: string, files: Array<[string, string]>, findings: Array<object>}} the Harness
@@ -345,20 +346,15 @@ function briefOutputs(ctx, bundle, result, items, from) {
   const listed = items.filter((item) => isPublished(item, releases)).map((item) => item.slug);
   const saved = from === undefined ? undefined : items.find((item) => item.slug === from);
   const dir = harnessDir(ctx, options.name);
-  try {
-    const outputs = saved !== undefined && architecture.isArchitecture(saved)
-      ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
-      : [];
-    // AGSC-07-25: the domain paragraph over the contexts the node declares (AGSC-08-32), and the
-    // domain links between listed items in `relations` (AGSC-03-27), read against the site vocabulary.
-    const contexts = bounded.declared(bundle.config).map((entry) => entry.cluster);
-    const listedSet = new Set(listed);
-    const domainEdges = links.domainEdges(items.filter((item) => listedSet.has(item.slug)), siteModel(bundle));
-    return { dir, files: [...brief.briefDomainFiles(result, { ...options, contexts, domainEdges, listed }), ...outputs], findings: [] };
-  } catch (e) {
-    if (e.code !== 'AGSC-E904') throw e;
-    return { dir, files: [], findings: [{ code: e.code, message: e.message, severity: 'error' }] };
-  }
+  const outputs = saved !== undefined && architecture.isArchitecture(saved)
+    ? blueprint.blueprintFiles(result, { ...options, architecture: from, listed })
+    : [];
+  // AGSC-07-25: the domain paragraph over the contexts the node declares (AGSC-08-32), and the
+  // domain links between listed items in `relations` (AGSC-03-27), read against the site vocabulary.
+  const contexts = bounded.declared(bundle.config).map((entry) => entry.cluster);
+  const listedSet = new Set(listed);
+  const domainEdges = links.domainEdges(items.filter((item) => listedSet.has(item.slug)), siteModel(bundle));
+  return { dir, files: [...brief.briefDomainFiles(result, { ...options, contexts, domainEdges, listed }), ...outputs], findings: [] };
 }
 
 /**

@@ -43,12 +43,16 @@ test('(a) a kind named after a prototype member is not a kind', () => {
   }
 });
 
-test('(b) sources that is not a list is not a transport error', () => {
-  for (const sources of [5, 'https://example.org/', { resource: 'https://example.org/' }, null]) {
+test('(b) sources that is not a list is not a transport error: AGSC-E201 in the envelope (AGSC-09-13a as amended 2026-11-10)', () => {
+  for (const sources of [5, 'https://example.org/', { resource: 'https://example.org/' }]) {
     const r = toolset().call('remember', { body: 'x', kind: 'concept', operator: OPERATOR, sources, title: 'A Plain Note' });
-    assert.equal(r.type, 'proposal', JSON.stringify(sources));
-    assert.equal(r.body.frontmatter.sources, undefined);
+    assert.equal(r.type, 'error', JSON.stringify(sources));
+    assert.equal(r.body.code, 'AGSC-E201', JSON.stringify(sources));
   }
+  // `null` counts as not supplied: the Proposal is written without sources.
+  const r = toolset().call('remember', { body: 'x', kind: 'concept', operator: OPERATOR, sources: null, title: 'A Plain Note' });
+  assert.equal(r.type, 'proposal');
+  assert.equal(r.body.frontmatter.sources, undefined);
 });
 
 test('(c) an argument that would make the item non-conforming is refused with its code', () => {
@@ -57,13 +61,14 @@ test('(c) an argument that would make the item non-conforming is refused with it
     [{ ...base, kind: 'concept', title: 'T' }, 'AGSC-E204'],
     [{ ...base, kind: 'concept', title: 'x'.repeat(121) }, 'AGSC-E204'],
     [{ ...base, kind: 'concept', title: 'Two\nlines here' }, 'AGSC-E204'],
-    [{ ...base, kind: 'concept', title: 42 }, 'AGSC-E204'],
+    // A value of another JSON type than the inputSchema states is AGSC-E201 (AGSC-09-13a as amended 2026-11-10).
+    [{ ...base, kind: 'concept', title: 42 }, 'AGSC-E201'],
     [{ ...base, kind: 'lesson', severity: 'catastrophic' }, 'AGSC-E203'],
     [{ ...base, actor: 'process:x', at: 'yesterday', kind: 'episode' }, 'AGSC-E204'],
     [{ ...base, actor: 'process:x', at: '2026-01-01T00:00:00Z', kind: 'episode', outcome: 'meh' }, 'AGSC-E203'],
     [{ ...base, kind: 'concept', operator: 'someone' }, 'AGSC-E204'],
     [{ ...base, agent: 'a\nb', kind: 'concept' }, 'AGSC-E204'],
-    [{ ...base, kind: 'concept', model: 7 }, 'AGSC-E204'],
+    [{ ...base, kind: 'concept', model: 7 }, 'AGSC-E201'],
     [{ ...base, actor: 'process:x', at: '2026-01-01T00:00:00Z', kind: 'episode', usage: { tokens_in: Infinity } }, 'AGSC-E201'],
     [{ ...base, actor: 'process:x', at: '2026-01-01T00:00:00Z', kind: 'episode', usage: { tokens_in: 1.5 } }, 'AGSC-E201'],
     [{ ...base, actor: 'process:x', at: '2026-01-01T00:00:00Z', kind: 'episode', usage: { cost_usd: 'free' } }, 'AGSC-E201'],

@@ -11,7 +11,7 @@ const { describe, it } = require('node:test');
 const { REPO, capture, envelope, tmpdir, tool, writeTree } = require('./helpers');
 
 const {
-  EXTERNAL, PREFIXES, buildContext, buildIndex, buildRdfXml, canonicalize,
+  EXTERNAL, PREFIXES, TERMS_AFTER_CONTEXT_VERSION, buildContext, buildIndex, buildRdfXml, canonicalize,
   externalTermNames, readOntology, readRdfXml, turtleTriples,
 } = tool('gen-ns');
 
@@ -203,10 +203,26 @@ describe('gen-ns — --check against a tree on disk', () => {
     assert.deepEqual(json.findings, []);
   });
 
-  it('a missing context is AGSC-E901, and missing siblings are warnings', () => {
+  it('a missing context is AGSC-E901; the vocabulary files are asked for only beside the namespace index', () => {
     const { json } = envelope('gen-ns', ['--check', tmpdir(), nsRoot()]);
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E901' && f.file === 'ns/context.jsonld'));
-    assert.ok(json.findings.filter((f) => f.code === 'AGSC-E901' && f.severity === 'warn').length === 2);
+    assert.equal(json.findings.filter((f) => f.severity === 'warn').length, 0, 'a content node serves the context files alone (AGSC-06-01)');
+    const site = tmpdir();
+    fs.writeFileSync(path.join(site, 'index.html'), '<!doctype html>\n');
+    const index = envelope('gen-ns', ['--check', site, nsRoot()]).json.findings.filter((f) => f.code === 'AGSC-E901' && f.severity === 'warn');
+    assert.deepEqual(index.map((f) => f.file).sort(), ['ns/agsc.rdf', 'ns/agsc.ttl']);
+    assert.ok(index.every((f) => /AGSC-06-06/u.test(f.message) && !/vocabulary files"/u.test(f.message)), 'no words the specification does not say are quoted');
+  });
+
+  it('the /ns/ of a built content node passes with no warning (AGSC-06-01: a content node serves the context files alone)', () => {
+    const dir = tmpdir();
+    fs.cpSync(path.join(REPO, 'tests', 'fixtures', 'minimal'), dir, { recursive: true });
+    const env = { HOME: dir, PATH: process.env.PATH, SOURCE_DATE_EPOCH: '1767225600' };
+    const built = require('node:child_process').spawnSync(process.execPath, [path.join(REPO, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
+    assert.equal(built.status, 0, built.stderr);
+    const { code, json } = envelope('gen-ns', ['--check', path.join(dir, 'www', 'ns'), REPO]);
+    assert.equal(code, 0);
+    assert.deepEqual(json.findings, []);
   });
 
   it('a context that is not JSON, not an @context object, or not an object is reported', () => {
@@ -347,10 +363,15 @@ describe('gen-ns — --check against a tree on disk', () => {
 });
 
 describe('gen-ns — the real distribution', () => {
-  it('derives 52 terms from the shipped ontology and round-trips 312 triples (295 of the terms and the ontology node, 17 declarations)', () => {
+  it('derives 53 terms from the shipped ontology, keeps the 52 of the context version in the context, and round-trips 318 triples (301 of the terms and the ontology node, 17 declarations)', () => {
     const result = capture('gen-ns', [REPO]);
     assert.equal(result.code, 0);
-    assert.match(result.out, /^gen-ns: 1 input file\(s\) read, 52 vocabulary terms, 85 context members, 312 triples round-tripped, 0 error, 0 warn\n$/u);
+    assert.match(result.out, /^gen-ns: 1 input file\(s\) read, 53 vocabulary terms, 85 context members, 318 triples round-tripped, 0 error, 0 warn\n$/u);
+  });
+
+  it('leaves out the same later terms as the engine (AGSC-06-32: the context of the context version)', () => {
+    const engine = require('../../src/knowledge/jsonld.js');
+    assert.deepEqual(TERMS_AFTER_CONTEXT_VERSION, engine.TERMS_AFTER_CONTEXT_VERSION);
   });
 
   it('the derived context is byte-identical on two runs', () => {

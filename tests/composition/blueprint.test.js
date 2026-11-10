@@ -109,7 +109,7 @@ test('AGSC-07-29: the files, their order, and one decision record per distinct t
   // An empty body: the description is quoted.
   assert.match(files.get('blueprint/decisions/0002-adr-b.md'), /^# A front$[\s\S]*```text agsc-content\nA web front\.\n```/mu);
   // `job` uses both Concepts: it sits in the subgraph of the code-point-least, `db`.
-  assert.match(files.get('blueprint/c4-components.mmd'), /\n {2}subgraph dbc\["db"\]\n {4}job\["job"\]\n {2}end\n/u);
+  assert.match(files.get('blueprint/c4-components.mmd'), /\n {2}subgraph s_db\["db"\]\n {4}n_job\["job"\]\n {2}end\n/u);
   // The build plan: dependency order, the members needed, the blocker.
   const steps = files.get('blueprint/build-plan.md').split('## Steps\n\n')[1];
   assert.strictEqual(steps, '### Step 1 — adopt `db`\n\n- Needs: nothing\n- Verified by: no check authored\n\n'
@@ -120,9 +120,9 @@ test('AGSC-07-29: the files, their order, and one decision record per distinct t
 test('AGSC-07-29: a member of another type that no Concept joins is drawn outside every subgraph', () => {
   const items = [plan(['web', 'note']), item('web', 'concept'), item('note', 'lesson', { related: ['elsewhere'] }), item('elsewhere', 'concept')];
   const level3 = filesOf(items, ['web', 'note']).get('blueprint/c4-components.mmd');
-  assert.ok(level3.endsWith('flowchart LR\n  note["note"]\n'), level3);
+  assert.ok(level3.endsWith('flowchart LR\n  n_note["note"]\n'), level3);
   const level1 = filesOf(items, ['web', 'note']).get('blueprint/c4-context.mmd');
-  assert.ok(level1.endsWith('  system["The plan"]\n  elsewhere["elsewhere"]\n  system -->|related| elsewhere\n'), level1);
+  assert.ok(level1.endsWith('  system["The plan"]\n  n_elsewhere["elsewhere"]\n  system -->|related| n_elsewhere\n'), level1);
 });
 
 test('AGSC-07-29: a quote or a backslash in the architecture\'s title is written as Mermaid reads a label', () => {

@@ -8,7 +8,7 @@
 // JSON-LD emitter, and a Level-0 emission named no context at all. This file builds
 // the reference fixture through the same options the CLI passes and checks:
 //
-//   * AGSC-06-32 — `/ns/context.jsonld` defines all 52 `asc:` terms and the 24
+//   * AGSC-06-32 — `/ns/context.jsonld` defines the 52 `asc:` terms of the context version and the 24
 //     external properties, with `@version` 1.1 and `@protected` true;
 //   * AGSC-06-32 — expanding the built `/graph.jsonld` with the built
 //     `/ns/context.jsonld` and re-compacting reproduces it byte for byte;
@@ -98,8 +98,8 @@ async function tripleCount(document, context) {
 
 test('buildOptions supplies the vocabulary the context is generated from', () => {
   const options = helpers.buildOptions({ specVersion: '1.0.0', version: '0.0.2' });
-  assert.strictEqual(options.ontologyTerms.length, 52,
-    'the 52 terms of ontology/agsc.ttl never reached a build');
+  assert.strictEqual(options.ontologyTerms.length, 53,
+    'the 53 terms of ontology/agsc.ttl never reached a build');
   assert.strictEqual(options.ontologyVersion, '1.0.0',
     'the owl:versionIRI version of AGSC-05-25 never reached a build');
   // Read once and memoised, exactly as the three compiled schemas are.
@@ -107,12 +107,13 @@ test('buildOptions supplies the vocabulary the context is generated from', () =>
     helpers.buildOptions({ specVersion: '1.0.0', version: '0.0.2' }).ontologyTerms);
 });
 
-test('a built /ns/context.jsonld defines all 52 asc: terms and the 24 external ones (AGSC-06-32)', () => {
+test('a built /ns/context.jsonld defines the 52 asc: terms of the context version, not asc:warrant, and the 24 external ones (AGSC-06-32)', () => {
   const context = JSON.parse(build().files.get('/ns/context.jsonld'))['@context'];
   const definitions = Object.entries(context)
     .filter(([, value]) => value !== null && typeof value === 'object');
   const asc = definitions.filter(([, value]) => String(value['@id']).startsWith('asc:'));
   assert.strictEqual(asc.length, 52, 'the built context carries no asc: term definition');
+  assert.strictEqual(context.warrant, undefined, 'asc:warrant came after the context version (AGSC-06-32, AGSC-05-09)');
   assert.strictEqual(definitions.length, 52 + 24);
   assert.strictEqual(Object.keys(context).length, 85, '2 flags + 7 prefixes + 52 + 24');
   assert.strictEqual(context['@version'], 1.1);

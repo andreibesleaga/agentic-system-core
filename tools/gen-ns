@@ -205,12 +205,20 @@ function readOntology(turtle) {
   };
 }
 
+/**
+ * AGSC-06-32: the context comes from the vocabulary file of the context version (1.0.0,
+ * AGSC-05-09); these terms came later and are not in it. The engine's
+ * `src/knowledge/jsonld.js` keeps the same list.
+ */
+const TERMS_AFTER_CONTEXT_VERSION = Object.freeze(['warrant']);
+
 /** AGSC-06-32: the JSON-LD context, derived from the vocabulary and the rules. */
 function buildContext(vocabulary) {
   const context = { '@protected': true, '@version': 1.1 };
   for (const [prefix, iri] of Object.entries(PREFIXES)) context[prefix] = iri;
   const localOf = (iri) => iri.slice(NS.length);
   const curieOf = (iri) => `asc:${localOf(iri)}`;
+  const ofContextVersion = (iris) => iris.filter((iri) => !TERMS_AFTER_CONTEXT_VERSION.includes(localOf(iri)));
   const ascNames = new Set([...vocabulary.classes, ...vocabulary.objectProperties,
     ...vocabulary.datatypeProperties].map(localOf));
   const names = externalTermNames(EXTERNAL, ascNames);
@@ -219,13 +227,13 @@ function buildContext(vocabulary) {
     if (type) definition['@type'] = type;
     context[names.get(curie)] = definition;
   }
-  for (const iri of vocabulary.classes) {
+  for (const iri of ofContextVersion(vocabulary.classes)) {
     context[localOf(iri)] = { '@id': curieOf(iri) };
   }
-  for (const iri of vocabulary.objectProperties) {
+  for (const iri of ofContextVersion(vocabulary.objectProperties)) {
     context[localOf(iri)] = { '@id': curieOf(iri), '@type': '@id' };
   }
-  for (const iri of vocabulary.datatypeProperties) {
+  for (const iri of ofContextVersion(vocabulary.datatypeProperties)) {
     const definition = { '@id': curieOf(iri) };
     const range = vocabulary.ranges.get(iri);
     if (range) definition['@type'] = range;
@@ -640,11 +648,14 @@ function run(argv, io) {
         }
       }
     }
-    for (const name of ['agsc.rdf', 'agsc.ttl']) {
+    // The vocabulary files belong to the namespace document site (AGSC-06-06), the tree that holds
+    // the `/ns/` index; a content node serves the two context files alone (AGSC-06-01).
+    const namespaceSite = fs.existsSync(path.join(target, 'index.html'));
+    for (const name of namespaceSite ? ['agsc.rdf', 'agsc.ttl'] : []) {
       const where = path.join(target, name);
       if (!fs.existsSync(where)) {
         findings.push(finding('AGSC-E901', `ns/${name}`,
-          `the ${name === 'agsc.ttl' ? 'text/turtle' : 'application/rdf+xml'} branch of the AGSC-06-06 negotiation table has no target here; AGSC-06-01 puts "/ns/ and its vocabulary files" in the route set a writer emits`, 'warn'));
+          `this tree holds the /ns/ index, and the ${name === 'agsc.ttl' ? 'text/turtle' : 'application/rdf+xml'} branch of the AGSC-06-06 negotiation table has no target here`, 'warn'));
       } else if (fs.readFileSync(where, 'utf8') !== files.get(name)) {
         findings.push(finding('AGSC-E602', `ns/${name}`,
           'the bytes on disk differ from this derivation (reported for review)', 'warn'));
@@ -671,7 +682,7 @@ function run(argv, io) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  EXTERNAL, HELP, PREFIXES, buildContext, buildIndex, buildRdfXml, canonicalize,
+  EXTERNAL, HELP, PREFIXES, TERMS_AFTER_CONTEXT_VERSION, buildContext, buildIndex, buildRdfXml, canonicalize,
   checkContext, compareCodePoint, contextById, expandCompact, externalTermNames, normalizeDefinition,
   readOntology, readRdfXml, run, turtleTriples,
 };

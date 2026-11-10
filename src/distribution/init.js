@@ -92,7 +92,8 @@ function synthesizeConfig({ directory, title, operator, specVersion, tdmCrawlers
 
 /**
  * AGSC-02-94(b): the synthesized `content/index.md` frontmatter. The description is
- * ≥ 40 code points by construction, so the AGSC-01-04 bound always holds. With no
+ * ≥ 50 code points by construction, so the AGSC-01-04 bound always holds and dataset search
+ * reads it (AGSC-06-41; amended 2026-11-10). With no
  * date (the build instant defaulted, `AGSC-E606`) the sentence carries none: a
  * 1970 date baked into authored content would be a false statement.
  */
@@ -100,8 +101,8 @@ function synthesizeIndex({ title, count, date, specVersion }) {
   return {
     base: PLACEHOLDER_BASE,
     description: date
-      ? `Adopted from ${count} Markdown files by agsc init on ${date}.`
-      : `Adopted from ${count} Markdown files by agsc init.`,
+      ? `This node was adopted from ${count} Markdown files by agsc init on ${date}.`
+      : `This node was adopted from ${count} Markdown files by agsc init.`,
     okf_version: OKF_VERSION,
     spec_version: specVersion,
     title,

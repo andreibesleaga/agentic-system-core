@@ -42,7 +42,7 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | `persona-k-live-board.feature` | P12 self-driving team | 5 | 12 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 3 | PRD-010, 054, 055, NFR-02 |
 | `persona-m-security-reviewer.feature` | P13 security reviewer | 0, 1 | 12 | PRD-005, 023, 047, 050, 053, 062, 065, NFR-07 |
-| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 7 | PRD-010, 020, 022, 024, 047, 060, 066, 067, 068, NFR-04, 05 |
+| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 7 | PRD-010, 020, 022, 024, 047, 060, 066, 067, 068, 072, NFR-04, 05 |
 | `persona-o-restricted.feature` | P15 restricted publisher | 1 | 5 | PRD-024, 057 |
 
 **P10 port implementer**: one scenario writes a Level-0 node without the engine and

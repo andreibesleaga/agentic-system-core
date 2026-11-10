@@ -1335,8 +1335,9 @@ function buildSite(bundle, ports, options, findings) {
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
   // AGSC-05-38/05-39: the site vocabulary of a node that uses the domain layer, else null.
   const siteVocabulary = siteViews.siteVocabularyOf(bundle, config);
+  const graphDomain = siteViews.graphDomainOf(config, siteVocabulary);
   const graphBase = {
-    ...(siteVocabulary === null ? {} : { domain: siteVocabulary }),
+    ...(graphDomain === null ? {} : { domain: graphDomain }),
     citations,
     mentions,
     base: `${base}/`,

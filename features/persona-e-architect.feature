@@ -76,12 +76,11 @@ Feature: Architect turns Concepts into a starting architecture
     And no network call was attempted
 
   @PRD-037 @human
-  Scenario: A brief too large for this engine is refused, and nothing is written
+  Scenario: A brief above the bound of derived keeps its first readings and says how many there are
     Given the Bundle holds a chain of 145 Concepts, "chain-144" requiring "chain-143" and so on down to "chain-0"
     When the operator runs "agsc compose chain-144 --brief --json" under the network trap
-    Then the command exits 1
-    And the JSON envelope carries the error "AGSC-E904"
-    And no Harness and no brief was written (AGSC-07-25)
+    Then the command exits 0
+    And the brief holds the first readings of derived and derived_total counts them all (AGSC-07-25)
     And no network call was attempted
 
   @PRD-037 @human

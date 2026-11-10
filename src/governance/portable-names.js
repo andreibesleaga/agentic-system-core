@@ -37,7 +37,7 @@ function reasonsFor(path) {
   return reasons;
 }
 
-/** The key two paths share when they are equal after NFC and simple case folding. */
+/** The key two paths share when they are equal after NFC, then upper-casing, then lower-casing (AGSC-01-40 (b)). */
 const single = (text) => Array.from(text).length === 1;
 /** One code point's simple fold: a full mapping that expands (ß to SS, İ to i̇) is not simple, so the code point stays. */
 function foldPoint(ch) {

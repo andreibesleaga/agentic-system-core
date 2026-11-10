@@ -182,7 +182,7 @@ test('a domain link appears in relations like any other key, in BRIEF.md and, au
   ], 'the edge to an item that is not listed is left out');
   assert.ok(files.get('BRIEF.md').includes('- `a` controls `b` (authored, outside)\n'));
   const inside = new Map(brief.briefDomainFiles(compose(items, ['a', 'b']), options));
-  assert.match(inside.get('brief.mmd'), /\n {2}a -->\|controls\| b\n/u);
+  assert.match(inside.get('brief.mmd'), /\n {2}n_a -->\|controls\| n_b\n/u);
   assert.doesNotMatch(inside.get('brief.mmd'), /controlled-by/u, 'a computed edge is not drawn');
   // Domain links name no member of the domain paragraph, and change nothing a key of the fourteen decides.
   assert.strictEqual(record.items[0].domain, undefined);

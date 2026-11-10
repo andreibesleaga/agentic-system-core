@@ -126,7 +126,8 @@ test('the governance chapter, agent lanes: a lane of kind process names its kind
   assert.match(b, /prov\{origin: ai-generated, agent: <name>, model: <entry\.model>, operator: <entry\.operator>\}/u);
   assert.match(b, /for a lane of kind: process, which declares no model \(AGSC-01-36\) and calls none, the model value is its kind, process, so that the item still names a model as AGSC-08-01 requires/u);
   assert.doesNotMatch(b, /\b(MUST|SHALL|SHOULD|REQUIRED|RECOMMENDED|OPTIONAL)\b[^;]*kind, process/u, 'the clarification adds no requirement keyword');
-  assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: \(b\) did not say which model a lane of kind process names; it names its kind, as the reference engine writes it\. No behaviour changes\.\)\* \[/u, 'the note stands at the end of the rule, before its trace bracket');
+  // A later dated note (2026-11-10, on (c)) may follow it; the 1.0.0 note stays among the notes at the end.
+  assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: \(b\) did not say which model a lane of kind process names; it names its kind, as the reference engine writes it\. No behaviour changes\.\)\*(?: \*\(Amended [^\n]*?\)\*)* \[/u, 'the note stands at the end of the rule, before its trace bracket');
 });
 
 test('the overview chapter, declared scope: the other items decided for 1.1 are listed', () => {

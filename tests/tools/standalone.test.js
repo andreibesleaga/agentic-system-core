@@ -12,8 +12,8 @@ const { describe, it } = require('node:test');
 
 const { TOOLS, capture } = require('./helpers');
 
-/** The nine command contracts of AGSC-09-90, plus the two generators of PRD-054. */
-const NINE = Object.freeze([
+/** The eleven command contracts of AGSC-09-90: seven validators and four generators. */
+const ELEVEN = Object.freeze([
   'validate-spec', 'validate-schemas', 'validate-ontology', 'validate-vectors',
   'validate-wellknown', 'validate-features', 'validate-diagrams',
   'gen-spec-html', 'gen-ns', 'gen-dc-profile', 'gen-shapes',
@@ -36,9 +36,9 @@ function sources() {
 }
 
 describe('tools/ are independent of the engine (AGSC-09-90)', () => {
-  it('ships the nine command contracts the rule names', () => {
+  it('ships the eleven command contracts the rule names', () => {
     const present = fs.readdirSync(TOOLS).sort();
-    for (const name of NINE) assert.ok(present.includes(name), `tools/${name} is missing`);
+    for (const name of ELEVEN) assert.ok(present.includes(name), `tools/${name} is missing`);
   });
 
   it('no tool requires anything under src/', () => {
@@ -76,7 +76,7 @@ describe('tools/ are independent of the engine (AGSC-09-90)', () => {
   });
 
   it('every tool answers --help with exit 0 and writes nothing to stderr', () => {
-    for (const name of NINE) {
+    for (const name of ELEVEN) {
       if (name === 'validate-vectors' || name === 'validate-wellknown') continue;   // left out of this loop; validate-wellknown's run() is asynchronous
       const result = capture(name, ['--help']);
       assert.equal(result.code, 0, name);

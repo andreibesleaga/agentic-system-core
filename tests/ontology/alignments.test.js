@@ -1,6 +1,6 @@
 'use strict';
 // ontology/alignments.ttl — the INFORMATIVE alignment file. It must (1) parse, (2) state only SKOS mapping relations or OWL
-// equivalences, (3) have one of the 52 terms of ontology/agsc.ttl as every subject —
+// equivalences, (3) have one of the 53 terms of ontology/agsc.ttl as every subject —
 // it adds no term, so the counter stays unchanged — (4) point every object at a
 // well-formed absolute IRI in a namespace its header verified by URL and quote, and
 // (5) never reach a build: no rule emits it and AGSC-06-01's route set is closed.
@@ -32,8 +32,8 @@ test('the alignment file parses and states something', () => {
   assert.ok(quads.length >= 5, `${quads.length} statements`);
 });
 
-test('every subject is one of the 52 terms of ontology/agsc.ttl — the file adds no term', () => {
-  assert.strictEqual(terms.size, 52);
+test('every subject is one of the 53 terms of ontology/agsc.ttl — the file adds no term', () => {
+  assert.strictEqual(terms.size, 53);
   for (const q of quads) {
     assert.strictEqual(q.subject.termType, 'NamedNode');
     assert.ok(terms.has(q.subject.value), `${q.subject.value} is not a term of ontology/agsc.ttl`);

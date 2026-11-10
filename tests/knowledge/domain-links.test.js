@@ -163,6 +163,14 @@ test('domain links on a node with no vocabulary file are the warning AGSC-E207: 
   assert.deepStrictEqual(e418(items, { model: null, vocabulary: true }), [], 'a vocabulary that does not load is AGSC-E420 alone');
 });
 
+test('AGSC-02-25 as amended 2026-11-10: a domain type whose class is under another item class than the item\'s type is AGSC-E418', () => {
+  const model = domain.load(withExtra('dom:Run a owl:Class ; rdfs:label "Run" ; rdfs:subClassOf asc:Episode .'));
+  const items = [item('a', { domain_type: 'Engine' }), item('b', { domain_type: 'Run' }),
+    { ...item('c', { domain_type: 'Run' }), frontmatter: { domain_type: 'Run', slug: 'c', type: 'episode' }, path: 'content/episodes/c.md' }];
+  assert.deepStrictEqual(e418(items, { model, vocabulary: true }), [['AGSC-E418', 'content/concepts/b.md', 'domain_type', 'error']]);
+  assert.match(domain.itemFindings(items, { model, vocabulary: true })[0].message, /under the item class .*Episode.*, not .*Concept/u);
+});
+
 test('a domain context that no entry of domain.contexts declares is AGSC-E418', () => {
   const items = [item('a', { domain_context: 'ops' }), item('b', { domain_context: 'payments' })];
   assert.deepStrictEqual(e418(items, { contexts: CONTEXTS, model: MODEL, vocabulary: true }), [

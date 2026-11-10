@@ -72,8 +72,15 @@ test('init in a bare folder names the steps a build still needs, and writes no f
   const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
   assert.deepEqual(config.site.tdm_crawlers, [...init.REFERENCE_TDM_CRAWLERS]);
   const index = fs.readFileSync(path.join(dir, 'content', 'index.md'), 'utf8');
-  assert.match(index, /Adopted from 1 Markdown files by agsc init\./u);
+  assert.match(index, /This node was adopted from 1 Markdown files by agsc init\./u);
   assert.doesNotMatch(index, /1970/u, 'a defaulted instant must not become a date in authored content');
+});
+
+test('the index description init writes is at least 50 code points, with and without a date (AGSC-02-94 (b), AGSC-06-41)', () => {
+  for (const date of [null, '2026-11-18']) {
+    const { description } = init.synthesizeIndex({ count: 1, date, specVersion: '1.0.0', title: 'Notes' });
+    assert.ok([...description].length >= 50, `${[...description].length} code points: ${description}`);
+  }
 });
 
 test('init with an instant writes the date, and after the two steps ci exits 0', (t) => {

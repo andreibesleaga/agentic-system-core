@@ -67,12 +67,13 @@ const HIGHER_LEVEL_CASES = Object.freeze({
   'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2,
   'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2, 'lint-0026': 2, 'bundle-0011': 2, 'disc-0026': 2,
   'disc-0027': 2, 'disc-0028': 2, 'disc-0029': 2, 'disc-0030': 2, 'disc-0031': 2, 'disc-0032': 2,
-  'disc-0033': 2,
+  'disc-0033': 2, 'disc-0035': 2, 'disc-0036': 2, 'disc-0037': 2, 'disc-0038': 2,
   'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3, 'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3,
   'lint-0028': 3, 'lint-0029': 3, 'lint-0032': 3, 'lint-0033': 3, 'adopt-0007': 3, 'adopt-0008': 3,
   'adopt-0009': 3, 'bundle-0018': 3, 'bundle-0019': 3, 'imp-0006': 3, 'imp-0007': 3, 'imp-0008': 3,
   'bnd-0046': 3, 'bnd-0047': 3, 'bnd-0048': 3, 'bnd-0050': 3, 'lint-0046': 3, 'lint-0047': 3,
   'lint-0048': 3, 'lint-0049': 3, 'lint-0050': 3, 'lint-0057': 3, 'lint-0058': 3, 'lint-0059': 3,
+  'lint-0063': 3,
 });
 
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */

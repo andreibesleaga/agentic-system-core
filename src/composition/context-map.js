@@ -76,8 +76,9 @@ function peerEntries(peers) {
  * @param {{contexts?: Array<{cluster: string, namespace: string}>, items: Array<object>,
  *   peers?: Array<{url: string, relationship: string, statements?: Array<object>}>,
  *   bundleVersion?: string, instant: string, licenseProse?: string, selectionDigest: string,
- *   specVersion: string}} options `contexts` is `domain.contexts`; `peers` the typed peers with
- *   the statements of their crosswalks; the rest as `harness.js#emit` takes them
+ *   specVersion: string, listed?: string[]}} options `contexts` is `domain.contexts`; `peers` the
+ *   typed peers with the statements of their crosswalks; `listed` the slugs of the listed items
+ *   (every item when absent); the rest as `harness.js#emit` takes them
  * @returns {object|null} the members in the order JCS writes them
  */
 function contextMap(result, options) {
@@ -86,7 +87,11 @@ function contextMap(result, options) {
   const selection = [...result.selection];
   const index = indexBySlug(options.items);
   const contextOf = bounded.contextOf(entries);
-  const contextOfMember = (slug) => (index.has(slug) ? contextOf(frontmatterOf(index.get(slug))) : null);
+  // AGSC-07-30 as amended 2026-11-10: a context whose cluster is not a listed item (a draft, a
+  // retired or a held-back cluster, AGSC-00-05) is never named; its members belong to none.
+  const listed = options.listed === undefined ? null : new Set(options.listed);
+  const named = (context) => (context !== null && (listed === null || listed.has(context)) ? context : null);
+  const contextOfMember = (slug) => (index.has(slug) ? named(contextOf(frontmatterOf(index.get(slug)))) : null);
   return {
     bundle_version: harness.contentVersion(options.bundleVersion, options.instant),
     contexts: contextEntries(contextOfMember, entries, selection),

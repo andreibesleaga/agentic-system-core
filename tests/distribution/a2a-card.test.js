@@ -1,5 +1,5 @@
 'use strict';
-// tests/distribution/a2a-card.test.js — AGSC-06-34 with AGSC-06-07: the Agent2Agent agent card.
+// tests/distribution/a2a-card.test.js — AGSC-06-34 with AGSC-06-07: the Agent2Agent agent card (PRD-024, PRD-073).
 //
 //   * The emitted card is read back by the official A2A SDK (`@a2a-js/sdk` 1.3.0): its codec
 //     loses nothing, so every member is one A2A 1.0 defines; every member A2A 1.0 §4.4.1 requires
@@ -90,7 +90,7 @@ test('AGSC-06-34 with AGSC-11-21: an MCP responder is not an A2A interface, and 
   assert.deepEqual(warned([CARD]), [['AGSC-E210', 'error']], 'no responder: the 1.0 error');
   // The warning says that the declaration stays while the card is not served (AGSC-11-16).
   assert.match(card.cardFindings([mcpResponder, CARD])[0].message,
-    /the discovery document still declares a2a-card at https:\/\/a\.example\/\.well-known\/agent-card\.json, which this node does not serve/u);
+    /the discovery document does not declare a2a-card at https:\/\/a\.example\/\.well-known\/agent-card\.json either/u);
   assert.deepEqual(JSON.parse(card.cardBytes(input({ surfaces: [RESPONDER, { ...CARD, version: '1.0.0' }] })))
     .supportedInterfaces.map((i) => i.protocolVersion), ['1.0.0']);
 });
@@ -118,4 +118,24 @@ test('property: the card keeps the order of the packs and of the responders, and
     assert.deepEqual(value.skills.map((s) => s.id), packs);
     assert.deepEqual(value.supportedInterfaces.map((i) => i.url), responders.map((r) => r.target));
   }), { numRuns: 50, seed: 20261107 });
+});
+
+test('AGSC-06-34 as amended 2026-11-10: a responder\'s security_schemes and security_requirements become the card\'s securitySchemes and securityRequirements', () => {
+  const secured = {
+    ...RESPONDER, access: 'credential',
+    security_requirements: [{ schemes: { bearer: { list: [] } } }],
+    security_schemes: { bearer: { httpAuthSecurityScheme: { bearerFormat: 'JWT', scheme: 'Bearer' } } },
+  };
+  const json = JSON.parse(card.cardBytes(input({ surfaces: [secured, CARD] })));
+  assert.deepEqual(json.securitySchemes, { bearer: { httpAuthSecurityScheme: { bearerFormat: 'JWT', scheme: 'Bearer' } } });
+  assert.deepEqual(json.securityRequirements, [{ schemes: { bearer: {} } }]);
+  assert.deepEqual(card.cardFindings([secured, CARD]), []);
+  // The SDK writes only what A2A defines: a member it does not know is not carried.
+  const odd = { ...secured, security_schemes: { bearer: { httpAuthSecurityScheme: { scheme: 'Bearer', x: 1 } } } };
+  assert.deepEqual(JSON.parse(card.cardBytes(input({ surfaces: [odd, CARD] }))).securitySchemes, { bearer: { httpAuthSecurityScheme: { scheme: 'Bearer' } } });
+  // A credential responder that names no scheme leaves a card an A2A client reads as open: a warning.
+  const open = card.cardFindings([{ ...RESPONDER, access: 'credential' }, CARD]);
+  assert.deepEqual(open.map((f) => [f.code, f.severity]), [['AGSC-E210', 'warn']]);
+  assert.match(open[0].message, /securitySchemes/u);
+  assert.equal(JSON.parse(card.cardBytes(input())).securitySchemes, undefined, 'a node that names none has none, as before');
 });

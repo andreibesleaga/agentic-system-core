@@ -210,7 +210,8 @@ test('AGSC-09-19 (3)-(5), AGSC-09-13a: the errors of 2026-07-28', async () => {
   assert.equal(byId.get(3).result.isError, true);
   assert.equal(byId.get(3).result.structuredContent.body.code, 'AGSC-E301');
   assert.deepEqual(byId.get(4).error.code, -32022);
-  assert.deepEqual(byId.get(4).error.data, { requested: '1900-01-01', supported: [MODERN, LEGACY] });
+  // Requests 1 to 3 of 2026-07-28 fixed that revision for the process (point 5), so the error names it alone.
+  assert.deepEqual(byId.get(4).error.data, { requested: '1900-01-01', supported: [MODERN] });
   assert.equal(byId.get(5).error.code, -32601);
   assert.equal(byId.get(6).error.code, -32602);
 });

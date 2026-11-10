@@ -40,10 +40,10 @@
 
 const { byCodePoint, compareCodePoint } = require('./compose.js');
 const {
-  dslIdentifier, fenceProse, licenceSentence, mermaidHead, pairs, provenanceHeader, quoted, singleLine,
+  fenceProse, licenceSentence, mermaidHead, pairs, provenanceHeader, quoted, singleLine,
   withoutTrailingFeeds,
 } = require('./harness.js');
-const { briefMember, briefParts, listedIndex } = require('./brief.js');
+const { briefMember, briefParts, listedIndex, mermaidName } = require('./brief.js');
 
 // ------------------------------------------------------------------ the inputs
 
@@ -83,9 +83,9 @@ function c4Head(level, options) {
   return [`%% ${level} (https://c4model.com/)`, ...mermaidHead(options), 'flowchart LR'];
 }
 
-/** One Mermaid node line, the identifier being the one `workspace.dsl` derives from the slug. */
+/** One Mermaid node line, named as AGSC-07-29 names a member (`brief.js#mermaidName`). */
 function nodeLine(slug, indent) {
-  return `${indent}${dslIdentifier(slug)}[${quoted(slug)}]`;
+  return `${indent}${mermaidName('n', slug)}[${quoted(slug)}]`;
 }
 
 /**
@@ -97,11 +97,11 @@ function c4Edges(parts, keep) {
   const lines = [];
   for (const r of parts.record.relations) {
     if (r.origin === 'authored' && r.scope === 'inside' && keep(r.source, r.target)) {
-      lines.push(`  ${dslIdentifier(r.source)} -->|${r.key}| ${dslIdentifier(r.target)}`);
+      lines.push(`  ${mermaidName('n', r.source)} -->|${r.key}| ${mermaidName('n', r.target)}`);
     }
   }
   for (const p of parts.wiring) {
-    if (keep(p.producer, p.consumer)) lines.push(`  ${dslIdentifier(p.producer)} -->|produces ${p.port}| ${dslIdentifier(p.consumer)}`);
+    if (keep(p.producer, p.consumer)) lines.push(`  ${mermaidName('n', p.producer)} -->|produces ${p.port}| ${mermaidName('n', p.consumer)}`);
   }
   return lines;
 }
@@ -138,7 +138,7 @@ function c4Context(parts, options) {
   for (const target of targets) lines.push(nodeLine(target, '  '));
   for (const target of targets) {
     for (const key of distinctSorted(outward.filter((r) => r.target === target).map((r) => r.key))) {
-      lines.push(`  system -->|${key}| ${dslIdentifier(target)}`);
+      lines.push(`  system -->|${key}| ${mermaidName('n', target)}`);
     }
   }
   return `${lines.join('\n')}\n`;
@@ -174,8 +174,8 @@ function homeConcept(parts, slug, concepts) {
 
 /**
  * `c4-components.mmd`, level 3: each member that is not a Concept, inside the subgraph of its
- * Concept (`homeConcept`; the subgraphs in the dependency order of their Concepts, the subgraph
- * identifier being the Concept's identifier followed by `c`), the members with no Concept after
+ * Concept (`homeConcept`; the subgraphs in the dependency order of their Concepts, each named
+ * `s_` and the Concept's slug, `brief.js#mermaidName`), the members with no Concept after
  * them, and the edges that have at least one such member as an end.
  */
 function c4Components(parts, options) {
@@ -187,7 +187,7 @@ function c4Components(parts, options) {
   for (const concept of concepts) {
     const inner = others.filter((slug) => home.get(slug) === concept);
     if (inner.length === 0) continue;
-    lines.push(`  subgraph ${dslIdentifier(concept)}c[${quoted(concept)}]`, ...inner.map((slug) => nodeLine(slug, '    ')), '  end');
+    lines.push(`  subgraph ${mermaidName('s', concept)}[${quoted(concept)}]`, ...inner.map((slug) => nodeLine(slug, '    ')), '  end');
   }
   for (const slug of others) if (home.get(slug) === null) lines.push(nodeLine(slug, '  '));
   lines.push(...c4Edges(parts, (a, b) => drawn.has(a) || drawn.has(b)));

@@ -202,7 +202,7 @@ for (const { folder, architecture } of BLUEPRINTS) {
       // Level 3: every other member, each inside the box of a level-2 node, and edges that reach level 2 or 3 only.
       const others = selection.filter((s) => items.get(s).type !== 'concept');
       assert.deepEqual([...l3.nodes.values()].sort(), [...others].sort());
-      for (const [id, label] of l3.subgraphs) assert.equal(l2.nodes.get(id.replace(/c$/u, '')), label, `level 3 box ${label} is no level-2 node`);
+      for (const [id, label] of l3.subgraphs) assert.equal(l2.nodes.get(id.replace(/^s_/u, 'n_')), label, `level 3 box ${label} is no level-2 node`);
       for (const [id, label] of l3.nodes) assert.ok(l3.subgraphs.has(l3.parents.get(id)), `level 3 member ${label} is drawn outside every box`);
       for (const e of l3.edges) {
         assert.ok(l3.nodes.has(e.from) || l3.nodes.has(e.to));

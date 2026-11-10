@@ -105,13 +105,20 @@ test('a node with one item and no link still gets ten examples that run, each an
   }
 });
 
+test('AGSC-05-34 as amended 2026-11-10: on chains that close a cycle, examples 3, 6 and 7 leave the subject out, as the functions do', () => {
+  const item = (slug, other) => ({ 'blocked-by': [other], 'derived-from': [other], kind: 'principle',
+    prov: { operator: 'human:tester', origin: 'human' }, slug, supersedes: [other], title: slug.toUpperCase(), type: 'concept' });
+  const runs = runAll([item('a', 'b'), item('b', 'a')], AT);
+  for (const k of [2, 5, 6]) {
+    assert.ok(runs[k].values.fits, `question ${k + 1} found an item to ask about`);
+    assert.deepStrictEqual(runs[k].got, runs[k].expected, runs[k].text);
+  }
+});
+
 /**
  * A small graph of items whose links fast-check draws among a fixed set of slugs. Every link
- * points to a later slug, so no chain closes a cycle: on a cycle the informative SPARQL text of
- * AGSC-05-34 (`p+`) reaches the subject itself, which the function leaves out ("a subject is
- * never in its own answer"). A `requires` cycle is refused (AGSC-E302) and a `blocked-by` cycle
- * is warned about; the divergence for the other chains is recorded for the specification's
- * owner, not worked around here.
+ * points to a later slug, so no chain closes a cycle (a `requires` cycle is refused, AGSC-E302);
+ * the test above covers the cycles of questions 3, 6 and 7.
  */
 const SLUGS = ['a', 'b', 'c', 'd', 'e'];
 const later = (slug) => SLUGS.filter((s) => s > slug);
@@ -171,7 +178,7 @@ test('AGSC-05-38: the classes and the relations a site vocabulary defines, each 
     classes: [{ iri: 'https://minimal.example/ns/domain#Engine', label: 'Engine', meaning: 'A machine that turns fuel into thrust.', parents: ['https://w3id.org/agentic-system-core/ns#Concept'] }],
     ontology: { iri: 'https://minimal.example/ns/domain', label: 'Minimal domain vocabulary' },
     relations: [
-      { inverse: 'https://minimal.example/ns/domain#controls', iri: 'https://minimal.example/ns/domain#controlled-by', label: 'controlled by', meaning: 'This engine is run by the target controller.', parents: ['https://w3id.org/agentic-system-core/ns#uses'] },
+      { inverse: null, iri: 'https://minimal.example/ns/domain#controlled-by', label: 'controlled by', meaning: 'This engine is run by the target controller.', parents: ['https://w3id.org/agentic-system-core/ns#uses'] },
       { inverse: 'https://minimal.example/ns/domain#controlled-by', iri: 'https://minimal.example/ns/domain#controls', label: 'controls', meaning: 'This controller runs the target engine.', parents: ['https://w3id.org/agentic-system-core/ns#uses'] },
     ],
   });

@@ -58,6 +58,16 @@ test('the map names each context with its members, the crossing Links, and the m
     'peers', 'selection', 'selection_digest', 'spec_version', 'terms_statement', 'unassigned']);
 });
 
+test('AGSC-07-30 as amended 2026-11-10: a context whose cluster is not listed (a draft) is never named', () => {
+  const result = compose(ITEMS, ['invoice', 'label', 'glossary']);
+  const listed = ITEMS.map((item) => item.slug).filter((slug) => slug !== 'shipping');
+  const map = contextMap.contextMap(result, optionsFor(result, { listed }));
+  assert.deepStrictEqual(map.contexts, [{ members: ['invoice'], name: 'billing', namespace: 'https://ctx.example/billing#' }]);
+  assert.deepStrictEqual(map.cross_context_links, [], 'no Link crosses into a context that is not named');
+  assert.deepStrictEqual(map.unassigned, ['glossary', 'label', 'parcel']);
+  assert.doesNotMatch(JSON.stringify(map), /shipping/u);
+});
+
 test('the peers carry their relationship and crosswalk, ordered by address', () => {
   const result = compose(ITEMS, ['invoice']);
   const peers = [

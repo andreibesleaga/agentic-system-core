@@ -113,11 +113,11 @@ test('the subjects keep the stable Turtle profile: code-point order, one block e
 
 // ---------------------------------------------------------------- the check
 
-test('the shipped file passes the check with 12 classes and 40 properties: declarations are not terms', () => {
+test('the shipped file passes the check with 12 classes and 41 properties: declarations are not terms', () => {
   const result = capture('validate-ontology', [ROOT]);
   assert.strictEqual(result.err, '');
   assert.strictEqual(result.code, 0);
-  assert.match(result.out, / 12 classes, 40 properties, 0 error, 0 warn\n$/u);
+  assert.match(result.out, / 12 classes, 41 properties, 0 error, 0 warn\n$/u);
 });
 
 test('a datatype property ranged over xsd:date is AGSC-E203: xsd:date is not an OWL 2 RL datatype', () => {

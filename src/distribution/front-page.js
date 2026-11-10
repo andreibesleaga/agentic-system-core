@@ -26,6 +26,10 @@ const { peerUrl } = require('../knowledge/contexts.js');
 /** AGSC-06-41: the PROV-O namespace (W3C Recommendation, 30 April 2013), prefix `prov`. */
 const PROV = 'http://www.w3.org/ns/prov#';
 const XSD_DATE_TIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
+/** AGSC-06-41: the DCAT 3 and DCTerms namespaces of the catalogue block, and the IANA media type registry. */
+const DCAT = 'http://www.w3.org/ns/dcat#';
+const DCTERMS = 'http://purl.org/dc/terms/';
+const IANA_MEDIA_TYPES = 'https://www.iana.org/assignments/media-types/';
 /** AGSC-06-41: the machine files a `DataDownload` names, in order, with the type each is served with. */
 const DOWNLOADS = Object.freeze([
   ['/graph.jsonld', 'application/ld+json'],
@@ -40,17 +44,19 @@ const MIN_DESCRIPTION = 50;
 /**
  * AGSC-06-41: the creator, a `Person` with a `name` and, where an ORCID iD is configured, a
  * `sameAs` naming it — from `bundle.creator` (name, OPTIONAL orcid), else from `site.author` with
- * `site.author_orcid` (AGSC-01-18); null when neither is configured.
+ * `site.author_orcid` (AGSC-01-18); null when neither is configured. As amended 2026-11-10 the
+ * Person is a named node: `@id` is the ORCID iD URL, else `<site.base>#creator`.
  */
-function creatorOf(config) {
+function creatorOf(config, base) {
   const bundle = (config && config.bundle) || {};
   const site = (config && config.site) || {};
   const named = bundle.creator && typeof bundle.creator.name === 'string'
     ? { name: bundle.creator.name, orcid: bundle.creator.orcid }
     : (typeof site.author === 'string' && site.author !== '' ? { name: site.author, orcid: site.author_orcid } : null);
   if (named === null) return null;
-  const person = { '@type': 'Person', name: named.name };
-  if (typeof named.orcid === 'string' && named.orcid !== '') person.sameAs = `https://orcid.org/${named.orcid}`;
+  const orcid = typeof named.orcid === 'string' && named.orcid !== '' ? `https://orcid.org/${named.orcid}` : null;
+  const person = { '@id': orcid === null ? `${base}#creator` : orcid, '@type': 'Person', name: named.name };
+  if (orcid !== null) person.sameAs = orcid;
   return person;
 }
 
@@ -68,15 +74,16 @@ function datasetBlock(input) {
   const served = typeof (input.served && input.served.has) === 'function' ? input.served : new Set(input.served || []);
   const restricted = config.visibility === 'restricted';
   const block = {
-    '@context': ['https://schema.org', { prov: PROV }], '@type': 'Dataset',
+    // AGSC-06-41 as amended 2026-11-10: the block is the Bundle IRI, so its triples are not on a blank node.
+    '@context': ['https://schema.org', { prov: PROV }], '@id': discovery.href(base, '/'), '@type': 'Dataset',
     description: input.description == null ? '' : input.description, name: input.name == null ? '' : input.name,
     'prov:generatedAtTime': { '@type': XSD_DATE_TIME, '@value': String(input.instant) },
     url: discovery.href(base, '/'),
   };
   const license = licenseUrl(config, { legal: input.hasLegal === true });
   if (license !== null) block.license = license;
-  const creator = creatorOf(config);
-  if (creator !== null) Object.assign(block, { creator, 'prov:wasAttributedTo': { ...creator } });
+  const creator = creatorOf(config, discovery.href(base, '/'));
+  if (creator !== null) Object.assign(block, { creator, 'prov:wasAttributedTo': { '@id': creator['@id'] } });
   // AGSC-06-41: the files of a `restricted` node are gated, so it names none and claims no free access.
   if (!restricted) {
     block.isAccessibleForFree = true;
@@ -85,6 +92,39 @@ function datasetBlock(input) {
     if (downloads.length > 0) block.distribution = downloads;
   }
   return block;
+}
+
+/**
+ * AGSC-06-41 as amended 2026-11-10: the DCAT 3 catalogue block (W3C Recommendation, 22 August
+ * 2024) that a node writes beside the Dataset block when `discovery.dcat` is `true`, or null. It
+ * states the same facts in the terms catalogue harvesters read: a `dcat:Catalog` whose dataset is
+ * the Bundle IRI, with one `dcat:Distribution` for each `DataDownload` of the Dataset block, typed
+ * by the IANA media type IRI or, for the chunks, whose type is not registered, by `dcterms:format`.
+ *
+ * @param {object} input as `datasetBlock` takes it
+ * @returns {object|null}
+ */
+function catalogBlock(input) {
+  const config = input.config || {};
+  if ((config.discovery || {}).dcat !== true) return null;
+  const dataset = datasetBlock(input);
+  const described = {
+    '@id': dataset['@id'], '@type': 'dcat:Dataset',
+    'dcterms:description': dataset.description, 'dcterms:modified': dataset['prov:generatedAtTime'], 'dcterms:title': dataset.name,
+  };
+  if (dataset.license !== undefined) described['dcterms:license'] = { '@id': dataset.license };
+  if (dataset.creator !== undefined) described['dcterms:creator'] = { '@id': dataset.creator['@id'] };
+  if (dataset.distribution !== undefined) {
+    described['dcat:distribution'] = dataset.distribution.map((download) => {
+      const type = download.encodingFormat.split(';')[0];
+      const typed = type === 'application/jsonl' ? { 'dcterms:format': type } : { 'dcat:mediaType': { '@id': `${IANA_MEDIA_TYPES}${type}` } };
+      return { '@type': 'dcat:Distribution', 'dcat:downloadURL': { '@id': download.contentUrl }, ...typed };
+    });
+  }
+  return {
+    '@context': { dcat: DCAT, dcterms: DCTERMS }, '@id': `${dataset['@id']}#catalog`, '@type': 'dcat:Catalog',
+    'dcat:dataset': described, 'dcterms:title': dataset.name,
+  };
 }
 
 /** AGSC-06-41: the warning for a description Google's dataset search ignores. */
@@ -113,9 +153,10 @@ function frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOpt
     { href: '/search/', title: 'Search' },
     { href: '/now/', title: 'Now' },
   ];
-  const jsonld = schemaOrg(datasetBlock({
-    config: bundle.config || {}, description: indexFrontmatter.description, hasLegal, instant, name: title, served,
-  }));
+  const facts = { config: bundle.config || {}, description: indexFrontmatter.description, hasLegal, instant, name: title, served };
+  const catalog = catalogBlock(facts);
+  // AGSC-06-41: the DCAT block, when the node asks for it, beside the Dataset block in one script.
+  const jsonld = schemaOrg(catalog === null ? datasetBlock(facts) : [datasetBlock(facts), catalog]);
   return {
     // With no root document the build already fails on it (AGSC-E901); a warning about the
     // length of its description would be about a file that is not there.
@@ -144,4 +185,4 @@ function peerSites(peers) {
   return out;
 }
 
-module.exports = { creatorOf, datasetBlock, datasetFindings, frontPage, peerSites };
+module.exports = { catalogBlock, creatorOf, datasetBlock, datasetFindings, frontPage, peerSites };

@@ -104,6 +104,7 @@ test('AGSC-06-40 / AGSC-06-41: the home page\'s Link field and Dataset block nam
   assert.deepEqual(block.distribution.map((d) => d.contentUrl.replace('https://minimal.example', '')),
     ['/graph.jsonld', '/graph.ttl', '/graph.nq', '/chunks.jsonl', '/.well-known/knowledge-linkset']);
   assert.equal(block.license, licence);
-  assert.deepEqual(block['prov:wasAttributedTo'], { '@type': 'Person', name: 'Josiah Carberry', sameAs: 'https://orcid.org/0000-0002-1825-0097' });
+  assert.deepEqual(block.creator, { '@id': 'https://orcid.org/0000-0002-1825-0097', '@type': 'Person', name: 'Josiah Carberry', sameAs: 'https://orcid.org/0000-0002-1825-0097' });
+  assert.deepEqual(block['prov:wasAttributedTo'], { '@id': 'https://orcid.org/0000-0002-1825-0097' }, 'the same Person, by @id (AGSC-06-41 as amended 2026-11-10)');
   assert.equal(block['prov:generatedAtTime']['@value'], '2026-01-01T00:00:00Z');
 });

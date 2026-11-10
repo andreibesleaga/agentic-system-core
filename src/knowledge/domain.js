@@ -49,6 +49,9 @@ const LINK_PROPERTIES = Object.freeze(RELATIONS.map((r) => {
   return `${nq.PREFIXES[r.property.slice(0, colon)]}${r.property.slice(colon + 1)}`;
 }));
 
+/** AGSC-05-26a: the link properties that take no super-property, so no site property is equivalent to one (AGSC-05-38 (f)). */
+const NO_SUPER = Object.freeze(['uses', 'excludes', 'contradicts'].map((local) => `${NS}${local}`));
+
 /** AGSC-05-38 (c): the predicates a site vocabulary may use (those of AGSC-05-22 less domain and range). */
 const PREDICATES = Object.freeze(new Set([
   `${RDF}type`, `${RDFS}label`, `${RDFS}comment`, `${RDFS}seeAlso`, `${RDFS}isDefinedBy`,
@@ -113,7 +116,11 @@ function ancestors(start, parents) {
   return seen;
 }
 
-/** The statements of a parsed file, by subject, with the type and the two hierarchies indexed. */
+/**
+ * The statements of a parsed file, by subject, with the type and the two hierarchies indexed.
+ * An `owl:equivalentClass` or `owl:equivalentProperty` statement is an edge of its hierarchy
+ * both ways, as OWL 2 RL entails (`scm-eqc1`, `scm-eqp1`; AGSC-05-38 (e), (f)).
+ */
 function indexOf(quads) {
   const bySubject = new Map();
   const types = new Map();
@@ -129,6 +136,11 @@ function indexOf(quads) {
     if (q.predicate.value === RDF_TYPE) add(types, s, q.object.value);
     if (q.predicate.value === `${RDFS}subClassOf`) add(superClasses, s, q.object.value);
     if (q.predicate.value === `${RDFS}subPropertyOf`) add(superProperties, s, q.object.value);
+    for (const [predicate, map] of [[`${OWL}equivalentClass`, superClasses], [`${OWL}equivalentProperty`, superProperties]]) {
+      if (q.predicate.value !== predicate) continue;
+      add(map, s, q.object.value);
+      add(map, q.object.value, s);
+    }
   }
   const typesOf = (iri) => types.get(iri) || new Set();
   const ontologies = [...bySubject.keys()].filter((s) => typesOf(s).has(`${OWL}Ontology`)).sort(compareCodePoint);
@@ -230,14 +242,39 @@ function termFaults(index, contexts, fault) {
     const isClass = types.has(`${OWL}Class`);
     const isProperty = [...types].some((type) => PROPERTY_TYPES.has(type));
     if (!isClass && !isProperty) fault('(e), (f)', `<${term}> is neither a class nor a property; a site vocabulary defines classes and object properties`);
-    if (isClass) {
-      const count = [...ancestors(term, index.superClasses)].filter((c) => ITEM_CLASSES.includes(c)).length;
-      if (count !== 1) fault('(e)', `<${term}> is a subclass of ${count} of the six item classes; it is a subclass of exactly one`);
-    }
-    if (isProperty && !(types.has(`${OWL}ObjectProperty`)
-        && [...ancestors(term, index.superProperties)].some((p) => LINK_PROPERTIES.includes(p)))) {
-      fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
-    }
+    if (isClass) classFaults(index, term, fault);
+    if (isProperty) propertyFaults(index, term, (iri) => own(iri) && index.typesOf(iri).has(`${OWL}ObjectProperty`), fault);
+  }
+}
+
+/** The objects of `predicate` on `term` that are named nodes. */
+const objectsOf = (index, term, predicate) => index.bySubject.get(term)
+  .filter((q) => q.predicate.value === predicate && q.object.termType === 'NamedNode').map((q) => q.object.value);
+
+/** (e): exactly one item class above a class the file defines, and no equivalence to an item class itself. */
+function classFaults(index, term, fault) {
+  const count = [...ancestors(term, index.superClasses)].filter((c) => ITEM_CLASSES.includes(c)).length;
+  if (count !== 1) fault('(e)', `<${term}> is a subclass of ${count} of the six item classes; it is a subclass of exactly one`);
+  for (const other of objectsOf(index, term, `${OWL}equivalentClass`).filter((c) => ITEM_CLASSES.includes(c))) {
+    fault('(e)', `<${term}> is stated equivalent to the item class <${other}>; a class of the site vocabulary is a subclass of one`);
+  }
+}
+
+/**
+ * (f): an object property under a link property; every super-property a link property or an
+ * object property of the file, so `prp-spo1` and `prp-eqp1`/`2` (AGSC-05-37) state no other
+ * predicate; and no equivalence to a link property that AGSC-05-26a gives no super-property.
+ */
+function propertyFaults(index, term, isOwnProperty, fault) {
+  const supers = [...ancestors(term, index.superProperties)];
+  if (!(index.typesOf(term).has(`${OWL}ObjectProperty`) && supers.some((p) => LINK_PROPERTIES.includes(p)))) {
+    fault('(f)', `<${term}> is not an owl:ObjectProperty that is a sub-property of one of the fourteen link properties`);
+  }
+  for (const other of supers.filter((p) => !LINK_PROPERTIES.includes(p) && !isOwnProperty(p)).sort(compareCodePoint)) {
+    fault('(f)', `<${term}> has the super-property <${other}>, which is neither a link property nor an object property the site vocabulary defines`);
+  }
+  for (const other of objectsOf(index, term, `${OWL}equivalentProperty`).filter((p) => NO_SUPER.includes(p))) {
+    fault('(f)', `<${term}> is stated equivalent to <${other}>, which takes no super-property (AGSC-05-26a)`);
   }
 }
 
@@ -364,6 +401,11 @@ function load(text, options = {}) {
     const iri = iriFor(item, item.domain_type);
     return iri !== null && index.typesOf(iri).has(`${OWL}Class`) ? iri : null;
   };
+  /** AGSC-05-38 (e): the one item class above a class of the file, or `null` where (e) is broken. */
+  const itemClassOf = (iri) => {
+    const found = [...ancestors(iri, index.superClasses)].filter((c) => ITEM_CLASSES.includes(c));
+    return found.length === 1 ? found[0] : null;
+  };
   /**
    * AGSC-03-27: the object property a member of `domain_links` names, or `null`: its IRI,
    * the inverse the vocabulary declares (IRI and local name), whether it is the computed side
@@ -386,6 +428,7 @@ function load(text, options = {}) {
   return Object.freeze({
     classFor,
     contextOf,
+    itemClassOf,
     namespace,
     ontology: index.ontologies.length === 1 ? index.ontologies[0] : null,
     propertyFor,
@@ -395,6 +438,25 @@ function load(text, options = {}) {
 }
 
 // ---------------------------------------------------------------- AGSC-02-25: the item keys
+
+/**
+ * AGSC-02-25: a `domain_type` names a class of the site vocabulary, and (amended 2026-11-10) one
+ * under the item class of the item's own `type`, since `cax-sco` would otherwise give the item two
+ * item classes (AGSC-05-26a). A class (e) leaves without one item class is `check`'s to report.
+ */
+function typeFault(model, item, fault) {
+  const fm = item.frontmatter || {};
+  const iri = model.classFor({ slug: item.slug, ...fm });
+  if (iri === null) {
+    fault('domain_type', `domain_type ${fm.domain_type} names no class of the site vocabulary in the namespace of the item's context`);
+    return;
+  }
+  const own = skos.classOf(fm.type);
+  const above = model.itemClassOf(iri);
+  if (own !== null && above !== null && above !== own) {
+    fault('domain_type', `domain_type ${fm.domain_type} names a class under the item class <${above}>, not <${own}>, the class of the item's type`);
+  }
+}
 
 /**
  * AGSC-02-25: the domain keys of the items that name nothing, each `AGSC-E418` on the item's
@@ -422,9 +484,7 @@ function itemFindings(items, options = {}) {
     const fault = (key, message) => findings.push(finding('AGSC-E418', `${message} (AGSC-02-25)`, { file: item.path, key, slug: item.slug }));
     if (typeof fm.domain_type === 'string') {
       if (options.vocabulary !== true) fault('domain_type', `domain_type ${fm.domain_type} is stated on a node with no site vocabulary file`);
-      else if (model !== null && model.classFor({ slug: item.slug, ...fm }) === null) {
-        fault('domain_type', `domain_type ${fm.domain_type} names no class of the site vocabulary in the namespace of the item's context`);
-      }
+      else if (model !== null) typeFault(model, item, fault);
     }
     if (typeof fm.domain_context === 'string' && !declared.has(fm.domain_context)) {
       fault('domain_context', `domain_context ${fm.domain_context} names no context that domain.contexts declares`);

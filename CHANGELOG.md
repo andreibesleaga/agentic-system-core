@@ -13,6 +13,66 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Errata to the 1.1 rules, each with a dated note of 2026-11-10 in `spec/`, its test or case
+  first, and the bytes it moves named here:
+  - AGSC-05-34: the SPARQL texts of questions 3, 6 and 7 gain `FILTER (?item != ?x)`, so a cycle
+    of `superseded-by`, `blocked-by` or `derived-from` links no longer returns the subject, which
+    the function never does. `/query/index.html` of every node with the query page changes (the
+    three example texts); `docs/ontology-questions.json` and `docs/ONTOLOGY-QUESTIONS.md` too.
+  - AGSC-05-37: `closure.nt` holds triples, as its name says, not quads in the Bundle graph
+    (`graph-0041`, `graph-0042`). Only the export output `dist/export/closure.nt` changes; `verify`
+    reads no graph name, so its results do not.
+  - AGSC-05-39 with AGSC-01-41 and §5.10: `domain_role` and `domain_context` add their triples
+    whenever the configuration has a `domain` object, also without a vocabulary file; a Bundle
+    with no `domain` object and no domain key is unchanged. The graph files, the item's
+    `pages/<slug>.jsonld` and the files carrying their digests change only on such 1.1 nodes.
+  - AGSC-06-41: the Dataset block of the home page is the node `@id` = the Bundle IRI, and its
+    creator is one named `Person` (`@id` its ORCID iD URL, else `<site.base>#creator`) that
+    `prov:wasAttributedTo` names by `@id`, where the block wrote two unlinked Persons on blank
+    nodes (`disc-0037` supersedes `disc-0027`). `/index.html` changes on every node.
+  - AGSC-06-34 with AGSC-11-16: when no agent card is written (a responder that is not an A2A
+    one, or an `a2a-card` version that is not an A2A version), the discovery document no longer
+    declares `a2a-card` (`disc-0035`); the warning says so. The discovery document changes only
+    on a node in that case.
+  - AGSC-07-25: `derived` holds at most 1,000,000 steps, as `search` holds at most 100 hits: above
+    the bound it keeps its first readings in their order and `brief.json` (and the `brief` tool)
+    gains `derived_total`, where the brief was refused with `AGSC-E904` (`compose-0036`). Below
+    the bound the bytes are unchanged. The page scripts `/compose/agsc-core.js`,
+    `/compose/agsc-compose.js` (which no longer handles that refusal) and
+    `/compose/agsc-page-tools.js` of every node change with this code.
+  - AGSC-07-25 and AGSC-07-29: the Mermaid names of `brief.mmd` and `blueprint/c4-*.mmd` are
+    prefixed, `n_<slug>` for a member and `s_<slug>` for a Concept subgraph (each `-` written
+    `_`), so a member named `end` or `system` no longer breaks a flowchart or meets the
+    architecture node (`compose-0035`; `compose-0024`, `compose-0028` and `compose-0034` state the
+    new names). The Harness `diagram.mmd` keeps its names (`compose-0027`).
+  - AGSC-07-30: `context-map.json` never names a context whose cluster is not listed (a draft),
+    as the brief and the pages already do; its members are in `unassigned`.
+  - AGSC-09-13a: a tool argument of another JSON type than its `inputSchema` states is `AGSC-E201`
+    in the error envelope on both transports (`cli-0039`), as MCP asks a server to validate tool
+    inputs; `search` with an object `query` answered with no hit before. The page script
+    `/compose/agsc-page-tools.js` of every node changes.
+  - AGSC-09-19: over standard input and output, a first request of 2026-07-28 fixes that revision
+    for the process, so a later `-32022` names it alone (`cli-0034`).
+  - AGSC-02-94: the description `init` writes into `content/index.md` begins "This node was
+    adopted", at least 50 code points, so a fresh node no longer warns `AGSC-E202` (AGSC-06-41).
+    Only the files `init` writes for a new node change.
+  - AGSC-02-25 and AGSC-05-38: a `domain_type` naming a class under another item class, an
+    `owl:equivalentClass` to an item class, an `owl:equivalentProperty` to `asc:uses`,
+    `asc:excludes` or `asc:contradicts`, and a super-property that is neither a link property nor
+    one of the file's own are refused (`AGSC-E418`, `AGSC-E420`), in the engine and in
+    `tools/validate-ontology`; all are 1.1-only input. AGSC-01-42: an arrow whose two shapes share
+    a centre is refused (`AGSC-E412`); it compiled to a path of `NaN` coordinates.
+  - Wording only (no byte): the case comparison of AGSC-05-21, 05-35, 01-40 and 08-32 is named as
+    the engine makes it, NFC then upper-casing then lower-casing (`lint-0064`: `ß` equals `ss`);
+    AGSC-09-90 and AGSC-10-01 count eleven command contracts; AGSC-06-37 names the provisional
+    media type `text/toon`; AGSC-06-24 lists the quickstart paths P0 to P12; AGSC-08-28 (c) agrees
+    with AGSC-10-17 that an agent naming no lane is a contributor; AGSC-05-28 counts 41 properties.
+- The query engine's `THIRD-PARTY.txt` (AGSC-06-39 assets) now lists the 107 crates that `cargo
+  tree` names for the WebAssembly build of Oxigraph 0.5.13, each with the licence it is taken
+  under, and carries the licence texts and copyright notices of every crate not taken under
+  Apache-2.0; it listed the 299 crates of the whole `Cargo.lock` with their expressions only.
+  `/query/THIRD-PARTY.txt` and the licence sentence of `/query/index.html` change on every node
+  with the query page; the pin, the vendor README and `NOTICE` follow.
 - Simpler code and documents, with no rule, no case and no emitted byte changed (a build, every
   export and every import of the reference inputs compared byte for byte with the engine before the
   change): the 1.1 views of a build (the tags, cluster members, relations, domain parts and brief of
@@ -525,6 +585,19 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`tests/arch/pack-and-conform.test.js`). `npm audit` 0.
 
 ### Added
+
+- `asc:warrant` in `ontology/agsc.ttl`, the datatype property AGSC-05-40 emits (AGSC-05-28); the
+  JSON-LD context stays the 1.0.0 file, which has no term for it (AGSC-06-32, AGSC-05-09), in the
+  engine and in `tools/gen-ns` alike. The vocabulary version is set by the release.
+- AGSC-06-41: an opt-in DCAT 3 catalogue block beside the Dataset block of the home page
+  (`discovery.dcat`, AGSC-01-18; default off, so no node changes unless it sets it).
+- AGSC-06-34: the agent card carries `securitySchemes` and `securityRequirements` from a
+  responder's `security_schemes` and `security_requirements` (AGSC-01-18), through the A2A SDK's
+  codec; a `credential` responder without them is the warning `AGSC-E210` (`disc-0038`).
+- AGSC-11-16: `tools/validate-wellknown` and the engine's own check refuse a `webmcp` version
+  that is not a `YYYY-MM-DD` date with `AGSC-E210` (`disc-0036`).
+- Cases for rules amended earlier: `lint-0062` (the inverse of a site property is a property of
+  the file), `lint-0063` (`LIMIT` needs an `ORDER BY` of every projected variable).
 
 - Three worked blueprints under `examples/blueprints/` (PRD-071; AGSC-07-29, AGSC-02-97): `engine/`, the
   engine itself (its contexts and layers in the order `.dependency-cruiser.js` allows, the check that
@@ -1474,6 +1547,14 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   step that runs the Agent Skills check over every installed pack.
 
 ### Fixed
+
+- `tools/gen-ns --check` asks for `agsc.ttl` and `agsc.rdf` only in a tree that holds the `/ns/`
+  index, the namespace document site of AGSC-06-06, so the `/ns/` of a built content node passes
+  with no warning; the message no longer quotes words the specification does not have.
+- The fixtures of `lint-0057` to `lint-0059` and `graph-0046` declare the inverse pair of their
+  site vocabulary one way, so `lint` on them no longer reports `AGSC-E317`; `tests/vectors/
+  README.md` says that those `verify` cases leave out the `AGSC-E606` warning of their
+  environment. `build-0031` no longer names a planning label.
 
 - The agent skill (`skills/agentic-system-core/`, the plugin copy) names the six direct memory
   adapters of AGSC-01-26a: the `export` and `import` rows list `mem0`, `letta`, `zep`, `csv`,

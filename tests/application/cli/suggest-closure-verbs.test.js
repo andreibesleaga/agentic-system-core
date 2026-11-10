@@ -124,7 +124,7 @@ test('AGSC-05-37: export --closure writes dist/export/closure.nt, the closure of
   const closure = require('../../../src/knowledge/closure.js');
   const ontology = nodeFs.readFileSync(path.join(ROOT, 'ontology', 'agsc.ttl'), 'utf8');
   assert.strictEqual(read(dir, 'dist/export/closure.nt'), closure.closure(read(dir, 'www/graph.nq'), [ontology]).text);
-  assert.match(read(dir, 'dist/export/closure.nt'), /skos\/core#Concept> <https:\/\/minimal\.example\/> \.\n/u);
+  assert.match(read(dir, 'dist/export/closure.nt'), /skos\/core#Concept> \.\n/u, 'triples only: no graph term (AGSC-05-37 as amended 2026-11-10)');
   assert.match(ctx.notes.join(''), /wrote: dist\/export\/closure\.nt sha256:[0-9a-f]{64}/u);
 });
 

@@ -208,10 +208,10 @@ describe('validate-ontology — the helper it exports', () => {
 });
 
 describe('validate-ontology — the real distribution', () => {
-  it('the shipped ontology passes, with 52 terms', () => {
+  it('the shipped ontology passes, with 53 terms', () => {
     const result = capture('validate-ontology', [REPO]);
     assert.equal(result.code, 0);
-    assert.match(result.out, /12 classes, 40 properties, 0 error, 0 warn/u);
+    assert.match(result.out, /12 classes, 41 properties, 0 error, 0 warn/u);
     assert.equal(result.err, '');
   });
 });

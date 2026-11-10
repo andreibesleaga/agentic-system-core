@@ -177,11 +177,11 @@ then says which conflict to resolve. `--narrate <agent>` would add a summary wri
 this distribution ships no way to reach a model, so it answers `AGSC-E001` and writes the brief
 alone.
 
-One brief is refused. Its `derived` list holds a reading, with its whole path, for each pair of
+One brief is cut short. Its `derived` list holds a reading, with its whole path, for each pair of
 items on a chain of `requires` (or another chain key), so it grows with the cube of the chain's
-length. Above 1,000,000 path steps, which a chain of 145 items passes, `compose` answers
-`AGSC-E904` with exit 1 and writes nothing, the Harness included; the `brief` tool answers the
-same code. Select fewer items of the longest chain.
+length. Above 1,000,000 path steps, which a chain of 145 items passes, `derived` keeps the first
+readings in their order and `derived_total` says how many there are, as `search` does with its
+hits; below that bound the brief has no `derived_total`.
 
 Keep a selection as an item and you have a **saved architecture**: a concept of
 `kind: architecture` whose body holds the selection in a `yaml agsc-selection` block.

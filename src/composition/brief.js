@@ -59,7 +59,7 @@
 
 const { byCodePoint, compareCodePoint, frontmatterOf, indexBySlug } = require('./compose.js');
 const {
-  canonicalJson, contentVersion, dslIdentifier, fenceProse, licenceSentence, linkKeys, linksOf,
+  canonicalJson, contentVersion, fenceProse, licenceSentence, linkKeys, linksOf,
   mermaidHead, provenanceHeader, quoted, singleLine, structureLicence, terms,
 } = require('./harness.js');
 
@@ -96,23 +96,15 @@ function contextBounds() {
 }
 
 /**
- * The most steps, counted over the `because` paths of every reading, that this engine writes
- * into `derived` (AGSC-07-25). The rule sets no bound, and the member grows with the cube of a
- * chain's length: a chain of 145 `requires` Links would hold 1,015,872 steps, about 32 MB of
- * `brief.json`, and one of 400 more than the longest string a JavaScript engine can hold. At
- * the bound the file is about 31 MB; above it the brief is refused with `AGSC-E904`, the code of
- * a size cap (`briefTooLarge`), rather than written in part or left to crash the process.
+ * AGSC-07-25 as amended 2026-11-10: the most steps, counted over the `because` paths of the
+ * readings, that `derived` holds. The member grows with the cube of a chain's length: a chain of
+ * 145 `requires` Links would hold 1,015,872 steps, about 32 MB of `brief.json`, and one of 400
+ * more than the longest string a JavaScript engine can hold. Above the bound `derived` keeps the
+ * first readings in their order and `derived_total` counts them all, as `search` caps its hits
+ * (AGSC-09-13); at or below it the brief has the bytes it had before the cap.
  */
 function derivedBound() {
   return 1000000;
-}
-
-/** The refusal of a brief above `derivedBound`: an Error whose `code` is `AGSC-E904`. */
-function briefTooLarge(bound) {
-  const error = new Error(`the brief is not written: its derived readings (AGSC-07-25) would hold more than `
-    + `${String(bound).replace(/\B(?=(\d{3})+(?!\d))/gu, ',')} steps, the bound of this engine; select fewer items of the longest chain`);
-  error.code = 'AGSC-E904';
-  return error;
 }
 
 // ------------------------------------------------------------------ the inputs
@@ -263,55 +255,65 @@ function dependencyOrder(selection, edges) {
   return order;
 }
 
+/** The first chain a breadth-first walk from `source` meets to each node, each frontier in code-point order. */
+function walkFrom(adjacency, source) {
+  const reached = new Map([[source, { depth: 0, from: null }]]);
+  let frontier = [source];
+  for (let depth = 1; frontier.length > 0; depth += 1) {
+    const next = [];
+    for (const node of frontier) {
+      for (const target of byCodePoint(adjacency.get(node) || [])) {
+        if (reached.has(target)) continue;
+        reached.set(target, { depth, from: node });
+        next.push(target);
+      }
+    }
+    frontier = byCodePoint(next);
+  }
+  return reached;
+}
+
 /**
  * AGSC-05-33 (c) and (d), for the chains whose two ends are members: one reading for each pair
  * joined by a chain of two or more edges of one transitive key, the chain being the one a
  * breadth-first walk meets first, each frontier in code-point order. The readings are those of
  * `knowledge/derive.js#readings` with the rule `transitive` or `closure`, in its order
- * (source, key, target); `tests/composition/brief.test.js` compares the two. The steps are
- * counted before each path is built, so readings above `bound` (`derivedBound` unless a test
- * asks for less) are refused with `briefTooLarge` before they take the memory.
+ * (source, key, target); `tests/composition/brief.test.js` compares the two. They are made in
+ * that order, and a path is built only while the steps stay within `bound` (`derivedBound`
+ * unless a test asks for less); after the first reading that would pass it, readings are counted
+ * and not built, so `readings` is the longest prefix within the bound and `total` the count.
  */
 function chainReadings(edges, members, bound = derivedBound()) {
   const inside = new Set(members);
-  const out = [];
+  const adjacency = new Map(chainKeys().map((key) => [key, new Map()]));
+  for (const edge of edges) {
+    const byKey = adjacency.get(edge.key);
+    if (byKey === undefined) continue;
+    if (!byKey.has(edge.source)) byKey.set(edge.source, []);
+    byKey.get(edge.source).push(edge.target);
+  }
+  const readings = [];
   let steps = 0;
-  for (const key of chainKeys()) {
-    const adjacency = new Map();
-    for (const edge of edges) {
-      if (edge.key !== key) continue;
-      if (!adjacency.has(edge.source)) adjacency.set(edge.source, []);
-      adjacency.get(edge.source).push(edge.target);
-    }
-    for (const source of byCodePoint(members)) {
-      if (!adjacency.has(source)) continue;
-      const reached = new Map([[source, { depth: 0, from: null }]]);
-      let frontier = [source];
-      for (let depth = 1; frontier.length > 0; depth += 1) {
-        const next = [];
-        for (const node of frontier) {
-          for (const target of byCodePoint(adjacency.get(node) || [])) {
-            if (reached.has(target)) continue;
-            reached.set(target, { depth, from: node });
-            next.push(target);
-          }
-        }
-        frontier = byCodePoint(next);
-      }
-      for (const [target, step] of reached) {
-        if (step.depth < 2 || !inside.has(target)) continue;
-        steps += step.depth;
-        if (steps > bound) throw briefTooLarge(bound);
+  let total = 0;
+  for (const source of byCodePoint(members)) {
+    for (const key of chainKeys()) {
+      if (!adjacency.get(key).has(source)) continue;
+      const reached = walkFrom(adjacency.get(key), source);
+      for (const target of byCodePoint([...reached.keys()])) {
+        if (reached.get(target).depth < 2 || !inside.has(target)) continue;
+        total += 1;
+        if (readings.length < total - 1 || steps + reached.get(target).depth > bound) continue;
+        steps += reached.get(target).depth;
         const from = [];
         for (let node = target; reached.get(node).from !== null; node = reached.get(node).from) {
           from.unshift([reached.get(node).from, key, node]);
         }
         const rule = key === 'requires' || key === 'required-by' ? 'closure' : 'transitive';
-        out.push({ because: [{ from, rule }], key, source, target });
+        readings.push({ because: [{ from, rule }], key, source, target });
       }
     }
   }
-  return out.sort(compareTriples);
+  return { readings, total };
 }
 
 /** A gap or checklist entry of AGSC-07-27; `target` only for the kinds that have one. */
@@ -419,10 +421,12 @@ function briefParts(result, options) {
     .sort(compareEdges);
   const order = dependencyOrder(verdict.selection, edges);
   const gaps = gapsOf(edges, members, verdict, options.instant);
+  const chains = chainReadings(edges, verdict.selection);
   const record = {
     bundle_version: contentVersion(options.bundleVersion, options.instant),
     checklist: checklistOf(edges, order, gaps, verdict),
-    derived: chainReadings(edges, verdict.selection),
+    derived: chains.readings,
+    ...(chains.total > chains.readings.length ? { derived_total: chains.total } : {}),
     gaps,
     generated_at: options.instant,
     items: members.map((m) => ({ reason: reasonOf(m), slug: m.slug, title: m.title, type: m.type })),
@@ -549,13 +553,24 @@ function contextMd(parts, options) {
 function briefMmd(parts, options) {
   const { record } = parts;
   const lines = [...mermaidHead(options), 'flowchart TD'];
-  for (const slug of record.order) lines.push(`  ${dslIdentifier(slug)}[${quoted(slug)}]`);
+  for (const slug of record.order) lines.push(`  ${mermaidName('n', slug)}[${quoted(slug)}]`);
   for (const r of record.relations) {
     if (r.origin === 'authored' && r.scope === 'inside') {
-      lines.push(`  ${dslIdentifier(r.source)} -->|${r.key}| ${dslIdentifier(r.target)}`);
+      lines.push(`  ${mermaidName('n', r.source)} -->|${r.key}| ${mermaidName('n', r.target)}`);
     }
   }
   return `${lines.join('\n')}\n`;
+}
+
+/**
+ * AGSC-07-25 and AGSC-07-29 as amended 2026-11-10: the Mermaid name of a member's node (`n`) or
+ * of a Concept's subgraph (`s`) in the companion files: the prefix, `_`, and the slug with each
+ * `-` written `_`. A slug holds no `_` (AGSC-01-10), so two slugs never share a name, and no name
+ * is a word Mermaid reserves or the architecture's `system`. `diagram.mmd` of the Harness keeps
+ * `harness.js#dslIdentifier` (`compose-0027`).
+ */
+function mermaidName(prefix, slug) {
+  return `${prefix}_${String(slug).split('-').join('_')}`;
 }
 
 /**
@@ -822,11 +837,11 @@ function briefDomainFiles(result, options) {
  * The portable surface, in dependency order: what `composition/browser.js` emits for a page
  * that shows the brief (AGSC-07-13).
  */
-const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds', 'derivedBound', 'briefTooLarge',
+const PORTABLE = Object.freeze(['inverseKeys', 'chainKeys', 'contextBounds', 'derivedBound',
   'listedIndex', 'briefEdges', 'compareTriples', 'compareEdges', 'listedVerdict', 'briefMember', 'reasonOf', 'reasonText',
-  'dependencyOrder', 'chainReadings', 'entryOf', 'bySlugThenTarget', 'contradictionGaps', 'gapsOf',
+  'dependencyOrder', 'walkFrom', 'chainReadings', 'entryOf', 'bySlugThenTarget', 'contradictionGaps', 'gapsOf',
   'checklistOf', 'summaryOf', 'briefParts', 'briefOf', 'listBlock', 'openingBlocks', 'briefMd',
-  'contextSection', 'utf8Length', 'contextMd', 'briefMmd', 'briefFiles']);
+  'contextSection', 'utf8Length', 'contextMd', 'mermaidName', 'briefMmd', 'briefFiles']);
 
 /**
  * The domain paragraph's portable functions, in dependency order: emitted after `PORTABLE` only
@@ -852,7 +867,6 @@ module.exports = {
   briefMmd,
   briefOf,
   briefParts,
-  briefTooLarge,
   bySlugThenTarget,
   chainKeys,
   chainReadings,
@@ -884,4 +898,6 @@ module.exports = {
   reasonText,
   summaryOf,
   utf8Length,
+  mermaidName,
+  walkFrom,
 };

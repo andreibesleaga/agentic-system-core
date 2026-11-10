@@ -569,6 +569,20 @@
             "description": "AGSC-06-34: the A2A protocolBinding of a responder entry. Default JSONRPC. Added at 1.1 (AGSC-01-18).",
             "type": "string",
             "pattern": "^[A-Za-z0-9+._-]{1,32}$"
+          },
+          "security_schemes": {
+            "description": "AGSC-06-34: the securitySchemes the agent card carries for a responder entry, a map from a scheme name to an A2A 1.0 SecurityScheme in its JSON form. Added at 1.1 (AGSC-01-18).",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "security_requirements": {
+            "description": "AGSC-06-34: the securityRequirements the agent card carries for a responder entry, A2A 1.0 SecurityRequirement objects in their JSON form. Added at 1.1 (AGSC-01-18).",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "allOf": [
@@ -833,6 +847,11 @@
       "properties": {
         "ai_catalog": {
           "description": "Whether the two catalogue files /.well-known/ard.json and /.well-known/ai-catalog.json are written. Both are proposals, not registered well-known URIs. Default false.",
+          "type": "boolean",
+          "default": false
+        },
+        "dcat": {
+          "description": "AGSC-06-41: whether the home page carries a DCAT 3 catalogue block beside its schema.org Dataset block, for catalogue harvesters. Default false.",
           "type": "boolean",
           "default": false
         }

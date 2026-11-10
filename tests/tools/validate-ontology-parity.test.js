@@ -46,7 +46,7 @@ describe('validate-ontology — a site vocabulary', () => {
     const dir = writeTree(tmpdir(), { 'vocabulary.ttl': VALID });
     const result = envelope('validate-ontology', [path.join(dir, 'vocabulary.ttl')]);
     assert.equal(result.code, 0);
-    const other = writeTree(tmpdir(), { 'agsc.config.json': '{"domain":{"vocabulary":"elsewhere.ttl"}}\n', 'vocabulary.ttl': ACCEPTED[4].text });
+    const other = writeTree(tmpdir(), { 'agsc.config.json': '{"domain":{"vocabulary":"elsewhere.ttl"}}\n', 'vocabulary.ttl': ACCEPTED.find((a) => a.contexts.length > 0).text });
     const outside = envelope('validate-ontology', [path.join(other, 'vocabulary.ttl')]);
     assert.equal(outside.code, 1, 'the configuration names another file, so its contexts do not apply');
     assert.equal(outside.json.findings[0].file, 'vocabulary.ttl');

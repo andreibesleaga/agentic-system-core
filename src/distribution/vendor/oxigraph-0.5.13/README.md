@@ -21,7 +21,7 @@ candidate, Comunica, has no browser bundle in its npm packages, so it would need
 | `web_bg.wasm` | 4324920 | `75e3f0f4de67921e88e3f6d587b2a8e7aa822abbe3a3b79873f2b97f20d52c24` | npm `oxigraph@0.5.13`, `web_bg.wasm` |
 | `LICENSE-MIT` | 1063 | `1f4f6736adc52ebfda18bb84947e0ef492bd86a408c0e83872efb75ed5e02838` | <https://github.com/oxigraph/oxigraph> at tag `v0.5.13` (the npm package ships no licence file) |
 | `LICENSE-APACHE` | 10847 | `a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2` | the same repository and tag |
-| `THIRD-PARTY.txt` | 11429 | `751d2b0096efb48de8746ad06802c8d65e46d48fa344311dea834814db48ac41` | written for this distribution: the crates that may be compiled into `web_bg.wasm`, each with its licence expression |
+| `THIRD-PARTY.txt` | 83361 | `52102a351fe22fcfffa96b5aee4246605c99800b754331bea85919f8bab7f2a8` | written for this distribution: the crates compiled into `web_bg.wasm`, each with the licence it is taken under and, where that is not Apache-2.0, its own licence text |
 
 Licence: `MIT OR Apache-2.0` (Oxigraph's own; `REUSE.toml` annotates the two engine files).
 
@@ -36,8 +36,16 @@ dependency in `node_modules/`, and checks that this table states the same values
 2. Create `src/distribution/vendor/oxigraph-<version>/`, copy `node_modules/oxigraph/web.js`
    and `web_bg.wasm` into it, and take `LICENSE-MIT` and `LICENSE-APACHE` from the Oxigraph
    repository at tag `v<version>`.
-3. Rewrite `THIRD-PARTY.txt` from that tag's `Cargo.lock` (the crates reached from
-   `oxigraph-js`, each with the licence expression crates.io states).
+3. Rewrite `THIRD-PARTY.txt` from that tag: in a clone of the Oxigraph repository at the tag,
+   `cargo tree --locked -p oxigraph-js --target wasm32-unknown-unknown -e normal,no-proc-macro
+   --prefix none --format '{p} | {l}'` lists the crates compiled into `web_bg.wasm` with the
+   licence expression of each (the crate packages it fetches hold their licence files). List
+   every crate with its expression and the licence taken: MIT where the expression offers it and
+   the package ships an MIT text, else Apache-2.0 where it offers that, else the one licence it
+   names; then, once for each distinct text, the crate's own licence file for every crate not
+   taken under Apache-2.0 (whose text is `LICENSE-APACHE`), and a `NOTICE` file where a crate
+   taken under Apache-2.0 ships one. Where a package ships no licence file for the licence taken,
+   take the file of the crate's repository at the same tag and say so.
 4. Update `ENGINE` in `src/distribution/query-page.js` and this table (`sha256sum`, `wc -c`),
    delete the old folder, and say in `CHANGELOG.md` which bytes of every node change.
 5. Run `node --test tests/arch/query-engine-pin.test.js tests/distribution/query*.test.js

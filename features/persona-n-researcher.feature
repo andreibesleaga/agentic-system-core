@@ -63,7 +63,7 @@ Feature: Researcher measures a node offline and cites exactly what was measured
     And the conformance report names the implementation, its version and the specification version the graph dumps carry
     And "www/llms.txt" names the node's content version and the specification version in its provenance header
 
-  @PRD-020 @PRD-024 @human @mode-0 @matrix-H19
+  @PRD-020 @PRD-024 @PRD-072 @human @mode-0 @matrix-H19
   Scenario: A dataset harvester finds the licence, the creator and the files of a node from its home page alone
     Given a fresh copy of the acceptance Bundle
     And the configuration names the creator "Josiah Carberry" with the ORCID iD "0000-0002-1825-0097" and the licence "https://creativecommons.org/licenses/by/4.0/"

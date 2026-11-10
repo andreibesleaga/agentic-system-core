@@ -510,6 +510,7 @@ Object.assign(HANDLERS, {
   'cli-0016': runCli0016,
   'cli-0026': runCli0026,
   'cli-0004': runCli0004,
+  'cli-0039': runCli0004,
   'cli-0007': runCli0007,
   'cli-0008': runCli0008,
   'cli-0010': runCli0010,

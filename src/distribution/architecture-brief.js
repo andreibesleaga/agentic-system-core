@@ -13,9 +13,7 @@
  * the build publishes (AGSC-00-05), so the section names, counts and links no draft, no retired
  * item and no item the `releases` switchboard holds back — exactly what the command line's brief
  * names. Every list stops at `SHOWN` entries, so a large selection keeps the page under the
- * budget of AGSC-06-21; the page then says how many there are and where the whole brief is. A
- * brief above the engine's bound on `derived` (`composition/brief.js#derivedBound`) is not
- * computed: the section then says why, and the build goes on.
+ * budget of AGSC-06-21; the page then says how many there are and where the whole brief is.
  *
  * Pure function of its input: no file is written, no clock is read (the build instant arrives).
  */
@@ -54,19 +52,9 @@ function section(item, options) {
   if (!architecture.isArchitecture(item)) return '';
   const saved = architecture.composeFrom(options.items, item.slug);
   if (saved.result === null || saved.findings.some((f) => f.severity === 'error')) return '';
-  let record;
-  try {
-    record = brief.briefOf(saved.result, {
-      instant: options.instant, items: options.items, listed: options.items.map((i) => i.slug),
-    });
-  } catch (e) {
-    // A brief above the engine's bound (`brief.js#derivedBound`) is refused: the page says so and
-    // the build goes on, since the item itself is valid.
-    if (e.code !== 'AGSC-E904') throw e;
-    return ['<section class="brief" aria-labelledby="composition-brief">',
-      '<h2 id="composition-brief">Brief of this architecture</h2>',
-      `<p>No brief: ${escapeHtml(e.message)} (${e.code}).</p>`, '</section>'].join('\n');
-  }
+  const record = brief.briefOf(saved.result, {
+    instant: options.instant, items: options.items, listed: options.items.map((i) => i.slug),
+  });
   const bySlug = new Map(options.items.map((i) => [i.slug, i]));
   const compose = `/compose/?from=${encodeURIComponent(item.slug)}`;
   const more = `the whole brief is on <a href="${escapeHtml(compose)}">${escapeHtml(compose)}</a>`;

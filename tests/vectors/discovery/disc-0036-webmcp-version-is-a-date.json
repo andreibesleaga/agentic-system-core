@@ -1,0 +1,232 @@
+{
+  "area": "discovery",
+  "description": "AGSC-11-16 as amended 2026-11-10: the `agsc-surface-version` of a `webmcp` surface is a date of the form YYYY-MM-DD, the date of the WebMCP Draft Community Group Report the node targets. The document of `disc-0033`'s complete case gains a `webmcp` surface for `/compose/`. In `date` its version is 2026-10-27 and the document passes; in `not-a-date` it is 2026-13-45x and the checker of AGSC-09-93 (`tools/validate-wellknown`) reports AGSC-E210. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "codes_reported": [],
+        "name": "date",
+        "valid": true
+      },
+      {
+        "codes_reported": [
+          "AGSC-E210"
+        ],
+        "name": "not-a-date",
+        "valid": false
+      }
+    ]
+  },
+  "id": "disc-0036",
+  "input": {
+    "cases": [
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:jvCwSK1RqdLMr5F3cW18gxWaHYwi/TeqK30DwRshtA0=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:Hm7WXXfWNk7q7Vp0W6XEmFritwDdhdfPfwJ73ylKM/w=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.4.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-10-29T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.1.0"
+                  ],
+                  "digest": [
+                    "sha-256=:uM+tyWY5SKewy6ymkOZYgR5PSko+78x9OJyIvcs4TU4=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                  ],
+                  "digest": [
+                    "sha-256=:mblIY47isvOBNvXpJSaluqVbopmCqjOLEgQ4e5oDowo=:"
+                  ],
+                  "href": "https://example.org/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#surface": [
+                {
+                  "agsc-access": [
+                    "none"
+                  ],
+                  "agsc-chunk-count": [
+                    "3"
+                  ],
+                  "agsc-chunk-set": [
+                    "sha-256=:wVzZiMjxoN5RC3qE+tDAr4CVRfLFldqWDZMf1KLxoCA=:"
+                  ],
+                  "agsc-surface": [
+                    "chunks"
+                  ],
+                  "digest": [
+                    "sha-256=:zHBOOnB/p2NgIt7gbICZE3dcXWIki9wc0doUXlGkk00=:"
+                  ],
+                  "href": "https://example.org/chunks.jsonl",
+                  "type": "application/jsonl"
+                },
+                {
+                  "agsc-access": [
+                    "consent"
+                  ],
+                  "agsc-surface": [
+                    "webmcp"
+                  ],
+                  "agsc-surface-version": [
+                    "2026-10-27"
+                  ],
+                  "href": "https://example.org/compose/"
+                }
+              ]
+            }
+          ]
+        },
+        "files": {
+          "/chunks.jsonl": "{\"digest\":\"05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3\",\"id\":\"848605af4f37ec13cd570127eb9aafe2d2876c734ab127187dabe7b725890536\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"Intro paragraph.\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"f06d38fc6bf3920390daa6d7057f02efbbde8c993345e2813ae8c9e35f86df94\",\"id\":\"b91b7cf751ac9e2834e5d295079d84fad992ae8dba90ea23ac06d8f63d95cd05\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"intent\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"## Intent\\n\\nCoordinate workers.\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"0050032f1fce0a18a854fb977288802f4635199baf89ce767ca391c02258dfd5\",\"id\":\"04daced57d83ce28d1b83d2df073d4d57fb7d220245121edd36970870bf607ed\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"structure\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"## Structure\\n\\n```text\\ncode stays\\n```\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n",
+          "/compose/index.html": "<!doctype html><title>Compose</title>\n",
+          "/graph.jsonld": "{\"@graph\":[]}\n",
+          "/ledger.jsonl": "{\"hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}\n",
+          "/llms.txt": "# Example\n"
+        },
+        "level": 2,
+        "name": "date"
+      },
+      {
+        "document": {
+          "linkset": [
+            {
+              "alternate": [
+                {
+                  "digest": [
+                    "sha-256=:jvCwSK1RqdLMr5F3cW18gxWaHYwi/TeqK30DwRshtA0=:"
+                  ],
+                  "href": "https://example.org/llms.txt",
+                  "type": "text/plain"
+                }
+              ],
+              "anchor": "https://example.org/",
+              "describedby": [
+                {
+                  "agsc-bundle-hash": [
+                    "sha-256=:Hm7WXXfWNk7q7Vp0W6XEmFritwDdhdfPfwJ73ylKM/w=:"
+                  ],
+                  "agsc-bundle-version": [
+                    "v1.4.0"
+                  ],
+                  "agsc-counts": [
+                    "clusters=0",
+                    "concepts=1",
+                    "episodes=0",
+                    "gates=0",
+                    "lessons=0",
+                    "procedures=0"
+                  ],
+                  "agsc-generated-at": [
+                    "2026-10-29T00:00:00Z"
+                  ],
+                  "agsc-spec-version": [
+                    "1.1.0"
+                  ],
+                  "digest": [
+                    "sha-256=:uM+tyWY5SKewy6ymkOZYgR5PSko+78x9OJyIvcs4TU4=:"
+                  ],
+                  "href": "https://example.org/graph.jsonld",
+                  "type": "application/ld+json"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#ledger": [
+                {
+                  "agsc-ledger-head": [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                  ],
+                  "digest": [
+                    "sha-256=:mblIY47isvOBNvXpJSaluqVbopmCqjOLEgQ4e5oDowo=:"
+                  ],
+                  "href": "https://example.org/ledger.jsonl",
+                  "type": "application/jsonl"
+                }
+              ],
+              "https://w3id.org/agentic-system-core/rel#surface": [
+                {
+                  "agsc-access": [
+                    "none"
+                  ],
+                  "agsc-chunk-count": [
+                    "3"
+                  ],
+                  "agsc-chunk-set": [
+                    "sha-256=:wVzZiMjxoN5RC3qE+tDAr4CVRfLFldqWDZMf1KLxoCA=:"
+                  ],
+                  "agsc-surface": [
+                    "chunks"
+                  ],
+                  "digest": [
+                    "sha-256=:zHBOOnB/p2NgIt7gbICZE3dcXWIki9wc0doUXlGkk00=:"
+                  ],
+                  "href": "https://example.org/chunks.jsonl",
+                  "type": "application/jsonl"
+                },
+                {
+                  "agsc-access": [
+                    "consent"
+                  ],
+                  "agsc-surface": [
+                    "webmcp"
+                  ],
+                  "agsc-surface-version": [
+                    "2026-13-45x"
+                  ],
+                  "href": "https://example.org/compose/"
+                }
+              ]
+            }
+          ]
+        },
+        "files": {
+          "/chunks.jsonl": "{\"digest\":\"05f1a99236280abb69e26c14f8ba132827935c3f89a39d6d52d504de282855b3\",\"id\":\"848605af4f37ec13cd570127eb9aafe2d2876c734ab127187dabe7b725890536\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"Intro paragraph.\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"f06d38fc6bf3920390daa6d7057f02efbbde8c993345e2813ae8c9e35f86df94\",\"id\":\"b91b7cf751ac9e2834e5d295079d84fad992ae8dba90ea23ac06d8f63d95cd05\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"intent\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"## Intent\\n\\nCoordinate workers.\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n{\"digest\":\"0050032f1fce0a18a854fb977288802f4635199baf89ce767ca391c02258dfd5\",\"id\":\"04daced57d83ce28d1b83d2df073d4d57fb7d220245121edd36970870bf607ed\",\"iri\":\"https://example.org/concepts/supervisor/\",\"item\":\"supervisor\",\"kind\":\"concept\",\"license\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"links\":{\"requires\":[\"worker\"]},\"ordinal\":0,\"section\":\"structure\",\"subkind\":\"pattern\",\"terms\":\"LicenseRef-AgenticSystemCore-Content-Use-1.0\",\"text\":\"## Structure\\n\\n```text\\ncode stays\\n```\\n\",\"title\":\"Supervisor\",\"trust\":\"untrusted\",\"type\":\"text\"}\n",
+          "/compose/index.html": "<!doctype html><title>Compose</title>\n",
+          "/graph.jsonld": "{\"@graph\":[]}\n",
+          "/ledger.jsonl": "{\"hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}\n",
+          "/llms.txt": "# Example\n"
+        },
+        "level": 2,
+        "name": "not-a-date"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.0.0"
+  },
+  "rule": "AGSC-11-16"
+}

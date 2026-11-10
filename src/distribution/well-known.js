@@ -50,7 +50,7 @@ function declaredSurfaces(options) {
     base: `${withoutTrailingSlashes(String(options.base))}/`,
     emitted: options.emitted || [],
     mcpServed: options.mcpServed === true,
-    surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
+    surfaces: servedDeclarations(Array.isArray(config.surfaces) ? config.surfaces : []),
     visibility: config.visibility,
     webmcpVersion: options.webmcpVersion,
   });
@@ -60,6 +60,18 @@ function declaredSurfaces(options) {
     if (link['agsc-access'] !== undefined) [entry.access] = link['agsc-access'];
     return entry;
   });
+}
+
+/**
+ * AGSC-11-16 as amended 2026-11-10: the declaration-only surfaces, less an `a2a-card` that gets no
+ * card (a responder that is not an A2A one, or an `a2a-card` version that is not an A2A version,
+ * AGSC-06-34), so the discovery document declares no card the node does not serve. The card module,
+ * and with it the A2A SDK, is loaded only when `surfaces[]` declares an `a2a-card`.
+ */
+function servedDeclarations(configured) {
+  const isCard = (entry) => entry !== null && typeof entry === 'object' && entry.surface === 'a2a-card';
+  if (!configured.some(isCard) || require('./a2a-card.js').eligible(configured)) return configured;
+  return configured.filter((entry) => !isCard(entry));
 }
 
 /**

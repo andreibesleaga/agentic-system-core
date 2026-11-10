@@ -28,7 +28,7 @@
       "question": "What replaced X, directly or through a chain?",
       "subject": "slug X",
       "answer": "slugs reached from X by one or more superseded-by edges",
-      "sparql": "SELECT DISTINCT ?item WHERE { ?x dcterms:isReplacedBy+ ?item } ORDER BY ?item"
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x dcterms:isReplacedBy+ ?item FILTER (?item != ?x) } ORDER BY ?item"
     },
     {
       "number": 4,
@@ -49,14 +49,14 @@
       "question": "What blocks task T, directly or through a chain?",
       "subject": "slug T",
       "answer": "slugs reached from T by one or more blocked-by edges",
-      "sparql": "SELECT DISTINCT ?item WHERE { ?x asc:blockedBy+ ?item } ORDER BY ?item"
+      "sparql": "SELECT DISTINCT ?item WHERE { ?x asc:blockedBy+ ?item FILTER (?item != ?x) } ORDER BY ?item"
     },
     {
       "number": 7,
       "question": "Where did lesson L come from?",
       "subject": "slug L",
       "answer": "an object with lineage, the slugs reached from L by one or more derived-from edges, and episodes, those of them whose type is episode",
-      "sparql": "SELECT DISTINCT ?item ?class WHERE { ?x prov:wasDerivedFrom+ ?item . ?item a ?class } ORDER BY ?item"
+      "sparql": "SELECT DISTINCT ?item ?class WHERE { ?x prov:wasDerivedFrom+ ?item . ?item a ?class FILTER (?item != ?x) } ORDER BY ?item"
     },
     {
       "number": 8,
