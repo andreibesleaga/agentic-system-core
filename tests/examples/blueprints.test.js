@@ -123,6 +123,16 @@ test('examples/blueprints/ holds the three blueprints and its README names each'
   for (const { folder } of BLUEPRINTS) assert.match(readme, new RegExp(`\\[${folder}/\\]\\(${folder}/README\\.md\\)`, 'u'));
 });
 
+test('each blueprint README promises only what its runner checks: the quoted lines, among others', () => {
+  // tests/docs/_page-runner.js checks that every quoted line appears in the block's output, not
+  // that the output holds nothing else; the README says the same (as docs/guides/mode-1.md does).
+  for (const { folder } of BLUEPRINTS) {
+    const text = fs.readFileSync(path.join(FOLDER, folder, 'README.md'), 'utf8').replace(/\s+/gu, ' ');
+    assert.doesNotMatch(text, /the lines a reader sees/u, `${folder}/README.md says the quoted lines are all a reader sees`);
+    assert.match(text, /prints at least the lines quoted after it \(other lines are left out\)/u, `${folder}/README.md does not say that other lines are left out`);
+  }
+});
+
 for (const { folder, architecture } of BLUEPRINTS) {
   test(`blueprint ${folder}/`, { skip: SKIP }, async (t) => {
     const source = path.join(FOLDER, folder);

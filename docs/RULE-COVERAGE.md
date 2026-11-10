@@ -155,7 +155,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-23 | VERIFIED | yes | `imp-0001` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +13 | `persona-i-maintainer.feature#A maintainer imports the old site` | — |
 | AGSC-01-25 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-01-26 | VERIFIED | yes | `export-0001` | `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js`, `application/cli/eng5-verbs.test.js` +2 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)`, `persona-h-memory.feature#Agent exports the Bundle in three lossless forms` | — |
-| AGSC-01-26a | VERIFIED | yes | `cli-0011` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +10 | — | — |
+| AGSC-01-26a | VERIFIED | yes | `cli-0011` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +11 | — | — |
 | AGSC-01-27 | VERIFIED | yes | `export-0002` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `distribution/content-version-stamps.test.js` +1 | — | — |
 | AGSC-01-28 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `application/cli/eng5-verbs.test.js`, `e2e/modes/mode-2-project.test.js` +1 | — | — |
 | AGSC-01-29 | VERIFIED | — | — | `composition/harness.test.js`, `composition/skills.test.js`, `distribution/single-line-injection.test.js` +3 | — | — |

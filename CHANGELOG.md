@@ -13,7 +13,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Run B close (review findings): the three blueprint READMEs say that their dry run needs this
+- Review fixes: the three blueprint READMEs say that their dry run needs this
   repository or an engine from 1.1 on (a 1.0 release has no `compose --from` and no `--http`) and set
   the git identity the commit needs, the test running the same lines; the blueprint test now checks
   that every level-3 member is drawn inside a box, as its comment said; the page-head test that
@@ -533,7 +533,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`tests/arch/memory-adapters-lazy.test.js`). Tests: `tests/interchange/memory-adapters.test.js`
   and `memory-adapters-fixtures.test.js` (recorded fixtures, property tests, an in-process network
   trap), a persona H scenario outline. No emitted byte of a build changes: the adapters write only
-  under `dist/export/<tool>/` when asked. Three guards from the run B review: the Zep export carries
+  under `dist/export/<tool>/` when asked. Three guards: the Zep export carries
   the own record in `metadata.agsc` as one base64 string, because the client's `AddEpisodeRequest`
   allows at most 10 metadata keys with scalar values; the CSV export writes a cell that starts with
   `=`, `+`, `-`, `@`, a tab or a carriage return behind one `'` (csv-stringify `escape_formulas`, as
@@ -544,7 +544,7 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   version (and its dependency on the engine, where it has one), not only the `agsc-cli` alias;
   `tests/arch/node-floor.test.js` holds each one's Node floor; and the dependency rule
   `plugins-loaded-never-required` forbids `src/`, `bin/` and `index.js` to require anything under
-  `packages/` (pre-block audit of run B, finding 16). Repository tooling; no emitted byte changes.
+  `packages/`. Repository tooling; no emitted byte changes.
 - The page head and the reader's way around a node (PRD-069; the engine half of the 1.0 site review's
   findings on titles, icon, link previews, unreachable tag pages, empty type lists and the `:target`
   mark). Every page's `<title>` is its name followed by the node's name (`Handoff — Minimal Bundle`; the
@@ -1449,12 +1449,25 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The agent skill (`skills/agentic-system-core/`, the plugin copy) names the six direct memory
+  adapters of AGSC-01-26a: the `export` and `import` rows list `mem0`, `letta`, `zep`, `csv`,
+  `basic-memory` and `claude-code`, the `import` row its flags `--allow-newer` and
+  `--source-version`, and `references/connectors.md` gains one line for them (files only; the
+  tool's own client moves them). `tests/docs/agent-skill.test.js` now holds the skill's import list
+  to the verb's own `FORMATS` and its export list to the memory adapters. Documentation only; no
+  emitted byte changes.
+- The three blueprint READMEs no longer say that the quoted lines are all a reader sees: each block
+  prints at least the lines quoted after it (other lines are left out), which is what
+  `tests/docs/_page-runner.js` checks and what `docs/guides/mode-1.md` already says;
+  `tests/examples/blueprints.test.js` holds the wording. Documentation only.
+- A change-log entry no longer names a later version number or the maintainers' internal work
+  labels; `tests/docs/release-wording.test.js` refuses either in `[Unreleased]`. Wording only; no
+  rule and no emitted byte changes.
 - The note `agsc build` and `agsc ci` print for the route `/feed.xml` no longer says "reserved to 1.1"
   and "a 1.0 tool rejects": AGSC-00-20 as amended for 1.1.0 moves `build.feed` to a later MINOR, so
   it now reads "reserved to a later MINOR (AGSC-00-20 as amended for 1.1.0)" and "a 1.0 or 1.1
-  tool rejects", with no version number for what comes after 1.1 (the run B close removed a
-  "planned for 1.2" that the first wording carried; `tests/standard/route-closure.test.js` now
-  refuses one). `src/REFERENCE.md` and two code comments say the same. Only standard error
+  tool rejects", with no version number for what comes after 1.1 (the first wording named a later
+  version number; `tests/standard/route-closure.test.js` now refuses one). `src/REFERENCE.md` and two code comments say the same. Only standard error
   changes; no emitted byte.
 - `agsc export --to <name>` names AGSC-01-26a once: an unknown adapter printed "(AGSC-01-26a)
   (AGSC-01-26a)". `export --to skos` no longer says that the adapter "exports no run() entry point":

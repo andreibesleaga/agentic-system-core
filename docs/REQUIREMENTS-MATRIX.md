@@ -84,7 +84,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-023 | MAPPED | `AGSC-08-18`, `AGSC-09-13`, `AGSC-09-13a` +1 | 7 vectors, 23 tests, 6 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-m-security-reviewer.feature` | `docs/PLAN.md` |
 | PRD-024 | MAPPED | `AGSC-00-10`, `AGSC-04-25`, `AGSC-06-07` +5 | 2 vectors, 21 tests, 4 scenarios, 1 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-j-standards.feature`, `persona-n-researcher.feature` +1 | `docs/PLAN.md` |
 | PRD-025 | MAPPED | `AGSC-06-14` | 1 vectors, 2 tests, 1 scenarios, 0 checkers | — | — | `persona-a-reader.feature`, `persona-c-agent-mcp.feature`, `persona-j-standards.feature` | — |
-| PRD-026 | MAPPED | `AGSC-00-22`, `AGSC-01-26`, `AGSC-01-26a` +1 | 4 vectors, 19 tests, 2 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-h-memory.feature` | — |
+| PRD-026 | MAPPED | `AGSC-00-22`, `AGSC-01-26`, `AGSC-01-26a` +1 | 4 vectors, 20 tests, 2 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-h-memory.feature` | — |
 | PRD-027 | MAPPED | `AGSC-05-04`, `AGSC-05-04a`, `AGSC-05-04b` +1 | 2 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | `persona-h-memory.feature` | `docs/PLAN.md` |
 | PRD-028 | MAPPED | `AGSC-02-12` | 0 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-029 | MAPPED | `AGSC-01-28` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |

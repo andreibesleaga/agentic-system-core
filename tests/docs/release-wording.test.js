@@ -398,3 +398,31 @@ test('the 1.0.0 change log names every rule amended after the previous release, 
   const missing = notes.filter((n) => !sectionKey.includes(noteKey(n.text))).map((n) => `${n.rule} (${n.day})`);
   assert.deepEqual(missing, [], 'amendment notes whose text the 1.0.0 section does not carry');
 });
+
+/** The text of the change log's `## [Unreleased]` section, up to the next `## [`. */
+function unreleasedSection() {
+  const text = read('CHANGELOG.md');
+  const head = '\n## [Unreleased]\n';
+  const start = text.indexOf(head);
+  if (start === -1) return '';
+  const end = text.indexOf('\n## [', start + head.length);
+  return text.slice(start, end === -1 ? text.length : end);
+}
+
+test('the unreleased change log names no later version and no internal work label', () => {
+  // A public entry says what changed and the rule that allows it. It names no version after
+  // the one being prepared ("1.2"; "0.1.2" or "1.2.0" of a format or package are other numbers)
+  // and none of the labels the maintainers' private planning uses for its runs and audits.
+  const lines = unreleasedSection().split('\n');
+  const forms = [
+    [/(?<![\d.])1\.2(?![\d.])/u, 'the version number 1.2'],
+    [/\b[Rr]un [A-D]\b/u, 'a planning run label ("run B")'],
+    [/\bpre-block audit\b/iu, 'a planning audit label ("pre-block audit")'],
+    [/\bB1\d[a-z]?-WP\d\b/u, 'a work package label ("B11-WP1")'],
+  ];
+  const found = [];
+  lines.forEach((line, i) => {
+    for (const [pattern, what] of forms) if (pattern.test(line)) found.push(`line ${i + 1} of [Unreleased]: ${what}`);
+  });
+  assert.deepEqual(found, [], 'the [Unreleased] section names a later version or an internal label');
+});

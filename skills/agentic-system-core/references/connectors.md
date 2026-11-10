@@ -33,6 +33,7 @@ Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -
 ## Memory systems and trackers
 
 - Cognee (and what it migrated from Mem0, Letta, LangMem, Zep): `agsc export --to cogx`; back with `agsc import <dir> --from cogx`.
+- Mem0, Letta, Zep, CSV, Basic Memory and Claude Code directly (from 1.1): `agsc export --to <tool>` writes the tool's own files under `dist/export/<tool>/`, and `agsc import <dir> --from <tool>` reads them back (this node's own records exactly, any other record as a draft). Tools: `mem0`, `letta`, `zep`, `csv`, `basic-memory`, `claude-code`. Files only: the engine reaches no network, so move the files with the tool's own client (the engine's `docs/CONNECTORS.md`, Route 10).
 - One context file for a model: `agsc export --to llm-context`.
 - Trackers: `agsc import <dir> --from board --format <f> --dry-run`, then without `--dry-run`; out with `agsc export --to board --format <f>`. Formats: `agsc-board`, `github`, `gitlab`, `jira`, `trello`, `linear`, `asana`, `notion`, `obsidian-kanban`, `markdown`, `todotxt`. Every imported row is a draft until a person publishes it.
 - Diagrams: `agsc export --to mermaid`.

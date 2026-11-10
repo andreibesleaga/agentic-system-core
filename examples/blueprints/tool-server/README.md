@@ -32,8 +32,8 @@ part it is drawn to.
 ## Build from this
 
 Every command below runs offline, needs no model and no account, and is run by
-`tests/examples/blueprints.test.js` with the build instant fixed, so the lines quoted
-after each block are the lines a reader sees. `$ENGINE` is the folder of this repository,
+`tests/examples/blueprints.test.js` with the build instant fixed: each block prints at least the lines
+quoted after it (other lines are left out). `$ENGINE` is the folder of this repository,
 or of the installed `agentic-system-core` package from 1.1 on (a 1.0 release has no
 `compose --from` and no `--http`); `agsc` is its command line. A commit needs a git
 identity, so the opening block sets one for this shell.
