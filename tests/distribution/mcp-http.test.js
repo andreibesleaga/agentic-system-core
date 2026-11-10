@@ -149,6 +149,10 @@ test('AGSC-09-18 (2), AGSC-09-19 (3) (4) (5): the endpoint, subscriptions/listen
     const mismatch = await send(server.url, { body: list, headers: { ...headersOf(list), 'Mcp-Method': 'subscriptions/listen' } });
     assert.equal(mismatch.status, 400);
     assert.equal(JSON.parse(mismatch.body).error.code, -32020);
+    // A tools/call with no Mcp-Name header is refused the same way (headersOf sends none for a body without a name).
+    const search = modern(12, 'tools/call', { arguments: { query: 'x' }, name: 'search' });
+    const nameless = await send(server.url, { body: search, headers: headersOf({ method: 'tools/call' }) });
+    assert.deepEqual([nameless.status, JSON.parse(nameless.body).error.code], [400, -32020]);
     // Only /mcp is the endpoint; a query string does not change the path.
     assert.equal((await send(server.url, { body: list, headers: headersOf(list), path: '/mcp/' })).status, 404);
     assert.equal((await send(server.url, { body: list, headers: headersOf(list), path: '/mcp?x=1' })).status, 200);

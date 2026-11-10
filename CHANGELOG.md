@@ -13,6 +13,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Tests: three more tests that start `bin/agsc.js` (`dataset-block`, `tool-server-wording`,
+  `skos-import-cli`) pass it no `AGSC_` variable (AGSC-01-37), so they pass in the browser lane, and
+  `tests/arch/child-env.test.js` refuses a test that hands the command an unfiltered `process.env`;
+  a request with no `Mcp-Name` header is refused with 400 and -32020 (AGSC-09-18), in
+  `tests/distribution/mcp-http.test.js` and as the case `mcp-name-missing` of `cli-0030`.
 - The memory-adapter load trace (`tests/arch/memory-adapters-lazy.test.js`) starts the command
   with no `AGSC_` variable, as the other tests that start it do, so it also passes in the
   architecture lane under `AGSC_AUDIT=1`.

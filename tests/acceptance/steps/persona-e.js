@@ -512,8 +512,10 @@ module.exports = [
         const options = /## Considered options\n\n([\s\S]*?)\n## Decision\n/u.exec(files.get(record));
         assert.ok(options && (options[1].match(/^\d+\. /gmu) || []).length >= 2, `${record} names fewer than two options`);
       }
-      const steps = [...files.get('blueprint/build-plan.md').matchAll(/^### Step \d+ — adopt `[^`]+`\n\n- Needs: .*\n- Verified by: (.*)$/gmu)];
+      const plan = files.get('blueprint/build-plan.md');
+      const steps = [...plan.matchAll(/^### Step \d+ — adopt `[^`]+`\n\n- Needs: .*\n- Verified by: (.*)$/gmu)];
       assert.ok(steps.length > 0, 'the build plan has no step');
+      assert.strictEqual((plan.match(/^### Step \d+/gmu) || []).length, steps.length, 'a step of the build plan names nothing that verifies it');
       for (const [, verified] of steps) assert.notStrictEqual(verified.trim(), '');
       assert.ok(![...tree(world.state.harnessDir).keys()].some((name) => name.startsWith('blueprint/')), 'the blueprint is inside the Harness directory');
     },

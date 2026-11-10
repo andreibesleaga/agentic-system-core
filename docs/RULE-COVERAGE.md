@@ -166,7 +166,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-34 | VERIFIED | yes | `lint-0021` | `governance/lint-order.test.js` | — | — |
 | AGSC-01-35 | VERIFIED | yes | `lint-0023` | `adapters/node-fs.test.js`, `governance/lint-order.test.js`, `interchange/mapping.test.js` +2 | — | — |
 | AGSC-01-36 | VERIFIED | yes | `bundle-0003`, `bundle-0004`, `bundle-0005` | `acceptance/steps/persona-k.js`, `governance/agents.test.js`, `governance/prov.test.js` | — | — |
-| AGSC-01-37 | VERIFIED | yes | `cli-0006` | `acceptance/steps/persona-m.js`, `application/cli/env-reaches-build.test.js`, `application/cli/json-stderr-findings-only.test.js` +6 | `persona-k-live-board.feature#ci --json names the budget override and never its value` | — |
+| AGSC-01-37 | VERIFIED | yes | `cli-0006` | `acceptance/steps/persona-m.js`, `application/cli/env-reaches-build.test.js`, `application/cli/json-stderr-findings-only.test.js` +7 | `persona-k-live-board.feature#ci --json names the budget override and never its value` | — |
 | AGSC-01-38 | VERIFIED | — | — | `application/cli/refresh-stops.test.js`, `distribution/now-spend.test.js` | — | — |
 | AGSC-01-39 | VERIFIED | yes | `imp-0006`, `imp-0007`, `imp-0008` | `acceptance/steps/persona-h.js`, `interchange/skos-import-cli.test.js`, `interchange/skos.test.js` | — | — |
 | AGSC-01-40 | VERIFIED | yes | `bundle-0013`, `bundle-0014`, `bundle-0015` | `governance/portable-names.test.js` | — | — |

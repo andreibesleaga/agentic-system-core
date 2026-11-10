@@ -145,8 +145,9 @@ test('AGSC-06-41: with no content/index.md, build reports the missing root and n
   try {
     fs.cpSync(path.join(root, 'tests', 'fixtures', 'minimal'), dir, { recursive: true });
     fs.rmSync(path.join(dir, 'content', 'index.md'));
-    const env = { ...process.env, SOURCE_DATE_EPOCH: '1767225600' };
-    delete env.AGSC_DOI;
+    const env = {};
+    for (const [name, value] of Object.entries(process.env)) if (!name.startsWith('AGSC_')) env[name] = value;
+    env.SOURCE_DATE_EPOCH = '1767225600';
     const r = spawnSync(process.execPath, [path.join(root, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /AGSC-E901 content\/index\.md, the Bundle root, is not there/u);

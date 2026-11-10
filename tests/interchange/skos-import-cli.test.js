@@ -20,8 +20,9 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(ROOT, 'bin', 'agsc.js');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 const THESAURUS = path.join(ROOT, 'tests', 'fixtures', 'skos-thesaurus', 'thesaurus.ttl');
-const ENV = { ...process.env, NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' };
-delete ENV.AGSC_DOI;
+const ENV = {};
+for (const [name, value] of Object.entries(process.env)) if (!name.startsWith('AGSC_')) ENV[name] = value;
+Object.assign(ENV, { NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' });
 
 const temporaries = [];
 test.after(() => {
