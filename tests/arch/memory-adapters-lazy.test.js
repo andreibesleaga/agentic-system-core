@@ -45,8 +45,11 @@ function traced(args) {
       '};',
       '',
     ].join('\n'));
-    const env = { ...process.env, SOURCE_DATE_EPOCH: '1767225600', TRACE_LOG: log };
-    delete env.AGSC_DOI;
+    // No AGSC_ switch reaches the command (AGSC-01-37 refuses names it does not know, such
+    // as the architecture lane's AGSC_AUDIT; docs/TESTING.md).
+    const env = {};
+    for (const [name, value] of Object.entries(process.env)) if (!name.startsWith('AGSC_')) env[name] = value;
+    Object.assign(env, { SOURCE_DATE_EPOCH: '1767225600', TRACE_LOG: log });
     const run = spawnSync(process.execPath, ['--require', hook, BIN, ...args], { cwd: dir, encoding: 'utf8', env });
     const loaded = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').split('\n').filter(Boolean) : [];
     return { loaded: [...new Set(loaded.map((p) => p.split(path.sep).join('/')))], status: run.status, stderr: run.stderr };

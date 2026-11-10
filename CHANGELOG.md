@@ -13,6 +13,9 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The memory-adapter load trace (`tests/arch/memory-adapters-lazy.test.js`) starts the command
+  with no `AGSC_` variable, as the other tests that start it do, so it also passes in the
+  architecture lane under `AGSC_AUDIT=1`.
 - Review fixes: the three blueprint READMEs say that their dry run needs this
   repository or an engine from 1.1 on (a 1.0 release has no `compose --from` and no `--http`) and set
   the git identity the commit needs, the test running the same lines; the blueprint test now checks
