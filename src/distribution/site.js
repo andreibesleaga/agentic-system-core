@@ -1075,7 +1075,7 @@ const UNPRODUCED_ROUTES = Object.freeze([
     + ' `/changelog/` is not in this list: AGSC-04-25 pins its versions list, which'
     + ' the build derives from the git-log file whenever it has one'],
   ['/feed.xml',
-    'reserved to a later MINOR (planned for 1.2, AGSC-00-20 as amended for 1.1.0): no 1.0 or 1.1'
+    'reserved to a later MINOR (AGSC-00-20 as amended for 1.1.0): no 1.0 or 1.1'
     + ' rule pins a feed\'s bytes, so the route cannot be derived, and `build.feed` is a RESERVED'
     + ' configuration name a 1.0 or 1.1 tool rejects with'
     + ' AGSC-E004 (AGSC-06-01) — it is not a switch an operator may set'],

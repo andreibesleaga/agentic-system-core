@@ -222,6 +222,35 @@ module.exports = [
     },
   },
   {
+    pattern: 'the page is titled "Agent2Agent Protocol — Acceptance Bundle", and the home page "/" by the node\'s name alone',
+    run(world) {
+      assert.ok(world.state.page.includes('<title>Agent2Agent Protocol — Acceptance Bundle</title>'), 'the item page title');
+      assert.ok(world.read('www/index.html').includes('<title>Acceptance Bundle</title>'), 'the home page title');
+    },
+  },
+  {
+    pattern: 'the page head names it to a link preview: "og:type" "article", "og:url" its canonical address, "og:title", "og:description" and "og:site_name", and no "og:image", because the build was given none',
+    run(world) {
+      const head = /<head>([\s\S]*?)<\/head>/u.exec(world.state.page)[1];
+      const { frontmatter } = splitItem(world.read('content/concepts/a2a.md'));
+      assert.ok(head.includes('<link rel="canonical" href="https://agenticsystemcore.com/concepts/a2a/">'), head);
+      for (const line of ['<meta property="og:type" content="article">',
+        '<meta property="og:url" content="https://agenticsystemcore.com/concepts/a2a/">',
+        '<meta property="og:title" content="Agent2Agent Protocol">',
+        `<meta property="og:description" content="${frontmatter.description}">`,
+        '<meta property="og:site_name" content="Acceptance Bundle">']) assert.ok(head.includes(line), `${line}\n${head}`);
+      assert.ok(!head.includes('og:image'), 'no image was given, so none is announced');
+    },
+  },
+  {
+    pattern: 'the page lists the tags "agents" and "protocols", each linked to its "/tags/<tag>/" page, which the build wrote',
+    run(world) {
+      const main = mainOf(world.state.page);
+      assert.ok(main.includes('<dt>Tags</dt><dd><a href="/tags/agents/">agents</a>, <a href="/tags/protocols/">protocols</a></dd>'), main);
+      for (const tag of ['agents', 'protocols']) assert.ok(fs.existsSync(path.join(world.dir, 'www', 'tags', tag, 'index.html')), tag);
+    },
+  },
+  {
     pattern: 'the reader navigates to "/clusters/protocols/"',
     run(world) {
       world.state.page = world.read('www/clusters/protocols/index.html');

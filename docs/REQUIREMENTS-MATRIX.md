@@ -13,8 +13,8 @@ A rule that traces to a requirement brings its own checks with it: the vectors, 
 | Rule trace bracket | 73 |
 | Test file | 20 |
 | Live conformance vector | 1 |
-| Acceptance scenario | 64 |
-| Document | 53 |
+| Acceptance scenario | 66 |
+| Document | 54 |
 
 ## Requirements met in part
 
@@ -140,6 +140,6 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-066 | MAPPED | — | — | `bench/agent-kit.test.js` | — | `persona-n-researcher.feature` | `docs/diagrams/arch-c4-container.md` |
 | PRD-067 | MAPPED | — | — | `bench/measure.test.js` | — | `persona-n-researcher.feature` | — |
 | PRD-068 | MAPPED | — | — | `docs/claims.test.js`, `tools/lint-claims.test.js` | — | `persona-n-researcher.feature` | — |
-| PRD-069 | MAPPED | — | — | `distribution/page-head-browser.test.js`, `distribution/page-head.test.js` | — | — | — |
-| PRD-070 | MAPPED | — | — | `arch/memory-adapters-lazy.test.js`, `interchange/import-verb.test.js`, `interchange/memory-adapters-fixtures.test.js` +1 | — | `persona-h-memory.feature` | — |
-| PRD-071 | MAPPED | — | — | `examples/blueprints.test.js` | — | — | — |
+| PRD-069 | MAPPED | — | — | `distribution/page-head-browser.test.js`, `distribution/page-head.test.js` | — | `persona-a-reader.feature` | `docs/ARCHITECTURE-DDD.md` |
+| PRD-070 | MAPPED | — | — | `arch/memory-adapters-lazy.test.js`, `interchange/import-verb.test.js`, `interchange/memory-adapters-fixtures.test.js` +2 | — | `persona-h-memory.feature` | — |
+| PRD-071 | MAPPED | — | — | `examples/blueprints.test.js` | — | `persona-e-architect.feature` | — |

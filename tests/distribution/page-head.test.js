@@ -221,7 +221,9 @@ test('U21: the stylesheet marks the element a #fragment link lands on', () => {
 
 // ---------------------------------------------------------------- what does not move
 
-test('the machine files do not change with the page head (the build with and without an image)', () => {
+test('the machine files are the same bytes with and without an ogImage (what the image option may change is the HTML only)', () => {
+  // The title, Open Graph and tag changes themselves are proven not to move a machine file by the
+  // reference comparison of run B (every non-HTML byte of seven inputs equal to the 17974f2 build).
   const plain = build();
   const imaged = build(FIXTURE, { ogImage: { url: '/assets/card.png' } });
   assert.deepStrictEqual([...imaged.files.keys()], [...plain.files.keys()], 'the route set is the same');

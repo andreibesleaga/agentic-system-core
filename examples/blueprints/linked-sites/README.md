@@ -34,13 +34,16 @@ cross-site read in `site-a`.
 
 Every command below runs offline, needs no model and no account, and is run by
 `tests/examples/blueprints.test.js` with the build instant fixed, so the lines quoted
-after each block are the lines a reader sees. `$ENGINE` is the folder of the installed
-`agentic-system-core` package (or this repository); `agsc` is its command line.
+after each block are the lines a reader sees. `$ENGINE` is the folder of this repository,
+or of the installed `agentic-system-core` package from 1.1 on (a 1.0 release has no
+`compose --from` and no `--http`); `agsc` is its command line. A commit needs a git
+identity, so the opening block sets one for this shell.
 
 Copy the folder, give it a git history, and run the three checks a node must pass:
 
 ```bash demo
 export SOURCE_DATE_EPOCH=1789380000
+export GIT_AUTHOR_NAME=Operator GIT_AUTHOR_EMAIL=operator@example.org GIT_COMMITTER_NAME=Operator GIT_COMMITTER_EMAIL=operator@example.org
 cp -r "$ENGINE/examples/blueprints/linked-sites" . && cd linked-sites
 git init -q -b main && git add -A && git commit -q -m 'linked sites blueprint'
 agsc lint | tail -1

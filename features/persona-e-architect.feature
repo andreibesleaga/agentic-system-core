@@ -1,4 +1,4 @@
-# Trace: PRD-001, PRD-022, PRD-036, PRD-037, PRD-038 · PLAN §6(c)
+# Trace: PRD-001, PRD-022, PRD-036, PRD-037, PRD-038, PRD-071 · PLAN §6(c)
 @persona-e @mode-4
 Feature: Architect turns Concepts into a starting architecture
   As P5 (architect / combiner)
@@ -131,4 +131,12 @@ Feature: Architect turns Concepts into a starting architecture
     Then the command exits 0
     And the Bundle holds "content/episodes/first-run.md"
     And that Episode starts at "2026-01-01T09:00:00Z", names the record's actor and keeps the record's unknown member under an "x-" name (AGSC-09-94)
+    And no network call was attempted
+
+  @PRD-071 @human
+  Scenario: A worked blueprint of the repository turns into its C4 levels, decision records and build plan
+    Given the worked blueprint "tool-server" of "examples/blueprints/" is copied into a scratch folder with a git history
+    When the operator runs "agsc compose --from tool-server-and-client --brief" under the network trap
+    Then the command exits 0
+    And the blueprint beside the Harness holds the three C4 levels, one decision record for each decision of the Bundle naming at least two considered options, and a build plan in which every step names what verifies it (AGSC-07-29)
     And no network call was attempted

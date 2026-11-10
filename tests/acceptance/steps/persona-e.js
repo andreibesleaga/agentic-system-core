@@ -490,6 +490,35 @@ module.exports = [
     },
   },
   {
+    pattern: /^the worked blueprint "([^"]+)" of "examples\/blueprints\/" is copied into a scratch folder with a git history$/u,
+    run(world, folder) {
+      world.dir = world.temp(`agsc-acc-blueprint-${folder}-`);
+      fs.cpSync(path.join(ROOT, 'examples', 'blueprints', folder), world.dir, { recursive: true });
+      world.commitAll(folder);
+    },
+  },
+  {
+    pattern: 'the blueprint beside the Harness holds the three C4 levels, one decision record for each decision of the Bundle naming at least two considered options, and a build plan in which every step names what verifies it (AGSC-07-29)',
+    run(world) {
+      const files = companionFiles(world);
+      for (const level of ['c4-context.mmd', 'c4-containers.mmd', 'c4-components.mmd']) assert.ok(files.has(`blueprint/${level}`), level);
+      const concepts = path.join(world.dir, 'content', 'concepts');
+      const decisions = fs.readdirSync(concepts).filter((name) => /^kind: decision$/mu.test(world.read(`content/concepts/${name}`)))
+        .map((name) => name.replace(/\.md$/u, '')).sort();
+      assert.ok(decisions.length > 0, 'the blueprint declares no decision');
+      const records = [...files.keys()].filter((name) => name.startsWith('blueprint/decisions/'));
+      assert.deepStrictEqual(records.map((n) => n.replace(/^blueprint\/decisions\/\d{4}-/u, '').replace(/\.md$/u, '')).sort(), decisions);
+      for (const record of records) {
+        const options = /## Considered options\n\n([\s\S]*?)\n## Decision\n/u.exec(files.get(record));
+        assert.ok(options && (options[1].match(/^\d+\. /gmu) || []).length >= 2, `${record} names fewer than two options`);
+      }
+      const steps = [...files.get('blueprint/build-plan.md').matchAll(/^### Step \d+ — adopt `[^`]+`\n\n- Needs: .*\n- Verified by: (.*)$/gmu)];
+      assert.ok(steps.length > 0, 'the build plan has no step');
+      for (const [, verified] of steps) assert.notStrictEqual(verified.trim(), '');
+      assert.ok(![...tree(world.state.harnessDir).keys()].some((name) => name.startsWith('blueprint/')), 'the blueprint is inside the Harness directory');
+    },
+  },
+  {
     pattern: /^the Bundle holds the saved architecture "([^"]+)" selecting "([^"]+)" and "([^"]+)", and the node is rebuilt$/u,
     run(world, slug, a, b) {
       world.write(`content/concepts/${slug}.md`, ['---', 'type: concept', 'kind: architecture', `title: The ${slug}`,

@@ -1,4 +1,4 @@
-# Trace: PRD-002, PRD-011, PRD-013, PRD-014, PRD-015, PRD-025 · PLAN §6(a)
+# Trace: PRD-002, PRD-011, PRD-013, PRD-014, PRD-015, PRD-025, PRD-069 · PLAN §6(a)
 @persona-a @mode-0
 Feature: Human reader finds a pattern with evidence
   As P1 (human reader: architect/engineer)
@@ -86,3 +86,10 @@ Feature: Human reader finds a pattern with evidence
     Then the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)
     And Enter on the example's button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine's own function answers for "a2a" (AGSC-06-20)
     And the vocabulary lists the fourteen relations, each with the meaning the specification gives it
+
+  @PRD-069 @human
+  Scenario: Reader sees a page named after the node, with its preview properties and its tags
+    When the reader navigates to "/concepts/a2a/"
+    Then the page is titled "Agent2Agent Protocol — Acceptance Bundle", and the home page "/" by the node's name alone
+    And the page head names it to a link preview: "og:type" "article", "og:url" its canonical address, "og:title", "og:description" and "og:site_name", and no "og:image", because the build was given none
+    And the page lists the tags "agents" and "protocols", each linked to its "/tags/<tag>/" page, which the build wrote

@@ -414,7 +414,7 @@ AGSC-01-18) and `run.enabled` (`false`, AGSC-09-94). `application/config/load.js
 applies them explicitly (`PROSE_DEFAULTS`, cited by rule id);
 `application/config/env.js#allDefaults` derives only what `config.schema.json`
 literally declares, mechanically, never hand-typed. The table gives `build.feed` no
-value: it is a name reserved to a later MINOR (planned for 1.2, AGSC-00-20 as amended for
+value: it is a name reserved to a later MINOR (AGSC-00-20 as amended for
 1.1.0), a configuration file that names it is refused with `AGSC-E004` (AGSC-00-20), and
 nothing at 1.0 or 1.1 reads it.
 

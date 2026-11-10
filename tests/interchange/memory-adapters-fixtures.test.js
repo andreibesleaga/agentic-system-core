@@ -383,6 +383,16 @@ test('csv: a cell a spreadsheet would read as a formula is written behind a quot
   assert.match(write.text, /\n---\n\+ step one\n$/u);
 });
 
+test('csv: an agsc cell that is not JSON, or names no item of this format, is not trusted; the row arrives as a draft', () => {
+  const forged = JSON.stringify({ body: 'B', frontmatter: {}, slug: 'Not A Slug', type: 'spaceship' }).replace(/"/gu, '""');
+  const table = `title,body,agsc\r\nBroken record,Text one,{not json\r\nForged record,Text two,"${forged}"\r\n`;
+  const planned = csv.plan({ 'rows.csv': table }, PLAN);
+  assert.strictEqual(planned.totals.own, 0);
+  assert.strictEqual(planned.totals.foreign_drafts, 2);
+  assert.ok(planned.findings.some((f) => /spaceship/u.test(f.message)), 'the forged record is named as not an item');
+  for (const write of planned.writes.filter((w) => /^content\//u.test(w.path))) assert.match(write.text, /^status: draft$/mu, write.path);
+});
+
 test('zep: every exported episode keeps the client rule for metadata (at most 10 keys, scalar values)', () => {
   const zep = require('../../src/interchange/adapters/zep.js');
   const out = zep.run(bundleOf([{ body: 'B\n', extra: 'x', slug: 'alpha', title: 'T alpha' }]), OPTIONS);

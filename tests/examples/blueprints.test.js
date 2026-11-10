@@ -91,15 +91,30 @@ function bundleOf(dir, architecture) {
 function mermaid(text) {
   const nodes = new Map();
   const subgraphs = new Map();
+  const parents = new Map();
   const edges = [];
+  const open = [];
   for (const line of text.split('\n')) {
     let m;
-    if ((m = /^\s*subgraph (\S+)\["(.*)"\]$/u.exec(line))) subgraphs.set(m[1], m[2]);
+    if ((m = /^\s*subgraph (\S+)\["(.*)"\]$/u.exec(line))) {
+      subgraphs.set(m[1], m[2]);
+      open.push(m[1]);
+    } else if (/^\s*end$/u.test(line)) open.pop();
     else if ((m = /^\s*(\S+) -->\|([^|]+)\| (\S+)$/u.exec(line))) edges.push({ from: m[1], key: m[2], to: m[3] });
-    else if ((m = /^\s*(\S+)\["(.*)"\]$/u.exec(line))) nodes.set(m[1], m[2]);
+    else if ((m = /^\s*(\S+)\["(.*)"\]$/u.exec(line))) {
+      nodes.set(m[1], m[2]);
+      if (open.length > 0) parents.set(m[1], open[open.length - 1]);
+    }
   }
-  return { edges, nodes, subgraphs };
+  assert.equal(open.length, 0, 'every subgraph is closed');
+  return { edges, nodes, parents, subgraphs };
 }
+
+test('the Mermaid reader of this file knows which box a node is drawn in', () => {
+  const read = mermaid('flowchart TB\n  outside["A"]\n  subgraph boxc["Box"]\n    inside["B"]\n  end\n');
+  assert.equal(read.parents.get('inside'), 'boxc');
+  assert.equal(read.parents.has('outside'), false);
+});
 
 test('examples/blueprints/ holds the three blueprints and its README names each', () => {
   const folders = fs.readdirSync(FOLDER, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
@@ -176,6 +191,7 @@ for (const { folder, architecture } of BLUEPRINTS) {
       const others = selection.filter((s) => items.get(s).type !== 'concept');
       assert.deepEqual([...l3.nodes.values()].sort(), [...others].sort());
       for (const [id, label] of l3.subgraphs) assert.equal(l2.nodes.get(id.replace(/c$/u, '')), label, `level 3 box ${label} is no level-2 node`);
+      for (const [id, label] of l3.nodes) assert.ok(l3.subgraphs.has(l3.parents.get(id)), `level 3 member ${label} is drawn outside every box`);
       for (const e of l3.edges) {
         assert.ok(l3.nodes.has(e.from) || l3.nodes.has(e.to));
         for (const end of [e.from, e.to]) assert.ok(l3.nodes.has(end) || l2.nodes.has(end), `level 3 edge end ${end}`);

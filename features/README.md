@@ -29,11 +29,11 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | File | Persona | Mode | Scenarios | PRD ids covered |
 |---|---|---|---|---|
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
-| `persona-a-reader.feature` | P1 human reader | 0 | 9 | PRD-002, 011, 013, 014, 015, 022, 025 |
+| `persona-a-reader.feature` | P1 human reader | 0 | 10 | PRD-002, 011, 013, 014, 015, 022, 025, 069 |
 | `persona-b-contributor.feature` | P2 human contributor | 0 | 7 | PRD-013, 039, 040, 041, 042, 050 |
 | `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 20 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |
-| `persona-e-architect.feature` | P5 architect/combiner | 4 | 13 | PRD-001, 022, 036, 037, 038 |
+| `persona-e-architect.feature` | P5 architect/combiner | 4 | 14 | PRD-001, 022, 036, 037, 038, 071 |
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |
 | `persona-g-team.feature` | P7 project team | 2, 5 | 7 | PRD-026, 028, 029, 030, 031, 064 |
 | `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 16 | PRD-021, 022, 026, 027, 061, 070 |

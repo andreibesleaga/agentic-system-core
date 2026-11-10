@@ -229,6 +229,12 @@ build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
   holds one minimal sample per kind; at 1.0 a command loads three of the kinds (a
   memory adapter, a composition emitter and a deployment profile), and the other
   five samples are proved by the plugin-contract test only.
+* `examples/blueprints/` holds three worked blueprints from 1.1: the engine itself, two
+  knowledge sites that link to each other, and the agent tool server with a client.
+  Each is a Bundle with one saved architecture; `agsc compose --from <slug> --brief`
+  turns it into the C4 levels 1 to 3, one decision record per decision and a build
+  plan, and its README ends with a dry run that needs no model
+  (`tests/examples/blueprints.test.js` runs it).
 
 The engine's arrangement is one implementation choice, not part of the format.
 Where this engine and the specification disagree, the specification wins.

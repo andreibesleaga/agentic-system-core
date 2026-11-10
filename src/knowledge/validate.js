@@ -328,8 +328,8 @@ function codeFor(error, ctx) {
  * `additionalProperties` error and not the offending key, so "/: must NOT have
  * additional properties" left the reader to guess which of their keys was wrong —
  * and AGSC-00-25 makes that guess matter, because one of the names a 1.0 or 1.1 tool
- * rejects here is a name reserved to a later MINOR (planned for 1.2, AGSC-00-20 as
- * amended for 1.1.0).
+ * rejects here is a name reserved to a later MINOR (AGSC-00-20 as amended for
+ * 1.1.0).
  *
  * @param {{path:string, keyword:string, params:object}} error
  * @returns {string}

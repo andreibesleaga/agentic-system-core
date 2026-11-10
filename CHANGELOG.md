@@ -13,6 +13,18 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Run B close (review findings): the three blueprint READMEs say that their dry run needs this
+  repository or an engine from 1.1 on (a 1.0 release has no `compose --from` and no `--http`) and set
+  the git identity the commit needs, the test running the same lines; the blueprint test now checks
+  that every level-3 member is drawn inside a box, as its comment said; the page-head test that
+  compares a build with and without `ogImage` is named for what it proves; a CSV test shows that an
+  `agsc` cell that is not JSON, or names no item of this format, is not trusted and its row arrives
+  as a draft; PRD-069 and PRD-071 each
+  gain a Gherkin scenario (`features/persona-a-reader.feature`, `features/persona-e-architect.feature`,
+  their steps in `tests/acceptance/steps/`), and `docs/REQUIREMENTS-MATRIX.md` and
+  `docs/RULE-COVERAGE.md` are regenerated; `README.md`, `docs/PLAN.md` and
+  `docs/ARCHITECTURE-DDD.md` name the page head, the memory adapters and the blueprints. Tests and
+  documentation only; no rule, no case and no emitted byte changes.
 - AGSC-00-20, amended 2026-11-09: the direct memory adapters for Mem0, Letta, Zep and CSV, and for
   Basic Memory and Claude Code's memory files, move from the capabilities planned for a later MINOR
   to the capabilities of the reference distribution in 1.1. They are adapters under AGSC-01-26a,
@@ -1439,9 +1451,11 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The note `agsc build` and `agsc ci` print for the route `/feed.xml` no longer says "reserved to 1.1"
   and "a 1.0 tool rejects": AGSC-00-20 as amended for 1.1.0 moves `build.feed` to a later MINOR, so
-  it now reads "reserved to a later MINOR (planned for 1.2, AGSC-00-20 as amended for 1.1.0)" and
-  "a 1.0 or 1.1 tool rejects" (`tests/standard/route-closure.test.js`). `src/REFERENCE.md` and two
-  code comments say the same. Only standard error changes; no emitted byte.
+  it now reads "reserved to a later MINOR (AGSC-00-20 as amended for 1.1.0)" and "a 1.0 or 1.1
+  tool rejects", with no version number for what comes after 1.1 (the run B close removed a
+  "planned for 1.2" that the first wording carried; `tests/standard/route-closure.test.js` now
+  refuses one). `src/REFERENCE.md` and two code comments say the same. Only standard error
+  changes; no emitted byte.
 - `agsc export --to <name>` names AGSC-01-26a once: an unknown adapter printed "(AGSC-01-26a)
   (AGSC-01-26a)". `export --to skos` no longer says that the adapter "exports no run() entry point":
   it says that `skos` is an import adapter (`agsc import --from skos`) and that the SKOS view is

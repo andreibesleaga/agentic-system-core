@@ -599,7 +599,10 @@ transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core
 server on the official MCP SDK that both MCP transports build, and `mcp-http.js` (compiled from
 `src-ts/distribution/mcp-http.ts`), the Streamable HTTP transport of `mcp --http`, and
 `a2a-card.js` (compiled from `src-ts/distribution/a2a-card.ts`), the A2A agent card; pages are rendered by `src/distribution/html.js` with no
-template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
+template files (no `templates/*.html`), and from 1.1 their title and Open Graph properties come from
+`src/distribution/page-head.js`. The direct memory adapters of 1.1 are six modules under
+`src/interchange/adapters/` over one shared `src/interchange/memory-records.js`, and the three
+worked blueprints of 1.1 are Bundles under `examples/blueprints/`. There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
 `src/adapters/node-network-refusing.js`, which refuses every call with `AGSC-E905`; there is no

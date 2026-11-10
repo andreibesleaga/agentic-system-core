@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 106 |
 | Checker header | 39 |
 
-Acceptance scenarios: 167 in `features/` (a Scenario Outline counts once), of which 11 are pending and 12 conditional, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 169 in `features/` (a Scenario Outline counts once), of which 11 are pending and 12 conditional, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -330,7 +330,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-27 | VERIFIED | yes | `chk-0002`, `chk-0004` | `knowledge/chunks.test.js` | — | — |
 | AGSC-06-28 | VERIFIED | yes | `chk-0011` | `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js`, `distribution/chunk-anchors.test.js` | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework`, `persona-c-agent-mcp.feature#An agent cites a chunk back and the item page shows it at its heading` | — |
 | AGSC-06-29 | VERIFIED | yes | `chk-0009`, `chk-0012` | `acceptance/steps/persona-c.js`, `distribution/routes.test.js`, `knowledge/chunks-1-1.test.js` +1 | `persona-c-agent-mcp.feature#chunks.jsonl feeds a memory framework` | — |
-| AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +10 | — |
+| AGSC-06-30 | VERIFIED | yes | `chk-0003` | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-anchors.js`, `acceptance/steps/persona-c.js` +14 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-a-reader.feature#Reader searches via the prebuilt client-side index`, `persona-a-reader.feature#Reader opens a Concept page and sees evidence` +11 | — |
 | AGSC-06-31 | VERIFIED | yes | `chk-0013` | `bench/agent-kit.test.js`, `composition/conform.test.js`, `distribution/content-version-stamps.test.js` +3 | — | — |
 | AGSC-06-32 | VERIFIED | yes | `graph-0011`, `graph-0019` | `acceptance/steps/persona-i.js`, `distribution/ns-context.test.js`, `knowledge/jsonld-roundtrip.test.js` +4 | `persona-i-maintainer.feature#A term states its warrant, and the graph carries its source and its kind of warrant` | — |
 | AGSC-06-33 | VERIFIED | yes | `build-0011` | `knowledge/nquads.test.js` | — | — |
@@ -373,7 +373,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-07-26 | VERIFIED | yes | `compose-0025` | `acceptance/steps/persona-e.js`, `composition/brief.test.js` | `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes`, `persona-e-architect.feature#The architect reads the brief of a selection on "/compose/" and downloads it` | — |
 | AGSC-07-27 | VERIFIED | yes | `compose-0026` | `acceptance/steps/persona-e.js` | `persona-e-architect.feature#The architect asks for a brief, written beside the Harness, and the Harness keeps its bytes` | — |
 | AGSC-07-28 | VERIFIED | yes | — | `acceptance/steps/persona-e.js`, `application/cli/compose-brief.test.js`, `composition/brief.test.js` | `persona-e-architect.feature#A narration is not written by this distribution, and the brief still is` | — |
-| AGSC-07-29 | VERIFIED | yes | `compose-0028`, `compose-0029`, `compose-0030` | `acceptance/steps/persona-e.js`, `application/cli/compose-blueprint.test.js`, `arch/brief.test.js` +3 | `persona-e-architect.feature#A saved architecture gets its blueprint beside the Harness, and its page shows the brief` | — |
+| AGSC-07-29 | VERIFIED | yes | `compose-0028`, `compose-0029`, `compose-0030` | `acceptance/steps/persona-e.js`, `application/cli/compose-blueprint.test.js`, `arch/brief.test.js` +3 | `persona-e-architect.feature#A saved architecture gets its blueprint beside the Harness, and its page shows the brief`, `persona-e-architect.feature#A worked blueprint of the repository turns into its C4 levels, decision records and build plan` | — |
 | AGSC-07-30 | VERIFIED | yes | `compose-0032`, `compose-0033` | `acceptance/steps/persona-e.js`, `application/cli/compose-brief.test.js`, `application/cli/compose-context-map.test.js` +2 | `persona-e-architect.feature#A node that declares bounded contexts gets a context map beside the Harness, and the Harness keeps its bytes` | — |
 | AGSC-08-01 | VERIFIED | yes | `fm-0004`, `prov-0009`, `prov-0014` | `acceptance/steps/persona-d.js`, `application/cli/refresh-process-lane.test.js`, `knowledge/validate.test.js` | — | — |
 | AGSC-08-02 | VERIFIED | — | — | `adapters/node-proc.test.js` | — | — |

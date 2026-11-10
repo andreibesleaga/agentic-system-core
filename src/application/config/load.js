@@ -212,8 +212,8 @@ function load(options) {
   //   - AGSC-01-18: `i18n.default` defaults to "en".
   //   - AGSC-09-94 (AGSC-01-18 "run{enabled,...} required... enabled default
   //     false"): `run.enabled` defaults to false.
-  // `build.feed` gets no default: it is a name reserved to a later MINOR (planned
-  // for 1.2, AGSC-00-20 as amended for 1.1.0) that a 1.0 or 1.1 tool refuses in a
+  // `build.feed` gets no default: it is a name reserved to a later MINOR
+  // (AGSC-00-20 as amended for 1.1.0) that a 1.0 or 1.1 tool refuses in a
   // configuration file (AGSC-00-20, AGSC-06-01), and nothing reads it.
   const PROSE_DEFAULTS = [
     ['build.out', 'www'], // AGSC-01-19
