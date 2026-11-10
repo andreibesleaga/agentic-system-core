@@ -226,6 +226,36 @@ head -n 2 dist/export/skos.ttl
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 ```
 
+Memory tools take the node directly too, from 1.1. `agsc export --to <tool>`, with `mem0`,
+`letta`, `zep`, `csv`, `basic-memory` or `claude-code`, writes that tool's own files under
+`dist/export/<tool>/`, and `agsc import --from <tool> <folder>` reads them back. Nothing reaches
+the network: you send the Mem0, Letta or Zep file with that tool's own client, and you copy the
+Basic Memory notes or the Claude Code memory folder where the tool reads them. A record this
+node wrote comes back exactly; anything else arrives as a draft. Here the node goes out as a
+table and as a Claude Code memory folder, and a sheet someone else kept is checked before it
+comes in:
+
+```bash demo
+agsc export --to csv
+agsc export --to claude-code
+ls dist/export/csv
+test -f dist/export/claude-code/memory/MEMORY.md && echo 'memory index written'
+mkdir -p ../from-sheet
+printf 'title,body\nOn-call rota,The rota changes every Monday.\n' > ../from-sheet/rota.csv
+agsc import --from csv ../from-sheet --dry-run
+```
+
+```text expect
+PROVENANCE.md
+items.csv
+memory index written
+import: --dry-run: 1 file(s) would be written, 0 unchanged
+```
+
+Without `--dry-run` the row becomes `content/concepts/on-call-rota.md`, with `status: draft`.
+[CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md)
+Route 10 shows the file each tool gets and the few lines that send it.
+
 `agsc lint --suggest` proposes Links without making any. It reads the notes and writes
 `dist/suggestions.json`: for each pair that no Link joins, a `related` suggestion where one
 note links to the other in its text, where the two cite two or more of the same sources, or

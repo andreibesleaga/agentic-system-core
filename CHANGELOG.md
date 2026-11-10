@@ -500,6 +500,39 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with no warning, that two builds and two compositions write the same bytes, that the three C4 levels
   agree, that every part names its check, and that the README's dry run prints what it quotes; `npm
   test` runs it in CI. New examples only: no rule, no case and no emitted byte changes.
+- Direct memory adapters (PRD-070; AGSC-01-26a, a capability of the reference distribution as
+  AGSC-00-20 was amended on 2026-11-09): `export --to` and `import --from` `mem0`, `letta`, `zep`,
+  `csv`, `basic-memory` and `claude-code`. Each writes and reads one tool's own files — Mem0 `add()`
+  arguments and `getAll()` pages, Letta archival passages, Zep graph episodes and nodes (the shapes of
+  the official clients `mem0ai` 3.3.1, `@letta-ai/letta-client` 1.12.1 and `@getzep/zep-cloud` 4.1.0,
+  none of which is installed), an RFC 4180 table, Basic Memory notes with their relations, and a
+  Claude Code memory folder (and, on import, `CLAUDE.md` and `.claude/rules/`). None reaches the
+  network (AGSC-00-24): a person moves the files with each tool's client (`docs/CONNECTORS.md`
+  Route 10). Published items only leave, with the provenance header and the terms (AGSC-06-30,
+  AGSC-01-29); an item of this node or a declared peer comes back exactly, plus
+  `prov.source_version` (AGSC-00-22, AGSC-01-23); every other record arrives as a draft with
+  `prov.origin: imported`, what its mapping does not use kept in `x-<tool>-*` keys (AGSC-01-22,
+  AGSC-02-05a); a Basic Memory relation named by a Link key or an AGSC-03-19 synonym becomes that
+  Link. One shared module, `src/interchange/memory-records.js`, and one import lane; the six names
+  join `import`'s format list and take `--replace`, `--allow-newer` and `--source-version`. New
+  run-time dependencies `csv-parse` 7.0.3 and `csv-stringify` 6.9.0 (MIT, node-csv; the RFC 4180
+  quoting is the library's, never the engine's), loaded only by the CSV adapter: a require trace
+  proves `build` and `lint` load no adapter of these six and no CSV library
+  (`tests/arch/memory-adapters-lazy.test.js`). Tests: `tests/interchange/memory-adapters.test.js`
+  and `memory-adapters-fixtures.test.js` (recorded fixtures, property tests, an in-process network
+  trap), a persona H scenario outline. No emitted byte of a build changes: the adapters write only
+  under `dist/export/<tool>/` when asked. Three guards from the run B review: the Zep export carries
+  the own record in `metadata.agsc` as one base64 string, because the client's `AddEpisodeRequest`
+  allows at most 10 metadata keys with scalar values; the CSV export writes a cell that starts with
+  `=`, `+`, `-`, `@`, a tab or a carriage return behind one `'` (csv-stringify `escape_formulas`, as
+  the board CSV writer already does), and a foreign import removes that `'`; and the Claude Code
+  export reports the warning `AGSC-E506` when `MEMORY.md` is longer than the 200 lines or 25 KB
+  Claude Code loads.
+- Every package under `packages/` is held to the engine: `tools/release` checks and bumps each one's
+  version (and its dependency on the engine, where it has one), not only the `agsc-cli` alias;
+  `tests/arch/node-floor.test.js` holds each one's Node floor; and the dependency rule
+  `plugins-loaded-never-required` forbids `src/`, `bin/` and `index.js` to require anything under
+  `packages/` (pre-block audit of run B, finding 16). Repository tooling; no emitted byte changes.
 - The page head and the reader's way around a node (PRD-069; the engine half of the 1.0 site review's
   findings on titles, icon, link previews, unreachable tag pages, empty type lists and the `:target`
   mark). Every page's `<title>` is its name followed by the node's name (`Handoff — Minimal Bundle`; the

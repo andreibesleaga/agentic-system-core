@@ -46,11 +46,24 @@ const { LICENSE_NAME } = require('../../../interchange/licences.js');
 const skills = require('../../../interchange/adapters/skills.js');
 const board = require('../../../interchange/adapters/board.js');
 const skos = require('../../../interchange/adapters/skos.js');
+const mem0 = require('../../../interchange/adapters/mem0.js');
+const letta = require('../../../interchange/adapters/letta.js');
+const zep = require('../../../interchange/adapters/zep.js');
+const csv = require('../../../interchange/adapters/csv.js');
+const basicMemory = require('../../../interchange/adapters/basic-memory.js');
+const claudeCode = require('../../../interchange/adapters/claude-code.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT, skos.FORMAT]);
+/**
+ * The direct memory adapters (AGSC-01-26a; PRD-070): each reads the files of one memory
+ * tool through the same lane, `importMemory`, and owns only its own file shapes.
+ */
+const MEMORY_ADAPTERS = Object.freeze([mem0, letta, zep, csv, basicMemory, claudeCode]);
+
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT,
+  skos.FORMAT, ...MEMORY_ADAPTERS.map((adapter) => adapter.FORMAT)]);
 
 /**
  * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
@@ -689,6 +702,65 @@ function importGabbe(ctx, source, identityOptions) {
 }
 
 /**
+ * `import --from <memory tool> <dir>` (AGSC-01-26a; PRD-070): `mem0`, `letta`, `zep`,
+ * `csv`, `basic-memory` and `claude-code`. The rules are the adapter's and
+ * `interchange/memory-records.js`'s; this function lists the folder (`.git/` and
+ * `node_modules/` excluded), reads only the files the adapter names through a
+ * read-only port rooted at the folder, and hands the plan to the shared tail, so
+ * `--dry-run`, the collision survey and `--replace` behave as in every other lane
+ * (AGSC-01-23). `--source-version <v>` states the content version of a foreign
+ * source, which none of these tools publishes (AGSC-01-22).
+ *
+ * @param {object} ctx
+ * @param {string} source the folder.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @param {object} adapter one of `MEMORY_ADAPTERS`.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importMemory(ctx, source, identityOptions, adapter) {
+  const verbFlags = ctx.verbFlags || {};
+  const stated = verbFlags['source-version'];
+  const bad = sourceVersionRefusal(stated);
+  if (bad !== null) return { findings: [bad], status: 'fail' };
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  const files = Object.create(null);
+  // A folder that is not there, or a path that is not a folder, lists nothing, and the
+  // E901 below says so.
+  let listed;
+  try {
+    listed = cloneFiles(fs);
+  } catch (e) {
+    listed = [];
+  }
+  for (const file of listed.filter(adapter.isSourceFile)) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  if (Object.keys(files).length === 0) {
+    return {
+      findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no file the`
+        + ` ${adapter.FORMAT} adapter reads (AGSC-01-22, AGSC-01-26a)`, { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const planned = adapter.plan(files, {
+    allowNewer: verbFlags['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    ...trustOptions(identityOptions),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  });
+  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
+  return finish(ctx, [...findings, ...planned.findings], planned);
+}
+
+/**
  * The origins whose own-record lines an import may trust: this node's
  * `site.base` and its declared `peers[]`.
  *
@@ -1067,6 +1139,8 @@ function run(ctx) {
   if (from === skills.FORMAT) return importSkills(ctx, source, identified.options);
   if (from === board.FORMAT) return importBoard(ctx, source, identified.options);
   if (from === skos.FORMAT) return importSkos(ctx, source, identified.options);
+  const memoryAdapter = MEMORY_ADAPTERS.find((adapter) => adapter.FORMAT === from);
+  if (memoryAdapter !== undefined) return importMemory(ctx, source, identified.options, memoryAdapter);
 
   let selectionText;
   try {
@@ -1120,6 +1194,7 @@ function run(ctx) {
 
 module.exports = {
   FORMATS,
+  MEMORY_ADAPTERS,
   SELECTION_REQUIRED,
   apply,
   bundleConfig,

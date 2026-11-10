@@ -238,6 +238,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | RFC 8288 `Link` header parser, to read the emitted header independently | `http-link-header` | 1.1.4 | MIT | the conformance handler of `disc-0026` (`tests/conformance/areas/_discovery-web.js`, shipped in the package so that `agsc conform` runs every vector) and the tests; a run-time dependency from B08-WP5, a development one before |
 | TOON encoding | `@toon-format/toon` | 4.4.0 | MIT | `knowledge/chunks-index.js`, the tabular chunk index that the build serves as `/chunks-index.toon` (AGSC-06-37) and `interchange/adapters/llm-context.js` writes beside the node |
 | RFC 9651 Structured Fields (the Dictionary of an RFC 9530 digest value) | `structured-headers` | 2.1.1 | MIT | `knowledge/digest-field.js`, the one writer of `sha-256=:<base64>:` (AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17) |
+| RFC 4180 CSV, read and written (1.1) | `csv-parse`, `csv-stringify` | 7.0.3, 6.9.0 | MIT, MIT | `interchange/adapters/csv.js` only, loaded by `export --to csv` and `import --from csv` and never by `build` or `lint` (`tests/arch/memory-adapters-lazy.test.js`) |
 | property tests (dev) | `fast-check` | 4.10.2 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
 | Gherkin parser (dev) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 | MIT | the acceptance runner |

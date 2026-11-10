@@ -554,9 +554,10 @@ make you non-conforming.
 Adapters are the one place where you must document rather than choose silently:
 AGSC-01-26a requires a memory adapter to be "listed with its claimed key set in the
 distribution's implementer documentation". This distribution's adapters are
-`llm-context` and `mermaid` (export), `okf` and `old-site` (import), and `cogx`, `gabbe`,
-`skills` and `board` (both ways), and `src/interchange/README.md` lists what each one
-claims.
+`llm-context` and `mermaid` (export), `okf`, `old-site` and `skos` (import), and `cogx`, `gabbe`,
+`skills` and `board` (both ways), and, from 1.1, the direct memory adapters `mem0`, `letta`,
+`zep`, `csv`, `basic-memory` and `claude-code` (both ways); `src/interchange/README.md` lists
+what each one claims.
 
 **Where you may extend, and where you may not.** `spec/00-overview.md` §0.6,
 AGSC-00-24, closes the extension points at **eight kinds** — memory adapter, channel

@@ -75,10 +75,11 @@ module.exports = {
     },
     {
       name: 'plugins-loaded-never-required',
-      comment: 'a plugin is loaded through src/application/plugin-loader.js by path; no module requires a sample plugin or a checker',
+      comment: 'a plugin is loaded through src/application/plugin-loader.js by path; no module requires a sample plugin, a checker'
+        + ' or a companion package under packages/ (each is published on its own and depends on the engine, never the reverse)',
       severity: 'error',
       from: { path: '^(src|src-ts|bin)/|^index\\.js$' },
-      to: { path: '^(examples|tools|plugins)/' },
+      to: { path: '^(examples|tools|plugins|packages)/' },
     },
     {
       name: 'no-dev-dependency-at-run-time',

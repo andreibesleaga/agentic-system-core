@@ -86,6 +86,35 @@ describe('1. one version, in one place', () => {
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E901' && /alias/u.test(f.message)));
   });
 
+  it('every package under packages/ is held to the engine version, and --apply bumps each', () => {
+    const dir = distribution({
+      'packages/agsc-extra/package.json': `${JSON.stringify({
+        dependencies: { 'agentic-system-core': '0.0.1' }, name: 'agsc-extra', version: '0.0.1',
+      }, null, 4)}\n`,
+      'packages/agsc-free/package.json': `${JSON.stringify({ name: 'agsc-free', version: '0.0.2' }, null, 4)}\n`,
+      'packages/not-a-package/README.md': 'no package.json here\n',
+    });
+    assert.deepEqual(release.companionPackages(dir).map((one) => one.dir),
+      ['packages/agsc-cli', 'packages/agsc-extra', 'packages/agsc-free']);
+    const { json } = envelope('release', [dir]);
+    const extra = json.findings.filter((f) => f.file === 'packages/agsc-extra/package.json').map((f) => f.message);
+    assert.equal(extra.length, 2, extra.join('\n'));
+    assert.match(extra.join('\n'), /the package packages\/agsc-extra is at 0\.0\.1/u);
+    assert.ok(!json.findings.some((f) => f.file === 'packages/agsc-free/package.json'), 'a package that does not pin the engine has only its version checked');
+    fs.writeFileSync(path.join(dir, 'packages/agsc-extra/package.json'), `${JSON.stringify({
+      dependencies: { 'agentic-system-core': '0.0.2' }, name: 'agsc-extra', version: '0.0.2' }, null, 4)}\n`);
+    const result = release.run(['--version', '1.0.0', '--apply', dir],
+      { env: { SOURCE_DATE_EPOCH: '1767225600' }, err: () => {}, out: () => {} });
+    assert.equal(result, 0);
+    const read = (at) => JSON.parse(fs.readFileSync(path.join(dir, at), 'utf8'));
+    for (const at of ['packages/agsc-cli/package.json', 'packages/agsc-extra/package.json']) {
+      assert.equal(read(at).version, '1.0.0', at);
+      assert.equal(read(at).dependencies['agentic-system-core'], '1.0.0', at);
+    }
+    assert.equal(read('packages/agsc-free/package.json').version, '1.0.0');
+    assert.equal(read('packages/agsc-free/package.json').dependencies, undefined, 'no dependency is invented');
+  });
+
   it('the proposed version must be strictly greater', () => {
     assert.equal(release.isGreater('1.0.0', '0.0.2'), true);
     assert.equal(release.isGreater('0.1.0', '0.0.9'), true);

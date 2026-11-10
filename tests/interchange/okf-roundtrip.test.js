@@ -226,7 +226,9 @@ test('an empty source directory is AGSC-E901 and writes nothing', () => {
 });
 
 test('AGSC-01-26a: --selection is the old-site adapter flag, not a verb requirement', () => {
-  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board', 'skos']);
+  // From 1.1 the six direct memory adapters (PRD-070) join the list; none of them needs --selection.
+  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board', 'skos',
+    'mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code']);
   assert.deepStrictEqual([...importVerb.SELECTION_REQUIRED], ['old-site']);
 });
 

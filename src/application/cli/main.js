@@ -205,6 +205,10 @@ const ADAPTER_FLAGS = {
       // The SKOS adapter reads one Turtle file (AGSC-01-39): it offers `--replace` for
       // AGSC-01-23 and nothing else, since a thesaurus states no content version.
       skos: new Map([['--replace', 'bool']]),
+      // The six direct memory adapters (PRD-070) offer what the GABBE adapter offers:
+      // none of those tools publishes a content version of its own.
+      ...Object.fromEntries(['mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code'].map((name) => [name,
+        new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value']])])),
     },
   },
   // `export --to skills --layout <name>`: the foreign layout to write.

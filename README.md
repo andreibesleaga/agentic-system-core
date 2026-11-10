@@ -257,9 +257,11 @@ refused, what changes in the built files, and what to do. A node still on
 published Bundle — steering files, skill packs, the MCP server, and the COGX
 memory archive (`agsc export --to cogx` / `agsc import --from cogx`), the format Cognee
 reads and writes and into which it translates Mem0, LangMem, Letta and Zep memories
-when they are migrated into Cognee; direct adapters for Mem0, Letta, Zep and CSV, and for
-Basic Memory and Claude Code's memory files, come with 1.1 as a capability of the reference
-distribution (AGSC-00-20, AGSC-01-26a). `examples/connectors/` holds the
+when they are migrated into Cognee; and, from 1.1, the files of Mem0, Letta, Zep, a CSV
+table, Basic Memory and Claude Code's memory folder, written and read directly
+(`agsc export --to mem0`, `agsc import --from claude-code <dir>`, and so on), a capability of the
+reference distribution (AGSC-00-20, AGSC-01-26a) that never reaches the network: you move the
+files with each tool's own client. `examples/connectors/` holds the
 working examples, and `docs/USE-CASES.md` walks through twenty-one concrete scenarios
 with their commands.
 

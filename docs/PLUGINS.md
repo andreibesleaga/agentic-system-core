@@ -143,6 +143,17 @@ the command line, each through the registry of its kind, so every plugin passes 
 | `compose <slug…> --emit <path or package>` | `composition-emitter` | `emit(harnessFiles, harnessDir)` → one `{path, text}` or a list | beside the Harness directory, never inside it (AGSC-07-18) |
 | `agsc-host emit <path or package>` | `deployment-profile` | `emit(input)` → `{site, server, findings}` (or the older `headerFile(sets)`) | host files in the build directory (never on a route) and under `dist/hosts/<name>/` or `--out` |
 
+**The memory adapters that ship with the engine.** A bare name that is one of the engine's
+own adapters selects it before any package is looked up: `cogx`, `gabbe`, `skills`, `board`,
+`skos`, `okf`, `llm-context`, `mermaid`, and from 1.1 the direct memory adapters `mem0`,
+`letta`, `zep`, `csv`, `basic-memory` and `claude-code` (`docs/CONNECTORS.md` Route 10). They
+live in `src/interchange/adapters/` and answer the engine's internal adapter interface —
+`FORMAT`, `CLAIMED_KEYS`, `run(bundle, options)` for export, `isSourceFile(path)` and
+`plan(files, options)` for import — documented in `src/REFERENCE.md` §11.3b. That interface is
+not the plugin API and makes no stability promise; a plugin you write answers `exportFiles` and
+`importFiles` as the table above says, and is held to the same rows of `KINDS`: no network,
+no file system, no executable output.
+
 `items` is a frozen copy of the published items; `files` a frozen copy of every
 file of the source directory, read by the engine; `context` carries the
 specification version, and on export the content version and the build instant. A

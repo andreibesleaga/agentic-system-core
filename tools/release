@@ -75,7 +75,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
-const ALIAS_DIR = path.join('packages', 'agsc-cli');
+const ALIAS_DIR = 'packages/agsc-cli';
 /** The MCP Registry entry of the npm package; it names `mcpName` and the npm version. */
 const SERVER_JSON = 'server.json';
 /** The sibling repository publishes to PyPI at the same version. */
@@ -213,6 +213,26 @@ function specVersion(root) {
 
 function readJson(at) {
   try { return JSON.parse(fs.readFileSync(at, 'utf8')); } catch { return null; }
+}
+
+/**
+ * Every companion package under `packages/`: each sub-folder holding a readable
+ * `package.json`, as `{dir, manifest}` in folder-name order (`dir` is root-relative,
+ * with `/`). A new package is checked and bumped with the alias, by being there.
+ *
+ * @param {string} root
+ * @returns {Array<{dir:string, manifest:object}>}
+ */
+function companionPackages(root) {
+  let names;
+  try {
+    names = fs.readdirSync(path.join(root, 'packages'), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  } catch {
+    names = [];
+  }
+  return names.map((name) => ({ dir: `packages/${name}`, manifest: readJson(path.join(root, 'packages', name, 'package.json')) }))
+    .filter((one) => one.manifest !== null);
 }
 
 /**
@@ -700,23 +720,27 @@ function run(argv, io = {}) {
 
   const manifest = readJson(path.join(root, 'package.json'));
   if (manifest === null) { err(`release: ${root}/package.json is unreadable\n`); return 2; }
-  const alias = readJson(path.join(root, ALIAS_DIR, 'package.json'));
+  const companions = companionPackages(root);
   const findings = [];
 
-  // 1. one version, in one place.
-  if (alias === null) {
+  // 1. one version, in one place: the alias, and every other companion package under
+  // `packages/` (packages/README.md: a package's version and its dependency on the
+  // engine always equal the engine's own version).
+  if (!companions.some((one) => one.dir === ALIAS_DIR)) {
     findings.push(finding('AGSC-E901', `${ALIAS_DIR}/package.json`, 1,
       'the alias package is absent; docs/PLAN.md §7 publishes it beside the engine'));
-  } else {
-    if (alias.version !== manifest.version) {
-      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
-        `the alias is at ${alias.version} and the engine at ${manifest.version}; one version, in one place`));
+  }
+  for (const { dir, manifest: companion } of companions) {
+    const what = dir === ALIAS_DIR ? 'the alias' : `the package ${dir}`;
+    if (companion.version !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${dir}/package.json`, 1,
+        `${what} is at ${companion.version} and the engine at ${manifest.version}; one version, in one place`));
     }
-    const pinned = (alias.dependencies || {})['agentic-system-core'];
-    if (pinned !== manifest.version) {
-      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
-        `the alias depends on "${pinned}" and the engine is ${manifest.version}; an alias`
-        + ' pins the exact version it aliases, never a range'));
+    const pinned = (companion.dependencies || {})['agentic-system-core'];
+    if ((dir === ALIAS_DIR || pinned !== undefined) && pinned !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${dir}/package.json`, 1,
+        `${what} depends on "${pinned}" and the engine is ${manifest.version}; a companion package`
+        + ' pins the exact engine version it ships with, never a range'));
     }
   }
   // 1b. the MCP Registry entry (`server.json`, published to the registry by the
@@ -769,12 +793,15 @@ function run(argv, io = {}) {
       const bumped = { ...manifest, version };
       fs.writeFileSync(path.join(root, 'package.json'), `${JSON.stringify(bumped, null, 4)}\n`);
       written.push('package.json');
-      if (alias !== null) {
-        const aliasBumped = {
-          ...alias, dependencies: { ...alias.dependencies, 'agentic-system-core': version }, version,
+      for (const { dir, manifest: companion } of companions) {
+        const pinsEngine = companion.dependencies && companion.dependencies['agentic-system-core'] !== undefined;
+        const companionBumped = {
+          ...companion,
+          ...(pinsEngine ? { dependencies: { ...companion.dependencies, 'agentic-system-core': version } } : {}),
+          version,
         };
-        fs.writeFileSync(path.join(root, ALIAS_DIR, 'package.json'), `${JSON.stringify(aliasBumped, null, 4)}\n`);
-        written.push(`${ALIAS_DIR}/package.json`);
+        fs.writeFileSync(path.join(root, dir, 'package.json'), `${JSON.stringify(companionBumped, null, 4)}\n`);
+        written.push(`${dir}/package.json`);
       }
       if (serverEntry !== null) {
         const bumpedEntry = {
@@ -810,7 +837,7 @@ function run(argv, io = {}) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
+  ALIAS_DIR, HELP, companionPackages, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
   packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
   withoutTrailingSlashes, workflowFindings, versionIn,

@@ -1,4 +1,4 @@
-# Trace: PRD-021, PRD-022, PRD-026, PRD-027, PRD-061 · PLAN §5.2 ContentStore
+# Trace: PRD-021, PRD-022, PRD-026, PRD-027, PRD-061, PRD-070 · PLAN §5.2 ContentStore
 @persona-h @mode-1
 Feature: Agent uses a node as external auditable memory
   As P8 (agent-as-memory, Mode 1)
@@ -74,6 +74,24 @@ Feature: Agent uses a node as external auditable memory
     And the copy builds, and its graph names every item the first node's graph names
     And the same import run again writes nothing and reports every item unchanged
     And no network call was attempted
+
+  @PRD-070 @human @matrix-H13
+  Scenario Outline: A memory tool exchanges a node directly: <tool>
+    When the author runs "agsc export --to <tool>" under the network trap
+    Then the command exits 0
+    When the author imports "dist/export/<tool>" with "--from <tool>" into a copy of the Bundle that holds no item
+    Then every published item comes back as authored, with the exporting node's content version
+    And the same import run again writes nothing and reports every item unchanged
+    And no network call was attempted
+
+    Examples:
+      | tool         |
+      | mem0         |
+      | letta        |
+      | zep          |
+      | csv          |
+      | basic-memory |
+      | claude-code  |
 
   @PRD-061 @agent @matrix-A14
   Scenario: A memory framework takes the node's chunks through the records.js connector

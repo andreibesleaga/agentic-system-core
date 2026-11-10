@@ -15,7 +15,7 @@ A rule counts as verified when at least one of these names it: a live conformanc
 | Executed acceptance scenario | 106 |
 | Checker header | 39 |
 
-Acceptance scenarios: 166 in `features/` (a Scenario Outline counts once), of which 11 are pending and 12 conditional, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
+Acceptance scenarios: 167 in `features/` (a Scenario Outline counts once), of which 11 are pending and 12 conditional, each with a reason in its own file under `tests/acceptance/pending/`. The executed scenarios name 106 rules in their tags or steps; their step files also name the rules they check in `// verifies` markers, counted as tests.
 
 ## Per part of the specification
 
@@ -151,7 +151,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-01-19 | VERIFIED | yes | `build-0021` | `application/cli/verbs-wired.test.js`, `application/config/load.test.js`, `knowledge/config-placeholder-base.test.js` | — | — |
 | AGSC-01-20 | VERIFIED | yes | `build-0022`, `build-0028` | `interchange/mapping.test.js`, `interchange/status.test.js`, `knowledge/chunks.test.js` | — | — |
 | AGSC-01-21 | VERIFIED | yes | `lint-0031`, `lint-0038` | `interchange/status.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-01-22 | VERIFIED | yes | `imp-0005`, `imp-0009` | `acceptance/steps/persona-h.js`, `acceptance/steps/persona-i.js`, `application/compatibility.test.js` +9 | `persona-h-memory.feature#Agent imports a foreign OKF bundle idempotently`, `persona-i-maintainer.feature#A maintainer imports the old site` | — |
+| AGSC-01-22 | VERIFIED | yes | `imp-0005`, `imp-0009` | `acceptance/steps/persona-h.js`, `acceptance/steps/persona-i.js`, `application/compatibility.test.js` +10 | `persona-h-memory.feature#Agent imports a foreign OKF bundle idempotently`, `persona-i-maintainer.feature#A maintainer imports the old site` | — |
 | AGSC-01-23 | VERIFIED | yes | `imp-0001` | `acceptance/steps/persona-f.js`, `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js` +13 | `persona-i-maintainer.feature#A maintainer imports the old site` | — |
 | AGSC-01-25 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-01-26 | VERIFIED | yes | `export-0001` | `acceptance/steps/persona-g.js`, `acceptance/steps/persona-h.js`, `application/cli/eng5-verbs.test.js` +2 | `persona-g-team.feature#Team publishes its own specs as an instance of itself (should)`, `persona-h-memory.feature#Agent exports the Bundle in three lossless forms` | — |
@@ -222,7 +222,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-13 | VERIFIED | yes | `links-0004` | `distribution/page-tools.test.js`, `knowledge/links.test.js`, `knowledge/markdown.test.js` | — | — |
 | AGSC-03-14 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-03-18 | VERIFIED | — | — | `standard/item-links-composition-wording.test.js`, `standard/rules.test.js` | — | — |
-| AGSC-03-19 | VERIFIED | yes | `imp-0010` | `knowledge/relations.test.js`, `standard/rules.test.js` | — | — |
+| AGSC-03-19 | VERIFIED | yes | `imp-0010` | `interchange/memory-adapters-fixtures.test.js`, `knowledge/relations.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-03-20 | VERIFIED | yes | — | `acceptance/steps/persona-g.js`, `knowledge/relations.test.js`, `standard/rules.test.js` | `persona-g-team.feature#Team authors Mode-2 Concepts without a new item type` | — |
 | AGSC-03-21 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk` | — |
@@ -254,7 +254,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-04-22 | VERIFIED | yes | `conform-0001` | `composition/conform.test.js` | — | — |
 | AGSC-04-23 | VERIFIED | yes | `lint-0022` | `governance/lint-order.test.js`, `knowledge/unicode.test.js` | — | — |
 | AGSC-04-24 | VERIFIED | yes | `conform-0004` | `composition/conform.test.js` | — | — |
-| AGSC-04-25 | VERIFIED | yes | `build-0014` | `distribution/content-version-stamps.test.js`, `e2e/modes/mode-1-memory.test.js`, `interchange/llm-context.test.js` +2 | — | — |
+| AGSC-04-25 | VERIFIED | yes | `build-0014` | `distribution/content-version-stamps.test.js`, `e2e/modes/mode-1-memory.test.js`, `interchange/llm-context.test.js` +3 | — | — |
 | AGSC-05-01 | VERIFIED | — | — | `distribution/routes.test.js`, `governance/fix.test.js`, `knowledge/nquads.test.js` | — | — |
 | AGSC-05-02 | VERIFIED | — | — | `knowledge/domain.test.js` | — | `validate-ontology` |
 | AGSC-05-03 | VERIFIED | — | — | `knowledge/nquads.test.js` | — | — |

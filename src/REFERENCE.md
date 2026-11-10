@@ -221,6 +221,7 @@ runtime, and is loadable from CommonJS.
 | property tests (dev) | `fast-check` | 4.10.2 | MIT |
 | TypeScript compiler, Node types, lint rules (dev) | `typescript`, `@types/node`, `typescript-eslint` | 6.0.3, 22.20.5, 8.72.1 | Apache-2.0, MIT, MIT |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
+| RFC 4180 CSV, read and written by `export --to csv` / `import --from csv` (1.1) | `csv-parse`, `csv-stringify` | 7.0.3, 6.9.0 | MIT, MIT |
 
 What the engine writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or
@@ -1175,7 +1176,7 @@ built node.
 | `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g), AGSC-09-20 | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check`, `verbs/_site-checks.js` → `knowledge/site-checks.js` | wired |
 | `ci` | AGSC-09-08, AGSC-08-26(g), AGSC-09-20 | `verbs/ci.js` → `distribution/ci.js` with the lint lane and the site checks injected (`verbs/_site-checks.js`, not run under `--level` 0 to 2, AGSC-10-19); its verify lane adds `governance/auto-merge.js#check` and the findings of the site checks | wired |
 | `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `verbs/export.js` → `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) and, from 1.1, `--skos` (AGSC-05-36: `dist/export/skos.ttl` by `knowledge/skos-export.js` from the build's own `graph.nq`) and `--closure` (AGSC-05-37: `dist/export/closure.nt` by `knowledge/closure.js` from the same `graph.nq`, the engine's ontology and the node's `domain.vocabulary`; never a published surface); `--zip` writes one archive beside each multi-file export root; `--manifest` (AGSC-09-17 (a)) adds `export-manifest.json` to each export root of the run, with the digests of its files, the item count and the items digest (`interchange/export-manifest.js`; the bundle hash and item IRIs come from the build, run in the verb) |
-| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf,export-manifest}.js`, `interchange/adapters/skos.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`), for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22 (from 1.1 every item of a source whose root document does not carry this Bundle's `base` is a draft; a folder holding `export-manifest.json` is checked against it, AGSC-09-17), and for `--from skos <file.ttl>`, the SKOS thesaurus import of AGSC-01-39 (`--replace`); `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
+| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf,export-manifest}.js`, `interchange/adapters/skos.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`), for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22 (from 1.1 every item of a source whose root document does not carry this Bundle's `base` is a draft; a folder holding `export-manifest.json` is checked against it, AGSC-09-17), and for `--from skos <file.ttl>`, the SKOS thesaurus import of AGSC-01-39 (`--replace`); `--dry-run` on both; from 1.1 for the six direct memory adapters `--from mem0`, `letta`, `zep`, `csv`, `basic-memory` and `claude-code` (one lane, `importMemory`, over `interchange/memory-records.js`; `--replace`, `--allow-newer`, `--source-version`, `--dry-run`; PRD-070); `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
 | `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12, 07-25…07-30 | `verbs/compose.js` → `composition/{compose,architecture,harness,context-map,brief,blueprint}.js`, `boundary/federation.js#peerFaults` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; from 1.1, for a node that declares contexts, `context-map.json` in `<dir>.companion/` (AGSC-07-30), after the typed peers' crosswalks pass `peerFaults` (a fault stops the run before anything is written); a node with no contexts gets no companion directory unless a brief is asked for; `--brief` or `compose.brief: true` writes the four files of the brief in `<dir>.companion/`, for an invalid composition too (no Harness, exit 1), and for no run another error stopped (AGSC-07-25); a brief above the engine's bound on `derived` is `AGSC-E904`, exit 1, and the run writes nothing, Harness included; with `--from <slug>` naming a saved architecture, also the blueprint outputs in `<dir>.companion/blueprint/` (AGSC-07-29), never in the Harness directory or the `--zip` archive; `--narrate <agent>` without `--brief` is `AGSC-E003` (exit 2), with it `AGSC-E001` at exit 1, no `narration.md`, the brief and Harness still written (AGSC-07-28: this distribution ships no model adapter); `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
 | `propose` | AGSC-08-04, AGSC-08-05 | `verbs/propose.js` → `knowledge/adopt.js`, `diff@9.0.0` | wired |
 | `review` | AGSC-08-27 | `verbs/review.js` → the lint lane | wired, **lint-only**; no model call is reachable |
@@ -1263,6 +1264,36 @@ compiled `.svg` MUST NOT be committed, and AGSC-02-98 admits the same picture as
 an attachment with its DSL source beside it. The import therefore writes the SOURCE
 only by default, and `--attach-diagrams` is the operator's choice when a Bundle must
 carry the rendered bytes.
+
+### 11.3b Interchange: the built-in memory-adapter interface (AGSC-01-26a)
+
+Every adapter under `src/interchange/adapters/` that `import --from` reads answers the same
+interface, so the import verb wires each one the same way and a new one adds a module, not a
+lane. The direct memory adapters of 1.1 (`mem0`, `letta`, `zep`, `csv`, `basic-memory`,
+`claude-code`, PRD-070) follow it exactly; `gabbe` and `cogx` already had the same shape.
+
+| member | what it is |
+|---|---|
+| `FORMAT` | the name `export --to` and `import --from` select it by (the module's file name) |
+| `CLAIMED_KEYS` | the keys it claims in each direction, listed in `src/interchange/README.md` (AGSC-01-26a) |
+| `run(bundle, options)` | `export --to`: `{files: [{path, text, sha256}], findings}`; `options` carries `instant`, `sha256`, `specVersion`, `bundleVersion`; published items only (AGSC-06-30) |
+| `isSourceFile(path)` | which files of the source folder the verb reads and hands in (`.git/` and `node_modules/` are never listed) |
+| `plan(files, options)` | `import --from`: `{findings, refused, totals, writes: [{path, text}]}`; `options` carries `operator`, `itemSchema`, `toolSpecVersion`, `origin`, `peers`, `allowNewer`, `sourceVersion` |
+
+Both functions are PURE: no file system, no clock, no network (AGSC-00-24). The verb reads the
+files through a read-only port rooted at the source folder and writes through the Bundle's own
+port, after the collision survey every lane shares (AGSC-01-23).
+
+`interchange/memory-records.js` holds what the six direct adapters share: `exportRecords` (the
+published items, the provenance lines and each item's own record — authored frontmatter,
+body, IRI, licence, terms, versions), `plan` (an own record that `own-record.js` trusts comes
+back item for item with `prov.source_version`; every other record is written as a draft with
+`prov.origin: imported`, reported once as `AGSC-E506`; a record of another specification MAJOR
+refuses the import unless `--allow-newer`), `jsonCandidates` (the JSON lane of `mem0`, `letta`
+and `zep`), `markdownNote` (the Markdown lane of `basic-memory` and `claude-code`), and the small
+helpers `lessonOf`, `restOf`, `memoryText`, `yamlLines`, `dateOf`, `firstString`, `agscIn`,
+`authoredLinks`, `filesOf`, `jsonText`. A memory-adapter PLUGIN (`docs/PLUGINS.md`) answers the
+plugin API instead: `exportFiles` and `importFiles`.
 
 ### 11.4 `mcp` is a streaming verb
 

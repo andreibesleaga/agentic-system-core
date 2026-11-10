@@ -1,0 +1,17 @@
+[
+  {
+    "id": "passage-4f0b6e2a-9d1c-4c7e-8b3a-1a2b3c4d5e6f",
+    "text": "The staging database is rebuilt every Monday at 06:00 UTC",
+    "tags": ["ops", "staging"],
+    "created_at": "2026-07-14T08:00:00Z",
+    "archive_id": "archive-7d1e",
+    "embedding": [0.0125, -0.5, 0.25],
+    "embedding_config": { "embedding_model": "example-embedding", "embedding_dim": 3 },
+    "metadata": { "origin": "ops-notes" }
+  },
+  {
+    "id": "passage-0a1b2c3d-4e5f-4061-8273-8495a6b7c8d9",
+    "text": "   ",
+    "created_at": "2026-07-15T08:00:00Z"
+  }
+]

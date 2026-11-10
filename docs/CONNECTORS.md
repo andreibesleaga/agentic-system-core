@@ -3,7 +3,7 @@
 **Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
 
 This page answers one question: **"I use tool X — how does it get at a node's
-knowledge?"** There are nine ways in, and every one of them already exists in the
+knowledge?"** There are ten ways in, and every one of them already exists in the
 engine. Pick by what your tool reads.
 
 | route | what the node gives you | the command | suits |
@@ -17,6 +17,7 @@ engine. Pick by what your tool reads.
 | **7. Project tools** | a live board's tasks as the import and export files of a tracker (Jira, Trello and others) | `agsc import --from board --format <tool> <dir>` and `agsc export --to board --format <tool>` | a team that plans in a tracker |
 | **8. Link diagrams** | one Mermaid flowchart per item and per cluster | `agsc export --to mermaid` | a page, wiki or vault that renders Mermaid |
 | **9. A SKOS thesaurus** | a thesaurus kept in a taxonomy tool becomes draft items (import only) | `agsc import thesaurus.ttl --from skos` | a vocabulary you already maintain as SKOS |
+| **10. Memory tools, directly** | the files of Mem0, Letta, Zep, a CSV table, Basic Memory or Claude Code's memory folder (from 1.1) | `agsc export --to <tool>` and `agsc import --from <tool> <dir>` | a team that already keeps its memory in one of these tools |
 
 Nothing here needs a network connection or a key on the node's side. The
 [examples](../examples/connectors/README.md) show each route working; the ones for
@@ -119,10 +120,11 @@ shape it translates Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into w
 they are migrated into Cognee. One archive from a node is read by Cognee; the other
 systems reach Cognee through the same format, not the archive (Cognee's own
 documentation, docs.cognee.ai/examples/migrate-memory-systems, read 2026-09-24:
-migration works into Cognee only). Direct adapters for Mem0, Letta, Zep and CSV, and for
-Basic Memory and Claude Code's memory files, come with 1.1 as a capability of the reference
-distribution (AGSC-00-20 as amended on 2026-11-09, AGSC-01-26a); this route stays the one
-through Cognee.
+migration works into Cognee only). From 1.1 the engine also writes and reads the files of
+Mem0, Letta, Zep, a CSV table, Basic Memory and Claude Code's memory folder directly, as a
+capability of the reference distribution (AGSC-00-20 as amended on 2026-11-09, AGSC-01-26a):
+that is [Route 10](#route-10--memory-tools-directly-mem0-letta-zep-csv-basic-memory-claude-code).
+This route stays the one through Cognee.
 
 ```sh
 agsc export --to cogx       # writes dist/export/cogx/
@@ -521,6 +523,69 @@ The other direction is `agsc export --skos`, which writes the SKOS view of the n
 graph. A file written that way is read like any other thesaurus: it has no root document
 of this node, so it counts as foreign and every item is a draft.
 
+## Route 10 — memory tools, directly: Mem0, Letta, Zep, CSV, Basic Memory, Claude Code
+
+From 1.1 the engine writes and reads the files of six memory tools itself. Like every memory
+adapter, none of them reaches the network (AGSC-00-24): `agsc export` writes a file, and you
+send it to the service with the service's own official client; to import, you save what that
+client returns as a file and point `agsc import` at its folder. No client is installed with
+the engine.
+
+```sh
+agsc export --to mem0                 # writes dist/export/mem0/
+agsc import --from mem0 ./mem0-back   # reads the *.json files of ./mem0-back
+```
+
+| `--to` / `--from` | what the export writes | how it reaches the tool | what the import reads |
+|---|---|---|---|
+| `mem0` | `memories.json`: for each item, the two arguments of the client's `add()` — `messages` and `options` (`infer: false`, so the text is stored as written; the item whole in `metadata.agsc`) | Mem0's official client `mem0ai` (shapes read at 3.3.1): `client.add(m.messages, { ...m.options, userId })` for each record | a `getAll()` page or a list of memories, in the client's camelCase or the REST API's snake_case |
+| `letta` | `passages.json`: one archival passage per item (`text`, `tags`, the item whole in `metadata.agsc`) | Letta's official client `@letta-ai/letta-client` (1.12.1): `client.archives.passages.createMany(archiveId, { passages })` | a list of passages (a bare array, or under `passages`, `items` or `data`) |
+| `zep` | `episodes.json`: one graph episode per item (`data`, `type: "text"`, `sourceDescription` = the item's address, `referenceTime` from its date, the item whole in `metadata.agsc` as one base64 string, because the client allows only scalar metadata values and at most 10 keys) | Zep's official client `@getzep/zep-cloud` (4.1.0): `client.graph.episode.add(graphUuid, episode)` for each episode | a list or page of episodes, or of nodes |
+| `csv` | `items.csv` (RFC 4180, CRLF, one row per item: `slug`, `type`, `title`, `description`, `tags`, `date`, `modified`, `iri`, `body`, and the item whole in `agsc`) and `PROVENANCE.md`; a cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is written behind one `'`, so a spreadsheet shows it as text and never runs it as a formula | any spreadsheet or table loader | every `*.csv`; its header row names the columns |
+| `basic-memory` | one note per item at `<type>/<slug>.md`: frontmatter `title`, `type`, `tags`, `permalink`, `created`, `modified`; the body; the item's Links as `- <key> [[<slug>]]` relations | copy the folder into a Basic Memory project | every `*.md` note |
+| `claude-code` | an auto-memory folder: `memory/MEMORY.md` (one index line per item) and one topic file per item (`name`, `description`, `type: reference`) | copy the files into `~/.claude/projects/<project>/memory/`; Claude Code loads no more than 200 lines or 25 KB of `MEMORY.md`, and a longer index is reported as the warning `AGSC-E506` | `CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/**/*.md`, and the topic files of every folder that holds a `MEMORY.md` |
+
+Published items only leave (drafts, retired and release-gated items never do), and every
+export carries the provenance header with the licence and the Content Use Terms: inside the
+JSON files as `agsc_provenance`, in each Markdown file, and beside the CSV table in
+`PROVENANCE.md`. `export --steer --target claude` already writes a `CLAUDE.md`, so
+`--to claude-code` writes the memory folder only.
+
+Sending the Mem0 file, as a sketch to run with your own key (the engine never runs it):
+
+```js
+// npm install mem0ai@3.3.1, then: node --input-type=module < send.mjs
+import fs from 'node:fs';
+import MemoryClient from 'mem0ai';
+const client = new MemoryClient({ apiKey: process.env.MEM0_API_KEY });
+const { memories } = JSON.parse(fs.readFileSync('dist/export/mem0/memories.json', 'utf8'));
+for (const m of memories) await client.add(m.messages, { ...m.options, userId: 'team' });
+fs.mkdirSync('mem0-back', { recursive: true });
+fs.writeFileSync('mem0-back/memories.json', JSON.stringify(await client.getAll(/* the filters you need */)));
+```
+
+**What an import brings back.** A record that carries an item of this node (in
+`metadata.agsc`, the `agsc` column or an `<!-- agsc-item … -->` line), from this node's
+`site.base` or a declared peer, comes back exactly as it was written, with
+`prov.source_version`. Everything else is foreign and arrives as a **draft**, with
+`prov.origin: imported` and your `bundle.operator`, and is never published until a person
+changes its status:
+
+| tool | a foreign record becomes | kept in `x-<tool>-*` keys |
+|---|---|---|
+| Mem0 | a lesson: the memory text under `## Lesson`, severity `info`, the creation date | `x-mem0-id`, `x-mem0-categories`, and every other member in `x-mem0-rest` |
+| Letta | a lesson, the same way | `x-letta-id`, `x-letta-tags`, `x-letta-rest` (the embedding included) |
+| Zep | an episode: a lesson; a node: a concept of kind `term`, its summary the body | `x-zep-uuid`, `x-zep-labels`, `x-zep-rest` |
+| CSV | a concept of kind `explainer`: `title` (or `name`), `body` (or `content`, `text`, `memory`), `description` when it is one line of 40–200 characters, `date` | `x-csv-tags`, `x-csv-description`, every other column in `x-csv-rest` |
+| Basic Memory | a concept of kind `explainer`, the note body as written; a relation named by one of the fourteen Link keys (or a synonym of AGSC-03-19, such as `refines`) to another note of the same import becomes that Link | `x-basic-memory-type`, `-tags`, `-permalink`, `-modified`, `-rest` |
+| Claude Code | `CLAUDE.md` and rule files: a concept of kind `principle`; a `feedback` memory: a lesson; any other memory: a concept of kind `explainer` | `x-claude-path`, `x-claude-name`, `x-claude-description`, `x-claude-type`, `x-claude-rest` |
+
+A record with no text, a note whose frontmatter is not the YAML subset of AGSC-02-02, and a
+CSV file the library cannot read are reported and skipped; nothing is invented. Each of the six
+takes `--dry-run`, `--replace`, `--allow-newer` and `--source-version <v>` (the content version
+of a source that publishes none). The keys each adapter claims are listed in
+[`src/interchange/README.md`](../src/interchange/README.md).
+
 ## Checking an export that travels — `--manifest`
 
 ```sh
@@ -547,7 +612,11 @@ whoever can change one can change the other.
 | Codex CLI | 1 (+ 3) | `examples/connectors/codex/connect.js` |
 | Cursor | 1 + 3 | `examples/connectors/cursor/connect.js` |
 | GitHub Copilot, Gemini CLI, Kiro, Windsurf, Cline, Aider | 1 | the matching `--target`; mind the Windsurf and Aider notes |
-| Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive; direct adapters for Mem0, Letta and Zep come with 1.1 (AGSC-00-20) |
+| Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive |
+| Mem0, Letta, Zep | 10 | `agsc export --to mem0` (or `letta`, `zep`), then send the file with the tool's official client; `agsc import --from mem0 <dir>` the other way |
+| Basic Memory | 10 | `agsc export --to basic-memory`, copy the notes into a project; `agsc import --from basic-memory <dir>` the other way |
+| Claude Code's memory folder | 10 (+ 1) | `agsc export --to claude-code`, copy `memory/` into the project's memory folder; `agsc import --from claude-code <dir>` reads `CLAUDE.md`, rules and memories |
+| a spreadsheet or table store | 10 | `agsc export --to csv`; `agsc import --from csv <dir>` |
 | LangGraph / LangChain | 4, or the chunk corpus | `examples/connectors/frameworks/records.js … langgraph`, then `store.put` |
 | AutoGen | the chunk corpus | `records.js … autogen` gives `MemoryContent`-shaped records |
 | CrewAI | 2 + the chunk corpus | skills for procedures; keep the item IRI in the text, because CrewAI rewrites memories it consolidates |
