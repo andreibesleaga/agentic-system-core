@@ -30,6 +30,7 @@ const STALE = [
   ['a version number after 1.1', /(?:planned|reserved|deferred|listed|not before)(?: for| with| to)? 1\.2\b(?!\.\d)/iu],
   ['"seven page tools" (there are ten)', /\bseven page tools\b/iu],
   ['a wording said to be someone\'s to write (say what is not written yet)', /\bwording is the owner'?s to write\b/iu],
+  ['the 1.0 count of the checkers (AGSC-09-90 counts eleven: seven validators and four generators)', /\bnine (?:independent |standalone )?(?:checkers?|checker contracts|validators)\b|\bone of the nine (?:checkers?\b|of AGSC-09-90)|\bseven validators and two generators\b/iu],
 ];
 
 /** The phrases that apply to the frozen specification: a number after 1.1 only. */
@@ -46,7 +47,7 @@ const SKIPPED = new Map([
 ]);
 
 /** Folders and root files the sweep reads. */
-const ROOTS = ['README.md', 'docs', 'schema', 'src', 'tools', 'spec', 'examples', 'features', 'tests/requirements-matrix.allow.json'];
+const ROOTS = ['README.md', 'AGENTS.md', 'package.json', 'docs', 'schema', 'src', 'tools', 'spec', 'examples', 'features', 'tests/requirements-matrix.allow.json'];
 const TEXT = /\.(?:md|json|js|ts|feature|ttl|txt)$/u;
 
 function* walk(rel) {
@@ -97,4 +98,20 @@ test('every skipped file exists, so the list cannot outlive the file', () => {
   for (const rel of SKIPPED.keys()) {
     assert.ok(fs.existsSync(path.join(ROOT, ...rel.split('/'))), `${rel} no longer exists`);
   }
+});
+
+test('no vector description names a version after 1.1', () => {
+  // The sweep above leaves the vectors out, since a released vector is frozen; a description
+  // still says "a later MINOR", never a number after 1.1 (AGSC-00-20).
+  const LATER = /\b(?:at|in|from|until|before|after|to) 1\.(?:[2-9]|[1-9]\d)\b(?!\.\d)/iu;
+  const found = [];
+  const visit = (dir) => {
+    for (const name of fs.readdirSync(dir).sort()) {
+      const full = path.join(dir, name);
+      if (fs.statSync(full).isDirectory()) visit(full);
+      else if (name.endsWith('.json') && LATER.test(String(JSON.parse(fs.readFileSync(full, 'utf8')).description ?? ''))) found.push(path.relative(ROOT, full));
+    }
+  };
+  visit(path.join(ROOT, 'tests', 'vectors'));
+  assert.deepEqual(found, [], 'a vector description names a version after 1.1');
 });

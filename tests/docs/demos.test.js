@@ -44,6 +44,24 @@ for (const demo of demos) {
   });
 }
 
+test('every $ENGINE file a demo runs ships in the package, or the step says it needs a clone', { skip: SKIP }, () => {
+  // "Before you start" points ENGINE at the installed package: a step that runs a file the
+  // package does not ship works only from a clone of the repository, and says so first.
+  const { files } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  const ships = (rel) => files.some((f) => rel === f || rel.startsWith(f.endsWith('/') ? f : `${f}/`));
+  const missing = [];
+  let prose = '';
+  const parts = fs.readFileSync(PAGE, 'utf8').split(/^```/mu);
+  parts.forEach((part, k) => {
+    if (k % 2 === 0) { prose = part; return; }
+    if (!part.startsWith('bash demo')) return;
+    for (const [, rel] of part.matchAll(/\$ENGINE\/([^"'\s)]+)/gu)) {
+      if (!ships(rel) && !/needs a clone\s+of the repository/u.test(prose)) missing.push(rel);
+    }
+  });
+  assert.deepEqual(missing, [], 'a demo step runs a file the package does not ship, and its text does not say it needs a clone');
+});
+
 test('every code a demo printed has a row on the troubleshooting page', { skip: SKIP }, () => {
   assert.ok(printed.size > 0, 'the demos above printed no code: they did not run');
   const rows = new Set(fs.readFileSync(TROUBLESHOOTING, 'utf8').split('\n').map((l) => (/^\| `(AGSC-E\d{3})` \|/u.exec(l) || [])[1]).filter(Boolean));

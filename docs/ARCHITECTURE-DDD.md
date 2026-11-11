@@ -65,7 +65,7 @@ that a plugin attaches at a context boundary and never inside a context's own ru
                           │               deployment profile ⑦      │        the writer's target
                           └─────────────────────────────────────────┘
                           ┌─────────────────────────────────────────┐
-  the distribution ──────▶│ (outside the contexts) checker ⑧        │        one of the nine
+  the distribution ──────▶│ (outside the contexts) checker ⑧        │        one of the eleven
   itself                  │               AGSC-09-90…92             │        tools/validate-*
                           └─────────────────────────────────────────┘
 ```

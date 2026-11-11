@@ -17,7 +17,7 @@
 // scoring it separately would report the same number twice.
 //
 // The tokenizer below is this tool's OWN, deliberately independent of the
-// engine's, for the same reason the nine checkers re-implement what they check.
+// engine's, for the same reason the eleven checkers re-implement what they check.
 //
 // `--dry-run` scores nothing and checks the kit with the runner bench/runners/kit.js
 // (compiled from src-ts/bench/kit.ts, which requires nothing of src/ either): the

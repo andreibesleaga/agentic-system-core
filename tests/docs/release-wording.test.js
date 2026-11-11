@@ -431,3 +431,20 @@ test('the unreleased and the newest change-log sections name no later version an
   }
   assert.deepEqual(found, [], 'a change-log section names a later version or an internal label');
 });
+
+test('no test or source file names an inventory id of the private planning', () => {
+  // A comment or a test title names the rule it holds ("AGSC-04-09"), not the private
+  // planning's inventory item ("I-122"), which no reader of this repository can look up.
+  const self = path.relative(ROOT, __filename);
+  const found = [];
+  const visit = (rel) => {
+    for (const name of fs.readdirSync(path.join(ROOT, rel)).sort()) {
+      const child = `${rel}/${name}`;
+      if (fs.statSync(path.join(ROOT, child)).isDirectory()) { if (name !== 'vendor' && name !== 'vectors') visit(child); continue; }
+      if (!/\.(?:js|ts|mjs|cjs)$/u.test(name) || child === self) continue;
+      read(child).split('\n').forEach((line, i) => { if (/\bI-\d{3}\b/u.test(line)) found.push(`${child}:${i + 1}`); });
+    }
+  };
+  for (const root of ['src', 'tests', 'src-ts']) if (fs.existsSync(path.join(ROOT, root))) visit(root);
+  assert.deepEqual(found, [], 'an inventory id in a test or source file: name the rule instead');
+});

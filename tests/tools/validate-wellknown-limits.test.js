@@ -230,7 +230,7 @@ it('a local file over 1 MiB stays AGSC-E904, the input cap of AGSC-01-16', async
   }
 });
 
-// I-083 (AGSC-11-10(c)): no document can make the checker fetch without bound. The
+// AGSC-11-10(c): no document can make the checker fetch without bound. The
 // request budget is `federation.max_requests` (500 by default, 1 to 2000); every request,
 // the document's own included, counts, and the one past the budget is AGSC-E906.
 it('--max-requests ends a run that would fetch more targets than the budget, with AGSC-E906', async () => {
@@ -273,7 +273,7 @@ it('--max-requests takes a whole number from 1 to 2000', async () => {
   }
 });
 
-// I-083 (opt-in): the Python checker needs --allow-network to fetch. The Node checker
+// Opt-in fetching: the Python checker needs --allow-network to fetch. The Node checker
 // accepts the same flag; from 1.1 a URL without it is still fetched, with a note on the
 // error stream in the human form (a refusal of a 1.0-valid command line waits for 2.0).
 it('--allow-network is accepted, and a URL without it is fetched with one note in the human form', async () => {

@@ -67,7 +67,7 @@ test('the default environment is the process environment', () => {
   }
 });
 
-// I-122: an empty SOURCE_DATE_EPOCH is read as unset (AGSC-04-09), and from 1.1 the
+// An empty SOURCE_DATE_EPOCH is read as unset (AGSC-04-09), and from 1.1 the
 // Clock says it was there: the warning AGSC-E603, beside the AGSC-E606 of the default.
 test('AGSC-04-09: an empty SOURCE_DATE_EPOCH is read as unset and reported as the warning AGSC-E603', () => {
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: '' } });

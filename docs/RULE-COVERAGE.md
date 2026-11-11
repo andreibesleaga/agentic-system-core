@@ -192,7 +192,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-18 | VERIFIED | yes | `fm-0003` | `governance/lint-boards-gates.test.js`, `governance/prov.test.js` | — | — |
 | AGSC-02-19 | VERIFIED | — | — | `governance/lint-boards-gates.test.js`, `interchange/clusters.test.js` | — | — |
 | AGSC-02-20 | VERIFIED | yes | `lint-0039` | `governance/lint-constructs.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
-| AGSC-02-21 | VERIFIED | yes | `lint-0040` | `governance/lint-order.test.js`, `knowledge/validate.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
+| AGSC-02-21 | VERIFIED | yes | `lint-0040` | `application/cli/eng5-verbs.test.js`, `governance/lint-order.test.js`, `knowledge/validate.test.js` +1 | — | — |
 | AGSC-02-22 | VERIFIED | yes | `graph-0027` | `governance/lint-order.test.js`, `knowledge/file-lines.test.js`, `knowledge/markdown.test.js` +1 | — | — |
 | AGSC-02-23 | VERIFIED | — | — | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` | — | — |
 | AGSC-02-24 | VERIFIED | yes | `fm-0010`, `fm-0019`, `frontmatter-0030` | `composition/skills.test.js`, `distribution/public-statements.test.js`, `interchange/clusters.test.js` +9 | — | `validate-schemas` |
@@ -448,7 +448,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-10-10 | VERIFIED | — | — | `docs/implementers-guide-rules.test.js` | — | — |
 | AGSC-10-11 | VERIFIED | — | — | `docs/implementers-guide-rules.test.js` | — | — |
 | AGSC-10-12 | VERIFIED | yes | `disc-0005` | `acceptance/steps/persona-j.js`, `boundary/anchor-origin.test.js`, `boundary/federation.test.js` +4 | `persona-j-standards.feature#Two publishers federate and pass the mutual check both ways` | `validate-wellknown` |
-| AGSC-10-13 | VERIFIED | yes | `brd-0001`, `brd-0002` | `acceptance/steps/persona-g.js`, `boundary/federation.test.js`, `distribution/boards-relation.test.js` +8 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task`, `persona-k-live-board.feature#A done board stops the lane` | — |
+| AGSC-10-13 | VERIFIED | yes | `brd-0001`, `brd-0002` | `acceptance/steps/persona-g.js`, `boundary/federation.test.js`, `distribution/boards-relation.test.js` +9 | `persona-k-live-board.feature#An agent claims a task by proposing its working state through the tool server`, `persona-k-live-board.feature#The work-in-progress limit keeps the agent on one task`, `persona-k-live-board.feature#A done board stops the lane` | — |
 | AGSC-10-14 | VERIFIED | yes | `bnd-0026` | — | — | — |
 | AGSC-10-15 | VERIFIED | yes | `conform-0005` | `application/conformance.test.js`, `composition/conform-higher-level-cases.test.js`, `composition/conform.test.js` +1 | — | — |
 | AGSC-10-16 | PROSE-ONLY | — | — | — | — | — |

@@ -117,7 +117,7 @@ test('a server bound to another name answers that name, and still not a foreign 
   }
 });
 
-// I-121: the one plain-http base the configuration admits is `http://localhost[:port]/`
+// The one plain-http base the configuration admits is `http://localhost[:port]/`
 // (AGSC-01-18), and a checker refuses a document whose anchor is not on the origin it
 // was fetched from, so the address the server prints is the name it was asked to bind.
 test('a server bound to localhost, by default or by name, prints localhost; an address prints itself', async () => {

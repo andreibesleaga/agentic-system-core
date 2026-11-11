@@ -1,5 +1,5 @@
 'use strict';
-// I-153 (verification finding m2): `build` dropped an edge whose typed-link target does
+// `build` dropped an edge whose typed-link target does
 // not exist without a word, while it reports a broken body link (AGSC-E310) and `lint`
 // and `ci` report the Link as AGSC-E301. From 1.1 `build` reports it too. A 1.0 Bundle
 // that carried the Link built, so the report is a warning (AGSC-00-14) and the build

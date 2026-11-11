@@ -4,7 +4,7 @@
 implementation in their own language. You need two directories: `spec/` and
 `tests/vectors/`. You do not need to read the reference engine, and this guide never
 asks you to. It tells you what to read first, where the bytes are pinned and why,
-how to run the vector set and the nine validators against your own output, what this
+how to run the vector set and the seven validators against your own output, what this
 specification deliberately leaves to you, and how to state which Level you reached.
 
 The specification is the truth. Where this guide and a rule differ, the rule wins.

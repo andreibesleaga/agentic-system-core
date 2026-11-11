@@ -31,7 +31,7 @@ are `examples/plugins/`, one per kind, each with tests.
 | `surface` | serves the published projection at its own route | derived from what the writer emits, or `surfaces[]` | AGSC-11-16, AGSC-11-02 |
 | `page-tool` | answers a question inside the published page | `registerTool()` in the page | AGSC-09-16 |
 | `composition-emitter` | renders a Harness for one runtime | `compose --emit <target>` | AGSC-07-18 |
-| `checker` | validates one normative artefact, standalone | one of the nine of AGSC-09-90 | AGSC-09-90…92 |
+| `checker` | validates one normative artefact, standalone | one of the eleven of AGSC-09-90 | AGSC-09-90…92 |
 
 At 1.0 this engine loads a plugin you write for **three** of the kinds —
 the memory adapter (`export --to <path>` / `import --from <path>`), the composition

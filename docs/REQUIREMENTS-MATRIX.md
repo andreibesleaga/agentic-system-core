@@ -74,7 +74,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-013 | MAPPED | `AGSC-01-42`, `AGSC-02-13` | 2 vectors, 10 tests, 3 scenarios, 0 checkers | `tools/validate-features.test.js` | — | `persona-a-reader.feature`, `persona-b-contributor.feature` | — |
 | PRD-014 | MAPPED | `AGSC-06-16`, `AGSC-06-23` | 3 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
 | PRD-015 | MAPPED | `AGSC-04-11`, `AGSC-06-22` | 1 vectors, 6 tests, 1 scenarios, 0 checkers | — | — | `persona-a-reader.feature` | — |
-| PRD-016 | MAPPED | `AGSC-00-18`; served by `AGSC-00-05`, `AGSC-02-21` | 2 vectors, 8 tests, 0 scenarios, 0 checkers | — | — | — | — |
+| PRD-016 | MAPPED | `AGSC-00-18`; served by `AGSC-00-05`, `AGSC-02-21` | 2 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-017 | MAPPED | `AGSC-02-11`, `AGSC-04-11` | 1 vectors, 3 tests, 1 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | — |
 | PRD-018 | MAPPED | `AGSC-01-12`, `AGSC-02-23`, `AGSC-06-04` | 0 vectors, 6 tests, 1 scenarios, 0 checkers | — | — | `persona-i-maintainer.feature` | `docs/diagrams/README.md`, `docs/diagrams/state-item-lifecycle.md` |
 | PRD-019 | MAPPED | `AGSC-01-29`, `AGSC-06-18`, `AGSC-11-01` | 3 vectors, 19 tests, 1 scenarios, 0 checkers | `distribution/public-statements.test.js`, `distribution/surfaces-eng2.test.js` | — | `persona-c-agent-mcp.feature` | `docs/PLAN.md`, `docs/SPEC.md` |
@@ -128,7 +128,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | NFR-11 | MAPPED | `AGSC-01-37`, `AGSC-01-38`, `AGSC-02-14` +3 | 5 vectors, 21 tests, 4 scenarios, 0 checkers | `acceptance/steps/persona-b.js`, `application/cli/verbs-wired.test.js` | — | — | `docs/DEMOS.md`, `docs/PLAN.md`, `docs/diagrams/README.md` +1 |
 | NFR-12 | MAPPED | `AGSC-08-17` | 1 vectors, 5 tests, 0 scenarios, 0 checkers | — | — | — | `docs/PLAN.md` |
 | NFR-13 | MAPPED | `AGSC-00-18`; served by `AGSC-04-01`, `AGSC-04-24`, `AGSC-10-12` | 2 vectors, 24 tests, 1 scenarios, 1 checkers | — | — | — | `docs/PLAN.md` |
-| PRD-057 | MAPPED | `AGSC-02-96`, `AGSC-07-23`, `AGSC-10-13` +4 | 9 vectors, 24 tests, 4 scenarios, 1 checkers | — | — | `persona-j-standards.feature`, `persona-o-restricted.feature` | — |
+| PRD-057 | MAPPED | `AGSC-02-96`, `AGSC-07-23`, `AGSC-10-13` +4 | 9 vectors, 25 tests, 4 scenarios, 1 checkers | — | — | `persona-j-standards.feature`, `persona-o-restricted.feature` | — |
 | PRD-058 | MAPPED | `AGSC-11-14` | 2 vectors, 6 tests, 2 scenarios, 0 checkers | — | — | `persona-j-standards.feature` | — |
 | PRD-059 | MAPPED | `AGSC-02-98`, `AGSC-05-29` | 3 vectors, 8 tests, 0 scenarios, 0 checkers | — | — | — | — |
 | PRD-060 | MAPPED | `AGSC-04-24`, `AGSC-06-13a` | 4 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-n-researcher.feature` | `docs/ARCHITECTURE-DDD.md` |

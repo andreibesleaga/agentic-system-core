@@ -15,7 +15,7 @@ flowchart TB
   CLI["agsc<br/>command line, 16 verbs"]
   HOSTC["agsc-host<br/>hosting profiles, local server"]
   MCP["agsc mcp<br/>local MCP server: stdio,<br/>or Streamable HTTP on loopback (1.1)"]
-  CHK["tools/validate-*, gen-*<br/>nine standalone checkers"]
+  CHK["tools/validate-*, gen-*<br/>eleven standalone checkers"]
   OUT["Built node<br/>(static files in build.out)"]
   PAGE["Page tools<br/>(script in the built pages)"]
   ACT["action.yml + pre-commit hook<br/>(run agsc in CI and before commit)"]

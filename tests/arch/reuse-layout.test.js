@@ -1,5 +1,5 @@
 'use strict';
-// I-042 (REUSE layout): `REUSE.toml` and `LICENSES/`.
+// The REUSE layout: `REUSE.toml` and `LICENSES/`.
 //
 // `reuse lint` itself needs the Python tool and is run by hand in a scratch virtualenv
 // (docs/ENGINEERING.md, "REUSE"). This test holds what can be read without it, so the

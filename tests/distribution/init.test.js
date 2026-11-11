@@ -116,7 +116,7 @@ test('AGSC-02-91: a second init over an adopted, built Bundle adopts nothing and
   assert.strictEqual(moved.path, 'content/concepts/agents-2.md');
 });
 
-// I-103: a note outside content/ that already carries a closed frontmatter block is
+// A note outside content/ that already carries a closed frontmatter block is
 // neither moved nor changed (AGSC-02-91), and from 1.1 init says so for each one.
 test('AGSC-02-91: a root note with its own frontmatter is left out and named in a warning', () => {
   const planned = init.plan([

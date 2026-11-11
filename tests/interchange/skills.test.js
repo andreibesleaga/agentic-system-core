@@ -669,7 +669,7 @@ test('--cluster files every imported skill in one Cluster, and a malformed one i
   assert.notStrictEqual(cli.status, 2, cli.stderr);
 });
 
-// ------------------------------------------------------------------ B03-WP4 (I-174, I-175)
+// ------------------------------------------------------------------ skills import: the layout read, a file outside the Bundle
 
 const SKILL_TEXT = '---\nname: tidy-notes\ndescription: Tidy a folder of notes into one page per topic.\nlicense: MIT\n---\n\n# Tidy notes\n\n1. Read every note.\n';
 const REMOTE_MARKET = `${JSON.stringify({
@@ -677,7 +677,7 @@ const REMOTE_MARKET = `${JSON.stringify({
   plugins: [{ name: 'remote', source: { repo: 'someone/elsewhere', source: 'github' } }],
 }, null, 2)}\n`;
 
-test('I-174: with no --layout the first layout that would import something is read, not an empty one', () => {
+test('with no --layout the first layout that would import something is read, not an empty one', () => {
   // A marketplace file whose only plugin names a remote source is detected first
   // (priority order) and imports nothing; the clone also holds a SKILL.md.
   const clone = writeTree(temp('agsc-skills-remote-'), {
@@ -693,7 +693,7 @@ test('I-174: with no --layout the first layout that would import something is re
   assert.match(result.notes, /skills layout agentskills \(detected\); also found: marketplace/u);
 });
 
-test('I-174: with --layout the stated layout is used even when it imports nothing', () => {
+test('with --layout the stated layout is used even when it imports nothing', () => {
   const clone = writeTree(temp('agsc-skills-remote-'), {
     '.claude-plugin/marketplace.json': REMOTE_MARKET,
     'skills/tidy-notes/SKILL.md': SKILL_TEXT,
@@ -703,14 +703,14 @@ test('I-174: with --layout the stated layout is used even when it imports nothin
   assert.ok(!nodeFs.existsSync(path.join(into, 'content/procedures/tidy-notes.md')));
 });
 
-test('I-174: when no detected layout imports anything the first detected one is still named', () => {
+test('when no detected layout imports anything the first detected one is still named', () => {
   const clone = writeTree(temp('agsc-skills-remote-'), { '.claude-plugin/marketplace.json': REMOTE_MARKET });
   const into = emptyBundle();
   const result = imported(into, clone);
   assert.match(result.notes, /skills layout marketplace \(detected\)/u);
 });
 
-test('I-175: skills import of a file outside the Bundle says so and names the other route', () => {
+test('skills import of a file outside the Bundle says so and names the other route', () => {
   const dir = emptyBundle();
   const outside = writeTree(temp('agsc-skills-outside-'), { 'SKILL.md': SKILL_TEXT });
   const run = (file) => require('../../src/application/cli/verbs/skills.js')

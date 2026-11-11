@@ -67,7 +67,7 @@ reached during a build (AGSC-04-03).
 ![C4 containers](diagrams-rendered/arch-c4-container-1.svg)
 
 Source: [diagrams/arch-c4-container.md](diagrams/arch-c4-container.md). `agsc` has
-sixteen verbs (AGSC-09-07). `agsc-host` is a separate helper for hosting. The nine
+sixteen verbs (AGSC-09-07). `agsc-host` is a separate helper for hosting. The eleven
 checkers in `tools/` import nothing from the engine, so what they check is the
 standard itself and a built node, not the engine's opinion of them (AGSC-09-90).
 

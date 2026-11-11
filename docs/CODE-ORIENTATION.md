@@ -20,7 +20,7 @@ truth; the engine is one implementation of it.
 | `src/` | **the engine**: five bounded contexts, a supporting context, the application layer, ports and adapters | [src/README.md](../src/README.md) |
 | `bin/` | the commands `agsc`, `agentic-system-core` and `agsc-host` | [bin/README.md](../bin/README.md) |
 | `index.js` | the package's programmatic entry: discovery constants, versions, `run()` | the file itself |
-| `tools/` | the nine standalone checkers, the counter, the benchmark runner, the maintainer tools | [tools/README.md](../tools/README.md) |
+| `tools/` | the eleven standalone checkers, the counter, the benchmark runner, the maintainer tools | [tools/README.md](../tools/README.md) |
 | `tests/` | every level of test, from one function to a real browser | [tests/README.md](../tests/README.md) |
 | `features/` | the persona scenarios in Gherkin, executed by the acceptance runner | [features/README.md](../features/README.md) |
 | `docs/` | explanations for every audience; none normative | [docs/README.md](README.md) |

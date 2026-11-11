@@ -1,7 +1,7 @@
 # `tools/` — the checkers, the generators and the maintainer's tools
 
 **Summary.** Standalone programs that check or generate the artefacts of the
-specification. The nine checkers of AGSC-09-90 are independent by construction: none
+specification. The eleven checkers of AGSC-09-90 are independent by construction: none
 imports anything from `src/`, because a checker that imported the engine it checks
 would prove nothing. Anyone can run them against any distribution of the format.
 Every tool prints the diagnostics envelope of AGSC-09-11 with `--json` and exits 0

@@ -48,7 +48,7 @@ test('a well-formed plugin registers, and is then selectable by name', () => {
   assert.strictEqual(result.registered, true);
   assert.deepStrictEqual(registry.names(), ['validate-example']);
   assert.strictEqual(registry.get('validate-example').name, 'validate-example');
-  assert.strictEqual(registry.contract.selector, 'one of the nine of AGSC-09-90');
+  assert.strictEqual(registry.contract.selector, 'one of the eleven of AGSC-09-90');
 });
 
 test('a mismatch is AGSC-E004 and never a crash', () => {

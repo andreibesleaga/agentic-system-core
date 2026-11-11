@@ -79,7 +79,7 @@ The paths below say what to read, in order, for each of these readers and a few 
 2. [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) — the reading order, the byte-level
    pitfalls, a ten-step path to a Level-0 node, the platform table, running the vectors.
 3. [tests/vectors/README.md](../tests/vectors/README.md) — the vector file format.
-4. [tools/README.md](../tools/README.md) — the nine standalone checkers you can run
+4. [tools/README.md](../tools/README.md) — the eleven standalone checkers you can run
    against your own output.
 5. [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md) — how to say that your
    implementation conforms.

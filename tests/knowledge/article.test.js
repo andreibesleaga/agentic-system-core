@@ -1,5 +1,5 @@
 'use strict';
-// I-129 (m8): a message that names a type with "a" read "a episode". `withArticle`
+// A message that names a type with "a" read "a episode". `withArticle`
 // puts "a" or "an" before a word by its first letter, and the messages that name a
 // type, a kind or a format use it.
 //

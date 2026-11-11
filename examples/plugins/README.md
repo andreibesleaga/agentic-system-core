@@ -17,7 +17,7 @@ may read, may write and may never do, and how the engine finds it.
 | `surface.js` | surface | derived from what is emitted, or `surfaces[]` in the configuration |
 | `page-tool.js` | page tool | `registerTool()` in the page |
 | `deployment-profile.js` | deployment profile | `agsc-host emit <path>`; the target stated in a conformance claim |
-| `checker.js` | checker | one of the nine checkers of AGSC-09-90, run standalone |
+| `checker.js` | checker | one of the eleven checkers of AGSC-09-90, run standalone |
 
 ```bash
 node --test tests/arch/plugin-contract.test.js   # each sample registers into its own kind only, reaches no network

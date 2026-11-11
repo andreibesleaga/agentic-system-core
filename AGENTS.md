@@ -14,7 +14,7 @@ The AgenticSystemCore specification and its reference engine, in one tree:
   rule, the rule wins.
 - **The engine** — `src/` (five bounded contexts, a supporting context, an application
   layer, ports and adapters), `bin/` (the `agsc` and `agsc-host` commands), `index.js`.
-- **The checkers** — `tools/` (nine standalone checkers that import nothing from
+- **The checkers** — `tools/` (eleven standalone checkers that import nothing from
   `src/`, plus maintainer tools).
 - **Everything else** — `tests/` (every level), `features/` (persona scenarios),
   `docs/` (explanations, none normative), `examples/`, `bench/`, `internet-draft/`,

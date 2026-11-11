@@ -2,7 +2,7 @@
 
 A specification for publishing machine-discoverable knowledge bundles — the Agentic Knowledge Web.
 
-What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the nine independent checkers of AGSC-09-90 — seven validators and two generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
+What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the eleven independent checkers of AGSC-09-90 — seven validators and four generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
 **Released.** This tree states specification `1.1.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.1.0` (see "Versions" below) and are published from the package tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core` (the Python checkers and reading API; the other verbs still run on the Node engine). The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
@@ -232,7 +232,7 @@ Where this engine and the specification disagree, the specification wins.
 **What the package promises to keep within 1.x.** The command line — the
 commands `agsc`, `agsc-host` and `agentic-system-core`, their verbs, flags, exit
 codes and output envelopes (AGSC-09-07 to AGSC-09-12) — the plugin contract of
-`docs/PLUGINS.md` (plugin API `1.0.0`), the nine checkers run as programs
+`docs/PLUGINS.md` (plugin API `1.0.0`), the eleven checkers run as programs
 (`node tools/<name>`), and the six names `require('agentic-system-core')` returns:
 `LINK_RELATION`, `PROFILE_URI`, `WELLKNOWN_SUFFIX`, `run`, `specVersion` and
 `version`. `package.json` declares no `exports` map, so every file under `src/`,

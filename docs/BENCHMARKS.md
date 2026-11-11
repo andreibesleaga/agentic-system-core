@@ -63,7 +63,7 @@ It reports recall@k, precision@k, nDCG@k (binary relevance), P@1 and MRR.
 
 Three design decisions worth stating:
 
-- **It imports nothing from `src/`**, by the same rule that governs the nine independent checkers (AGSC-09-90). It measures what a consumer of the published files gets, not what the engine believes it emitted, and it carries its own tokenizer for the same reason.
+- **It imports nothing from `src/`**, by the same rule that governs the eleven independent checkers (AGSC-09-90). It measures what a consumer of the published files gets, not what the engine believes it emitted, and it carries its own tokenizer for the same reason.
 - **`ask` is not scored separately.** AGSC-09-14a makes `ask` the first three `search` hits with mandatory citations, so its ranking is the `search` ranking truncated at three; reporting it as a fourth surface would report one number twice.
 - **`--origin-node` exists because a multi-node set measures nothing without it.** The committed set draws intents from two nodes; asking one node for the other's items produces a misses-by-construction score. Each node is scored only on the intents its own items answer.
 

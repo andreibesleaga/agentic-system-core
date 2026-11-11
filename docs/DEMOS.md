@@ -1015,7 +1015,9 @@ mcp exit 2
 
 **The benchmark kit.** One layer of it runs offline: the determinism layer builds the
 repository's node twice, under another time zone and locale too, and compares every byte.
-The method and the other layers are in [BENCHMARKS.md](BENCHMARKS.md).
+The method and the other layers are in [BENCHMARKS.md](BENCHMARKS.md). This step needs a clone
+of the repository: point `ENGINE` at it (the npm package ships the retrieval tool `tools/bench`,
+not `bench/measure.js`).
 
 ```bash demo
 node "$ENGINE/bench/measure.js" --layer determinism --scratch "$PWD/../bench" > /dev/null
@@ -1053,6 +1055,8 @@ determinism: 61 files compared, 0 different
 
 ## What needs something you may not have
 
+- **A clone of the repository** (the benchmark kit's determinism layer of the 1.1 demo):
+  `bench/measure.js` is not in the npm package; point `ENGINE` at a clone for that step.
 - **A browser with an assistant** (the in-page tools, the `/compose/` download): the
   page-tools demo above runs the page's own scripts without a browser; the real
   browser lane is `AGSC_BROWSER=1 CHROME_EXE=<chromium> node --test tests/e2e/modes/browser.test.js`

@@ -520,7 +520,7 @@ test('AGSC-11-10(b): a peer list far above `fan_out` is bounded, never a stack o
   assert.strictEqual(result.error, 'AGSC-E906');
 });
 
-// I-152 (AGSC-11-08, AGSC-11-10): a walk given no resolution map used to hand every
+// AGSC-11-08, AGSC-11-10: a walk given no resolution map used to hand every
 // hostname, `localhost` and intranet names included, to the injected fetch.
 test('AGSC-11-08: a walk with no resolution map fetches no named host (fails closed)', () => {
   for (const options of [{}, { resolved: null }, { resolved: {} }, { dev: true }]) {

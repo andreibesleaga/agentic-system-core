@@ -28,7 +28,7 @@ section lists every file of a 1.0.1 node whose bytes change.
   version the Bundle declares, so a 1.0 Bundle's `graph.jsonld`, `graph.nq`, `graph.ttl` and
   `now.md` keep their bytes (AGSC-05-26, AGSC-06-22, AGSC-00-17).
 - The vocabulary is version 1.1.0, served under `/ns/1.1.0/` (`owl:versionIRI`, `owl:versionInfo`,
-  `dcterms:modified` 2026-11-18), because it gains `asc:warrant`; version 1.0.0 stays served
+  `dcterms:modified` the release date), because it gains `asc:warrant`; version 1.0.0 stays served
   unchanged under `/ns/1.0.0/`, and the JSON-LD context address of `graph.jsonld` stays
   `/ns/1.0.0/context.jsonld` (AGSC-05-09, AGSC-05-25, AGSC-06-32).
 - Three answers a 1.0 client sees change, the named exceptions of AGSC-00-14: a call of a tool the

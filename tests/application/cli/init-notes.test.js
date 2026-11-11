@@ -90,7 +90,7 @@ test('D1 / AGSC-02-91: a root note with a closed block and no type is left as it
     assert.match(kept[0], /handoff\.md/u);
     assert.match(kept[0], /AGSC-02-91/u);
     assert.match(kept[0], /content\/<type-plural>\//u);
-    // From 1.1 it is also a warning (AGSC-E506, I-103): the warnings of the bare note alone,
+    // From 1.1 it is also a warning (AGSC-E506, AGSC-02-91): the warnings of the bare note alone,
     // plus exactly one that names the note.
     const alone = folder({ 'agents.md': 'Notes on agents.\n' });
     try {

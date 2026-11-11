@@ -77,7 +77,7 @@ test('a build file answers one route; host configuration answers none', () => {
   assert.deepStrictEqual(rules.routesOf(undefined), []);
 });
 
-// I-119: a route with several splats was the regular expression `^a.*b.*c$`, which
+// A route with several splats was the regular expression `^a.*b.*c$`, which
 // retries every split of the path (cubic in the path for three splats) on a path that
 // ends wrong. The matcher is linear in the path, and says what the expression said.
 test('a pattern with several splats matches exactly what its regular expression matched', () => {
