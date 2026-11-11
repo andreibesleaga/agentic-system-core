@@ -2,9 +2,9 @@
 
 **Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method).
 
-**Status: every one of the nine layers was measured on 2026-10-12, one after another, into one scratch directory, on the `1.0.0` tree (the specification and engine of this release, before the release commit).** `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. Four figures outside the nine layers were measured the same day by the commands shown with them and are not in the record: the `verify` line of §4, the install and cold-start lines of §9, and the cost figures of §11. *(1.1, 7 November 2026: the install and the cold start were re-measured on the 1.1 tree as a tenth layer, `install`, which the record now holds beside the nine layers of the 1.0.0 run; §9 gives both.)* *(1.1, 7 November 2026: each of those figures is marked "1.0.0 run; not in the record" where it stands. `tools/lint-claims --record` holds the measured regions of this page and of BENCHMARKS.md to the record, and these figures stand outside them until they are measured into it.)* The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
+**Status: every one of the ten layers was measured on 2026-11-11, one after another, into one scratch directory, on the `1.1.0` tree (the specification and engine of this release, before the release tag).** `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. The figures outside the ten layers were measured on 2026-10-12 on the `1.0.0` tree and are not in the record; each is marked "1.0.0 run; not in the record" where it stands: the `verify` line of §4, the folder breakdown and the 1.0.0 install of §9, and the cost figures of §11. `tools/lint-claims --record` holds the measured regions of this page and of BENCHMARKS.md to the record. The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
 
-Every number in the nine layers is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
+Every number in the ten layers is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
 ## What may be said about these numbers, and what may not
 
@@ -43,26 +43,26 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch
 node tools/count-artifacts --json
 ```
 
-**The vector run.** `243 pass, 0 fail, 7 skip (7 withdrawn, 0 pending) of 250`. Of the 250 vectors, 242 are required, 1 is optional and 7 are withdrawn; a withdrawn vector stays in the set, carries the id of the case that replaces it, and is excluded from every claim, as AGSC-00-13 requires. The 20 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery export frontmatter graph import jcs ledger links lint prov slug`.
+**The vector run.** `374 pass, 0 fail, 23 skip (23 withdrawn, 0 pending) of 397`. Of the 397 vectors, 372 are required, 2 are optional and 23 are withdrawn; a withdrawn vector stays in the set, carries the id of the case that replaces it, and is excluded from every claim, as AGSC-00-13 requires. The 20 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery export frontmatter graph import jcs ledger links lint prov slug`.
 
-**Rule coverage.** The specification declares **343 rules** — 332 active, 11 reserved. Counted over the 332 active rules, a rule being reserved exactly when `tools/count-artifacts` says so:
+**Rule coverage.** The specification declares **385 rules** — 374 active, 11 reserved. Counted over the 374 active rules, a rule being reserved exactly when `tools/count-artifacts` says so:
 
-| | rules | share of 332 |
+| | rules | share of 374 |
 |---|---|---|
-| with at least one conformance vector | **166** | 50 % |
-| with **no** vector | **166** | 50 % |
-| named by at least one test file (a file that contains the id — a proxy; `tools/rule-coverage`, which counts test titles and `// verifies` markers, reports 313) | 325 | 98 % |
-| named by at least one checker under `tools/` | 94 | 28 % |
-| named by at least one acceptance scenario | 78 | 23 % |
-| **named by nothing at all** | **5** | 2 % |
+| with at least one conformance vector | **211** | 56 % |
+| with **no** vector | **163** | 44 % |
+| named by at least one test file (a file that contains the id — a proxy; `tools/rule-coverage`, which counts test titles and `// verifies` markers, reports 356) | 369 | 99 % |
+| named by at least one checker under `tools/` | 119 | 32 % |
+| named by at least one acceptance scenario | 110 | 29 % |
+| **named by nothing at all** | **4** | 1 % |
 
 *(The runner counts a rule as reserved by the counter's own test, not by whether its opening words mention "reserved".)*
 
-**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only row 1 — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound.** The authoritative classification is `tools/rule-coverage` (`docs/RULE-COVERAGE.md`), which reports 319 rules verified, 11 prose-only with a stated reason, 0 unverified and 2 listed as gaps. The 5 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
+**Read the last four rows carefully.** "Named by a test" means the rule id appears in a test file. That is a statement of intent, not proof of a machine assertion. Only row 1 — a vector that carries the rule id in its `rule` member and is executed by the runner — is verified in the strict sense. **Treat rows 3 to 6 as an upper bound on coverage and row 1 as the lower bound.** The authoritative classification is `tools/rule-coverage` (`docs/RULE-COVERAGE.md`), which reports 361 rules verified, 11 prose-only with a stated reason, 0 unverified and 2 listed as gaps. The 4 rules that nothing names are listed in `docs/measurements.json` under `layers.conformance.rule_coverage.uncovered`, with a per-chapter breakdown beside it.
 
-**Error codes.** 91 registered, 91 used by the engine; 80 are asserted by a conformance case, and the other 11 are named, each with its reason, in the paragraph "Codes no case asserts" of the registry (spec/09 §9.4).
+**Error codes.** 105 registered, 105 used by the engine; 94 are asserted by a conformance case, and the other 11 are named, each with its reason, in the paragraph "Codes no case asserts" of the registry (spec/09 §9.4).
 
-**The independent checkers.** Six of the nine ran, each exiting 0 with a well-formed envelope and no finding: `validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-features`, `validate-diagrams`. `validate-wellknown` ran in §3 against sixteen hostile discovery inputs; `gen-spec-html` and `gen-ns` are generators and have no pass/fail to report here.
+**The independent checkers.** Six of the eleven ran, each exiting 0 with a well-formed envelope and no finding: `validate-spec`, `validate-schemas`, `validate-ontology`, `validate-vectors`, `validate-features`, `validate-diagrams`. `validate-wellknown` ran in §3 against sixteen hostile discovery inputs; `gen-spec-html`, `gen-ns`, `gen-shapes` and `gen-dc-profile` are generators and have no pass/fail to report here.
 
 ---
 
@@ -74,12 +74,12 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch
 
 | comparison | files compared | files differing |
 |---|---|---|
-| two clean builds, same environment | **49** | **0** |
-| `TZ=UTC LC_ALL=C` against `TZ=Asia/Tokyo LC_ALL=de_DE.UTF-8` | **49** | **0** |
+| two clean builds, same environment | **61** | **0** |
+| `TZ=UTC LC_ALL=C` against `TZ=Asia/Tokyo LC_ALL=de_DE.UTF-8` | **61** | **0** |
 
-The 49 files are the build output (`www/`) of the reference fixture.
+The 61 files are the build output (`www/`) of the reference fixture.
 
-`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; `agsc run-vectors tests/vectors` gives 78 pass and 0 fail — the other 14 vectors of those areas need a whole build or the publisher's writers and are not run, and 2 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
+`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; `agsc run-vectors tests/vectors` gives 114 pass and 0 fail — the other 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer, which only the engine checks in 1.1, and are not run, and 7 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
 
 ---
 
@@ -130,38 +130,40 @@ An outcome is one of six: **detected** (the rule's code, exit 0), **refused** (t
 
 ```
 node bench/gen-bundle.js --items <n> --out <scratch>/n<n>
-SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3
+SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,501,1000,5000,10000 --runs 3
 ```
 
 Generated Bundles, each item a pure function of its number, three runs per size, median reported. The Bundles are generated outside the repository; the generator refuses to write inside it.
 
 | items | build (median of 3) | runs | peak RSS (median) | files | output | largest index shard | shards | chunks, all shards |
 |---|---|---|---|---|---|---|---|---|
-| 100 | **1.60 s** | 1.68 / 1.55 / 1.60 | 121 MiB | 343 | 3.2 MB | 31.9 KB | 0 | 0.65 MB |
-| 500 | **4.06 s** | 4.17 / 4.06 / 4.05 | 267 MiB | 1,548 | 15.2 MB | 176.0 KB | 2 | 3.25 MB |
-| 1,000 | **7.27 s** | 7.46 / 7.27 / 7.22 | 378 MiB | 3,054 | 30.2 MB | 176.3 KB | 3 | 6.50 MB |
-| 5,000 | **34.59 s** | 34.92 / 34.47 / 34.59 | 1,027 MiB | 15,102 | 150.5 MB | 177.9 KB | 11 | 32.66 MB |
-| 10,000 | **86.64 s** | 85.15 / 86.64 / 100.34 | 1,778 MiB | 30,162 | 300.9 MB | 177.9 KB | 21 | 65.35 MB |
+| 100 | **2.33 s** | 2.33 / 2.35 / 2.25 | 175 MiB | 355 | 8.3 MB | 31.9 KB | 0 | 0.71 MB |
+| 500 | **5.88 s** | 5.88 / 5.84 / 6.41 | 304 MiB | 1,559 | 22.2 MB | 176.0 KB | 2 | 3.57 MB |
+| 501 | **6.24 s** | 10.09 / 6.24 / 5.75 | 305 MiB | 1,565 | 22.2 MB | 176.0 KB | 2 | 3.57 MB |
+| 1,000 | **10.21 s** | 10.27 / 10.06 / 10.21 | 440 MiB | 3,065 | 39.4 MB | 176.3 KB | 3 | 7.13 MB |
+| 5,000 | **49.93 s** | 50.05 / 47.53 / 49.93 | 1,057 MiB | 15,113 | 178.2 MB | 177.9 KB | 11 | 35.81 MB |
+| 10,000 | **119.13 s** | 119.13 / 128.61 / 116.68 | 1,692 MiB | 30,173 | 351.6 MB | 177.9 KB | 21 | 71.66 MB |
 
 These timings are of this machine on this day; they vary between days on the same machine, and none is a property of the format.
 
 **Cluster pages.** An item page is never paginated (AGSC-06-21), so a cluster page lists at most 500 members — the bound the rule uses for every index page — and says how many members there are and where the complete membership is (the search index carries `cluster` per document; the graph carries the membership). Neither reference node has a cluster of more than 500 members.
 
-**Against the normative budgets of AGSC-06-21.** ≤ 60 s of build per 500 items: at 10,000 items that is a 1,200 s allowance and the build takes 86.64 s. ≤ 1 MB per index document: the largest shard is 178 KB at every size above 500. Both are met with wide margins.
+**Against the normative budgets of AGSC-06-21.** ≤ 60 s of build per 500 items: at 10,000 items that is a 1,200 s allowance and the build takes 119.13 s. ≤ 1 MB per index document: the largest shard is 178 KB at every size above 500. Both are met with wide margins.
 
 **≤ 100 KB per HTML page — measured over `*.html` only.**
 
 | items | HTML pages | largest page | which | median page | over 100 KB |
 |---|---|---|---|---|---|
-| 100 | 115 | 17.9 KB | `search/index.html` | 6.3 KB | 0 |
-| 500 | 516 | 80.3 KB | `clusters/bench-cluster/index.html` | 6.4 KB | 0 |
-| 1,000 | 1,020 | 80.6 KB | `clusters/bench-cluster/index.html` | 6.4 KB | 0 |
-| 5,000 | 5,052 | 81.6 KB | `clusters/bench-cluster/index.html` | 6.4 KB | 0 |
-| 10,000 | 10,092 | 81.6 KB | `clusters/bench-cluster/index.html` | 6.4 KB | 0 |
+| 100 | 116 | 32.5 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
+| 500 | 517 | 95.1 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
+| 501 | 521 | 95.4 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
+| 1,000 | 1,021 | 95.5 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
+| 5,000 | 5,053 | 96.6 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
+| 10,000 | 10,093 | 96.6 KB | `clusters/bench-cluster/index.html` | 10.3 KB | 0 |
 
-No HTML page exceeds the budget at any size. The largest page is the cluster page that lists 500 members, at 81.6 KB — an 18 % margin; the paginated index pages sit just under it. The published sites were swept the same way (§7): the largest page of the main site is under the budget, because its longest specification chapters are published in parts.
+No HTML page exceeds the budget at any size. The largest page is the cluster page that lists 500 members, at 96.6 KB — a 3 % margin. The published sites were swept the same way (§7): the largest page of the main site is under the budget, because its longest specification chapters are published in parts.
 
-**Supported scale, stated from these numbers and nothing else.** The reference engine is measured to **10,000 published items** on one machine: 86.64 s of build, 1,778 MiB peak, 300.9 MB of output in 30,162 files, every budget of AGSC-06-21 met. From 1,000 to 10,000 items the build grows 11.9× in time and 4.7× in peak memory for a 10× corpus: memory grows less than the corpus, time somewhat more. Above 10,000 items nothing is measured and nothing is claimed. Where such a node can be hosted is §11.
+**Supported scale, stated from these numbers and nothing else.** The reference engine is measured to **10,000 published items** on one machine: 119.13 s of build, 1,692 MiB peak, 351.6 MB of output in 30,173 files, every budget of AGSC-06-21 met. From 1,000 to 10,000 items the build grows 11.7× in time and 3.8× in peak memory for a 10× corpus: memory grows less than the corpus, time somewhat more. Above 10,000 items nothing is measured and nothing is claimed. Where such a node can be hosted is §11.
 
 *(1.0.0 run; not in the record.)* `agsc verify` (two builds in one process, digests kept, AGSC-04-02), with `SOURCE_DATE_EPOCH=1767225600 /usr/bin/time -v node bin/agsc.js verify`: on the 5,000-item Bundle 54.7 s wall and **1,244 MiB** peak — about 220 MiB above one build, the earlier build's garbage not yet reclaimed while the second runs; on the 500-item Bundle 6.4 s and 298 MiB.
 
@@ -173,16 +175,16 @@ No HTML page exceeds the budget at any size. The largest page is the cluster pag
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer parity --scratch <dir> --nodes fixture=<bundle>,patterns=<bundle>,main=<bundle>
 ```
 
-The call list (`bench/corpus/parity-calls.json`) has 25 fixed calls — every tool of AGSC-09-13, every domain-error path (unknown tool, missing argument, unknown slug, a foreign `memory://` IRI, a 1 MiB + 1 argument), the two local-only writers — and four per-item templates (`read`, `links`, `propose`, `compose`) run once for every published item. Each call is asked of **the real `agsc mcp` process over stdio**, of **the emitted page script** run in a fresh `vm` context over the build's own bytes, of the page-tools module, and of the in-process server, and the answers are compared **as values** after a JSON round trip — the comparison AGSC-09-16 makes, never byte-identity across the browser boundary.
+The call list (`bench/corpus/parity-calls.json`) has 34 fixed calls — every tool of AGSC-09-13, every domain-error path (unknown tool, missing argument, unknown slug, a foreign `memory://` IRI, a 1 MiB + 1 argument), the two local-only writers — and seven per-item templates (`read`, `links`, `propose`, `compose`, `brief`, `check`, `explain`) run once for every published item. Each call is asked of **the real `agsc mcp` process over stdio**, of **the emitted page script** run in a fresh `vm` context over the build's own bytes, of the page-tools module, and of the in-process server, and the answers are compared **as values** after a JSON round trip — the comparison AGSC-09-16 makes, never byte-identity across the browser boundary.
 
-Measured on three Bundles anyone can rebuild: the reference fixture, the demonstration node's public repository (`agsc-demo-node`) and the main node as its site build hands it to the engine.
+Measured on three Bundles anyone can rebuild: the reference fixture, the demonstration node's public repository (`agsc-demo-node`) and the main node as its site build hands it to the engine. Each is measured as files without a git history (the demonstration node as `git archive` writes it): the in-process server is built without the history, so on a git checkout the content version in the answers of `read` and `brief` would differ between the stdio process and the in-process server, a limit of the runner and not of the transports.
 
 | Bundle | items / published | calls | page = server (published projection) | the one difference the rule requires | other differences | stdio = in-process server |
 |---|---|---|---|---|---|---|
-| reference fixture | 3 / 3 | 37 | **35** | 2 | **0** | 37 / 37 |
-| demonstration node | 42 / 42 | 193 | **191** | 2 | **0** | 193 / 193 |
-| main node | 17 / 17 | 93 | **91** | 2 | **0** | 93 / 93 |
-| **total** | | **323** | **317** | **6** | **0** | **323 / 323** |
+| reference fixture | 3 / 3 | 55 | **53** | 2 | **0** | 55 / 55 |
+| demonstration node | 42 / 42 | 328 | **326** | 2 | **0** | 328 / 328 |
+| main node | 17 / 17 | 153 | **151** | 2 | **0** | 153 / 153 |
+| **total** | | **536** | **530** | **6** | **0** | **536 / 536** |
 
 **The one difference the rule requires.** AGSC-09-16: "The one input on which the two transports MUST differ is a `remember` call that declares no operator: the local server refuses it with `AGSC-E003` and a page tool, which has no identity to declare, returns the item with `prov.operator` absent and `AGSC-E506`." The call list holds two such calls, and on every Bundle both answers have exactly that shape; the runner checks the shape and counts these calls apart (`required_difference` in the record).
 
@@ -203,8 +205,8 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer retrieval --scratch <
 | demonstration | chunks.jsonl | 0.667 | 0.067 | 0.547 | 0.417 | 0.533 | 12 | 128 |
 | demonstration | search.json | **0.917** | 0.092 | 0.737 | 0.583 | 0.688 | 12 | 42 |
 | demonstration | llms.txt | **0.917** | 0.092 | 0.736 | 0.583 | 0.679 | 12 | 22 |
-| main | chunks.jsonl | **1.00** | 0.100 | 0.696 | 0.375 | 0.599 | 8 | 21 |
-| main | search.json | 0.875 | 0.088 | 0.694 | 0.500 | 0.645 | 8 | 17 |
+| main | chunks.jsonl | **1.00** | 0.100 | 0.698 | 0.375 | 0.601 | 8 | 21 |
+| main | search.json | 0.875 | 0.088 | 0.695 | 0.500 | 0.647 | 8 | 17 |
 | main | llms.txt | 0.875 | 0.088 | 0.665 | 0.500 | 0.598 | 8 | 14 |
 
 Twenty intents over 59 published items is a smoke test of the surfaces, not a study: no split, no paraphrases, no second annotator, no intervals, and the intents and items share an author. The study is specified in `docs/BENCHMARKS.md` and is the `tools/bench` program's work at 1.1. The `ask` tool is not scored separately: its ranking is the `search` ranking truncated at three.
@@ -217,14 +219,14 @@ Twenty intents over 59 published items is a smoke test of the surfaces, not a st
 SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules CHROME_EXE=<chromium> node bench/measure.js --layer a11y --scratch <dir> --nodes <name>=<build>,…
 ```
 
-axe-core 4.13.0 in headless Chromium through playwright-core 1.62.1 (both installed outside the repository), the WCAG 2.0/2.1/2.2 A and AA tags plus best practices — the tag set of the site repository's own browser lane — over every page, in the light and in the dark colour scheme. Every request to another origin is blocked and counted.
+axe-core 4.13.0 in headless Chromium through playwright-core 1.61.1 (both installed outside the repository), the WCAG 2.0/2.1/2.2 A and AA tags plus best practices — the tag set of the site repository's own browser lane — over every page, in the light and in the dark colour scheme. Every request to another origin is blocked and counted.
 
 | build | pages | checks (× 2 schemes) | page types | axe violations | third-party requests | largest HTML page |
 |---|---|---|---|---|---|---|
-| reference fixture (engine) | 16 | 32 | 14 | **0** | 0 | 3.5 KB |
-| demonstration node (engine) | 88 | 176 | 16 | **0** | 0 | 16.9 KB |
-| main node (engine page shell) | 35 | 70 | 18 | **0** | 0 | 10.6 KB |
-| main site (its own generator) | 100 | 200 | 31 | **0** | 0 | 92.8 KB |
+| reference fixture (engine) | 17 | 34 | 15 | **0** | 0 | 21.9 KB |
+| demonstration node (engine) | 89 | 178 | 17 | **0** | 0 | 25.5 KB |
+| main node (engine page shell) | 35 | 70 | 18 | **0** | 0 | 22.0 KB |
+| main site (its own generator) | 109 | 218 | 38 | **0** | 0 | 96.1 KB |
 
 Page types are the templates a route is rendered from: home, each section's index, each section's item or term page, paginated indexes. The per-type counts are in `docs/measurements.json` under `layers.a11y.nodes.<build>.by_type`; every type has zero violations. **axe-core finds on average 57 % of WCAG issues automatically: zero is a floor, not a conformance claim.** This lane loads every page at one size, 1200 × 900; the site repository's own lane (`scripts/a11y.js`) loads every page at 390, 768 and 1280 px. The Lighthouse performance category is not measured and is never a gate.
 
@@ -240,11 +242,11 @@ SOURCE_DATE_EPOCH=1767225600 NODE_PATH=<scratch>/node_modules node bench/measure
 
 | node | llms.txt index line | chunk text only | chunk records as served (JSON lines) | llm-context skim sections | llm-context TOON index rows |
 |---|---|---|---|---|---|
-| reference fixture (3 items) | 32 (33.5) | 102 (103) | 945 (958) | 349 (350) | 165 (174) |
-| demonstration node (42 items) | 49 (49) | 204 (204) | 981.5 (993) | 439 (444) | 166 (166.5) |
-| main node (17 items) | 40 (40) | 100 (100) | 270 (272) | 144 (144) | 31 (30) |
+| reference fixture (3 items) | 32 (33.5) | 102 (103) | 1055 (1073) | 349 (350) | 165 (174) |
+| demonstration node (42 items) | 49 (49) | 204 (204) | 1197.5 (1209) | 439 (444) | 166 (166.5) |
+| main node (17 items) | 40.5 (40.5) | 99 (99) | 304 (306) | 144 (144) | 30 (30) |
 
-Whole files, `o200k_base`: `llms.txt` 219 / 1,329 / 782 tokens; `llms-ctx.txt` 1,008 / 12,267 / 3,419; `chunks-index.toon` 403 / 5,086 / 763 (fixture / demonstration node / main). The two vocabularies differ by at most 5.2 % on any median above. The distance between the chunk text and the chunk record as served is the provenance an agent receives with every chunk — digest, IRI, licence, terms, trust and links; the skim view drops it on purpose and says so in its own header.
+Whole files, `o200k_base`: `llms.txt` 219 / 1,333 / 782 tokens; `llms-ctx.txt` 1,008 / 12,274 / 3,445; `chunks-index.toon` 403 / 5,085 / 761 (fixture / demonstration node / main). The two vocabularies differ by at most 5.2 % on any median above. The distance between the chunk text and the chunk record as served is the provenance an agent receives with every chunk — digest, IRI, licence, terms, trust and links; the skim view drops it on purpose and says so in its own header.
 
 ---
 
@@ -257,9 +259,9 @@ npm ls --omit=dev --parseable --all | xargs du -sk      # what a consumer's inst
 
 | | |
 |---|---|
-| files in the tarball | **658** |
-| unpacked | **4.23 MB** |
-| packed | **1,257 KB** |
+| files in the tarball | **993** |
+| unpacked | **11.06 MB** |
+| packed | **3,418 KB** |
 
 By folder, the largest shipped parts are `tests/vectors` (632 KB, 251 files, read by `conform`), `src/distribution` (468 KB, 31 files), the specification `spec/` (451 KB), `src/interchange` (383 KB) and `tests/conformance` (314 KB, 32 files). What no verb reads and still ships — `examples/` (107 files, 85 KB), `docs/diagrams/` (22 files, 52 KB, read by the `validate-diagrams` checker over the engine's own tree), `docs/guides/` and the changelog (149 KB) — is shipped on purpose and left as it is. *(1.0.0 run; not in the record.)*
 
@@ -267,7 +269,7 @@ By folder, the largest shipped parts are `tests/vectors` (632 KB, 251 files, rea
 
 **Cold start** (`/usr/bin/time`, five runs, from that install, the reference fixture): `agsc --version` 0.23–0.24 s and 65 MB with 120 modules loaded (`node -e ""` alone: 0.05–0.06 s, 44 MB); `agsc lint` 0.88–0.97 s and 93–95 MB with 288 modules. Every verb is required only when it runs; `jsonld` (183–206 ms to load) and the MCP SDK (323–344 ms) are loaded only by the verbs that emit RDF or serve MCP, never by `--version`, `lint`, `build` or `verify`. *(1.0.0 run; not in the record. 1.1, 7 November 2026: re-measured on the 1.1 tree, below.)*
 
-**1.1: the install and the cold start, measured again (7 November 2026).** The two paragraphs above are the 1.0.0 run and stay as they were. The 1.1 tree replaces `@modelcontextprotocol/sdk` with the official MCP packages `@modelcontextprotocol/server` and `@modelcontextprotocol/node`, and adds `oxigraph`, `rdf-validate-shacl`, `@traqula/parser-sparql-1-1`, `@a2a-js/sdk`, `structured-headers` and `http-link-header` as run-time packages. The figures are the record's `install` layer, measured by one command on the `next-1.1` branch with Node 24.18.0 on Linux (WSL 2), the machine above. Its byte sizes describe the tree on the day it was measured: the documents and this record ship in the tarball, so a later commit packs to other sizes. The record's `spec_version` is the version the measured tree's specification states, 1.0.0 until the 1.1 release:
+**1.1: the install and the cold start, measured again (11 November 2026).** The two paragraphs above are the 1.0.0 run and stay as they were. The 1.1 tree replaces `@modelcontextprotocol/sdk` with the official MCP packages `@modelcontextprotocol/server` and `@modelcontextprotocol/node`, and adds `oxigraph`, `rdf-validate-shacl`, `@traqula/parser-sparql-1-1`, `@a2a-js/sdk`, `structured-headers` and `http-link-header` as run-time packages. The figures are the record's `install` layer, measured by one command on the `1.1.0` tree with Node 24.18.0 on Linux (WSL 2), the machine above. Its byte sizes describe the tree on the day it was measured: the documents and this record ship in the tarball, so a later commit packs to other sizes. The record's `spec_version` is the version the measured tree's specification states, 1.1.0:
 
 ```
 SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer install --scratch <dir>
@@ -275,10 +277,10 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --assemble --scratch <dir> --
 ```
 
 <!-- measured:start -->
-- **The tarball:** 879 files, 3,356,330 bytes packed, 10,730,651 unpacked (`npm pack`, measured while the package version was still 1.0.1).
-- **Install:** `npm install --omit=dev` of the tarball in an empty folder holds **86 packages**, the package itself among them, and 67.7 MB of files. The count is of the package folders under `node_modules`; `npm ls --parseable`, which gave the 1.0.0 figure above, also prints the install root, one line more, so the two counts differ in method as well as in tree. The ten largest, each without the packages nested in it: the package 10.73 MB, `oxigraph` 8.80 MB, `@modelcontextprotocol/server` 7.02 MB, `zod` 6.15 MB, `@tpluscode/rdf-ns-builders` 5.05 MB, `@a2a-js/sdk` 4.52 MB, `@types/node` 2.59 MB, `@traqula/chevrotain` 2.32 MB, `jsonld` 2.08 MB and `markdown-it` 2.06 MB. `@types/node` holds type declarations only and still lands in a production install, because `@rdfjs/types`, which `rdf-validate-shacl` and its RDF helpers depend on, lists it as a dependency. The other protocol packages: `@modelcontextprotocol/core` 1.37 MB, `hono` 1.30 MB, `@modelcontextprotocol/node` 0.15 MB, `@hono/node-server` 0.14 MB, `structured-headers` 0.14 MB and `http-link-header` 0.02 MB.
-- **Cold start** (GNU `time -v`, five runs each, from that install, on a copy of the reference fixture `tests/fixtures/minimal`): `node -e ""` alone 0.06 s and 44–45 MB; `agsc --version` 0.23–0.24 s and 67 MB, 173 modules loaded; `agsc lint` 0.86–0.88 s and 104–105 MB, 332 modules; `agsc build` 1.12–1.15 s and 124–127 MB, 333 modules.
-- **What a verb loads.** One more run of each verb preloads a resolve hook (`module.registerHooks`, which sees `require` and `import` alike) and records every file the process resolved. `--version`, `lint` and `build` load no file of `@modelcontextprotocol/*`, `@a2a-js/sdk`, `hono` or `@hono/node-server`. The control run, `agsc mcp` with an empty input, loads `@modelcontextprotocol/server`, `@modelcontextprotocol/core`, `@modelcontextprotocol/node`, `hono` and `@hono/node-server`, so the trace sees these packages when a verb does load them. Loading each alone takes 229–248 ms for `@modelcontextprotocol/server`, 281–294 ms for `@modelcontextprotocol/node` and 80–89 ms for `@a2a-js/sdk` (five runs each). The A2A package is loaded only by a build of a node whose `surfaces[]` declares `a2a-card`.
+- **The tarball:** 993 files, 3,417,692 bytes packed, 11,058,497 unpacked (`npm pack`, at package version 1.1.0).
+- **Install:** `npm install --omit=dev` of the tarball in an empty folder holds **88 packages**, the package itself among them, and 70.6 MB of files. The count is of the package folders under `node_modules`; `npm ls --parseable`, which gave the 1.0.0 figure above, also prints the install root, one line more, so the two counts differ in method as well as in tree. The ten largest, each without the packages nested in it: the package 11.06 MB, `oxigraph` 8.80 MB, `@modelcontextprotocol/server` 7.02 MB, `zod` 6.15 MB, `@tpluscode/rdf-ns-builders` 5.05 MB, `@a2a-js/sdk` 4.52 MB, `@types/node` 2.59 MB, `@traqula/chevrotain` 2.32 MB, `jsonld` 2.08 MB and `markdown-it` 2.06 MB. `@types/node` holds type declarations only and still lands in a production install, because `@rdfjs/types`, which `rdf-validate-shacl` and its RDF helpers depend on, lists it as a dependency. The other protocol packages: `@modelcontextprotocol/core` 1.37 MB, `hono` 1.31 MB, `@modelcontextprotocol/node` 0.15 MB, `@hono/node-server` 0.14 MB, `structured-headers` 0.14 MB and `http-link-header` 0.02 MB.
+- **Cold start** (GNU `time -v`, five runs each, from that install, on a copy of the reference fixture `tests/fixtures/minimal`): `node -e ""` alone 0.06 s and 44–45 MB; `agsc --version` 0.23–0.25 s and 67 MB, 174 modules loaded; `agsc lint` 0.86–0.89 s and 104–105 MB, 335 modules; `agsc build` 1.12–1.15 s and 126–128 MB, 336 modules.
+- **What a verb loads.** One more run of each verb preloads a resolve hook (`module.registerHooks`, which sees `require` and `import` alike) and records every file the process resolved. `--version`, `lint` and `build` load no file of `@modelcontextprotocol/*`, `@a2a-js/sdk`, `hono` or `@hono/node-server`. The control run, `agsc mcp` with an empty input, loads `@modelcontextprotocol/server`, `@modelcontextprotocol/core`, `@modelcontextprotocol/node`, `hono` and `@hono/node-server`, so the trace sees these packages when a verb does load them. Loading each alone takes 234–241 ms for `@modelcontextprotocol/server`, 287–293 ms for `@modelcontextprotocol/node` and 80–88 ms for `@a2a-js/sdk` (five runs each). The A2A package is loaded only by a build of a node whose `surfaces[]` declares `a2a-card`.
 <!-- measured:end -->
 
 `tests/bench/measure.test.js` holds the record to the trace claim. `tools/lint-claims --record docs/measurements.json` checks that every number between the two markers above is a number of the record, which does not say which member it is; `tests/docs/quoted-counts.test.js` binds each figure of the list to its member of the `install` layer, the ten largest packages to the record's own order.
@@ -347,41 +349,41 @@ A published node costs three files per item (the page, the Markdown view, the JS
 
 ## Summary table (numbers only)
 
-Every figure is from this document; nothing is rounded up. Rows from the 1.0.0 run; not in the record: `verify`, the item-page visit, the MCP calls, the hosting and the runtime install of the npm package (§4, §9, §11). The rc.6 figures of the security-floor row are the score of that published package (§3).
+Every figure is from this document; nothing is rounded up. Rows from the 1.0.0 run; not in the record: `verify`, the item-page visit, the MCP calls and the hosting (§4, §11). The rc.6 figures of the security-floor row are the score of that published package (§3).
 
 | quantity | value |
 |---|---|
-| specification version measured | measured on 2026-10-12 at 1.0.0 |
-| rules declared / active / reserved | 343 / 332 / 11 |
-| conformance vectors: total / required / optional / withdrawn | 250 / 242 / 1 / 7 |
-| vector run | 243 pass, 0 fail, 7 skipped (the 7 withdrawn) |
+| specification version measured | measured on 2026-11-11 at 1.1.0 |
+| rules declared / active / reserved | 385 / 374 / 11 |
+| conformance vectors: total / required / optional / withdrawn | 397 / 372 / 2 / 23 |
+| vector run | 374 pass, 0 fail, 23 skipped (the 23 withdrawn) |
 | populated vector areas | 20 |
-| active rules with ≥ 1 vector | 166 of 332 (50 %) |
-| active rules named by no test, checker, vector or scenario | 5 of 332 (2 %) |
-| error codes registered / used | 91 / 91 |
-| error codes asserted by a conformance case | 80 of 91; the other 11 named with their reason in the registry |
-| two clean builds compared | 49 output files, 0 differing |
-| builds across time zone and locale compared | 49 output files, 0 differing |
+| active rules with ≥ 1 vector | 211 of 374 (56 %) |
+| active rules named by no test, checker, vector or scenario | 4 of 374 (1 %) |
+| error codes registered / used | 105 / 105 |
+| error codes asserted by a conformance case | 94 of 105; the other 11 named with their reason in the registry |
+| two clean builds compared | 61 output files, 0 differing |
+| builds across time zone and locale compared | 61 output files, 0 differing |
 | security floor: seeded faults stopped | 108 of 108, each under its rule's code (21 detected, 74 refused, 5 neutralised, 8 finished; none missed); the published rc.6 package, on its 104 cases: 85 stopped, 84 under the expected code (§3) |
 | security floor: valid controls clean | 14 of 14 |
 | security floor: hostile discovery inputs refused | 16 of 16 |
-| page-tool / MCP parity, 3 Bundles | 323 calls: 317 equal as values, 6 the one difference AGSC-09-16 requires, 0 other differences; stdio = in-process 323 of 323 |
+| page-tool / MCP parity, 3 Bundles | 536 calls: 530 equal as values, 6 the one difference AGSC-09-16 requires, 0 other differences; stdio = in-process 536 of 536 |
 | unpublished items hidden from the page tools | 3 of 3 calls in the test suite |
-| build, 500 items (median of 3) | 4.06 s, 267 MiB peak |
-| build, 5,000 items (median of 3) | 34.59 s, 1,027 MiB peak |
-| build, 10,000 items (median of 3) | 86.64 s, 1,778 MiB peak, 300.9 MB output in 30,162 files |
+| build, 500 items (median of 3) | 5.88 s, 304 MiB peak |
+| build, 5,000 items (median of 3) | 49.93 s, 1,057 MiB peak |
+| build, 10,000 items (median of 3) | 119.13 s, 1,692 MiB peak, 351.6 MB output in 30,173 files |
 | build budget (AGSC-06-21) | ≤ 60 s per 500 items — met at every size measured |
 | largest index shard at 10,000 items | 178 KB against a 1 MB budget |
-| largest HTML page at 10,000 items | 81.6 KB against a 100 KB budget (a cluster page listing 500 members) |
+| largest HTML page at 10,000 items | 96.6 KB against a 100 KB budget (a cluster page listing 500 members) |
 | `verify`, 5,000 items | 54.7 s, 1,244 MiB peak |
 | an item page, one visit (main site / demonstration node) | 6 requests, 111.5 KiB / 6 requests, 113.6 KiB |
 | MCP `search`, `links`, `ask` on 5,000 items (median of 20) | 80.20 ms, 1.86 ms, 8.01 ms per call |
 | hosting of both reference nodes on Cloudflare Pages | 0 USD / month (189 and 219 files against a 20,000-file Free-plan limit; static requests unlimited) |
-| axe-core violations, 4 builds, 239 pages, both colour schemes, at 1200 × 900 | 0 |
-| tokens per item, demonstration node, median (o200k_base) | 49 in llms.txt, 204 of chunk text, 981.5 as served in chunks.jsonl |
-| independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 20 areas: 78 pass and 0 fail, 14 vectors of those areas need a whole build or the publisher's writers and are not run |
+| axe-core violations, 4 builds, 250 pages, both colour schemes, at 1200 × 900 | 0 |
+| tokens per item, demonstration node, median (o200k_base) | 49 in llms.txt, 204 of chunk text, 1197.5 as served in chunks.jsonl |
+| independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 20 areas: 114 pass and 0 fail, 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer and are not run |
 | retrieval smoke run (`bench-v2`), demonstration node, search surface | recall@10 0.917, nDCG@10 0.737, P@1 0.583 (12 intents) |
-| npm package | 658 files, 1,257 KB packed, 4.23 MB unpacked; a runtime install holds 137 packages, the package included |
+| npm package | 993 files, 3,418 KB packed, 11.06 MB unpacked; a runtime install holds 88 packages, the package included |
 
 ---
 

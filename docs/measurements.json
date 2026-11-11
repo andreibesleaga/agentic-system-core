@@ -3,53 +3,51 @@
     "conformance": {
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch <dir>",
       "error_codes": {
-        "registered": 91,
-        "used": 91
+        "registered": 105,
+        "used": 105
       },
       "rule_coverage": {
-        "active": 332,
-        "any_check": 327,
-        "named_by_checker": 94,
-        "named_by_feature": 78,
-        "named_by_test": 325,
-        "no_check": 5,
+        "active": 374,
+        "any_check": 370,
+        "named_by_checker": 119,
+        "named_by_feature": 110,
+        "named_by_test": 369,
+        "no_check": 4,
         "uncovered": [
           "AGSC-00-19",
           "AGSC-01-32",
           "AGSC-03-21",
-          "AGSC-05-24",
           "AGSC-10-07"
         ],
-        "with_vector": 166,
-        "without_vector": 166
+        "with_vector": 211,
+        "without_vector": 163
       },
       "rule_coverage_by_chapter": {
         "active": {
-          "10": 18,
-          "11": 23,
+          "10": 19,
+          "11": 24,
           "00": 25,
-          "01": 38,
-          "02": 34,
-          "03": 18,
+          "01": 42,
+          "02": 35,
+          "03": 23,
           "04": 25,
-          "05": 35,
-          "06": 38,
-          "07": 23,
-          "08": 31,
-          "09": 24
+          "05": 44,
+          "06": 47,
+          "07": 29,
+          "08": 33,
+          "09": 28
         },
         "uncovered": {
           "10": 1,
           "00": 1,
           "01": 1,
-          "03": 1,
-          "05": 1
+          "03": 1
         }
       },
       "rules": {
-        "active": 332,
+        "active": 374,
         "reserved": 11,
-        "total": 343
+        "total": 385
       },
       "validators": {
         "validate-spec": {
@@ -98,75 +96,75 @@
         },
         "boundary": {
           "optional": 0,
-          "required": 35,
-          "total": 36,
+          "required": 42,
+          "total": 43,
           "withdrawn": 1
         },
         "build": {
-          "optional": 1,
-          "required": 19,
-          "total": 21,
-          "withdrawn": 1
+          "optional": 2,
+          "required": 26,
+          "total": 30,
+          "withdrawn": 2
         },
         "bundle": {
           "optional": 0,
-          "required": 9,
-          "total": 9,
-          "withdrawn": 0
+          "required": 19,
+          "total": 20,
+          "withdrawn": 1
         },
         "chunks": {
           "optional": 0,
-          "required": 7,
-          "total": 7,
-          "withdrawn": 0
+          "required": 12,
+          "total": 15,
+          "withdrawn": 3
         },
         "cli": {
           "optional": 0,
-          "required": 22,
-          "total": 24,
-          "withdrawn": 2
+          "required": 34,
+          "total": 38,
+          "withdrawn": 4
         },
         "compose": {
           "optional": 0,
-          "required": 15,
-          "total": 15,
+          "required": 27,
+          "total": 27,
           "withdrawn": 0
         },
         "conform": {
           "optional": 0,
-          "required": 3,
-          "total": 3,
-          "withdrawn": 0
+          "required": 4,
+          "total": 5,
+          "withdrawn": 1
         },
         "discovery": {
           "optional": 0,
-          "required": 15,
-          "total": 15,
-          "withdrawn": 0
+          "required": 27,
+          "total": 31,
+          "withdrawn": 4
         },
         "export": {
           "optional": 0,
-          "required": 2,
-          "total": 2,
+          "required": 4,
+          "total": 4,
           "withdrawn": 0
         },
         "frontmatter": {
           "optional": 0,
-          "required": 22,
-          "total": 22,
+          "required": 29,
+          "total": 29,
           "withdrawn": 0
         },
         "graph": {
           "optional": 0,
-          "required": 15,
-          "total": 16,
+          "required": 33,
+          "total": 34,
           "withdrawn": 1
         },
         "import": {
           "optional": 0,
-          "required": 3,
-          "total": 3,
-          "withdrawn": 0
+          "required": 7,
+          "total": 9,
+          "withdrawn": 2
         },
         "jcs": {
           "optional": 0,
@@ -176,20 +174,20 @@
         },
         "ledger": {
           "optional": 0,
-          "required": 6,
-          "total": 6,
-          "withdrawn": 0
+          "required": 8,
+          "total": 10,
+          "withdrawn": 2
         },
         "links": {
           "optional": 0,
-          "required": 9,
-          "total": 9,
+          "required": 19,
+          "total": 19,
           "withdrawn": 0
         },
         "lint": {
           "optional": 0,
-          "required": 28,
-          "total": 28,
+          "required": 48,
+          "total": 48,
           "withdrawn": 0
         },
         "prov": {
@@ -200,35 +198,35 @@
         },
         "slug": {
           "optional": 0,
-          "required": 6,
-          "total": 6,
+          "required": 7,
+          "total": 7,
           "withdrawn": 0
         }
       },
       "vector_run": {
         "fail": 0,
-        "pass": 243,
+        "pass": 374,
         "pending": 0,
-        "skip": 7,
-        "total": 250,
-        "withdrawn": 7
+        "skip": 23,
+        "total": 397,
+        "withdrawn": 23
       },
       "vectors": {
-        "optional": 1,
-        "required": 242,
-        "total": 250,
-        "withdrawn": 7
+        "optional": 2,
+        "required": 372,
+        "total": 397,
+        "withdrawn": 23
       }
     },
     "determinism": {
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch <dir>",
       "double_build": {
-        "compared": 49,
+        "compared": 61,
         "different": [],
         "only_left": [],
         "only_right": []
       },
-      "files_compared": 49,
+      "files_compared": 61,
       "os_matrix": {
         "note": "A second operating system cannot be measured on this machine; the CI matrix is the only place it can be run.",
         "ran_here": [
@@ -236,7 +234,7 @@
         ]
       },
       "tz_locale": {
-        "compared": 49,
+        "compared": 61,
         "different": [],
         "only_left": [],
         "only_right": []
@@ -698,7 +696,8 @@
         {
           "class": "imperative",
           "codes": [
-            "AGSC-E401"
+            "AGSC-E401",
+            "AGSC-E506"
           ],
           "expect": [
             "AGSC-E401"
@@ -1137,6 +1136,7 @@
           "class": "traversal",
           "codes": [
             "AGSC-E204",
+            "AGSC-E506",
             "AGSC-E902"
           ],
           "expect": [
@@ -1861,7 +1861,8 @@
         {
           "class": "prototype-key",
           "codes": [
-            "AGSC-E004"
+            "AGSC-E004",
+            "AGSC-E506"
           ],
           "expect": [
             "AGSC-E004"
@@ -1932,7 +1933,8 @@
         {
           "class": "traversal",
           "codes": [
-            "AGSC-E204"
+            "AGSC-E204",
+            "AGSC-E506"
           ],
           "expect": [
             "AGSC-E204"
@@ -2249,159 +2251,188 @@
         "index_bytes": 1048576,
         "page_bytes": 102400
       },
-      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,1000,5000,10000 --runs 3",
+      "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer perf --scratch <dir> --sizes 100,500,501,1000,5000,10000 --runs 3",
       "machine": {
         "arch": "x64",
         "cpus": 16,
         "model": "AMD Ryzen 7 5800H with Radeon Graphics",
         "node": "v24.18.0",
         "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
-        "total_mem_bytes": 33560780800
+        "total_mem_bytes": 33560788992
       },
       "rows": [
         {
           "bytes_per_item_index": 319,
-          "chunks_bytes": 647461,
-          "chunks_bytes_per_item": 6475,
-          "files": 343,
-          "html_pages": 115,
-          "html_largest_bytes": 17894,
-          "html_largest_path": "search/index.html",
-          "html_median_bytes": 6337,
+          "chunks_bytes": 710676,
+          "chunks_bytes_per_item": 7107,
+          "files": 355,
+          "html_pages": 116,
+          "html_largest_bytes": 32546,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 10254,
           "html_over_budget": 0,
           "index_bytes_largest": 31853,
           "index_shards": 0,
           "items": 100,
-          "largest_page_bytes": 647461,
-          "largest_page_path": "chunks.jsonl",
-          "ms_median": 1605,
+          "largest_page_bytes": 4324920,
+          "largest_page_path": "query/vendor/oxigraph-0.5.13/web_bg.wasm",
+          "ms_median": 2334,
           "ms_runs": [
-            1683,
-            1551,
-            1605
+            2334,
+            2354,
+            2249
           ],
-          "output_bytes": 3181415,
-          "rss_kb_median": 123576,
+          "output_bytes": 8349585,
+          "rss_kb_median": 179344,
           "rss_kb_runs": [
-            123576,
-            124836,
-            122648
+            178240,
+            179344,
+            180184
           ]
         },
         {
           "bytes_per_item_index": 352,
-          "chunks_bytes": 3249673,
-          "chunks_bytes_per_item": 6499,
-          "files": 1548,
-          "html_pages": 516,
-          "html_largest_bytes": 80292,
+          "chunks_bytes": 3565488,
+          "chunks_bytes_per_item": 7131,
+          "files": 1559,
+          "html_pages": 517,
+          "html_largest_bytes": 95146,
           "html_largest_path": "clusters/bench-cluster/index.html",
-          "html_median_bytes": 6351,
+          "html_median_bytes": 10291,
           "html_over_budget": 0,
           "index_bytes_largest": 175986,
           "index_shards": 2,
           "items": 500,
-          "largest_page_bytes": 3243064,
-          "largest_page_path": "chunks-01.jsonl",
-          "ms_median": 4056,
+          "largest_page_bytes": 4324920,
+          "largest_page_path": "query/vendor/oxigraph-0.5.13/web_bg.wasm",
+          "ms_median": 5876,
           "ms_runs": [
-            4169,
-            4056,
-            4050
+            5876,
+            5845,
+            6412
           ],
-          "output_bytes": 15225756,
-          "rss_kb_median": 273256,
+          "output_bytes": 22172233,
+          "rss_kb_median": 311064,
           "rss_kb_runs": [
-            273256,
-            276100,
-            270036
+            311108,
+            310932,
+            311064
+          ]
+        },
+        {
+          "bytes_per_item_index": 351,
+          "chunks_bytes": 3572590,
+          "chunks_bytes_per_item": 7131,
+          "files": 1565,
+          "html_pages": 521,
+          "html_largest_bytes": 95361,
+          "html_largest_path": "clusters/bench-cluster/index.html",
+          "html_median_bytes": 10291,
+          "html_over_budget": 0,
+          "index_bytes_largest": 175984,
+          "index_shards": 2,
+          "items": 501,
+          "largest_page_bytes": 4324920,
+          "largest_page_path": "query/vendor/oxigraph-0.5.13/web_bg.wasm",
+          "ms_median": 6238,
+          "ms_runs": [
+            10088,
+            6238,
+            5749
+          ],
+          "output_bytes": 22213412,
+          "rss_kb_median": 311924,
+          "rss_kb_runs": [
+            311924,
+            311980,
+            300352
           ]
         },
         {
           "bytes_per_item_index": 176,
-          "chunks_bytes": 6502350,
-          "chunks_bytes_per_item": 6502,
-          "files": 3054,
-          "html_pages": 1020,
-          "html_largest_bytes": 80630,
+          "chunks_bytes": 7133915,
+          "chunks_bytes_per_item": 7134,
+          "files": 3065,
+          "html_pages": 1021,
+          "html_largest_bytes": 95481,
           "html_largest_path": "clusters/bench-cluster/index.html",
-          "html_median_bytes": 6352,
+          "html_median_bytes": 10294,
           "html_over_budget": 0,
           "index_bytes_largest": 176303,
           "index_shards": 3,
           "items": 1000,
-          "largest_page_bytes": 3524291,
-          "largest_page_path": "llms-full.txt",
-          "ms_median": 7270,
+          "largest_page_bytes": 4324920,
+          "largest_page_path": "query/vendor/oxigraph-0.5.13/web_bg.wasm",
+          "ms_median": 10215,
           "ms_runs": [
-            7465,
-            7270,
-            7223
+            10270,
+            10056,
+            10215
           ],
-          "output_bytes": 30204482,
-          "rss_kb_median": 386560,
+          "output_bytes": 39441208,
+          "rss_kb_median": 450392,
           "rss_kb_runs": [
-            386560,
-            380536,
-            391880
+            450392,
+            396176,
+            452828
           ]
         },
         {
           "bytes_per_item_index": 36,
-          "chunks_bytes": 32655503,
-          "chunks_bytes_per_item": 6531,
-          "files": 15102,
-          "html_pages": 5052,
-          "html_largest_bytes": 81622,
+          "chunks_bytes": 35813068,
+          "chunks_bytes_per_item": 7163,
+          "files": 15113,
+          "html_pages": 5053,
+          "html_largest_bytes": 96567,
           "html_largest_path": "clusters/bench-cluster/index.html",
-          "html_median_bytes": 6366,
+          "html_median_bytes": 10331,
           "html_over_budget": 0,
           "index_bytes_largest": 177854,
           "index_shards": 11,
           "items": 5000,
           "largest_page_bytes": 17650291,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 34593,
+          "ms_median": 49934,
           "ms_runs": [
-            34924,
-            34467,
-            34593
+            50053,
+            47531,
+            49934
           ],
-          "output_bytes": 150511304,
-          "rss_kb_median": 1051856,
+          "output_bytes": 178153706,
+          "rss_kb_median": 1082352,
           "rss_kb_runs": [
-            1055608,
-            1051248,
-            1051856
+            1082352,
+            1065952,
+            1083068
           ]
         },
         {
           "bytes_per_item_index": 18,
-          "chunks_bytes": 65346976,
-          "chunks_bytes_per_item": 6535,
-          "files": 30162,
-          "html_pages": 10092,
-          "html_largest_bytes": 81626,
+          "chunks_bytes": 71662041,
+          "chunks_bytes_per_item": 7166,
+          "files": 30173,
+          "html_pages": 10093,
+          "html_largest_bytes": 96563,
           "html_largest_path": "clusters/bench-cluster/index.html",
-          "html_median_bytes": 6367,
+          "html_median_bytes": 10334,
           "html_over_budget": 0,
           "index_bytes_largest": 177863,
           "index_shards": 21,
           "items": 10000,
           "largest_page_bytes": 35307799,
           "largest_page_path": "llms-full.txt",
-          "ms_median": 86638,
+          "ms_median": 119132,
           "ms_runs": [
-            85153,
-            86638,
-            100338
+            119132,
+            128606,
+            116680
           ],
-          "output_bytes": 300903945,
-          "rss_kb_median": 1820732,
+          "output_bytes": 351573556,
+          "rss_kb_median": 1732476,
           "rss_kb_runs": [
-            1820732,
-            1855564,
-            1701536
+            1725312,
+            1733732,
+            1732476
           ]
         }
       ],
@@ -2471,11 +2502,11 @@
             "chunks": {
               "documents": 21,
               "queries_scored": 8,
-              "ndcg": 0.6956,
+              "ndcg": 0.6978,
               "p1": 0.375,
               "precision": 0.1,
               "recall": 1,
-              "rr": 0.599
+              "rr": 0.6012
             },
             "llms": {
               "documents": 14,
@@ -2489,11 +2520,11 @@
             "search": {
               "documents": 17,
               "queries_scored": 8,
-              "ndcg": 0.6939,
+              "ndcg": 0.6954,
               "p1": 0.5,
               "precision": 0.0875,
               "recall": 0.875,
-              "rr": 0.6453
+              "rr": 0.6467
             }
           },
           "verb": "bench"
@@ -2503,25 +2534,29 @@
     "parity": {
       "call_list": {
         "file": "bench/corpus/parity-calls.json",
-        "fixed": 25,
-        "per_item": 4,
-        "version": "parity-calls-v1"
+        "fixed": 34,
+        "per_item": 7,
+        "version": "parity-calls-v2"
       },
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer parity --scratch <dir> --nodes <name>=<bundle dir>,…",
       "nodes": {
         "fixture": {
           "answer_types": {
             "items": 5,
-            "error": 15,
+            "error": 18,
             "answer": 3,
             "verdict": 5,
+            "none": 2,
+            "brief": 4,
+            "findings": 4,
+            "explanation": 5,
             "item": 3,
             "links": 3,
             "proposal": 3
           },
-          "calls": 37,
+          "calls": 55,
           "differing": [],
-          "equal": 35,
+          "equal": 53,
           "items": 3,
           "items_published": 3,
           "per_tool": {
@@ -2569,6 +2604,21 @@
               "calls": 1,
               "equal": 1,
               "required_difference": 0
+            },
+            "brief": {
+              "calls": 6,
+              "equal": 6,
+              "required_difference": 0
+            },
+            "check": {
+              "calls": 5,
+              "equal": 5,
+              "required_difference": 0
+            },
+            "explain": {
+              "calls": 7,
+              "equal": 7,
+              "required_difference": 0
             }
           },
           "required_difference": [
@@ -2583,23 +2633,27 @@
           ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
-          "transport_equal": 37,
+          "transport_equal": 55,
           "unpublished_calls": 0,
           "unpublished_answered_e301": 0
         },
         "patterns": {
           "answer_types": {
             "items": 5,
-            "error": 15,
+            "error": 20,
             "answer": 3,
             "verdict": 44,
+            "none": 2,
+            "brief": 43,
+            "findings": 43,
             "item": 42,
             "links": 42,
-            "proposal": 42
+            "proposal": 42,
+            "explanation": 42
           },
-          "calls": 193,
+          "calls": 328,
           "differing": [],
-          "equal": 191,
+          "equal": 326,
           "items": 42,
           "items_published": 42,
           "per_tool": {
@@ -2647,6 +2701,21 @@
               "calls": 1,
               "equal": 1,
               "required_difference": 0
+            },
+            "brief": {
+              "calls": 45,
+              "equal": 45,
+              "required_difference": 0
+            },
+            "check": {
+              "calls": 44,
+              "equal": 44,
+              "required_difference": 0
+            },
+            "explain": {
+              "calls": 46,
+              "equal": 46,
+              "required_difference": 0
             }
           },
           "required_difference": [
@@ -2661,23 +2730,27 @@
           ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
-          "transport_equal": 193,
+          "transport_equal": 328,
           "unpublished_calls": 0,
           "unpublished_answered_e301": 0
         },
         "main": {
           "answer_types": {
             "items": 5,
-            "error": 15,
+            "error": 20,
             "answer": 3,
             "verdict": 19,
+            "none": 2,
+            "brief": 18,
+            "findings": 18,
             "item": 17,
             "links": 17,
-            "proposal": 17
+            "proposal": 17,
+            "explanation": 17
           },
-          "calls": 93,
+          "calls": 153,
           "differing": [],
-          "equal": 91,
+          "equal": 151,
           "items": 17,
           "items_published": 17,
           "per_tool": {
@@ -2725,6 +2798,21 @@
               "calls": 1,
               "equal": 1,
               "required_difference": 0
+            },
+            "brief": {
+              "calls": 20,
+              "equal": 20,
+              "required_difference": 0
+            },
+            "check": {
+              "calls": 19,
+              "equal": 19,
+              "required_difference": 0
+            },
+            "explain": {
+              "calls": 21,
+              "equal": 21,
+              "required_difference": 0
             }
           },
           "required_difference": [
@@ -2739,18 +2827,18 @@
           ],
           "stdio_exit": 0,
           "stdio_stderr_bytes": 0,
-          "transport_equal": 93,
+          "transport_equal": 153,
           "unpublished_calls": 0,
           "unpublished_answered_e301": 0
         }
       },
       "note": "Compared as values after a JSON round trip, which is what AGSC-09-16 claims; never byte-identical across the browser boundary. A `remember` call that declares no operator is the one input on which AGSC-09-16 requires the two transports to differ (the server refuses with AGSC-E003, the page proposes with prov.operator absent and AGSC-E506); such a call is counted under required_difference when both answers have exactly that shape, and under differing otherwise.",
       "totals": {
-        "calls": 323,
+        "calls": 536,
         "differing": 0,
-        "equal": 317,
+        "equal": 530,
         "required_difference": 6,
-        "transport_equal": 323,
+        "transport_equal": 536,
         "unpublished_answered_e301": 0,
         "unpublished_calls": 0
       }
@@ -2767,10 +2855,10 @@
             "cl100k_base": {
               "chunks_line": {
                 "items": 3,
-                "max": 1017,
-                "median": 958,
-                "min": 180,
-                "total": 2155
+                "max": 1097,
+                "median": 1073,
+                "min": 201,
+                "total": 2371
               },
               "chunks_text": {
                 "items": 3,
@@ -2807,10 +2895,10 @@
             "o200k_base": {
               "chunks_line": {
                 "items": 3,
-                "max": 1004,
-                "median": 945,
-                "min": 177,
-                "total": 2126
+                "max": 1084,
+                "median": 1055,
+                "min": 197,
+                "total": 2336
               },
               "chunks_text": {
                 "items": 3,
@@ -2854,17 +2942,17 @@
             "cl100k_base": {
               "chunks_line": {
                 "items": 42,
-                "max": 1242,
-                "median": 993,
-                "min": 174,
-                "total": 28721
+                "max": 1472,
+                "median": 1209,
+                "min": 200,
+                "total": 34584
               },
               "chunks_text": {
                 "items": 42,
                 "max": 246,
                 "median": 204,
                 "min": 10,
-                "total": 5248
+                "total": 5251
               },
               "llms_line": {
                 "items": 22,
@@ -2873,38 +2961,38 @@
                 "min": 38,
                 "total": 1058
               },
-              "llms_file": 1338,
+              "llms_file": 1342,
               "ctx_section": {
                 "items": 42,
                 "max": 518,
                 "median": 444,
                 "min": 61,
-                "total": 12022
+                "total": 12025
               },
-              "ctx_file": 12271,
+              "ctx_file": 12278,
               "index_row": {
                 "items": 42,
                 "max": 212,
                 "median": 166.5,
                 "min": 29,
-                "total": 4897
+                "total": 4896
               },
-              "index_file": 5041
+              "index_file": 5040
             },
             "o200k_base": {
               "chunks_line": {
                 "items": 42,
-                "max": 1232,
-                "median": 981.5,
-                "min": 172,
-                "total": 28506
+                "max": 1462,
+                "median": 1197.5,
+                "min": 199,
+                "total": 34359
               },
               "chunks_text": {
                 "items": 42,
                 "max": 245,
                 "median": 204,
                 "min": 10,
-                "total": 5225
+                "total": 5228
               },
               "llms_line": {
                 "items": 22,
@@ -2913,23 +3001,23 @@
                 "min": 39,
                 "total": 1056
               },
-              "llms_file": 1329,
+              "llms_file": 1333,
               "ctx_section": {
                 "items": 42,
                 "max": 528,
                 "median": 439,
                 "min": 60,
-                "total": 12022
+                "total": 12025
               },
-              "ctx_file": 12267,
+              "ctx_file": 12274,
               "index_row": {
                 "items": 42,
                 "max": 221,
                 "median": 166,
                 "min": 29,
-                "total": 4942
+                "total": 4941
               },
-              "index_file": 5086
+              "index_file": 5085
             }
           }
         },
@@ -2941,82 +3029,82 @@
             "cl100k_base": {
               "chunks_line": {
                 "items": 17,
-                "max": 1033,
-                "median": 272,
-                "min": 179,
-                "total": 5778
+                "max": 1161,
+                "median": 306,
+                "min": 213,
+                "total": 6659
               },
               "chunks_text": {
                 "items": 17,
-                "max": 475,
-                "median": 100,
+                "max": 490,
+                "median": 99,
                 "min": 20,
-                "total": 2123
+                "total": 2138
               },
               "llms_line": {
                 "items": 14,
                 "max": 75,
-                "median": 40,
+                "median": 40.5,
                 "min": 35,
-                "total": 607
+                "total": 609
               },
               "llms_file": 784,
               "ctx_section": {
                 "items": 17,
-                "max": 644,
+                "max": 659,
                 "median": 144,
                 "min": 66,
-                "total": 3178
+                "total": 3206
               },
-              "ctx_file": 3425,
+              "ctx_file": 3451,
               "index_row": {
                 "items": 17,
-                "max": 146,
+                "max": 148,
                 "median": 30,
-                "min": 26,
-                "total": 723
+                "min": 27,
+                "total": 722
               },
-              "index_file": 761
+              "index_file": 760
             },
             "o200k_base": {
               "chunks_line": {
                 "items": 17,
-                "max": 1029,
-                "median": 270,
-                "min": 176,
-                "total": 5742
+                "max": 1157,
+                "median": 304,
+                "min": 210,
+                "total": 6620
               },
               "chunks_text": {
                 "items": 17,
-                "max": 474,
-                "median": 100,
+                "max": 489,
+                "median": 99,
                 "min": 20,
-                "total": 2119
+                "total": 2134
               },
               "llms_line": {
                 "items": 14,
                 "max": 76,
-                "median": 40,
+                "median": 40.5,
                 "min": 35,
-                "total": 609
+                "total": 611
               },
               "llms_file": 782,
               "ctx_section": {
                 "items": 17,
-                "max": 643,
+                "max": 658,
                 "median": 144,
                 "min": 66,
-                "total": 3176
+                "total": 3204
               },
-              "ctx_file": 3419,
+              "ctx_file": 3445,
               "index_row": {
                 "items": 17,
-                "max": 146,
-                "median": 31,
-                "min": 26,
-                "total": 725
+                "max": 148,
+                "median": 30,
+                "min": 27,
+                "total": 723
               },
-              "index_file": 763
+              "index_file": 761
             }
           }
         }
@@ -3114,6 +3202,13 @@
               "rules": [],
               "violations": 0
             },
+            "query index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "search index": {
               "checks": 2,
               "nodes": 0,
@@ -3136,20 +3231,20 @@
               "violations": 0
             }
           },
-          "checks": 32,
-          "pages": 16,
+          "checks": 34,
+          "pages": 17,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 3499,
-              "path": "concepts/supervisor/index.html"
+              "bytes": 21947,
+              "path": "query/index.html"
             },
-            "median_bytes": 1939,
+            "median_bytes": 2378,
             "over_budget": [],
-            "pages": 17,
-            "total_bytes": 37372
+            "pages": 18,
+            "total_bytes": 78301
           }
         },
         "patterns": {
@@ -3245,6 +3340,13 @@
               "rules": [],
               "violations": 0
             },
+            "query index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "search index": {
               "checks": 2,
               "nodes": 0,
@@ -3267,32 +3369,25 @@
               "violations": 0
             }
           },
-          "checks": 176,
-          "pages": 88,
+          "checks": 178,
+          "pages": 89,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 16869,
-              "path": "legal/index.html"
+              "bytes": 25535,
+              "path": "query/index.html"
             },
-            "median_bytes": 3057,
+            "median_bytes": 3636,
             "over_budget": [],
-            "pages": 89,
-            "total_bytes": 388878
+            "pages": 90,
+            "total_bytes": 558440
           }
         },
         "main-engine": {
           "by_type": {
             "boards page": {
-              "checks": 2,
-              "nodes": 0,
-              "pages": 1,
-              "rules": [],
-              "violations": 0
-            },
-            "changelog index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3390,6 +3485,13 @@
               "rules": [],
               "violations": 0
             },
+            "query index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "search index": {
               "checks": 2,
               "nodes": 0,
@@ -3419,13 +3521,13 @@
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 10551,
-              "path": "legal/index.html"
+              "bytes": 21966,
+              "path": "query/index.html"
             },
-            "median_bytes": 4024,
+            "median_bytes": 4795.5,
             "over_budget": [],
             "pages": 36,
-            "total_bytes": 140595
+            "total_bytes": 187218
           }
         },
         "main-site": {
@@ -3486,6 +3588,13 @@
               "rules": [],
               "violations": 0
             },
+            "conformance index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "docs index": {
               "checks": 2,
               "nodes": 0,
@@ -3504,6 +3613,13 @@
               "checks": 16,
               "nodes": 0,
               "pages": 8,
+              "rules": [],
+              "violations": 0
+            },
+            "docs/requirements subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
               "rules": [],
               "violations": 0
             },
@@ -3529,6 +3645,13 @@
               "violations": 0
             },
             "gates index": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "graph index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3571,9 +3694,9 @@
               "violations": 0
             },
             "ns page": {
-              "checks": 4,
+              "checks": 6,
               "nodes": 0,
-              "pages": 2,
+              "pages": 3,
               "rules": [],
               "violations": 0
             },
@@ -3585,6 +3708,13 @@
               "violations": 0
             },
             "procedures page": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "query index": {
               "checks": 2,
               "nodes": 0,
               "pages": 1,
@@ -3619,6 +3749,27 @@
               "rules": [],
               "violations": 0
             },
+            "specs/00-overview subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "specs/01-bundle subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
+            "specs/05-graph subpage": {
+              "checks": 2,
+              "nodes": 0,
+              "pages": 1,
+              "rules": [],
+              "violations": 0
+            },
             "specs/06-surfaces subpage": {
               "checks": 2,
               "nodes": 0,
@@ -3627,9 +3778,9 @@
               "violations": 0
             },
             "specs/09-conformance subpage": {
-              "checks": 2,
+              "checks": 4,
               "nodes": 0,
-              "pages": 1,
+              "pages": 2,
               "rules": [],
               "violations": 0
             },
@@ -3648,20 +3799,20 @@
               "violations": 0
             }
           },
-          "checks": 200,
-          "pages": 100,
+          "checks": 218,
+          "pages": 109,
           "third_party_requests": 0,
           "violations": 0,
           "weights": {
             "budget_bytes": 100000,
             "largest": {
-              "bytes": 92845,
-              "path": "specs/00-overview/index.html"
+              "bytes": 96082,
+              "path": "specs/09-conformance/index.html"
             },
-            "median_bytes": 12259,
+            "median_bytes": 14890.5,
             "over_budget": [],
-            "pages": 101,
-            "total_bytes": 2104024
+            "pages": 110,
+            "total_bytes": 2776733
           }
         }
       },
@@ -3679,52 +3830,52 @@
       ],
       "versions": {
         "axe_core": "4.13.0",
-        "playwright_core": "1.62.1"
+        "playwright_core": "1.61.1"
       }
     },
     "package": {
       "command": "npm pack --dry-run --json",
-      "files": 658,
-      "packed_bytes": 1257371,
-      "unpacked_bytes": 4233981
+      "files": 993,
+      "packed_bytes": 3417692,
+      "unpacked_bytes": 11058497
     },
     "install": {
       "command": "SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer install --scratch <dir>",
       "cold_start": {
         "build": {
-          "modules_loaded": 333,
+          "modules_loaded": 336,
           "ms_runs": [
+            1154,
             1135,
-            1117,
-            1138,
-            1150,
-            1121
+            1142,
+            1118,
+            1128
           ],
           "protocol_packages": [],
           "rss_kb_runs": [
-            126568,
-            127400,
-            123912,
-            127048,
-            126456
+            126428,
+            126980,
+            126712,
+            127520,
+            127396
           ]
         },
         "lint": {
-          "modules_loaded": 332,
+          "modules_loaded": 335,
           "ms_runs": [
-            857,
-            873,
-            875,
-            870,
-            861
+            889,
+            889,
+            886,
+            862,
+            864
           ],
           "protocol_packages": [],
           "rss_kb_runs": [
-            104364,
-            103992,
-            104016,
-            104064,
-            104556
+            103972,
+            104124,
+            104128,
+            104696,
+            104540
           ]
         },
         "mcp_answering_nothing": {
@@ -3740,62 +3891,62 @@
           "modules_loaded": 0,
           "ms_runs": [
             60,
+            62,
             58,
-            57,
-            59,
-            57
+            58,
+            60
           ],
           "protocol_packages": [],
           "rss_kb_runs": [
-            44416,
-            44628,
-            44624,
-            44624,
-            44624
+            44496,
+            44496,
+            44492,
+            44500,
+            44496
           ]
         },
         "version": {
-          "modules_loaded": 173,
+          "modules_loaded": 174,
           "ms_runs": [
-            240,
+            238,
+            237,
             236,
-            234,
-            239,
-            238
+            231,
+            248
           ],
           "protocol_packages": [],
           "rss_kb_runs": [
-            66676,
-            66572,
-            66884,
-            67048,
-            67404
+            67336,
+            66924,
+            66808,
+            66864,
+            66632
           ]
         }
       },
       "fixture": "tests/fixtures/minimal",
-      "install_bytes": 67694400,
+      "install_bytes": 70619586,
       "load_ms_runs": {
         "@modelcontextprotocol/server": [
-          229,
-          248,
-          233,
-          240,
-          231
+          237,
+          236,
+          234,
+          241,
+          235
         ],
         "@modelcontextprotocol/node": [
-          282,
-          284,
-          281,
-          294,
-          292
+          291,
+          291,
+          289,
+          293,
+          287
         ],
         "@a2a-js/sdk": [
-          89,
-          81,
+          82,
+          82,
+          82,
           80,
-          81,
-          81
+          88
         ]
       },
       "machine": {
@@ -3804,7 +3955,7 @@
         "platform": "Linux 6.6.114.1-microsoft-standard-WSL2"
       },
       "package_bytes": {
-        "agentic-system-core": 10730651,
+        "agentic-system-core": 11058497,
         "oxigraph": 8796868,
         "@modelcontextprotocol/server": 7023377,
         "zod": 6148944,
@@ -3814,12 +3965,14 @@
         "@traqula/chevrotain": 2317921,
         "jsonld": 2075535,
         "markdown-it": 2064760,
+        "csv-parse": 1610302,
         "@traqula/rules-sparql-1-1": 1609201,
         "@modelcontextprotocol/core": 1370840,
-        "fast-xml-parser": 1315394,
-        "hono": 1303825,
+        "fast-xml-parser": 1335158,
+        "hono": 1307513,
         "undici": 1205968,
         "ajv": 1033496,
+        "csv-stringify": 963217,
         "n3": 826106,
         "@traqula/core": 799071,
         "yaml": 686297,
@@ -3830,7 +3983,7 @@
         "ky": 280722,
         "fast-uri": 241202,
         "fast-xml-builder": 223768,
-        "jose": 221809,
+        "jose": 222078,
         "readable-stream": 218700,
         "commander": 207368,
         "event-target-shim": 188883,
@@ -3839,7 +3992,7 @@
         "path-expression-matcher": 170626,
         "@modelcontextprotocol/node": 153446,
         "linkify-it": 149190,
-        "@hono/node-server": 140053,
+        "@hono/node-server": 140153,
         "structured-headers": 135690,
         "undici-types": 120779,
         "@toon-format/toon": 108167,
@@ -3891,20 +4044,29 @@
         "@types/rdfjs__namespace": 3918,
         "require-from-string": 3422
       },
-      "package_version": "1.0.1",
-      "packages": 86,
+      "package_version": "1.1.0",
+      "packages": 88,
       "runs": 5,
       "tarball": {
-        "files": 879,
-        "packed_bytes": 3356330,
-        "unpacked_bytes": 10730651
+        "files": 993,
+        "packed_bytes": 3417692,
+        "unpacked_bytes": 11058497
       }
     }
   },
   "schema": "agsc.measurements.v1",
   "measured": [
+    "conformance",
+    "determinism",
+    "security",
+    "perf",
+    "retrieval",
+    "parity",
+    "tokens",
+    "a11y",
+    "package",
     "install"
   ],
   "measured_for": "2026-01-01",
-  "spec_version": "1.0.0"
+  "spec_version": "1.1.0"
 }

@@ -144,7 +144,8 @@ section lists every file of a 1.0.1 node whose bytes change.
   reaches the network; a person moves the files with each tool's own client.
 - The benchmark kit: `node bench/measure.js --all`, the agent-side study's kit under `bench/queries/`,
   `tools/bench --dry-run`, and `tools/lint-claims --record`, which holds the numbers of a page to the
-  measurement record (`docs/BENCHMARKS.md`).
+  measurement record (`docs/BENCHMARKS.md`). The record `docs/measurements.json` and
+  `docs/MEASUREMENTS.md` give all ten layers measured on the 1.1.0 tree.
 - Examples: three worked blueprints under `examples/blueprints/` and `examples/demos/domain-layer/`.
 - The REUSE layout: `REUSE.toml` and `LICENSES/` (REUSE 3.3).
 

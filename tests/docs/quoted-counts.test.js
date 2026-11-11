@@ -209,7 +209,7 @@ test('the summary table of docs/MEASUREMENTS.md quotes the record', () => {
   assert.ok(text.includes(`| vector run | ${run.pass} pass, ${run.fail} fail, ${run.skip} skipped (the ${run.withdrawn} withdrawn) |`),
     'the summary row of the vector run is not the record\'s');
   const v = c.vectors;
-  assert.ok(text.includes(`Of the ${v.total} vectors, ${v.required} are required, ${v.optional} is optional and ${v.withdrawn} are withdrawn`),
+  assert.ok(text.includes(`Of the ${v.total} vectors, ${v.required} are required, ${v.optional} ${v.optional === 1 ? 'is' : 'are'} optional and ${v.withdrawn} are withdrawn`),
     'the sentence that splits the vectors is not the record\'s');
   const s = RECORD.layers.security.totals;
   assert.ok(text.includes(`| security floor: seeded faults stopped | ${s.handled} of ${s.faults}, each under its rule's code (${s.detected} detected, ${s.refused} refused, ${s.neutralised} neutralised, ${s.finished} finished; none missed)`),
