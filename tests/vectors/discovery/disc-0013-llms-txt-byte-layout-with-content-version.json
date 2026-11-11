@@ -43,7 +43,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). AGSC-06-13a now puts the blockquote summary straight after the H1 and the provenance comment after the summary, escapes the backslash, `[`, `]` and `(` in a link line, and lets a restricted node leave out the bundle_version line; the expected bytes of this case change in all three respects. Superseded by disc-0024.",
   "rule": "AGSC-06-13a",

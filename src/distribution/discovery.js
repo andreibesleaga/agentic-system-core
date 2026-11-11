@@ -22,6 +22,7 @@ const surfaces = require('../boundary/surfaces.js');
 const { sha256Field } = require('../knowledge/digest-field.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
+const { SPEC_VERSION } = require('../shared/spec-version.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one substitutable constant. */
@@ -108,11 +109,6 @@ const KNOWN_ATTRIBUTES = Object.freeze([
  */
 const OPEN_WHEN_RESTRICTED = Object.freeze(['/graph.jsonld', '/llms.txt']);
 
-/**
- * The MAJOR.MINOR of the specification this reader implements (AGSC-00-15); a caller
- * that knows its full version passes it as `options.specVersion`.
- */
-const OWN_SPEC_VERSION = '1.0';
 
 /** The `{major, minor}` of a version string, or `null` when it names none. */
 function majorMinor(version) {
@@ -446,7 +442,7 @@ function check(doc, options = {}) {
     // AGSC-11-20: a restricted node keeps `agsc-generated-at` and `agsc-spec-version`
     // at every Level, so the Level-0 omission of AGSC-06-08a does not reach them there.
     const gatedAnchor = [].concat(anchorLink['agsc-visibility'] || []).map(String).includes('restricted');
-    const newer = newerMinor(declared, options.specVersion == null ? OWN_SPEC_VERSION : options.specVersion);
+    const newer = newerMinor(declared, options.specVersion == null ? SPEC_VERSION : options.specVersion);
     for (const relation of Object.keys(context)) {
       if (relation === 'anchor') continue;
       if (!ALLOWED_RELATIONS.includes(relation)) {

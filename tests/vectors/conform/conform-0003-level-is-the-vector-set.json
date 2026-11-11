@@ -12,7 +12,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "2026-10-29: the case asserts the Level-1 area list in an order that AGSC-10-15 left unfixed; from 1.1 the order is fixed (the order of AGSC-09-04) and differs from the list it states. Republished as conform-0005, which asserts every Level.",
   "rule": "AGSC-10-15",

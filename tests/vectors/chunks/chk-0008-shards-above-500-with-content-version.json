@@ -23,7 +23,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). The case pins the manifest of a sharded export; AGSC-06-31 now says that the digest, the count and the chunk-set commitment of AGSC-06-44 cover the shards read through this manifest, and the successor chk-0013 restates the case beside them. The manifest bytes are unchanged. Superseded by chk-0013.",
   "rule": "AGSC-06-31",

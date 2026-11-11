@@ -352,6 +352,42 @@ describe('1b. the MCP Registry entry carries the same version', () => {
   });
 });
 
+describe('1c. every other file that states the package version', () => {
+  // A seeded wrong version in any of them stops the dry run (B13-WP1, test first).
+  const sites = {
+    '.claude-plugin/marketplace.json': `${JSON.stringify({ plugins: [{ name: 'p', version: '0.0.2' }] }, null, 2)}\n`,
+    '.github/mcpb/manifest.json': `${JSON.stringify({ manifest_version: '0.3', name: 'p', version: '0.0.2' }, null, 2)}\n`,
+    'CITATION.cff': 'cff-version: 1.2.0\nversion: 0.0.2\ndate-released: 2026-01-01\n',
+    'plugins/agentic-system-core/.claude-plugin/plugin.json': `${JSON.stringify({ name: 'p', version: '0.0.2' }, null, 2)}\n`,
+    'plugins/agentic-system-core/skills/agentic-system-core/SKILL.md': '---\nname: p\nmetadata:\n  version: "0.0.2"\n---\n',
+    'skills/agentic-system-core/SKILL.md': '---\nname: p\nmetadata:\n  version: "0.0.2"\n---\n',
+  };
+
+  it('each file at the version of package.json, or absent (a fork may carry none), is no finding', () => {
+    const { code, json } = envelope('release', [distribution(sites)]);
+    assert.deepEqual(json.findings.filter((f) => Object.hasOwn(sites, f.file)), [], JSON.stringify(json.findings));
+    assert.equal(code, 0, JSON.stringify(json.findings));
+    assert.deepEqual(envelope('release', [distribution()]).json.findings.filter((f) => Object.hasOwn(sites, f.file)), []);
+  });
+
+  for (const file of Object.keys(sites)) {
+    it(`a wrong version in ${file} is AGSC-E202 and fails the dry run`, () => {
+      const seeded = { ...sites, [file]: sites[file].replace('0.0.2', '0.0.1') };
+      const { code, json } = envelope('release', [distribution(seeded)]);
+      const found = json.findings.filter((f) => f.file === file).map((f) => [f.code, /0\.0\.1/u.test(f.message)]);
+      assert.deepEqual([code, found], [1, [['AGSC-E202', true]]], JSON.stringify(json.findings));
+    });
+  }
+
+  it('--apply writes the new version into each, and the release date into the citation file', () => {
+    const dir = distribution(sites);
+    assert.equal(release.run(['--version', '1.0.0', '--apply', dir], { env: { SOURCE_DATE_EPOCH: '1767225600' }, err: () => {}, out: () => {} }), 0);
+    for (const file of Object.keys(sites)) assert.match(fs.readFileSync(path.join(dir, file), 'utf8'), /^(?![^]*0\.0\.2)[^]*1\.0\.0/u, file);
+    assert.match(fs.readFileSync(path.join(dir, 'CITATION.cff'), 'utf8'), /^date-released: 2026-01-01$/mu);
+    assert.equal(envelope('release', [dir]).code, 0);
+  });
+});
+
 describe('5. --apply, and the checklist', () => {
   it('writes the two versions and the changelog heading, and nothing else', () => {
     const dir = distribution();
@@ -397,15 +433,22 @@ describe('5. --apply, and the checklist', () => {
 describe('the real distribution passes its own release lane', () => {
   it('exits 0 with no finding', () => {
     const { code, json } = envelope('release', []);
-    // A CI checkout has no Python repository beside it: the one finding then allowed
-    // is the warning that says the PyPI version was NOT checked (never an error).
-    const sibling = path.join(__dirname, '..', '..', '..', 'agentic-system-core-python', 'pyproject.toml');
-    const findings = fs.existsSync(sibling) ? json.findings
-      : json.findings.filter((f) => !(f.code === 'AGSC-E901' && f.severity === 'warn' && /not checked out beside/u.test(f.message)));
+    // A CI checkout has no Python repository beside it: the one finding then allowed is the
+    // warning that the PyPI version was NOT checked. Where ACCEPTANCE_PYTHON_PACKAGE names the
+    // Python checkout (as for the acceptance lane), the PyPI step is judged on that one instead.
+    const named = process.env.ACCEPTANCE_PYTHON_PACKAGE;
+    const absent = !fs.existsSync(path.join(REPO, '..', 'agentic-system-core-python', 'pyproject.toml'));
+    const pypi = (f) => f.file === '../agentic-system-core-python/pyproject.toml';
+    const findings = json.findings.filter((f) => !(pypi(f) && (named || (absent && f.severity === 'warn'))));
+    if (named) {
+      const layout = tmpdir();
+      fs.symlinkSync(path.resolve(named), path.join(layout, 'agentic-system-core-python'));
+      assert.deepEqual(release.pypiFindings(path.join(layout, 'engine'), json.version), [], `${named} is not at ${json.version}`);
+    }
     assert.deepEqual(findings, [], JSON.stringify(json.findings, null, 1));
     assert.equal(json.verb, 'release');
     assert.equal(json.schema, 'agsc.diagnostics.v1');
-    assert.equal(code, 0);
+    assert.equal(code, json.findings.some((f) => f.severity === 'error') ? 1 : 0, 'the exit code follows the findings');
   });
 });
 
@@ -517,6 +560,31 @@ describe('the release workflow', () => {
     assert.ok(!/NPM_TOKEN|NODE_AUTH_TOKEN/u.test(text));
     assert.ok(!text.includes('pull_request_target'));
     assert.match(text, /on:\n {2}push:\n {4}tags:\n {6}- 'v\*'/u);
+  });
+
+  it('PRD-085: builds the Claude Desktop extension (.mcpb) with the official packer, in a job that holds no token, and prints its SHA-256', () => {
+    const jobs = require('yaml').parse(workflow()).jobs;
+    const job = jobs.mcpb || { steps: [] };
+    assert.deepEqual([job.needs, job.permissions], ['verify', { contents: 'read' }], 'after the gates, with read access alone');
+    assert.ok(!JSON.stringify(jobs.publish.needs || '').includes('mcpb'), 'a bundle that fails to build never stops the npm publish');
+    const run = job.steps.filter((one) => one.run).map((one) => one.run).join('\n');
+    const pins = [...run.matchAll(/npx -y @anthropic-ai\/mcpb@(\S+) (validate|pack)/gu)];
+    assert.deepEqual(pins.map((m) => m[2]), ['validate', 'pack'], 'the manifest is validated, then packed');
+    for (const m of pins) assert.match(m[1], /^\d+\.\d+\.\d+$/u, 'an exact version of the official packer');
+    assert.match(run, /--ignore-scripts/u, 'the engine is installed without install scripts');
+    assert.match(run, /\.github\/mcpb\/manifest\.json/u, 'the manifest the release checks');
+    assert.match(run, /sha256sum "agentic-system-core-\$\{?VERSION\}?\.mcpb"[^\n]*GITHUB_STEP_SUMMARY/u, 'the SHA-256 goes to the run summary');
+    assert.ok(job.steps.some((one) => /^actions\/upload-artifact@[0-9a-f]{40}$/u.test(one.uses || '')), 'kept as a run artifact');
+    const manifest = JSON.parse(fs.readFileSync(path.join(REPO, '.github', 'mcpb', 'manifest.json'), 'utf8'));
+    const server = JSON.parse(fs.readFileSync(path.join(REPO, 'server.json'), 'utf8'));
+    const pkg = require('../../package.json');
+    assert.deepEqual([manifest.name, manifest.version, manifest.license, manifest.description, manifest.icon],
+      [pkg.name, pkg.version, pkg.license, server.description, undefined],
+      'the package\'s name, version and licence; the MCP Registry description; no icon (the repository holds none)');
+    assert.deepEqual(manifest.server.mcp_config.args,
+      ['${__dirname}/server/node_modules/agentic-system-core/bin/agsc.js', 'mcp', '${user_config.bundle_dir}']);
+    assert.equal(manifest.server.entry_point, 'server/node_modules/agentic-system-core/bin/agsc.js');
+    assert.equal(manifest.compatibility.runtimes.node, pkg.engines.node);
   });
 
   it('the tool PRINTS the whole procedure; no repository file holds it', () => {

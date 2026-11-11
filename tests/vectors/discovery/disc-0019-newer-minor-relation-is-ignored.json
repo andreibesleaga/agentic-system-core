@@ -135,7 +135,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). Its first sub-case declared `agsc-spec-version` 1.1.0 and expected a 1.0 reader to find it newer; once the tool under test is 1.1 the document is no longer a newer MINOR and the expectation fails, and the case would fail again at every later MINOR. Superseded by disc-0023: the same two sub-cases with a document at 1.99.0 and a 1.1.0 reader.",
   "rule": "AGSC-09-93",

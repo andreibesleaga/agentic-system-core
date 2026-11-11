@@ -26,8 +26,8 @@ const CANDIDATE = /1\.0\.0-rc\.\d+/gu;
 // Two versions, stated apart (README, "Versions"): the specification this tree declares
 // and the packages built from it. They are equal on a release that moves the
 // specification and differ on a package-only patch.
-const SPEC = '1.0.0';
-const PACKAGE = '1.0.1';
+const SPEC = '1.1.0';
+const PACKAGE = '1.1.0';
 
 /** Copy `rel` from the repository into `root`, replacing every candidate version in text files. */
 function copyAsRelease(root, rel) {
@@ -47,7 +47,7 @@ function copyAsRelease(root, rel) {
   }
 }
 
-/** A distribution root that declares `1.0.0` everywhere the candidate stood. */
+/** A distribution root that declares the release everywhere a candidate stood. */
 function releaseRoot() {
   const root = tmpdir();
   for (const rel of ['spec', 'ontology', 'tests/vectors', 'docs/SPEC.md', 'w3c/index.html', 'tools/validate-vectors']) {
@@ -56,13 +56,13 @@ function releaseRoot() {
   // `validate-vectors` stamps its envelope with the version of the package it ships in.
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'agentic-system-core', version: PACKAGE }));
   const overview = fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8');
-  assert.match(overview, /spec_version: "1\.0\.0"/u, 'the copy declares 1.0.0');
+  assert.ok(overview.includes(`spec_version: "${SPEC}"`), `the copy declares ${SPEC}`);
   assert.doesNotMatch(overview, CANDIDATE, 'no candidate version is left in the copy');
   return root;
 }
 
-describe('plan item A4: the tools read a 1.0.0 declaration', () => {
-  it('count-artifacts reports spec_version 1.0.0 and finds no disagreement', () => {
+describe('plan item A4: the tools read a release declaration, not only a candidate', () => {
+  it('count-artifacts reports the declared release and finds no disagreement', () => {
     const root = releaseRoot();
     const result = envelope('count-artifacts', [root]);
     assert.equal(result.code, 0, result.err);
@@ -71,7 +71,7 @@ describe('plan item A4: the tools read a 1.0.0 declaration', () => {
     assert.equal(result.json.counts.spec_version, SPEC);
   });
 
-  it('validate-vectors compares every vector against the 1.0.0 declaration and passes', () => {
+  it('validate-vectors compares every vector against the release declaration and passes', () => {
     const root = releaseRoot();
     const run = cp.spawnSync(process.execPath, [path.join(root, 'tools', 'validate-vectors'), '--json', path.join(root, 'tests', 'vectors')], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
@@ -123,7 +123,7 @@ describe('the tree states the version it releases, in every place that carries i
   const json = (rel) => JSON.parse(read(rel));
   const declared = /`spec_version: "([^"]+)"`/u.exec(read('spec/00-overview.md'))[1];
 
-  it('the specification declares 1.0.0', () => {
+  it('the specification declares the release', () => {
     assert.equal(declared, SPEC);
     assert.match(read('docs/SPEC.md'), new RegExp(`spec_version: "${SPEC.replace(/\./gu, '\\.')}"`, 'u'));
   });
@@ -142,8 +142,17 @@ describe('the tree states the version it releases, in every place that carries i
     assert.equal(lock.packages[''].version, PACKAGE);
   });
 
-  it('the engine states the declared version as the one it implements', () => {
-    assert.match(read('src/application/cli/main.js'), new RegExp(`const SPEC_VERSION = '${declared.replace(/\./gu, '\\.')}';`, 'u'));
+  it('the engine states the declared version as the one it implements, from one constant', () => {
+    // ERR-075: one constant, `src/shared/spec-version.js`; the command line, the
+    // discovery reader and the deployment profiles take it from there.
+    const { SPEC_VERSION } = require('../../src/shared/spec-version.js');
+    assert.equal(SPEC_VERSION, declared);
+    assert.equal(require('../../src/application/cli/main.js').SPEC_VERSION, declared);
+    assert.equal(require('../../src/distribution/hosts/profile.js').TARGET.agsc_spec_version, declared);
+    const literal = new RegExp(`'${declared.replace(/\./gu, '\\.')}'`, 'u');
+    for (const rel of ['src/application/cli/main.js', 'src/distribution/discovery.js', 'src/distribution/hosts/profile.js']) {
+      assert.doesNotMatch(read(rel), literal, `${rel} states the version itself instead of reading the constant`);
+    }
   });
 
   it('the agent skill and its plugin copy name the release', () => {
@@ -154,14 +163,21 @@ describe('the tree states the version it releases, in every place that carries i
     }
   });
 
-  it('every Bundle the distribution ships declares the release in its configuration and its root index', () => {
-    const roots = ['tests/fixtures/minimal', 'tests/fixtures/with-assets', 'tests/acceptance/bundle',
+  it('every demonstration Bundle declares the release; the test fixtures stay 1.0 Bundles a 1.1 engine reads', () => {
+    // The fixtures the vectors name are part of the specification (AGSC-00-01) and stay
+    // the 1.0.0 Bundles they were: a reader accepts any Bundle of its MAJOR (AGSC-00-15),
+    // so they are also the proof that a 1.0 Bundle still builds. The blueprints keep the
+    // version they were reviewed at.
+    for (const base of ['tests/fixtures/minimal', 'tests/fixtures/with-assets']) {
+      assert.equal(json(path.join(base, 'agsc.config.json')).spec_version, '1.0.0', base);
+    }
+    const roots = ['tests/acceptance/bundle',
       ...fs.readdirSync(path.join(REPO, 'examples', 'demos'), { withFileTypes: true }).filter((e) => e.isDirectory()).flatMap((demo) => {
         const base = path.join('examples', 'demos', demo.name);
         return fs.existsSync(path.join(REPO, base, 'agsc.config.json')) ? [base]
           : fs.readdirSync(path.join(REPO, base)).map((sub) => path.join(base, sub)).filter((b) => fs.existsSync(path.join(REPO, b, 'agsc.config.json')));
       })];
-    assert.ok(roots.length >= 9, 'the fixtures and the demos are found');
+    assert.ok(roots.length >= 9, 'the acceptance Bundle and the demos are found');
     for (const base of roots) {
       assert.equal(json(path.join(base, 'agsc.config.json')).spec_version, SPEC, base);
       assert.match(read(path.join(base, 'content', 'index.md')), new RegExp(`^spec_version: "?${SPEC.replace(/\./gu, '\\.')}"?$`, 'mu'), base);
@@ -201,8 +217,10 @@ describe('the tree states the version it releases, in every place that carries i
     const [pMajor, pMinor] = PACKAGE.split('.');
     const [sMajor, sMinor] = SPEC.split('.');
     assert.deepEqual([pMajor, pMinor], [sMajor, sMinor], 'a package patch implements the same MAJOR.MINOR specification');
+    const claim = new RegExp(`agentic-system-core ${PACKAGE.replace(/\./gu, '\\.')} conforms to AgenticSystemCore ${SPEC.replace(/\./gu, '\\.')}, Level 3`, 'u');
     if (PACKAGE === SPEC) {
-      assert.match(read('README.md'), new RegExp(`agentic-system-core ${PACKAGE.replace(/\./gu, '\\.')} conforms to AgenticSystemCore ${SPEC.replace(/\./gu, '\\.')}, Level 3`, 'u'));
+      assert.match(read('README.md'), claim);
+      assert.match(read('docs/CONFORMANCE-STATEMENTS.md'), claim);
       return;
     }
     const log = read('CHANGELOG.md');
@@ -210,7 +228,7 @@ describe('the tree states the version it releases, in every place that carries i
     assert.ok(at > 0, 'the package release has its dated heading');
     const section = log.slice(at).split(/^## \[/mu)[1];
     assert.match(section, new RegExp(`Specification \`${SPEC.replace(/\./gu, '\\.')}\` is unchanged`, 'u'));
-    assert.match(read('README.md'), new RegExp(`agentic-system-core ${PACKAGE.replace(/\./gu, '\\.')} conforms to AgenticSystemCore ${SPEC.replace(/\./gu, '\\.')}, Level 3`, 'u'));
-    assert.match(read('docs/CONFORMANCE-STATEMENTS.md'), new RegExp(`agentic-system-core ${PACKAGE.replace(/\./gu, '\\.')} conforms to AgenticSystemCore ${SPEC.replace(/\./gu, '\\.')}, Level 3`, 'u'));
+    assert.match(read('README.md'), claim);
+    assert.match(read('docs/CONFORMANCE-STATEMENTS.md'), claim);
   });
 });

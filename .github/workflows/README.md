@@ -11,7 +11,10 @@ publishes the npm packages, and runs only when the maintainer pushes a `v*` tag 
 starts it by hand for a version already tagged); it holds no token (npm trusted
 publishing), publishes only a tag whose commit is on `main`, uses the dist-tag `next`
 for a pre-release and `latest` for a final release, and attests each tarball it
-publishes. Every action is pinned to a commit hash.
+publishes. Beside the publish job it builds the Claude Desktop extension
+(`agentic-system-core-<version>.mcpb`, manifest `.github/mcpb/manifest.json`) with the
+official packer at an exact version, keeps it as a run artifact and writes its SHA-256 to
+the run summary. Every action is pinned to a commit hash.
 
 **Updates.** [`../dependabot.yml`](../dependabot.yml) asks Dependabot, once a month,
 for one grouped pull request with every update of the pinned actions and one with

@@ -113,7 +113,9 @@ function inProcess(bundleDir, options = {}) {
   const fs = createFileSystem(bundleDir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(REPO)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const { files } = site.build(bundle, { clock, fs }, { specVersion: options.specVersion || '1.0.0', version: options.version || '0.0.0' });
+  const { SPEC_VERSION } = require(path.join(REPO, 'src', 'shared', 'spec-version.js'));
+  // The engine's own version, as the stdio process states it (`agsc mcp`).
+  const { files } = site.build(bundle, { clock, fs }, { specVersion: options.specVersion || SPEC_VERSION, version: options.version || '0.0.0' });
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const bundleId = (bundle.config.bundle || {}).id;

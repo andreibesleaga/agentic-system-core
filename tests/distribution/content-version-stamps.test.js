@@ -157,3 +157,19 @@ test('AGSC-04-02: the version does not make the build irreproducible', () => {
   assert.deepStrictEqual([...first.keys()], [...second.keys()]);
   for (const [route, text] of first) assert.strictEqual(second.get(route), text, route);
 });
+
+test('AGSC-05-26, AGSC-06-22: the graph and the now line state the spec_version the Bundle declares, not the version the engine implements', () => {
+  // The table of AGSC-05-26 maps `spec_version` of agsc.config.json to `asc:specVersion` of the
+  // Bundle, and AGSC-06-22 takes the now line's value from AGSC-00-17, the Bundle's
+  // declaration; so a release of the engine moves no byte of a node's graph files or of its
+  // now line (the fixture declares 1.0.0; the engine here says it implements 1.1.0).
+  const { files } = build({ specVersion: '1.1.0' });
+  const said = '<https://w3id.org/agentic-system-core/ns#specVersion> "1.0.0"';
+  assert.ok(String(files.get('/graph.nq')).includes(said), 'graph.nq does not carry the declared 1.0.0');
+  assert.match(String(files.get('/now.md')), /, specification 1\.0\.0\n/u);
+  for (const route of ['/graph.nq', '/graph.ttl', '/graph.jsonld', '/pages/handoff.jsonld', '/now.md', '/now/index.html']) {
+    assert.ok(!String(files.get(route)).includes('1.1.0'), `${route} carries the engine's version`);
+  }
+  // The files that say which specification the writer followed still say the engine's.
+  assert.match(String(files.get('/llms.txt')), /\nspec_version: 1\.1\.0\n/u);
+});

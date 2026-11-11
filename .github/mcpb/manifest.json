@@ -1,0 +1,61 @@
+{
+  "manifest_version": "0.3",
+  "name": "agentic-system-core",
+  "display_name": "AgenticSystemCore",
+  "version": "1.1.0",
+  "description": "Read, cite, compose and remember over a Markdown knowledge Bundle, as MCP tools over stdio.",
+  "long_description": "AgenticSystemCore turns a folder of Markdown into a knowledge node that people and agents can both read, verify and cite. This extension runs the reference engine's tool server over one such folder (a Bundle: a folder initialised with `agsc init`, which holds `agsc.config.json`). Ten tools search, read and cite items by their IRIs, follow their typed links, compose a selection and its brief, explain and check it, and hand back changes as Proposal payloads for a person to merge; no tool writes to the folder, and no model is called. Documentation: https://agenticsystemcore.com/docs/how-to-use/",
+  "author": {
+    "name": "Andrei N. Besleaga",
+    "url": "https://agenticsystemcore.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andreibesleaga/agentic-system-core"
+  },
+  "homepage": "https://agenticsystemcore.com/",
+  "documentation": "https://agenticsystemcore.com/docs/how-to-use/",
+  "support": "https://github.com/andreibesleaga/agentic-system-core/issues",
+  "server": {
+    "type": "node",
+    "entry_point": "server/node_modules/agentic-system-core/bin/agsc.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/node_modules/agentic-system-core/bin/agsc.js",
+        "mcp",
+        "${user_config.bundle_dir}"
+      ],
+      "env": {}
+    }
+  },
+  "user_config": {
+    "bundle_dir": {
+      "type": "directory",
+      "title": "Knowledge folder (Bundle)",
+      "description": "A folder of Markdown initialised with `npx agentic-system-core init` (it holds agsc.config.json). The tools read it; none of them writes to it.",
+      "required": true
+    }
+  },
+  "tools_generated": true,
+  "keywords": [
+    "knowledge",
+    "markdown",
+    "citation",
+    "linkset",
+    "rdf",
+    "memory",
+    "mcp"
+  ],
+  "license": "Apache-2.0 AND CC0-1.0",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=22.13.0"
+    }
+  }
+}

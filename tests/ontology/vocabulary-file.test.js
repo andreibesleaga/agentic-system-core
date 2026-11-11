@@ -160,12 +160,29 @@ test('a declaration that carries more than its type, or declares what nothing us
 
 // ---------------------------------------------------------------- version, dates, comments
 
-test('the 1.0.0 version and the dates the rule states (AGSC-05-25)', () => {
-  assert.strictEqual(one(ONTOLOGY, `${OWL}versionIRI`).value, 'https://w3id.org/agentic-system-core/ns/1.0.0');
-  assert.strictEqual(one(ONTOLOGY, `${OWL}versionInfo`).value, '1.0.0');
+test('the 1.1.0 version and the dates the rule states (AGSC-05-25)', () => {
+  // 1.1.0 added a term (asc:warrant, AGSC-05-40), so the file takes the version of the
+  // specification that ships it; the published 1.0.0 copy stays as it was.
+  assert.strictEqual(one(ONTOLOGY, `${OWL}versionIRI`).value, 'https://w3id.org/agentic-system-core/ns/1.1.0');
+  assert.strictEqual(one(ONTOLOGY, `${OWL}versionInfo`).value, '1.1.0');
   // The first published tagged release that carried the vocabulary.
   assert.strictEqual(one(ONTOLOGY, `${DCTERMS}issued`).value, '2026-09-29');
   assert.match(one(ONTOLOGY, `${DCTERMS}modified`).value, /^\d{4}-\d{2}-\d{2}$/u);
+});
+
+test('while owl:versionInfo names a released version, the file is that release\'s bytes (AGSC-05-25, AGSC-00-16)', () => {
+  // The SHA-256 of ontology/agsc.ttl as each release ships it (1.0.0: tag v1.0.1, the same
+  // bytes the main site serves at /ns/1.0.0/agsc.ttl; 1.1.0: the file this release ships). A
+  // changed term set under a released version would put two files behind one version IRI;
+  // it takes a new version.
+  const RELEASED = {
+    '1.0.0': '1e36cf86f48430a0a9c7c93d9dc773cc1f9f821d85723ff2a79c0888c6ebd08d',
+    '1.1.0': 'f1706508acdad24ab7da7c837f0d825719d6bc38272f8bff195fbd5dd5b0218f',
+  };
+  const version = one(ONTOLOGY, `${OWL}versionInfo`).value;
+  if (!Object.hasOwn(RELEASED, version)) return;
+  const sha = require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'ontology', 'agsc.ttl'))).digest('hex');
+  assert.strictEqual(sha, RELEASED[version], `ontology/agsc.ttl changed while it still says ${version}: give it the version of the release that ships it`);
 });
 
 test('the modification date is the date of the release that ships this version of the file (AGSC-05-25)', () => {

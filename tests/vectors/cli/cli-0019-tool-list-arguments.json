@@ -35,7 +35,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). It pinned the exact list of seven tools with their argument names, and AGSC-09-13 lists ten tools. Superseded by cli-0038: the same reduction of `tools/list`, over the ten tools of AGSC-09-13.",
   "rule": "AGSC-09-13",

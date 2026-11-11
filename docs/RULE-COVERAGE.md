@@ -120,7 +120,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-00-13 | VERIFIED | — | — | `conformance/vector-runner.test.js` | — | — |
 | AGSC-00-14 | VERIFIED | — | — | `composition/skill-format.test.js`, `standard/rules.test.js` | — | — |
 | AGSC-00-15 | VERIFIED | yes | `bundle-0001`, `bundle-0011` | `application/compatibility.test.js`, `application/serve-command.test.js`, `knowledge/validate.test.js` | — | — |
-| AGSC-00-16 | VERIFIED | — | — | `application/conformance.test.js`, `standard/consistency.test.js`, `standard/rules.test.js` | — | `validate-spec` |
+| AGSC-00-16 | VERIFIED | — | — | `application/conformance.test.js`, `ontology/vocabulary-file.test.js`, `standard/consistency.test.js` +1 | — | `validate-spec` |
 | AGSC-00-17 | VERIFIED | yes | `bundle-0016` | `application/bundle-root-consistency.test.js`, `application/cli/messages-and-help.test.js`, `knowledge/validate-major.test.js` +2 | — | — |
 | AGSC-00-18 | VERIFIED | — | — | `standard/rules.test.js` | — | — |
 | AGSC-00-19 | PROSE-ONLY | — | — | — | — | — |
@@ -282,7 +282,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-23 | VERIFIED | — | — | `arch/shacl-library.test.js`, `knowledge/closure.test.js`, `standard/item-links-composition-wording.test.js` +1 | — | — |
 | AGSC-05-24 | VERIFIED | yes | — | `acceptance/steps/persona-j.js`, `tools/gen-shapes-lane.test.js` | — | — |
 | AGSC-05-25 | VERIFIED | — | — | `ontology/vocabulary-file.test.js`, `standard/vocabulary-version.test.js` | — | `validate-ontology` |
-| AGSC-05-26 | VERIFIED | — | — | `knowledge/nquads.test.js`, `knowledge/warrant-graph.test.js`, `tools/gen-dc-profile.test.js` +1 | — | — |
+| AGSC-05-26 | VERIFIED | — | — | `distribution/content-version-stamps.test.js`, `knowledge/nquads.test.js`, `knowledge/warrant-graph.test.js` +2 | — | — |
 | AGSC-05-26a | VERIFIED | — | — | `tools/validate-ontology.test.js` | — | `validate-ontology` |
 | AGSC-05-27 | VERIFIED | yes | `graph-0024`, `graph-0025` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-28 | VERIFIED | — | — | `knowledge/turtle.test.js`, `ontology/alignments.test.js`, `ontology/property-coverage.test.js` | — | — |
@@ -322,7 +322,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-06-19 | VERIFIED | yes | `disc-0009` | `distribution/build-golden.test.js`, `distribution/html.test.js`, `distribution/query-page.test.js` +1 | — | — |
 | AGSC-06-20 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `distribution/compose-browser.test.js`, `distribution/domain-browser.test.js` +9 | `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
 | AGSC-06-21 | VERIFIED | yes | `build-0019` | `composition/conform.test.js`, `distribution/architecture-brief.test.js`, `distribution/build-golden.test.js` +8 | — | — |
-| AGSC-06-22 | VERIFIED | yes | `build-0036` | `acceptance/steps/persona-a.js`, `distribution/now-spend.test.js`, `distribution/surfaces-eng2.test.js` +1 | `persona-a-reader.feature#Reader inspects cluster membership and the NOW page` | — |
+| AGSC-06-22 | VERIFIED | yes | `build-0036` | `acceptance/steps/persona-a.js`, `distribution/content-version-stamps.test.js`, `distribution/now-spend.test.js` +2 | `persona-a-reader.feature#Reader inspects cluster membership and the NOW page` | — |
 | AGSC-06-23 | VERIFIED | yes | `build-0001`, `build-0002` | `distribution/mcp-tools.test.js`, `distribution/search-index.test.js`, `distribution/search-page.test.js` | — | — |
 | AGSC-06-24 | VERIFIED | — | — | `distribution/html.test.js` | — | — |
 | AGSC-06-25 | VERIFIED | yes | — | `acceptance/steps/persona-a.js`, `acceptance/steps/persona-c-llms.js`, `distribution/headers.test.js` +2 | `persona-a-reader.feature#Home page states software-and-registry identity, no narrative`, `persona-c-agent-mcp.feature#An agent that lands on any page finds the node's llms.txt and the page's Markdown copy by their link relations` | `validate-wellknown` |

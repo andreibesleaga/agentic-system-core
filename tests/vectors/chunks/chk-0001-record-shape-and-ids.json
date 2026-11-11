@@ -27,7 +27,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). AGSC-06-45 states the rule for the text that opens chunk 0, and AGSC-06-29 now names the optional members of 1.1; the successor chk-0011 restates this case under the 1.1 record shape. The expected lines of this case still hold for its input, which has no leading blank line, no description and no licence URL, and are repeated unchanged in chk-0011. Superseded by chk-0011.",
   "rule": "AGSC-06-28",

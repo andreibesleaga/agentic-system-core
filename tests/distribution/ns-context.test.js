@@ -100,7 +100,7 @@ test('buildOptions supplies the vocabulary the context is generated from', () =>
   const options = helpers.buildOptions({ specVersion: '1.0.0', version: '0.0.2' });
   assert.strictEqual(options.ontologyTerms.length, 53,
     'the 53 terms of ontology/agsc.ttl never reached a build');
-  assert.strictEqual(options.ontologyVersion, '1.0.0',
+  assert.strictEqual(options.ontologyVersion, '1.1.0',
     'the owl:versionIRI version of AGSC-05-25 never reached a build');
   // Read once and memoised, exactly as the three compiled schemas are.
   assert.strictEqual(options.ontologyTerms,

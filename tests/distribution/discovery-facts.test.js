@@ -20,6 +20,7 @@ const { createClock } = require('../../src/adapters/node-clock.js');
 const validate = require('../../src/knowledge/validate.js');
 const { loadBundle } = require('../../src/application/bundle.js');
 const site = require('../../src/distribution/site.js');
+const { SPEC_VERSION } = require('../../src/shared/spec-version.js');
 const discovery = require('../../src/distribution/discovery.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -99,12 +100,15 @@ test('AGSC-00-21 / AGSC-09-93: a newer MINOR\'s relation and attribute are warne
     }],
   });
   // Level 1: a Level-0 document states no version (AGSC-06-08a), so it has none to be newer.
-  const findings = discovery.check(later('1.1.0'), { level: 1 });
+  // The document is of the MINOR after the reader's own, computed so the case follows a release.
+  const [major, minor] = SPEC_VERSION.split('.').map(Number);
+  const next = `${major}.${minor + 1}.0`;
+  const findings = discovery.check(later(next), { level: 1 });
   assert.deepStrictEqual(findings.map((f) => [f.code, f.severity]), [['AGSC-E506', 'warn'], ['AGSC-E506', 'warn']]);
-  assert.ok(findings.every((f) => f.message.includes('1.1.0')));
+  assert.ok(findings.every((f) => f.message.includes(next)));
   const refused = discovery.check(later('2.0.0'), { level: 1 });
   assert.ok(refused.some((f) => f.code === 'AGSC-E209' && f.severity === 'error'));
-  // The mutual check of AGSC-10-12 between a 1.0 node and a 1.1 node still holds.
+  // The mutual check of AGSC-10-12 between a node of an earlier version and one of a later MINOR still holds.
   const mine = {
     linkset: [{
       anchor: 'https://a.example/',
@@ -114,7 +118,7 @@ test('AGSC-00-21 / AGSC-09-93: a newer MINOR\'s relation and attribute are warne
   };
   const result = discovery.peerCheck([
     { doc: mine, level: 0, url: 'https://a.example/.well-known/knowledge-linkset' },
-    { doc: later('1.1.0'), level: 1, url: 'https://b.example/.well-known/knowledge-linkset' },
+    { doc: later(next), level: 1, url: 'https://b.example/.well-known/knowledge-linkset' },
   ]);
   assert.strictEqual(result.both_resolve, true);
   assert.strictEqual(result.mutual, true);

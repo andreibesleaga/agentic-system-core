@@ -53,7 +53,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "2026-10-29: the case names 1.1.0 as the newer MINOR; once the tree declares 1.1.0 that version is the tool's own and the warning it expects is not raised. Republished as bundle-0011 with 1.99.0, which stays newer for every 1.x tool.",
   "rule": "AGSC-00-15",

@@ -22,6 +22,15 @@ section lists every file of a 1.0.1 node whose bytes change.
 
 ### Upgrading from 1.0.1
 
+- Every envelope, report, provenance header, skill pack, page script and Harness states
+  `spec_version` 1.1.0, the version the engine implements (AGSC-00-14, AGSC-09-11); `agsc init`
+  writes 1.1.0 into a new Bundle. The graph files and the line of `/now/` and `/now.md` state the
+  version the Bundle declares, so a 1.0 Bundle's `graph.jsonld`, `graph.nq`, `graph.ttl` and
+  `now.md` keep their bytes (AGSC-05-26, AGSC-06-22, AGSC-00-17).
+- The vocabulary is version 1.1.0, served under `/ns/1.1.0/` (`owl:versionIRI`, `owl:versionInfo`,
+  `dcterms:modified` 2026-11-18), because it gains `asc:warrant`; version 1.0.0 stays served
+  unchanged under `/ns/1.0.0/`, and the JSON-LD context address of `graph.jsonld` stays
+  `/ns/1.0.0/context.jsonld` (AGSC-05-09, AGSC-05-25, AGSC-06-32).
 - Three answers a 1.0 client sees change, the named exceptions of AGSC-00-14: a call of a tool the
   server does not serve is the JSON-RPC error -32602, not an envelope with `AGSC-E001`, and every
   tool result carries MCP's `isError` (AGSC-09-13a); a failed conformance case is `AGSC-E005`, not
@@ -165,7 +174,8 @@ section lists every file of a 1.0.1 node whose bytes change.
   2.1.2 (Apache-2.0); `@traqula/parser-sparql-1-1` 1.4.0, `rdf-validate-shacl` 0.6.5,
   `structured-headers` 2.1.1, `csv-parse` 7.0.3, `csv-stringify` 6.9.0 and `http-link-header` 1.1.4
   (MIT); `oxigraph` 0.5.13 (MIT OR Apache-2.0); `@toon-format/toon` 4.1.1 → 4.4.0, `dotenv` 18.0.3 →
-  18.0.9, `fast-xml-parser` 5.11.1 → 5.11.2. `tests/arch/dependency-licences.test.js` holds every
+  18.0.9, `fast-xml-parser` 5.11.1 → 5.12.0 (5.12.0 for GHSA-474x-hrwr-fgx4, quadratic time on an
+  unterminated stop-node tag). `tests/arch/dependency-licences.test.js` holds every
   run-time package to a list of permissive licences. `npm audit`: 0.
 - Development: the protocol modules are strict TypeScript under `src-ts/`, compiled to `src/` and
   committed, so no install needs TypeScript (`typescript` 6.0.3, `typescript-eslint` 8.72.1,
@@ -173,9 +183,18 @@ section lists every file of a 1.0.1 node whose bytes change.
   is held at 11.0.4 through `overrides`.
 - CI: `test.yml` runs pushes on `main` and `release/` branches only and cancels a run a newer push
   supersedes; its browser job runs the page, query, explorer, compose and domain browser tests.
+- Release: the release workflow also builds the Claude Desktop extension
+  `agentic-system-core-<version>.mcpb` from the tagged tree with the official packer
+  `@anthropic-ai/mcpb` 2.1.2 (MIT, run by `npx`, not a dependency), keeps it as a run artifact and
+  writes its SHA-256 to the run summary (PRD-085; manifest `.github/mcpb/manifest.json`).
+  `tools/release` holds every copy of the version to `package.json` (the citation file, the plugin
+  and its marketplace entry, the two agent-skill copies and the extension manifest) and writes them
+  with `--apply`, the release date into `CITATION.cff`.
 
 ### Fixed
 
+- The graph files and the now line state the `spec_version` the Bundle declares, as AGSC-05-26 and
+  AGSC-06-22 say; 1.0.1 wrote the engine's own, the same value for every 1.0 Bundle.
 - `tools/gen-ns --check` asks for `agsc.ttl` and `agsc.rdf` only in a tree that holds the `/ns/`
   index, so a built content node passes with no warning (AGSC-06-06).
 - Diagrams (AGSC-01-42): a `line` with both `acc` and `thick` (it wrote `stroke-width` twice), a `via`
@@ -210,11 +229,12 @@ Measured on seven inputs as they stood at 1.0.1, each built by 1.0.1 and by 1.1.
 `SOURCE_DATE_EPOCH=1767225600` and compared file by file by SHA-256: `fixture`
 (`tests/fixtures/minimal`), `mode-2` to `mode-5` (`examples/demos/mode-2-project`, `mode-3-skills`,
 `mode-4-compose` and `mode-5-board`), and `demo` and `patterns`, the two public content nodes; `all`
-is the seven. Of the 753 files the seven builds wrote at 1.0.1, 367 change and 386 keep their bytes;
-1.1.0 writes 84 new files and removes none, so 451 files differ, each counted once below.
+is the seven. Of the 753 files the seven builds wrote at 1.0.1, 426 change and 327 keep their bytes;
+1.1.0 writes 84 new files and removes none, so 510 files differ, each counted once below.
 `graph.jsonld`, `graph.nq`, `graph.ttl`, `search.json`, `now.md`, `robots.txt` and the copies under
-`/pages/` keep their bytes, as do the seven Harness files of a composition (AGSC-07-12,
-`compose-0027`). `lint`, `ci` and `build` exit as they did.
+`/pages/` keep their bytes, as do the seven Harness files of a composition and its archive but for
+the `spec_version` they state, which is now 1.1.0 (AGSC-07-12, AGSC-07-13a; `compose-0027` fixes the
+version and holds every other byte). `lint`, `ci` and `build` exit as they did.
 
 None of the seven uses the domain layer, and no row below comes from it. A node that uses it (a
 `domain` object, or an item that states a key of AGSC-02-25) also changes `graph.nq`, `graph.ttl`,
@@ -226,14 +246,15 @@ items (AGSC-06-38); `/query/index.html` (AGSC-06-39); and `/compose/agsc-core.js
 | Rule | Files | Nodes | Change | Count |
 |---|---|---|---|---|
 | AGSC-08-20a: the build entry names `process:agsc` | `ledger.jsonl` | demo, patterns | changed | 2 |
-| AGSC-07-19, AGSC-07-22: a `description` that holds a colon and a space is double-quoted, and the index's `lock` values follow | `skills/*/SKILL.md`, `skills/index.json` | demo | changed | 4 |
-| AGSC-06-44 (the chunk and ledger link attributes), AGSC-11-16 (`webmcp` 2026-10-27), and the digests of the files below | `.well-known/knowledge-linkset` | all | changed | 7 |
+| AGSC-00-14, AGSC-07-19 (the `spec_version` the files state is the writer's, 1.1.0); on demo also AGSC-07-22 (a `description` that holds a colon and a space is double-quoted, and the index's `lock` values follow) | `skills/*/SKILL.md`, `skills/index.json` | all | changed | 56 |
+| AGSC-00-14: the script's `spec_version` line names 1.1.0 | `search/agsc-search.js` | all | changed | 7 |
+| AGSC-06-44 (the chunk and ledger link attributes), AGSC-11-16 (`webmcp` 2026-10-27), AGSC-06-08 (`agsc-spec-version` 1.1.0), and the digests of the files below | `.well-known/knowledge-linkset` | all | changed | 7 |
 | AGSC-06-40 (Signposting on `/`), AGSC-06-37, AGSC-07-19 (`/skills/*.json`), AGSC-06-06 (`/ns/1.0.0/*`), AGSC-06-39 (`/query/*`), with AGSC-06-17 | `_headers` | all | changed | 7 |
-| AGSC-06-13a: the summary before the provenance comment | `llms.txt`, `llms-full.txt` | all | changed | 14 |
+| AGSC-06-13a: the summary before the provenance comment; AGSC-06-15, AGSC-00-14: its `spec_version` line names 1.1.0 | `llms.txt`, `llms-full.txt` | all | changed | 14 |
 | AGSC-06-29 (`abstract`; `license_url` where the node has a licence URL); AGSC-06-45 (one chunk 0 on mode-2) | `chunks.jsonl` | all | changed | 7 |
 | AGSC-06-19, AGSC-06-39: the `/query/` entry | `sitemap.xml` | all | changed | 7 |
 | AGSC-04-24: the mark of a fragment target (a node with its own stylesheet keeps it) | `assets/site.css` | all but patterns | changed | 6 |
-| AGSC-09-13, AGSC-09-13a, AGSC-09-14b, AGSC-09-16 (the ten tools), AGSC-07-25, AGSC-07-29 (the brief and the blueprint) | `compose/agsc-core.js`, `compose/agsc-compose.js`, `compose/agsc-page-tools.js`, `compose/webmcp.js` | all | changed | 28 |
+| AGSC-09-13, AGSC-09-13a, AGSC-09-14b, AGSC-09-16 (the ten tools), AGSC-07-25, AGSC-07-29 (the brief and the blueprint), AGSC-00-14 (the `spec_version` line, 1.1.0) | `compose/agsc-core.js`, `compose/agsc-compose.js`, `compose/agsc-page-tools.js`, `compose/webmcp.js` | all | changed | 28 |
 | AGSC-06-41: the Dataset block; and the page head of the next rows | `index.html` | all | changed | 7 |
 | AGSC-06-38: the overview, the legend and the explorer; and the page head | `clusters/index.html` | all | changed | 7 |
 | AGSC-07-25, AGSC-07-29: the filters, the verdict and the brief; and the page head | `compose/index.html` | all | changed | 7 |

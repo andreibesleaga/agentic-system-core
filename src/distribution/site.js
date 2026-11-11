@@ -1346,7 +1346,8 @@ function buildSite(bundle, ports, options, findings) {
       id: (config.bundle || {}).id,
       license_prose: licenseProse,
       terms: chunks.termsFor(licenseProse),
-      spec_version: specVersion,
+      // AGSC-05-26: the graph states the version the Bundle declares, not the engine's.
+      spec_version: config.spec_version,
     },
     attachmentBytes: options.attachmentBytes,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
@@ -1417,7 +1418,8 @@ function buildSite(bundle, ports, options, findings) {
   const fingerprint = files.has('/graph.nq')
     ? createHash('sha256').update(files.get('/graph.nq'), 'utf8').digest('hex')
     : '';
-  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion, visibility: config.visibility });
+  // AGSC-06-22: the line names the version the Bundle declares (AGSC-00-17).
+  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion: config.spec_version, visibility: config.visibility });
   if (full) put('/now.md', nowMd);
 
   if (!full && graph !== null && typeof graph.jsonld === 'function' && contextUrl === undefined) {

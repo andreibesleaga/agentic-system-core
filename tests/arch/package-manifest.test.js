@@ -99,12 +99,10 @@ test('the version is one SemVer string, and the CLI reports that one', () => {
   // The engine version and the SPECIFICATION version are two different numbers
   // (AGSC-09-90). The maintainer publishes them equal, and they are still read
   // from two different places.
-  const main = fs.readFileSync(path.join(ROOT, 'src', 'application', 'cli', 'main.js'), 'utf8');
-  const declared = /const SPEC_VERSION = '([^']+)';/u.exec(main);
-  assert.ok(declared, 'src/application/cli/main.js must declare SPEC_VERSION');
+  const { SPEC_VERSION } = require(path.join(ROOT, 'src', 'shared', 'spec-version.js'));
   const spec = fs.readFileSync(path.join(ROOT, 'spec', '00-overview.md'), 'utf8');
-  assert.ok(spec.includes(declared[1]),
-    `the engine states spec version ${declared[1]} and spec/00-overview.md does not declare it`);
+  assert.ok(spec.includes(`\`spec_version: "${SPEC_VERSION}"\``),
+    `the engine states spec version ${SPEC_VERSION} and spec/00-overview.md does not declare it`);
 });
 
 test('the main entry reports the package version and exports the command line', () => {

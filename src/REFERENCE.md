@@ -83,6 +83,9 @@ that names a type, a kind or a format at run time. `src/shared/version-line.js` 
 prints (AGSC-09-09). It is the one module compiled from TypeScript so far
 (`src-ts/shared/version-line.ts`, by `tools/build-ts`; `docs/ENGINEERING.md` §8), and
 `application/cli/main.js` prints its `--version` line through it; the bytes are those of 1.0.
+`src/shared/spec-version.js` holds `SPEC_VERSION`, the version of the specification the engine
+implements (AGSC-00-14), in one place: the command line, the discovery reader and the built-in
+deployment profiles read it, so a release moves one line.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,

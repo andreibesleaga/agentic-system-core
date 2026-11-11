@@ -2,7 +2,7 @@
 // `src/knowledge/rdfxml.js` is the one writer in this package with no library behind
 // it — the 2026-09-18 survey found no maintained RDF/JS-quads → RDF/XML serializer on
 // npm. A hand-written serializer that is only compared with itself proves nothing, so
-// this test re-parses its output with `fast-xml-parser@5.11.2` (already a pinned
+// this test re-parses its output with `fast-xml-parser@5.12.0` (already a pinned
 // dependency) and asserts that the triples that come back are the ones that went in.
 // The dataset is blank-node-free (AGSC-05-08), so "isomorphic" is set equality and
 // needs no matching algorithm.

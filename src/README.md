@@ -44,7 +44,7 @@ benchmark runners `src-ts/bench/kit.ts` and `src-ts/bench/install.ts`, which com
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
-| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, the reader of the rest of a line after a fixed head, the indefinite article, and the `--version` line compiled from TypeScript, and nothing else | [shared/README.md](shared/README.md) |
+| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, the reader of the rest of a line after a fixed head, the indefinite article, the `--version` line compiled from TypeScript, and the version of the specification the engine implements (`spec-version.js`), and nothing else | [shared/README.md](shared/README.md) |
 
 Entry points: `bin/agsc.js` builds the four ports from `adapters/` and calls
 `application/cli/main.js#main`, which dispatches to one module per verb in
@@ -219,7 +219,7 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
 | Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js`, `knowledge/skos-export.js`, `knowledge/domain.js` and the crosswalk reader of `boundary/federation.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |
-| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.2 | MIT | `governance/lint.js`, `tools/gen-ns` |
+| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.12.0 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
 | SHACL Core validation | `rdf-validate-shacl` | 0.6.5 | MIT | `knowledge/shacl-core.js` only (`tests/arch/shacl-library.test.js`), for a site's own invariants (AGSC-05-41); never at build |
 | SPARQL 1.1 parser | `@traqula/parser-sparql-1-1` | 1.4.0 | MIT | `knowledge/competency.js` only (`tests/arch/sparql-library.test.js`), for a site's competency questions (AGSC-05-41); never at build |

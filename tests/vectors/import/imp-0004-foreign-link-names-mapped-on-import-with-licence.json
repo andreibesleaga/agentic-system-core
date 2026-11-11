@@ -31,7 +31,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "2026-10-29: the case counts exactly four AGSC-E506 warnings for a licensed record and says the draft record 'is not in play'; from 1.1 every foreign record arrives as a draft with one more AGSC-E506 (AGSC-01-22, AGSC-00-14). Republished as imp-0010.",
   "rule": "AGSC-03-19",

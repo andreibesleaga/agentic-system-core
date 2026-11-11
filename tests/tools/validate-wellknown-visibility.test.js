@@ -175,14 +175,17 @@ describe('validate-wellknown: the bundle hash, gated digests and a newer MINOR',
   });
 
   it('AGSC-00-21 / AGSC-09-93: a newer MINOR\'s relation and attribute are ignored with a warning', () => {
-    const later = withRelations(document({ 'agsc-spec-version': ['1.1.0'], 'agsc-summary': ['a later attribute'] }),
+    // The MINOR after the one the checker implements, computed so the case follows a release.
+    const [own, ownMinor] = require('../../src/shared/spec-version.js').SPEC_VERSION.split('.').map(Number);
+    const next = `${own}.${ownMinor + 1}.0`;
+    const later = withRelations(document({ 'agsc-spec-version': [next], 'agsc-summary': ['a later attribute'] }),
       { [`${REL}brief`]: [{ href: `${BASE}brief.md`, type: 'text/markdown' }] });
     const result = check(later);
     assert.deepEqual(result.envelope.findings.filter((f) => ['AGSC-E209', 'AGSC-E202'].includes(f.code)
       && /brief|summary/u.test(f.message)), []);
     const ignored = result.envelope.findings.filter((f) => f.code === 'AGSC-E506');
     assert.deepEqual(ignored.map((f) => f.severity), ['warn', 'warn']);
-    assert.ok(ignored.every((f) => f.message.includes('1.1.0')), JSON.stringify(ignored));
+    assert.ok(ignored.every((f) => f.message.includes(next)), JSON.stringify(ignored));
     // Another MAJOR has no tolerance: the same relation is AGSC-E209.
     const major = withRelations(document({ 'agsc-spec-version': ['2.0.0'] }),
       { [`${REL}brief`]: [{ href: `${BASE}brief.md`, type: 'text/markdown' }] });

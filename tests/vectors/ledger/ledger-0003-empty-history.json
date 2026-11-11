@@ -13,7 +13,7 @@
   "level": "withdrawn",
   "options": {
     "source_date_epoch": 1767484800,
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "2026-10-29: the case pins a trailing build entry whose actor names the builder, process:agsc/0.1.0; from 1.1 the actor is the fixed string process:agsc (AGSC-08-20a). Republished as ledger-0010.",
   "rule": "AGSC-08-20a",

@@ -8,6 +8,6 @@
     "vocabulary": "domain/vocabulary.ttl"
   },
   "site": { "base": "https://domain-layer.example/", "tagline": "A demo node of the AgenticSystemCore format.", "tdm_crawlers": ["CCBot", "GPTBot"], "title": "domain layer demo" },
-  "spec_version": "1.0.0",
+  "spec_version": "1.1.0",
   "tags": { "allowed": ["agents", "patterns"] }
 }

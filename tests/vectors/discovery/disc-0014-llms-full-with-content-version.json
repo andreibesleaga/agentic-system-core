@@ -48,7 +48,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). AGSC-06-13a now orders the blocks of /llms.txt and /llms-full.txt as H1, summary, provenance comment, sections; the expected bytes of both files change. Superseded by disc-0025.",
   "rule": "AGSC-06-13a",

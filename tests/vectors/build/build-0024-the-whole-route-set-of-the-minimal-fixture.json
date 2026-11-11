@@ -13,7 +13,7 @@
   "level": "withdrawn",
   "options": {
     "source_date_epoch": 1767225600,
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). AGSC-06-01 and AGSC-06-39 add /query/ to the route set a writer emits by default (site.query_page defaults to true), so the list of 42 routes is 43 for the same fixture. Superseded by build-0029.",
   "rule": "AGSC-06-01",

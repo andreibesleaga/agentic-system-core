@@ -74,7 +74,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-11-10). The block had no `@id` and wrote the creator twice, as `creator` and as `prov:wasAttributedTo`, so `jsonld.toRDF` read its triples on blank nodes and found two unlinked Persons. AGSC-06-41 as amended names the block and the Person by `@id`; disc-0037 supersedes this case.",
   "rule": "AGSC-06-41",

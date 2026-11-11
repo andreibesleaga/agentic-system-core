@@ -27,7 +27,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). The case says that a record carries exactly the fourteen named members; AGSC-06-29 now names three optional members that a 1.1 writer adds under their conditions, so the sentence is restated in chk-0012. The expected lines are repeated unchanged, because none of the three conditions holds for this input. Superseded by chk-0012.",
   "rule": "AGSC-06-29",

@@ -23,6 +23,11 @@
 //      the current one: greater is a bump, equal is a release of the version the
 //      tree already carries (nothing to write), smaller is refused; `--apply`
 //      writes a bump into both files and adds the changelog heading.
+// 1c. EVERY OTHER COPY OF THE VERSION. The citation file, the Claude Code plugin and
+//      its marketplace entry, the agent skill and its plugin copy, and the manifest
+//      of the Claude Desktop bundle (`.mcpb`) each state the package version once;
+//      each must equal `package.json#version`, and `--apply` writes it (and the
+//      release date into `CITATION.cff`). A file that is absent is not checked.
 //   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]`, and
 //      either something under it or a section already naming the version in
 //      `package.json`; the release must have — or, under `--apply`, gain — a
@@ -78,13 +83,28 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..');
 const ALIAS_DIR = 'packages/agsc-cli';
 /** The MCP Registry entry of the npm package; it names `mcpName` and the npm version. */
 const SERVER_JSON = 'server.json';
+/**
+ * 1c. Every other file that states the package version: the path, and a pattern whose
+ * first group is the version (`date` marks the one value `--apply` sets to the release
+ * date instead). Each pattern matches one line of its file.
+ */
+const VERSION_SITES = Object.freeze([
+  ['.claude-plugin/marketplace.json', /"version": "([^"]+)"/u],
+  ['.github/mcpb/manifest.json', /"version": "([^"]+)"/u],
+  ['CITATION.cff', /^version: (\S+)$/mu],
+  ['CITATION.cff', /^date-released: (\S+)$/mu, 'date'],
+  ['plugins/agentic-system-core/.claude-plugin/plugin.json', /"version": "([^"]+)"/u],
+  ['plugins/agentic-system-core/skills/agentic-system-core/SKILL.md', /^ {2}version: "([^"]+)"$/mu],
+  ['skills/agentic-system-core/SKILL.md', /^ {2}version: "([^"]+)"$/mu],
+]);
 /** The sibling repository publishes to PyPI at the same version. */
 const PYTHON_DIR = 'agentic-system-core-python';
 const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
 
   The release lane of docs/PLAN.md §7, as a check. Nothing is ever published by
   this script: its default mode is a dry run and --apply writes only the version
-  strings (package.json, the alias, server.json) and the changelog heading.
+  strings (package.json, the alias, server.json and the other copies of the
+  version, with the release date in CITATION.cff) and the changelog heading.
 
   --version <x.y.z>  the release being prepared (semver; greater than the current
                      package.json version is a bump, equal means the tree already
@@ -559,6 +579,47 @@ function serverEntryFindings(entry, manifest) {
   return findings;
 }
 
+/** 1c. The text of each version site that exists, keyed by path. */
+function versionSiteTexts(root) {
+  const texts = new Map();
+  for (const [file] of VERSION_SITES) {
+    if (texts.has(file)) continue;
+    try { texts.set(file, fs.readFileSync(path.join(root, file), 'utf8')); } catch { /* absent: not checked */ }
+  }
+  return texts;
+}
+
+/** 1c. A version site that states another version than the engine's. */
+function versionSiteFindings(texts, version) {
+  const findings = [];
+  for (const [file, pattern, kind] of VERSION_SITES) {
+    if (kind === 'date' || !texts.has(file)) continue;
+    const stated = pattern.exec(texts.get(file));
+    if (stated === null || stated[1] !== version) {
+      findings.push(finding('AGSC-E202', file, 1, `${file} states version "${stated === null ? 'none' : stated[1]}"`
+        + ` and the engine is ${version}; one version, in one place`));
+    }
+  }
+  return findings;
+}
+
+/** 1c under `--apply`: the new version (and the date) written into each site that exists. */
+function applyVersionSites(root, texts, version, date) {
+  const written = [];
+  for (const [file, text] of texts) {
+    let updated = text;
+    for (const [site, pattern, kind] of VERSION_SITES) {
+      if (site !== file) continue;
+      const value = kind === 'date' ? date : version;
+      updated = updated.replace(pattern, (line, old) => line.replace(old, value));
+    }
+    if (updated === text) continue;
+    fs.writeFileSync(path.join(root, file), updated);
+    written.push(file);
+  }
+  return written;
+}
+
 // --------------------------------------------------------------------------
 // 2. The changelog.
 // --------------------------------------------------------------------------
@@ -748,6 +809,9 @@ function run(argv, io = {}) {
   // and carries the npm version, on the server and on its npm package entry.
   const serverEntry = readJson(path.join(root, SERVER_JSON));
   if (serverEntry !== null) findings.push(...serverEntryFindings(serverEntry, manifest));
+  // 1c. every other copy of the version.
+  const siteTexts = versionSiteTexts(root);
+  findings.push(...versionSiteFindings(siteTexts, manifest.version));
   // Equal is not a fault: the first release of a version the tree already carries
   // (the versions were written when the release candidate was drafted) has nothing
   // to bump, so the checklist leaves out the two bump steps.
@@ -811,6 +875,7 @@ function run(argv, io = {}) {
         fs.writeFileSync(path.join(root, SERVER_JSON), `${JSON.stringify(bumpedEntry, null, 2)}\n`);
         written.push(SERVER_JSON);
       }
+      written.push(...applyVersionSites(root, siteTexts, version, date));
       const updated = applyChangelog(changelog, version, date);
       if (updated !== changelog) {
         fs.writeFileSync(path.join(root, 'CHANGELOG.md'), updated);
@@ -839,6 +904,6 @@ if (require.main === module) process.exit(run(process.argv.slice(2)));
 module.exports = {
   ALIAS_DIR, HELP, companionPackages, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
-  packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
+  packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, VERSION_SITES, walk,
   withoutTrailingSlashes, workflowFindings, versionIn,
 };

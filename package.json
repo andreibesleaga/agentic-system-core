@@ -1,7 +1,7 @@
 {
     "name": "agentic-system-core",
     "mcpName": "io.github.andreibesleaga/agentic-system-core",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "The reference engine and command line of AgenticSystemCore: publish a Markdown knowledge Bundle as a static node of the Agentic Knowledge Web — a wiki, an RDF graph, agent memory, skills, MCP and WebMCP tools and a discovery document. Ships the specification, the JSON Schemas, the ontology, the conformance vectors and the nine independent checkers.",
     "main": "index.js",
     "exports": {
@@ -134,7 +134,7 @@
         "csv-stringify": "6.9.0",
         "diff": "9.0.0",
         "dotenv": "18.0.9",
-        "fast-xml-parser": "5.11.2",
+        "fast-xml-parser": "5.12.0",
         "http-link-header": "1.1.4",
         "json-canonicalize": "3.0.1",
         "jsonld": "9.0.0",

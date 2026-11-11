@@ -1,5 +1,5 @@
 ---
-spec_version: 1.0.0
+spec_version: 1.1.0
 okf_version: "0.2"
 title: domain layer demo
 description: The smallest Bundle that shows the domain layer of AgenticSystemCore; two concepts, one bounded context, nothing private.

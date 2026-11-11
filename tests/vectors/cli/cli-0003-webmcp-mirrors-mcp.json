@@ -14,7 +14,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.1.0 (2026-10-29). It pinned the seven tool names of the tool server and of WebMCP, and AGSC-09-13 and AGSC-09-16 now name ten (`brief`, `explain` and `check` are added), so the case would fail on every conforming 1.1 engine. Superseded by cli-0026: the same comparison of the two transports over the ten names.",
   "rule": "AGSC-09-16",

@@ -23,15 +23,16 @@ const VERBS = [
 ];
 
 /**
- * The ONE place the engine states which version of the specification it
- * implements (AGSC-09-11's `spec_version` member; AGSC-00-14). Everything else
+ * The version of the specification the engine implements (AGSC-09-11's
+ * `spec_version` member; AGSC-00-14), from its one place, `shared/spec-version.js`. Everything else
  * — every envelope, every report, `llms.txt`'s provenance header, the
  * `/compose/` page — takes it from here through `ctx.specVersion`, so a release
- * bump is one edit. A test harness may still pin a per-vector value
+ * bump is one edit. The graph files and the now line are the exception: they state
+ * the version the Bundle declares (AGSC-05-26, AGSC-06-22). A test harness may still pin a per-vector value
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0';
+const { SPEC_VERSION } = require('../../shared/spec-version.js');
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -534,7 +535,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0') and package.json's
+ *   members; default to SPEC_VERSION (shared/spec-version.js) and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
