@@ -401,30 +401,33 @@ test('the 1.0.0 change log names every rule amended after the previous release, 
   assert.deepEqual(missing, [], 'amendment notes whose text the 1.0.0 section does not carry');
 });
 
-/** The text of the change log's `## [Unreleased]` section, up to the next `## [`. */
-function unreleasedSection() {
+/** The `## [Unreleased]` section and the newest dated section of the change log, each up to the next `## [`. */
+function openSections() {
   const text = read('CHANGELOG.md');
-  const head = '\n## [Unreleased]\n';
-  const start = text.indexOf(head);
-  if (start === -1) return '';
-  const end = text.indexOf('\n## [', start + head.length);
-  return text.slice(start, end === -1 ? text.length : end);
+  const heads = [...text.matchAll(/^## \[[^\]]+\]/gmu)].map((m) => m.index);
+  return heads.slice(0, 2).map((start, k) => text.slice(start, heads[k + 1] ?? text.length));
 }
 
-test('the unreleased change log names no later version and no internal work label', () => {
+test('the unreleased and the newest change-log sections name no later version and no internal work label', () => {
   // A public entry says what changed and the rule that allows it. It names no version after
   // the one being prepared ("1.2"; "0.1.2" or "1.2.0" of a format or package are other numbers)
-  // and none of the labels the maintainers' private planning uses for its runs and audits.
-  const lines = unreleasedSection().split('\n');
+  // and none of the labels the maintainers' private planning uses for its runs, audits, blocks,
+  // work packages, inventory items, decisions and gates.
   const forms = [
     [/(?<![\d.])1\.2(?![\d.])/u, 'the version number 1.2'],
     [/\b[Rr]un [A-D]\b/u, 'a planning run label ("run B")'],
     [/\bpre-block audit\b/iu, 'a planning audit label ("pre-block audit")'],
-    [/\bB1\d[a-z]?-WP\d\b/u, 'a work package label ("B11-WP1")'],
+    [/\bB\d{1,2}[a-z]?(?:-WP\d+)?\b/u, 'a block or work package label ("B11-WP1", "B2")'],
+    [/\b[Bb]lock \d{1,2}[a-z]?\b/u, 'a block label ("block 8")'],
+    [/\b(?:I|D|N)-\d{1,3}\b/u, 'an inventory, decision or need id ("I-164", "D-15")'],
+    [/\bG-(?:ENGINE|PIN|REF|PY|SITE|DOCS|RED)\b/u, 'a gate label ("G-REF")'],
   ];
   const found = [];
-  lines.forEach((line, i) => {
-    for (const [pattern, what] of forms) if (pattern.test(line)) found.push(`line ${i + 1} of [Unreleased]: ${what}`);
-  });
-  assert.deepEqual(found, [], 'the [Unreleased] section names a later version or an internal label');
+  for (const section of openSections()) {
+    const name = section.slice(0, section.indexOf(']') + 1);
+    section.split('\n').forEach((line, i) => {
+      for (const [pattern, what] of forms) if (pattern.test(line)) found.push(`line ${i + 1} of ${name}: ${what}`);
+    });
+  }
+  assert.deepEqual(found, [], 'a change-log section names a later version or an internal label');
 });
