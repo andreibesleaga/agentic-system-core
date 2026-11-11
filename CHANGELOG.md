@@ -31,6 +31,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   AGSC-07-29 name those rows, each with a dated note of 2026-11-11. The test of the Internet-Draft's
   attributes lists the three of AGSC-06-44 that its posted revision predates, until the next revision names
   them.
+- Demos, no rule, case or emitted byte changes: `examples/demos/domain-layer/`, the smallest Bundle with a
+  domain layer (a vocabulary, one bounded context, one rule, one question), built on the files of the other
+  demos and run by `tests/examples/domain-layer.test.js` as part of `npm test` (it was red on the empty
+  folder first); `docs/DEMOS.md` gains "Version 1.1 — the new parts, in one pass" (the domain layer, the
+  brief, suggestions, the SKOS export, the chunk index and the query page, the agent card, the HTTP
+  tool server's loopback refusal and the benchmark kit's determinism layer), each command run by
+  `tests/docs/demos.test.js` (PRD-076).
 - Wording errata of the register, each a dated note of 2026-11-11 in `spec/` that states what the engine does
   and changes no rule, case or emitted byte: AGSC-02-21 (the three sections `trace` writes), the registry rows
   of `AGSC-E301`, `AGSC-E302`, `AGSC-E506`, `AGSC-E512` and `AGSC-E603` (the uses they gained), AGSC-06-32

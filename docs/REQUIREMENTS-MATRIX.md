@@ -147,7 +147,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-073 | MAPPED | — | — | `distribution/a2a-card.test.js` | — | — | — |
 | PRD-074 | MAPPED | — | — | `knowledge/derive.test.js`, `knowledge/questions.test.js`, `knowledge/relations.test.js` | — | — | — |
 | PRD-075 | MAPPED | — | — | `interchange/skos-import-cli.test.js`, `knowledge/closure.test.js`, `knowledge/skos-export.test.js` +3 | — | `persona-h-memory.feature` | — |
-| PRD-076 | MAPPED | `AGSC-01-41`, `AGSC-02-25`, `AGSC-03-27` +8 | 28 vectors, 30 tests, 11 scenarios, 1 checkers | `composition/context-map.test.js`, `distribution/domain-view.test.js`, `knowledge/competency.test.js` +4 | — | `persona-e-architect.feature`, `persona-i-maintainer.feature` | — |
+| PRD-076 | MAPPED | `AGSC-01-41`, `AGSC-02-25`, `AGSC-03-27` +8 | 28 vectors, 30 tests, 11 scenarios, 1 checkers | `composition/context-map.test.js`, `distribution/domain-view.test.js`, `examples/domain-layer.test.js` +5 | — | `persona-e-architect.feature`, `persona-i-maintainer.feature` | — |
 | PRD-077 | MAPPED | `AGSC-06-38` | 2 vectors, 13 tests, 3 scenarios, 0 checkers | `distribution/clusters-page.test.js`, `distribution/explorer-browser.test.js`, `distribution/graph-view.test.js` +1 | — | `persona-a-reader.feature` | — |
 | PRD-078 | MAPPED | `AGSC-06-39` | 1 vectors, 9 tests, 2 scenarios, 0 checkers | `distribution/query-browser.test.js`, `distribution/query-examples.test.js`, `distribution/query-page.test.js` | — | `persona-a-reader.feature` | — |
 | PRD-079 | MAPPED | — | — | `distribution/chunk-surface.test.js`, `distribution/page-links.test.js`, `distribution/signposting.test.js` +2 | — | `persona-h-memory.feature` | — |

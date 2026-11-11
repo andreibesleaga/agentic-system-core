@@ -1,7 +1,7 @@
 # Demos — every mode and every persona, run from an empty folder
 
 **Summary.** This page is a set of small, complete demonstrations: one for each of
-the six modes of using a Bundle, and one for what each of the sixteen personas of
+the six modes of using a Bundle, one pass over the parts version 1.1 added, and one for what each of the sixteen personas of
 the scenarios does first. Each demo starts from an empty folder with nothing but the
 `agentic-system-core` package, takes under five minutes, gives the exact commands,
 quotes the lines a real run printed, and names the one thing it proves. The agent
@@ -915,6 +915,119 @@ Mode 2 wrote.
 
 ---
 
+## Version 1.1 — the new parts, in one pass
+
+Version 1.1 adds a domain layer, a brief and blueprints, a query page, a chunk index,
+suggestions, a SKOS export, an agent card, the tool server over HTTP and a benchmark kit.
+One folder shows most of them at once: [examples/demos/domain-layer/](../examples/demos/domain-layer/README.md),
+the two concepts of the other demos with a vocabulary, one bounded context, one rule and one
+question. Each part has its own tested walk-through (links after each step); this is the short
+pass. It needs the 1.1 engine: a 1.0 release has none of these verbs and flags.
+
+```bash demo
+cp -r "$ENGINE/examples/demos/domain-layer" . && cd domain-layer
+git init -q -b main && git add -A && git commit -q -m "domain layer"
+agsc verify
+```
+
+```text expect
+verify: pass (0 error, 0 warn)
+```
+
+**The domain layer.** `verify` ran the node's rule (every coordinator controls a handover)
+and its question (which coordinator controls which handover?). The folder's README breaks
+the rule on purpose and shows the two refusals; [guides/mode-1.md](guides/mode-1.md) explains
+each file.
+
+**The brief.** `compose --brief` writes four files beside the Harness, and with a domain
+layer the brief names each member's type, role and context, and a context map is written
+too. `compose --from <slug> --brief` also writes a blueprint of a saved architecture: the
+three blueprints under [examples/blueprints/](../examples/blueprints/README.md) show it, and
+[guides/mode-4.md](guides/mode-4.md) explains it.
+
+```bash demo
+agsc compose handoff supervisor --brief > /dev/null 2>&1
+ls "$(ls -d dist/harness/*.companion)"
+grep -A3 '^## Domain' "$(ls -d dist/harness/*.companion)/BRIEF.md"
+```
+
+```text expect
+BRIEF.md
+brief.json
+brief.mmd
+context-map.json
+context.md
+## Domain
+- `handoff`: type Handover; role entity; context agent-patterns
+- `supervisor`: type Coordinator; role aggregate-root; context agent-patterns
+```
+
+**Suggestions, a SKOS export, the chunk index and the query page.** `lint --suggest` writes
+the Links it would propose to `dist/suggestions.json` and changes no note (these two notes are
+linked already, so its list is empty), `export --skos` writes the node as SKOS, and `build`
+writes `chunks-index.toon` and the `/query/` page. The query page runs in a browser; its ten
+example questions are in [guides/mode-0.md](guides/mode-0.md).
+
+```bash demo
+agsc lint --suggest | tail -1
+grep -o '"suggestions":\[\]' dist/suggestions.json
+agsc export --skos | tail -1
+agsc build > /dev/null 2>&1
+ls www/chunks-index.toon www/query/index.html
+```
+
+```text expect
+lint: pass (0 error, 0 warn)
+"suggestions":[]
+export: pass (0 error, 0 warn)
+www/chunks-index.toon
+www/query/index.html
+```
+
+**The agent card.** A node that declares an A2A `responder` and an `a2a-card` surface
+publishes `/.well-known/agent-card.json`, written by the official A2A SDK. Here the
+configuration gains the two declarations and the build writes the card:
+
+```bash demo
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.surfaces = [{ access: "consent", binding: "HTTP+JSON", surface: "responder", target: "https://domain-layer.example/a2a", version: "a2a:1.0" }, { access: "none", surface: "a2a-card", target: "https://domain-layer.example/.well-known/agent-card.json", version: "1.0" }]; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+agsc build | tail -1
+grep -o '"supportedInterfaces":\[[^]]*\]' www/.well-known/agent-card.json
+```
+
+```text expect
+build: pass (0 error, 0 warn)
+"supportedInterfaces":[{"protocolBinding":"HTTP+JSON","protocolVersion":"1.0","url":"https://domain-layer.example/a2a"}]
+```
+
+**The tool server over HTTP.** `agsc mcp --http` serves the ten tools over Streamable HTTP on
+a loopback address only; an address that is not loopback is refused before anything starts
+(opening a socket is shown in the agent demo's blueprint,
+[examples/blueprints/tool-server/](../examples/blueprints/tool-server/README.md)).
+
+```bash demo
+agsc mcp --http 0 --bind 10.0.0.1 || echo "mcp exit $?"
+```
+
+```text expect
+{"code":"AGSC-E003","severity":"error","message":"mcp: --bind \"10.0.0.1\" is not a loopback address: one in 127.0.0.0/8, or ::1 (AGSC-09-18)"}
+mcp exit 2
+```
+
+**The benchmark kit.** One layer of it runs offline: the determinism layer builds the
+repository's node twice, under another time zone and locale too, and compares every byte.
+The method and the other layers are in [BENCHMARKS.md](BENCHMARKS.md).
+
+```bash demo
+node "$ENGINE/bench/measure.js" --layer determinism --scratch "$PWD/../bench" > /dev/null
+node -e 'const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log("determinism:", m.double_build.compared, "files compared,", m.double_build.different.length, "different")' "$PWD/../bench/measure-determinism.json"
+```
+
+```text expect
+determinism: 61 files compared, 0 different
+```
+
+---
+
 ## The sixteen personas, by demo
 
 | Persona | First thing they do | Demo | The one thing it proves |
@@ -933,7 +1046,7 @@ Mode 2 wrote.
 | K — self-driving team | a lane claims a task through the tools | Mode 5 | claims are proposals; the commit decides the holder; refusals are the same everywhere |
 | L — port implementer | `validate-wellknown --level 0` on a hand-written node | Mode 1 | the checker judges the files, not the engine that wrote them |
 | M — security reviewer | `ci` before the security contact exists; `verify --ledger` | Mode 0 | a node without a security contact does not pass, and the ledger re-derives from the history |
-| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (no demo on this page) | every figure names the command that produced it, and a second run gives the same bytes |
+| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (the 1.1 demo on this page runs its determinism layer) | every figure names the command that produced it, and a second run gives the same bytes |
 | O — restricted publisher | `"visibility": "restricted"` with an `access` link; `validate-wellknown --level 2` | the Level-2 check of `docs/guides/publish.md`; `docs/IMPLEMENTERS-GUIDE.md` §7b (no demo on this page) | the discovery document says the node exists and where to ask for access, and the shipped checker judges it |
 
 ---

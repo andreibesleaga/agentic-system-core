@@ -1,0 +1,15 @@
+[
+  {
+    "expected": {
+      "rows": [
+        [
+          "<https://domain-layer.example/concepts/supervisor/>",
+          "<https://domain-layer.example/concepts/handoff/>"
+        ]
+      ]
+    },
+    "id": "who-controls-which-handover",
+    "query": "SELECT ?coordinator ?handover WHERE { ?coordinator <https://domain-layer.example/ns/agent-patterns#controls> ?handover . } ORDER BY ?coordinator ?handover",
+    "question": "Which coordinator controls which handover?"
+  }
+]

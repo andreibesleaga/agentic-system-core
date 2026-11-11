@@ -1,0 +1,11 @@
+@prefix ap: <https://domain-layer.example/ns/agent-patterns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+<https://domain-layer.example/ns/domain-shapes#CoordinatorControlsAHandover> a sh:NodeShape ;
+    sh:targetClass ap:Coordinator ;
+    sh:property [
+        sh:path ap:controls ;
+        sh:minCount 1 ;
+        sh:class ap:Handover ;
+        sh:message "Every coordinator controls at least one handover."@en
+    ] .

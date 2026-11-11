@@ -1,0 +1,27 @@
+@prefix ap: <https://domain-layer.example/ns/agent-patterns#> .
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+asc:Concept a owl:Class .
+asc:uses a owl:ObjectProperty .
+skos:definition a owl:AnnotationProperty .
+
+<https://domain-layer.example/ns/domain> a owl:Ontology ;
+    rdfs:label "Vocabulary of the domain layer demo" .
+
+ap:Coordinator a owl:Class ;
+    rdfs:label "Coordinator" ;
+    skos:definition "An agent that routes work to other agents and collects what they return." ;
+    rdfs:subClassOf asc:Concept .
+
+ap:Handover a owl:Class ;
+    rdfs:label "Handover" ;
+    skos:definition "The transfer of control and context from one agent to another." ;
+    rdfs:subClassOf asc:Concept .
+
+ap:controls a owl:ObjectProperty ;
+    rdfs:label "controls" ;
+    skos:definition "The coordinator starts, steers and ends the handover." ;
+    rdfs:subPropertyOf asc:uses .
