@@ -353,7 +353,7 @@ describe('1b. the MCP Registry entry carries the same version', () => {
 });
 
 describe('1c. every other file that states the package version', () => {
-  // A seeded wrong version in any of them stops the dry run (B13-WP1, test first).
+  // A seeded wrong version in any of them stops the dry run.
   const sites = {
     '.claude-plugin/marketplace.json': `${JSON.stringify({ plugins: [{ name: 'p', version: '0.0.2' }] }, null, 2)}\n`,
     '.github/mcpb/manifest.json': `${JSON.stringify({ manifest_version: '0.3', name: 'p', version: '0.0.2' }, null, 2)}\n`,
@@ -571,7 +571,7 @@ describe('the release workflow', () => {
     const pins = [...run.matchAll(/npx -y @anthropic-ai\/mcpb@(\S+) (validate|pack)/gu)];
     assert.deepEqual(pins.map((m) => m[2]), ['validate', 'pack'], 'the manifest is validated, then packed');
     for (const m of pins) assert.match(m[1], /^\d+\.\d+\.\d+$/u, 'an exact version of the official packer');
-    assert.match(run, /--ignore-scripts/u, 'the engine is installed without install scripts');
+    assert.match(run, /^npm ci --ignore-scripts$[\s\S]*npm pack[\s\S]*npm install --ignore-scripts/mu, 'prepack needs the development dependencies, so `npm ci` runs before `npm pack`; no install script runs in either install');
     assert.match(run, /\.github\/mcpb\/manifest\.json/u, 'the manifest the release checks');
     assert.match(run, /sha256sum "agentic-system-core-\$\{?VERSION\}?\.mcpb"[^\n]*GITHUB_STEP_SUMMARY/u, 'the SHA-256 goes to the run summary');
     assert.ok(job.steps.some((one) => /^actions\/upload-artifact@[0-9a-f]{40}$/u.test(one.uses || '')), 'kept as a run artifact');

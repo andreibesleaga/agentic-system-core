@@ -63,6 +63,7 @@ test('AGSC-08-20b: one process, oldest first, tags read out of the decorations',
 });
 
 // AGSC-08-20b (1.1): `author_email` is supplied when `ledger.actors` is configured, and only then.
+// Requirement: PRD-088 (docs/PRD.md).
 test('AGSC-08-20b: with ledger.actors configured the author addresses are read in a second process', () => {
   const calls = [];
   const sha = (c) => c.repeat(40);

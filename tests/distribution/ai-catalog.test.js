@@ -1,5 +1,6 @@
 'use strict';
 // tests/distribution/ai-catalog.test.js — AGSC-06-42: the two opt-in catalogue files.
+// Requirement: PRD-086 (docs/PRD.md).
 //
 //   * Off by default: no file, no finding.
 //   * The `urn:air` host is a fully qualified domain name: an IP literal, a single label and a

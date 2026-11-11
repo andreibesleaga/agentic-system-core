@@ -461,8 +461,9 @@ function typeFault(model, item, fault) {
 /**
  * AGSC-02-25: the domain keys of the items that name nothing, each `AGSC-E418` on the item's
  * file and key — a `domain_type` that names no class of the site vocabulary, or that is stated
- * on a node with no vocabulary file, and a `domain_context` that names no context
- * `domain.contexts` declares. Raised only on an item that states the key. A vocabulary that is
+ * on a node with no vocabulary file, a `domain_type` that names a class under another item
+ * class than the class of the item's `type` (AGSC-02-25, as amended 2026-11-10), and a
+ * `domain_context` that names no context `domain.contexts` declares. Raised only on an item that states the key. A vocabulary that is
  * named and does not load is `AGSC-E420` (`check`), and no type is judged against it.
  * `domain_links` on a node with no vocabulary file is the warning `AGSC-E207` that 1.0 gives
  * it: AGSC-03-27 lets only a node with a site vocabulary state domain links, and the registry

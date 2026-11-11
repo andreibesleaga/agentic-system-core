@@ -1,5 +1,6 @@
 'use strict';
 // Requirement: PRD-079 (docs/PRD.md).
+// Requirement: PRD-086 (docs/PRD.md), the llms.txt v2 relations (AGSC-06-46).
 // tests/distribution/page-links.test.js — AGSC-06-46: the two page-level link relations of
 // llms.txt v2 (modified 2026-08-10, llmstxt.org, read again 2026-11-07).
 //

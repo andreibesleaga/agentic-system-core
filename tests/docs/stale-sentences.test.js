@@ -29,6 +29,7 @@ const STALE = [
   ['"comes with 1.1"', /\bcomes? with 1\.1\b/iu],
   ['a version number after 1.1', /(?:planned|reserved|deferred|listed|not before)(?: for| with| to)? 1\.2\b(?!\.\d)/iu],
   ['"seven page tools" (there are ten)', /\bseven page tools\b/iu],
+  ['a wording said to be someone\'s to write (say what is not written yet)', /\bwording is the owner'?s to write\b/iu],
 ];
 
 /** The phrases that apply to the frozen specification: a number after 1.1 only. */

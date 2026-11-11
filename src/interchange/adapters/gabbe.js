@@ -736,16 +736,16 @@ function plan(files, options) {
       for (const [key, value] of Object.entries(candidate.fm)) fm[key] = value;
       if (candidate.type === 'procedure' && derived.title !== candidate.name) fm['x-gabbe-name'] = candidate.name;
       fm['x-gabbe-source'] = `${path}:${candidate.line}`;
-      if (tainted.all || tainted.entries.has(candidate.line)) {
-        // AGSC-06-30 keeps a draft out of every published surface; a kit states no
-        // licence, so nothing that arrived under a forged line may publish itself.
-        fm.status = 'draft';
-        totals.draft_untrusted += 1;
-        findings.push(finding('AGSC-E506', `${path}:${candidate.line}: imported as status: draft: it carried an`
-          + ' untrusted agsc-item line and a GABBE kit states no licence this adapter recognises as open, so it'
-          + ' is never published (AGSC-06-30) until a person has the right to publish it and changes the status',
-        { file: path, line: candidate.line, severity: 'warn' }));
-      }
+      // AGSC-01-22 (from 1.1): every foreign record is a draft, which AGSC-06-30 keeps out of
+      // every published surface; a kit states no licence this adapter recognises as open.
+      const untrusted = tainted.all || tainted.entries.has(candidate.line);
+      fm.status = 'draft';
+      if (untrusted) totals.draft_untrusted += 1;
+      findings.push(finding('AGSC-E506', `${path}:${candidate.line}: imported as status: draft: it comes from a kit`
+        + ` this node does not own${untrusted ? ' and carried an untrusted agsc-item line' : ''}, and a GABBE kit`
+        + ' states no licence this adapter recognises as open, so it is never published (AGSC-06-30) until a person'
+        + ' has the right to publish it and changes the status (AGSC-01-22)',
+      { file: path, line: candidate.line, severity: 'warn' }));
       if (candidate.synthesized === 'severity') synthesizedSeverity += 1;
       const clean = neutraliseSingleLine(fm);
       items.push({ body: nfc(String(candidate.body)), fm: plain(clean.frontmatter), foreign: true, slug, type: candidate.type });

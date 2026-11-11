@@ -94,7 +94,7 @@ section lists every file of a 1.0.1 node whose bytes change.
   beside the Harness, never in it or its archive: why each member is there, the relations one step
   out, the dependency order, the readings, the gaps and a checklist; `derived` holds at most 1,000,000
   steps, with `derived_total` above that (AGSC-07-25 to AGSC-07-27). The seven Harness files keep their
-  bytes (AGSC-07-12).
+  bytes but for the `spec_version` they state (AGSC-07-12, AGSC-00-16).
 - `compose --narrate <agent>` needs `--brief`; this distribution ships no model adapter and answers
   `AGSC-E001` (AGSC-07-28).
 - For an item of `kind: architecture`, `compose --from <slug> --brief` also writes `blueprint/`: the

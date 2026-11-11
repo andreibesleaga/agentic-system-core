@@ -1,5 +1,6 @@
 'use strict';
 // I-087 (FR-226): the `exports` map of package.json.
+// Requirement: PRD-089 (docs/PRD.md).
 //
 // Without a map every file of the tarball is an import path, including `src/` internals.
 // The map names what a consumer may import: the entry, the `agsc` launcher the alias

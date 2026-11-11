@@ -111,8 +111,12 @@ test('the search page works in a browser, by keyboard alone, and nothing leaves 
       });
     }
     assert.ok(onResult, 'no result link is reachable by Tab');
-    await first.page.keyboard.press('Enter');
-    await first.page.waitForURL(/\/[a-z]+\/[a-z0-9-]+\/$/u, { timeout: 10000 });
+    // Wait for the navigation the Enter key starts, armed before the key is pressed, and only
+    // until the new address commits (not its 'load'), so a busy machine cannot race it.
+    await Promise.all([
+      first.page.waitForURL(/\/[a-z]+\/[a-z0-9-]+\/$/u, { timeout: 30000, waitUntil: 'commit' }),
+      first.page.keyboard.press('Enter'),
+    ]);
     assert.ok(first.page.url().endsWith(hits[0].href), `${first.page.url()} is not the first hit ${hits[0].href}`);
     assert.deepStrictEqual(first.errors, [], 'the page logged errors');
     assert.deepStrictEqual(first.offOrigin, [], 'the page requested another origin');

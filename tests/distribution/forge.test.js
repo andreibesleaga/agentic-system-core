@@ -122,6 +122,7 @@ test('CODEOWNERS takes channels[].owner, else the bundle.operator identifier, el
 // file is in the shape GitHub's "Import a ruleset" takes (`rules` is a list of
 // `{type, parameters}`) and carries the review rule the check `review` stands for.
 test('ruleset.json is a GitHub ruleset: the pull-request review rule and the one check a CI job reports', () => {
+  // Requirement: PRD-088 (docs/PRD.md).
   const files = forge.compile([gate({ enforce: ['ruleset', 'status-check'], level: 'L2' })], {});
   const text = files.get('ruleset.json');
   assert.strictEqual(text, '{"bypass_actors":[],"conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},'

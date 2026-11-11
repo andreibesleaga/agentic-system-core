@@ -140,10 +140,12 @@ test('the overview chapter, declared scope: the other items decided for 1.1 are 
   assert.match(SCOPE, /\(Amended 2026-10-12 for 1\.0\.0: /u);
 });
 
-test('the overview chapter, "This version": it names the normative references section and both exceptions of the vector rule', () => {
+test('the overview chapter, "This version": it describes the version the chapter declares, and both exceptions of the vector rule', () => {
   const note = plain(CH00.split('\n').find((l) => l.startsWith('> **This version.**')));
-  assert.match(note, /It adds one section, §0\.7, which lists the documents the rules already cite normatively, and adds, renumbers and removes no rule/u);
-  assert.doesNotMatch(note, /adds no section/u);
+  const declared = /^`spec_version: "([^"]+)"`/mu.exec(CH00)[1];
+  assert.ok(note.startsWith(`> **This version.** ${declared} is a MINOR release`), `the note names ${declared}, the version this chapter declares`);
+  assert.match(note, /it adds keys, rules and test cases and renumbers or removes no rule \(AGSC-00-14\)/u);
+  assert.match(note, /AGSC-00-20 lists what it makes normative/u);
   assert.match(note, /a released vector is withdrawn and replaced rather than edited, except the specification-version string it carries and its rule member, re-pointed when the rule it named is retired into another \(AGSC-00-16\)/u);
 });
 

@@ -163,8 +163,9 @@ unless you add `--replace`, and a second import of the same archive changes noth
   lessons (severity `info`), memory blocks become procedures, and facts become
   typed Links when both ends were imported and the predicate is one of the fourteen
   Link kinds. Every item is marked `prov.origin: imported` with your node's
-  operator. Whatever the mapping does not use is kept in `x-cogx-rest`, so nothing
-  is silently dropped. **Not imported, and reported:** episodes (a COGX episode has
+  operator and arrives as a **draft**, with the warning `AGSC-E506`, so nothing of it
+  is published until you change its status (AGSC-01-22). Whatever the mapping does not
+  use is kept in `x-cogx-rest`, so nothing is silently dropped. **Not imported, and reported:** episodes (a COGX episode has
   no outcome, which an episode here must have), documents (they are the raw text the
   other records were derived from) and raw nodes (there is no item type for them).
 - **Refused:** an archive containing `permissions.json` (remove it — it holds
@@ -227,8 +228,10 @@ nothing.
   each dated `PROJECT_STATE.md` line and each decision-log entry whose action type is
   a decision becomes a concept of kind `decision`; each `AUDIT_LOG.md` row and
   decision-log entry that states an outcome (`PASS`, `FAIL`, `OK`, `PARTIAL`) becomes
-  an episode. Every item is marked `prov.origin: imported` with your node's operator
-  and names the kit file and line it came from (`x-gabbe-source`). A kit publishes no
+  an episode. Every item is marked `prov.origin: imported` with your node's operator,
+  arrives as a **draft** with the warning `AGSC-E506` (nothing of it is published until
+  you change its status, AGSC-01-22) and names the kit file and line it came from
+  (`x-gabbe-source`). A kit publishes no
   content version of its own, so `prov.source_version` is written only when you pass
   `--source-version` (the kit's commit, for instance).
 - **Not imported, and reported:** an `AUDIT_LOG.md` bullet entry (`- <date> | <actor>

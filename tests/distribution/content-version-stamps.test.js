@@ -132,6 +132,7 @@ test('with no git-log file the build still stamps, from the build instant', () =
 });
 
 test('AGSC-11-20: a restricted node stamps nothing a content oracle could read', () => {
+  // Requirement: PRD-087 (docs/PRD.md).
   const fs = createFileSystem(FIXTURE);
   const loaded = loadBundle(fs, { schemas: validate.schemas(readSchemas(ROOT)) });
   const bundle = {

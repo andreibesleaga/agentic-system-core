@@ -21,6 +21,7 @@ test('every public artefact carries the CORS pair and no credentials header (AGS
 });
 
 test('a restricted node applies the wildcard to the discovery document alone (AGSC-11-20)', () => {
+  // Requirement: PRD-087 (docs/PRD.md).
   const sets = headers.headerSets({ visibility: 'restricted' });
   assert.deepStrictEqual(setFor(sets, WELLKNOWN_PATH).map(([k]) => k).filter((k) => k.startsWith('Access-Control')),
     ['Access-Control-Allow-Origin', 'Access-Control-Expose-Headers']);

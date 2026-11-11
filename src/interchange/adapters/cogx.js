@@ -776,16 +776,16 @@ function plan(files, options) {
     if (mapped.item.created !== null) fm.date = mapped.item.created;
     fm.prov = { operator: String(opts.operator === undefined ? 'human:unknown' : opts.operator), origin: 'imported' };
     for (const [key, value] of Object.entries(mapped.item.fm)) fm[key] = value;
-    if (trust.get(entry) === false) {
-      // AGSC-06-30 keeps a draft out of every published surface; a COGX record states
-      // no licence, so nothing that arrived under a forged member may publish itself.
-      fm.status = 'draft';
-      totals.draft_untrusted += 1;
-      findings.push(finding('AGSC-E506', `${entry.file}:${entry.line}: imported as status: draft: it carried an`
-        + ' untrusted agsc member and a COGX record states no licence this adapter recognises as open, so it is'
-        + ' never published (AGSC-06-30) until a person has the right to publish it and changes the status',
-      { file: entry.file, line: entry.line, severity: 'warn' }));
-    }
+    // AGSC-01-22 (from 1.1): every foreign record is a draft, which AGSC-06-30 keeps out of
+    // every published surface; a COGX record states no licence this adapter recognises as open.
+    const untrusted = trust.get(entry) === false;
+    fm.status = 'draft';
+    if (untrusted) totals.draft_untrusted += 1;
+    findings.push(finding('AGSC-E506', `${entry.file}:${entry.line}: imported as status: draft: it comes from an`
+      + ` archive this node does not own${untrusted ? ' and carried an untrusted agsc member' : ''}, and a COGX record`
+      + ' states no licence this adapter recognises as open, so it is never published (AGSC-06-30) until a person'
+      + ' has the right to publish it and changes the status (AGSC-01-22)',
+    { file: entry.file, line: entry.line, severity: 'warn' }));
     const clean = neutraliseSingleLine(fm);
     items.push({ body: mapped.item.body, fm: plain(clean.frontmatter), foreign: true, slug, type: mapped.item.type });
     remember(entry.value.external_id, slug);

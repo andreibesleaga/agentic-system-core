@@ -143,6 +143,9 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      # `npm pack` runs the prepack script (check:ts, typecheck), which needs the
+      # development dependencies; no dependency's install script runs.
+      - run: npm ci --ignore-scripts
       - name: pack the engine into the bundle, validate, pack, print the SHA-256
         shell: bash
         run: |

@@ -73,6 +73,7 @@ test('AGSC-08-23: a builder name that is not a process is not accepted as the bu
 });
 
 // AGSC-08-20a (1.1): a commit with no sign-off takes its actor from ledger.actors, by author address.
+// Requirement: PRD-088 (docs/PRD.md).
 const ACTORS = { 'ada@example.org': 'human:ada' };
 const commit = (extra) => ({ committed_at: '2026-01-01T00:00:00Z', parents: [], sha: 'a'.repeat(40), trailers: {}, ...extra });
 

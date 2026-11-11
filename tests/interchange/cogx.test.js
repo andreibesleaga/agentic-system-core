@@ -442,6 +442,14 @@ const FOREIGN = {
   'nodes.jsonl': `${JSON.stringify({ id: 'n1', type: 'Widget' })}\n`,
 };
 
+test('AGSC-01-22 (1.1): every record of a foreign archive is written as a draft and reported once as AGSC-E506', () => {
+  const planned = cogx.plan(FOREIGN, { itemSchema: ITEM_SCHEMA, operator: 'human:x', toolSpecVersion: SPEC });
+  assert.ok(planned.writes.length > 0);
+  for (const w of planned.writes) assert.match(w.text, /^status: draft$/mu, `${w.path} is from a source this node does not own`);
+  const drafted = planned.findings.filter((f) => f.code === 'AGSC-E506' && /imported as status: draft/u.test(f.message));
+  assert.deepStrictEqual([drafted.length, drafted.every((f) => f.severity === 'warn')], [planned.writes.length, true]);
+});
+
 test('a foreign archive is imported by kind, and every loss is named', () => {
   const planned = cogx.plan(FOREIGN, { itemSchema: ITEM_SCHEMA, operator: 'human:x', toolSpecVersion: SPEC });
   assert.strictEqual(planned.refused, false);

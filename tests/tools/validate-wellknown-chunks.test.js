@@ -68,7 +68,7 @@ describe('validate-wellknown: the chunks surface link and the ledger length', ()
   });
 
   it('the engine\'s own build declares the version it implements, so the three are required of it as built', () => {
-    // ERR-075: no version is edited here. A build that still said 1.0.0 would let a writer
+    // AGSC-09-93: no version is edited here. A build that still said 1.0.0 would let a writer
     // drop the chunk facts unnoticed.
     const envelope = checked((doc) => {
       assert.deepEqual(anchorLink(doc)['agsc-spec-version'], [require('../../src/shared/spec-version.js').SPEC_VERSION]);

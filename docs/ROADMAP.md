@@ -5,9 +5,10 @@ writes a small, deterministic set of files called a Harness. Version 1.1 gives e
 Link a stated meaning and checks it, writes a **composition brief** beside the Harness,
 shows the graph on every page, adds a query page, an optional domain layer and more
 ways for agents and other tools to read a node. A Bundle that conforms to 1.0 builds
-the same graph and the same seven Harness files under 1.1. This page is informative;
-where it disagrees with a rule in [`spec/`](../spec/README.md), the rule wins, and the
-complete list of what each version specifies is AGSC-00-20.
+the same graph and the same seven Harness files under 1.1, but for the `spec_version`
+they state. This page is informative; where it disagrees with a rule in
+[`spec/`](../spec/README.md), the rule wins, and the complete list of what each version
+specifies is AGSC-00-20.
 
 **Who this is for:** anyone deciding whether to use composition and the graph today,
 and anyone who wants to help shape what comes next. **Read after:**
@@ -111,7 +112,7 @@ reserves stay as AGSC-00-20 states them.
 6. **`agsc-host` behind the file-system port**, as the engine's other commands are.
    An internal change with no effect on any file.
 7. **Content Use Terms in plain words, opted into per node.** The rule slot is
-   reserved; the wording is the owner's to write.
+   reserved; its wording is not written yet.
 8. **Skills import extras:** `--replace` with no loss of data, and one route for the
    two import paths.
 9. **Discovery extras:** an `/.well-known/api-catalog` route (RFC 9727), a lint warning
@@ -128,8 +129,8 @@ reserves stay as AGSC-00-20 states them.
 ## Compatibility promise
 
 - A Bundle that conforms to 1.0 builds and composes under 1.1 with the same bytes for
-  its graph and its seven Harness files; its pages change only by the added views and
-  by the files AGSC-00-20 names.
+  its graph and its seven Harness files, but for the `spec_version` the Harness files state
+  (1.1.0); its pages change only by the added views and by the files AGSC-00-20 names.
 - The five composition steps and every verdict stay as they are. The brief is an extra
   rendering, not a new step.
 - A 1.0 tool that meets something from 1.1 ignores it or refuses it with a registered

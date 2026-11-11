@@ -143,7 +143,7 @@ describe('the tree states the version it releases, in every place that carries i
   });
 
   it('the engine states the declared version as the one it implements, from one constant', () => {
-    // ERR-075: one constant, `src/shared/spec-version.js`; the command line, the
+    // AGSC-00-14: one constant, `src/shared/spec-version.js`; the command line, the
     // discovery reader and the deployment profiles take it from there.
     const { SPEC_VERSION } = require('../../src/shared/spec-version.js');
     assert.equal(SPEC_VERSION, declared);
