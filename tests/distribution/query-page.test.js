@@ -237,8 +237,8 @@ test('the two scripts and the stylesheet are pinned: a change to what every node
   // the stylesheet changes these: update the pin in the same commit, and say in CHANGELOG.md
   // which bytes of every node change.
   const pins = {
-    [queryPage.SCRIPT_ROUTE]: '8f2aecb319ccd24a50acfd672e27ef8dddc36245d93cc67ded74ba3d5fbf704a',
-    [queryPage.WORKER_ROUTE]: 'f19c45d9cf2141b018b8c94428f2e2e80d3f019b6733b85b44641e4ec28ee61d',
+    [queryPage.SCRIPT_ROUTE]: '3eaa10b1faa4c8eb6e02d57f65c7d60250b10d90ed694040a6d1bdb06b89bc7d',
+    [queryPage.WORKER_ROUTE]: '1b047d0d6430d51985cc9407b437ec878ec403cf6e0a3820936089902be3674d',
     [queryPage.STYLESHEET_ROUTE]: 'f49cf88e09ede76cd49f0e38eeaa6087ab48c070b9e2f9ffc6f857e16d646b93',
   };
   for (const [route, pin] of Object.entries(pins)) assert.strictEqual(sha256(String(BUILT.files.get(route))), pin, route);

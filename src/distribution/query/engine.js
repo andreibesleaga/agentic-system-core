@@ -129,15 +129,21 @@ function queryAnswer(ox, store, text) {
   const refused = queryRefusal(check);
   if (refused !== null) return { error: refused, form: check.form };
   const options = check.dataset ? {} : { use_default_graph_as_union: true };
+  // No W3C result file is empty; the WebAssembly build gives "" for a result longer than
+  // the browser's longest string (the Node build throws), so "" is that case, said as such.
+  const whole = (file) => {
+    if (file === '') throw new Error('the result is too large for this browser; add LIMIT to the query.');
+    return file;
+  };
   try {
-    if (check.form === 'ASK') return { csv: null, form: check.form, json: store.query(text, { ...options, results_format: json }) };
+    if (check.form === 'ASK') return { csv: null, form: check.form, json: whole(store.query(text, { ...options, results_format: json })) };
     if (check.form === 'SELECT') {
-      const result = store.query(text, { ...options, results_format: json });
-      return { csv: check.fresh ? querySelectCsv(ox, result) : store.query(text, { ...options, results_format: csv }), form: check.form, json: result };
+      const result = whole(store.query(text, { ...options, results_format: json }));
+      return { csv: whole(check.fresh ? querySelectCsv(ox, result) : store.query(text, { ...options, results_format: csv })), form: check.form, json: result };
     }
     const triples = queryGraphStore(ox, store.query(text, options));
     const read = 'SELECT ?subject ?predicate ?object WHERE { ?subject ?predicate ?object } ORDER BY ?subject ?predicate ?object';
-    return { csv: triples.query(read, { results_format: csv }), form: check.form, json: triples.query(read, { results_format: json }) };
+    return { csv: whole(triples.query(read, { results_format: csv })), form: check.form, json: whole(triples.query(read, { results_format: json })) };
   } catch (e) {
     return { error: `The engine could not run the query: ${e && e.message ? e.message : String(e)}`, form: check.form };
   }

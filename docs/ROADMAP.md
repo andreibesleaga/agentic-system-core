@@ -131,7 +131,8 @@ reserves stay as AGSC-00-20 states them.
 
 - A Bundle that conforms to 1.0 builds and composes under 1.1 with the same bytes for
   its graph and its seven Harness files, but for the `spec_version` the Harness files state
-  (1.1.0); its pages change only by the added views and by the files AGSC-00-20 names.
+  (1.1.0); its pages change only by the added views, the page head and tag links that
+  AGSC-00-20 (d) names, and the files AGSC-00-20 names.
 - The five composition steps and every verdict stay as they are. The brief is an extra
   rendering, not a new step.
 - A 1.0 tool that meets something from 1.1 ignores it or refuses it with a registered

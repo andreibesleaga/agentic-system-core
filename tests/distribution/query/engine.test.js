@@ -182,6 +182,19 @@ test('the engine\'s own error comes back as a message', () => {
   assert.match(answer.error, /^The engine could not run the query: .+/u);
 });
 
+test('a result too large for the browser comes back as a message, not as an empty file', () => {
+  // The WebAssembly build gives "" where a result is longer than the browser's longest
+  // string (the Node build throws); no W3C result file is ever empty, so "" is that case.
+  const empty = { query: () => '' };
+  for (const text of ['SELECT ?s WHERE { ?s ?p ?o }', 'SELECT (RAND() AS ?r) WHERE { ?s ?p ?o }', 'ASK { ?s ?p ?o }']) {
+    const answer = engine.queryAnswer(ox, empty, text);
+    assert.strictEqual(answer.json, undefined, text);
+    assert.match(answer.error, /^The engine could not run the query: the result is too large for this browser; add LIMIT to the query\.$/u, text);
+  }
+  const csvOnly = { query: (q, o) => (o.results_format === 'text/csv' ? '' : '{"head":{"vars":["s"]},"results":{"bindings":[]}}') };
+  assert.match(engine.queryAnswer(ox, csvOnly, 'SELECT ?s WHERE { ?s ?p ?o }').error, /too large/u);
+});
+
 /** RFC 4180 records of a CSV text, as the W3C CSV format writes it (CRLF, quoted fields). */
 function csvRecords(text) {
   const records = [];

@@ -95,6 +95,8 @@ async function openQuery({ base, browser }, options = {}) {
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(String(e)));
   context.on('request', (r) => requests.push(r.url()));
+  // `options.worker`: the source of a stand-in worker, served in place of the page's own.
+  if (options.worker) await context.route('**/query/agsc-query-worker.js', (r) => r.fulfill({ body: options.worker, contentType: 'text/javascript' }));
   const started = Date.now();
   await page.goto(`${base}/query/${options.hash || ''}`, { waitUntil: 'load' });
   await page.waitForSelector('#query[data-state="ready"]', { timeout: 30000 });

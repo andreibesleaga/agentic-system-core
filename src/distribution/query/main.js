@@ -88,12 +88,18 @@ function queryMain(win, api) {
       build(['figcaption', { id: 'query-picture-caption' }, words]));
     picture.hidden = false;
   };
-  const show = (answer) => {
+  const show = (given) => {
     release();
+    let answer = given;
+    let parsed = null;
+    try {
+      if (answer.error === undefined) parsed = JSON.parse(answer.json);
+    } catch (e) {
+      answer = { error: 'The result could not be read in this browser; add LIMIT to the query.', form: answer.form };
+    }
     say(querySummary(answer));
     root.setAttribute('data-result', answer.error === undefined ? 'answered' : 'refused');
     if (answer.error !== undefined) { result.hidden = true; return; }
-    const parsed = JSON.parse(answer.json);
     table.replaceChildren(build(queryTable(parsed, api.ROWS_SHOWN, api.PREFIXES)));
     offer('json', json, answer.json, 'application/sparql-results+json');
     if (answer.csv === null) csvNone.hidden = false;

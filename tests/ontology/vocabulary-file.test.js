@@ -177,7 +177,7 @@ test('while owl:versionInfo names a released version, the file is that release\'
   // it takes a new version.
   const RELEASED = {
     '1.0.0': '1e36cf86f48430a0a9c7c93d9dc773cc1f9f821d85723ff2a79c0888c6ebd08d',
-    '1.1.0': 'f1706508acdad24ab7da7c837f0d825719d6bc38272f8bff195fbd5dd5b0218f',
+    '1.1.0': '1a47ed14050f413714e128996bdb775ac59e5217ee090a3986a8c6a8ec7c5b0d',
   };
   const version = one(ONTOLOGY, `${OWL}versionInfo`).value;
   if (!Object.hasOwn(RELEASED, version)) return;

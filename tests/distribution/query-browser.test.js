@@ -17,7 +17,8 @@
 //     same values as the table where a query draws new ones on each run;
 //   * the share link holds the query in its fragment; opening it fills the editor and runs
 //     nothing; no request carries the query text; nothing is stored;
-//   * Stop ends a long query and the page is ready again;
+//   * Stop ends a long query and the page is ready again; an answer the page cannot read
+//     (a result too large for the browser) is said as such;
 //   * each of the ten examples, filled in from the node and run from the keyboard alone,
 //     answers what the question's own function answers (AGSC-05-34, the answers of
 //     graph-0030 to graph-0039 over this node's items);
@@ -194,6 +195,20 @@ test('the /query/ page in a browser', { skip: SKIP || false }, async (t) => {
       await page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
       assert.strictEqual(await page.getAttribute('#query', 'data-result'), null, 'a stopped query shows no result');
       assert.deepStrictEqual(errors, []);
+      await context.close();
+    });
+
+    await t.test('an answer the page cannot read is said as such, and the page is ready again', async () => {
+      // A stand-in worker gives a SELECT answer whose JSON file is empty, as a result too
+      // large for the browser's longest string would be; the page must not stay on "Running…".
+      const worker = "self.onmessage = (e) => self.postMessage({ answer: { csv: '', form: 'SELECT', json: '' }, id: e.data.id, type: 'answer' });\n"
+        + "self.postMessage({ size: 1, type: 'ready' });\n";
+      const { context, page } = await openQuery(run, { worker });
+      const shown = await runQuery(page, 'SELECT * WHERE { ?a ?b ?c . ?d ?e ?f }');
+      assert.strictEqual(shown.result, 'refused');
+      assert.strictEqual(shown.status, 'The result could not be read in this browser; add LIMIT to the query.');
+      assert.ok(shown.resultHidden);
+      assert.strictEqual(await page.getAttribute('#query', 'data-state'), 'ready');
       await context.close();
     });
 

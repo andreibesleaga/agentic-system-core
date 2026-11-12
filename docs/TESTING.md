@@ -73,9 +73,9 @@ Before the 1.1.0 release the tree was verified in two rounds of read-only audits
 |---|---|---|
 | Whole suite with the coverage gate | `npm run test:coverage` (`SOURCE_DATE_EPOCH=1767225600`, the Python package 1.1 named by `ACCEPTANCE_PYTHON_PACKAGE`) | 4,964 tests: 4,906 pass, 0 fail, 58 skipped, each skip with its printed reason; lines 99.96 %, branches 94.63 %, functions 99.50 % of `src/` (bars 99.9, 93 and 99) |
 | Static gates | `npm run lint`, `arch`, `typecheck`, `check:ts`, `duplicates`; the six validators; `rule-coverage --check`; `requirements-matrix --check`; `tools/public-hygiene`; `npm audit` | all 0 errors; 211 modules with no dependency violation; 0.76 % duplicated lines; 374 active rules, 361 verified, 11 prose-only, 2 gaps, 0 unverified; 102 requirements, 0 unmapped; 0 vulnerabilities |
-| Browser | the eight browser test files with `AGSC_BROWSER=1` | 31 of 31 pass, none skipped |
+| Browser | the nine browser test files (`tests/*/*browser*.test.js`, `tests/e2e/modes/browser.test.js`) with `AGSC_BROWSER=1` | 47 of 47 pass, none skipped |
 | `/query/` on the three public nodes | `AGSC_E2E=1 AGSC_BROWSER=1 node --test tests/e2e/query-sites.test.js` | 3 of 3: the ten examples answer as their functions do, axe-core finds nothing in either scheme at 390 and 1280 px |
-| Python package | `pytest`, `ruff check .`, `mypy src/agentic_system_core tests` | 1,368 passed, 1 skipped (a withdrawn vector); 98 % coverage; ruff and mypy clean |
+| Python package | `pytest`, `ruff check .`, `mypy src/agentic_system_core tests` | 1,369 passed, 1 skipped (a withdrawn vector); 98 % coverage; ruff and mypy clean |
 | Compatibility | the change log's byte table checked against a fresh comparison of seven 1.0.1 inputs built by 1.0.1 and by 1.1.0; `compose-0027` | 510 files differ and the table counts 510; the Harness files keep their bytes but for the `spec_version` they state |
 
 **Fresh clones.** The release dry run, `node tools/release --version 1.1.0` on side-by-side fresh clones of the engine and the Python package, lists the files the package ships with 0 errors and 0 warnings. The demonstration node, cloned fresh, passes `lint`, `build`, `verify --ledger`, `ci` and `conform --level 2` with 0 errors and 0 warnings.
