@@ -53,3 +53,11 @@ test('the main entry still resolves by the package name through the map', () => 
   const resolved = require.resolve(ROOT);
   assert.strictEqual(resolved, path.join(ROOT, manifest.main));
 });
+
+test('the README says what the map exports, and never that there is no map', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  assert.ok(!/declares no `exports` map/u.test(readme), 'README.md says the package declares no exports map');
+  for (const subpath of Object.keys(manifest.exports).filter((k) => k !== '.')) {
+    assert.ok(readme.includes(`\`${subpath.replace(/^\.\//u, '').replace(/\/\*$/u, '/')}\``), `README.md does not name the export ${subpath}`);
+  }
+});

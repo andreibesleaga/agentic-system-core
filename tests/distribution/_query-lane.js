@@ -80,11 +80,14 @@ async function session(out) {
   return { base, browser, close, out };
 }
 
-/** `/query/` (or a share link) with the engine ready; every console error and request recorded; `ms` the time to ready. */
+/**
+ * `/query/` (or a share link) with the engine ready; every console error and request recorded; `ms` the time to ready.
+ * `options.width` is the viewport width (1280 by default; 390 is the phone width of the sites' a11y lanes).
+ */
 async function openQuery({ base, browser }, options = {}) {
   const context = await browser.newContext({
     acceptDownloads: true, colorScheme: options.scheme || 'light', reducedMotion: options.reducedMotion || 'no-preference',
-    viewport: { height: 900, width: 1280 },
+    viewport: { height: 900, width: options.width || 1280 },
   });
   const page = await context.newPage();
   const errors = [];

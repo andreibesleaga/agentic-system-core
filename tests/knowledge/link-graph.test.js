@@ -58,5 +58,5 @@ test('property: the edges do not depend on the order of the items, and every edg
     const forward = linkGraph.edgesOf(items, published);
     assert.deepStrictEqual(linkGraph.edgesOf([...items].reverse(), published), forward);
     for (const e of forward) assert.ok(published.has(e.source) && published.has(e.target));
-  }));
+  }), { seed: 20260918 });
 });

@@ -567,6 +567,15 @@ async function checkDigest(t, h, rel, ext, doc) {
   } catch (e) { F(e.code || 'AGSC-E907', `relation ${rel}: ${e.message}`); }
 }
 
+/** AGSC-11-16: a `YYYY-MM-DD` value that names a day of the calendar (not `2026-13-45`). */
+function isDate(text) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+  const [year, month, day] = text.split('-').map(Number);
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return day >= 1 && day <= (days || 0);
+}
+
 /**
  * AGSC-11-16: one rel#surface target's declaration; an llms-txt or chunks target must resolve,
  * and so must an a2a-card target on the node's own origin (`checkCardTarget`).
@@ -581,7 +590,7 @@ async function checkSurface(t, h, doc) {
   else if (!ACCESS.has(acc[0])) F('AGSC-E210', `rel#surface ${t.href}: unknown access class ${JSON.stringify(acc[0])} (read as credential, AGSC-11-02)`, 'warn');
   if (name && SURFACE_NEEDS_VERSION.has(name) && !(Array.isArray(ver) && ver.length === 1)) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version is required for ${name} (AGSC-11-16)`);
   if (name && (name === 'llms-txt' || name === 'chunks') && ver !== undefined) F('AGSC-E210', `rel#surface ${t.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
-  if (name === 'webmcp' && Array.isArray(ver) && ver.length === 1 && !/^\d{4}-\d{2}-\d{2}$/.test(String(ver[0]))) F('AGSC-E210', `rel#surface ${t.href}: the agsc-surface-version of webmcp is a date YYYY-MM-DD, not ${JSON.stringify(ver[0])} (AGSC-11-16)`);
+  if (name === 'webmcp' && Array.isArray(ver) && ver.length === 1 && !isDate(String(ver[0]))) F('AGSC-E210', `rel#surface ${t.href}: the agsc-surface-version of webmcp is a date YYYY-MM-DD, not ${JSON.stringify(ver[0])} (AGSC-11-16)`);
   if (name === 'llms-txt' && h.pathname !== '/llms.txt' && !h.pathname.endsWith('/llms.txt')) F('AGSC-E210', `rel#surface llms-txt must target /llms.txt (AGSC-11-16)`);
   // AGSC-11-20: the `chunks` of a restricted node declare `credential` and are not served unauthenticated.
   const open = name === 'chunks' && !(Array.isArray(acc) && acc[0] === 'credential');

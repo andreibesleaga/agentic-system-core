@@ -13,7 +13,12 @@ test('a private-key block is AGSC-E403', () => {
   assert.deepStrictEqual(codes(secrets.check({ text: '-----BEGIN RSA PRIVATE KEY-----\nAAAA\n' })),
     ['AGSC-E403']);
   assert.deepStrictEqual(codes(secrets.check({ text: '-----BEGIN OPENSSH PRIVATE KEY-----' })),
-    ['AGSC-E403', 'AGSC-E403'], 'the generic and the specific shape both name it');
+    ['AGSC-E403'], 'one credential, one finding');
+});
+
+test('one credential is one finding, worded with its article', () => {
+  const found = secrets.check({ text: `sk-ant-${'a'.repeat(20)}` });
+  assert.deepStrictEqual(found.map((f) => [f.code, f.message]), [['AGSC-E403', 'an sk- API token (AGSC-08-15)']]);
 });
 
 test('provider token prefixes are AGSC-E403', () => {

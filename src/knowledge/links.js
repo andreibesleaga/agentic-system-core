@@ -37,19 +37,7 @@ const { SLUG_PATTERN } = require('./slug.js');
 
 // AGSC-03-01…04, 03-05: the keys, inverses, symmetric set and computed names are the
 // relation table's (`relations.js`), the one copy the server side reads.
-const { RELATIONS, CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS } = require('./relations.js');
-
-/**
- * AGSC-03-03 / AGSC-11-12: the link-shaped names that are NOT among the fourteen
- * and MUST warn rather than being silently treated as a Link. The set is closed on
- * purpose: the reserved `peer-ref`, the untyped `mentions` of AGSC-03-11, and the
- * foreign spellings AGSC-03-19/03-20 map on import. An arbitrary unknown key is
- * AGSC-E207's business (knowledge/validate.js), not this module's, so that one
- * fault never carries two codes.
- */
-const LINK_SHAPED_UNKNOWN = Object.freeze(new Set(['peer-ref', 'mentions', 'refines',
-  'alternative-to', 'conflicts-with', 'composed-of', 'mitigates', 'recommends',
-  'blockedBy', 'decidedBy', 'tests', 'traces-to']));
+const { RELATIONS, CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS, LINK_SHAPED_UNKNOWN } = require('./relations.js');
 
 /** AGSC-03-08: family > deck > sub-deck — at most two `broader` ancestors. */
 const MAX_CLUSTER_ANCESTORS = 2;

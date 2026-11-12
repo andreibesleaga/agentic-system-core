@@ -66,6 +66,7 @@ function queryMain(win, api) {
       if (files[key] !== null) win.URL.revokeObjectURL(files[key]);
       files[key] = null;
       link.removeAttribute('href');
+      link.removeAttribute('download');
       link.hidden = true;
     }
     csvNone.hidden = true;
@@ -73,6 +74,7 @@ function queryMain(win, api) {
   const offer = (key, link, text, type) => {
     files[key] = win.URL.createObjectURL(new win.Blob([text], { type }));
     link.setAttribute('href', files[key]);
+    link.setAttribute('download', `query-result.${key}`);
     link.hidden = false;
   };
   const draw = (parsed) => {

@@ -213,6 +213,16 @@ section lists every file of a 1.0.1 node whose bytes change.
   longer appears (AGSC-01-18).
 - `export --to` names AGSC-01-26a once, and `--to skos` points to `import --from skos` and
   `export --skos`; messages say "an episode", not "a episode".
+- A link-shaped key (`peer-ref`, `mentions` or a foreign relation name) is the one warning
+  `AGSC-E304`; 1.0.1 also reported it as `AGSC-E207`, two codes for one key (AGSC-03-03).
+- One credential is one `AGSC-E403`: an OpenSSH key block and an `sk-ant-` token were reported twice;
+  the messages read "an AWS access-key id", not "a AWS" (AGSC-08-15).
+- A `webmcp` `agsc-surface-version` must name a day of the calendar: `2026-13-45` has the form and is
+  `AGSC-E210` in `tools/validate-wellknown` and the engine's own check (AGSC-11-16).
+- `export --to csv` quotes a field that holds a bare line feed, so a reader that ends a record at
+  any line break keeps the row whole (RFC 4180).
+- The tools' `inputSchema` says what an array argument holds: `selection` lists strings, `sources`
+  objects (AGSC-09-13); some model providers refuse an array schema without `items`.
 
 ### Security
 

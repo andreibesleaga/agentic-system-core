@@ -64,6 +64,20 @@ const MCP_SURFACE_VERSION = MCP_PROTOCOL_VERSION;
 const WEBMCP_SURFACE_VERSION = '2026-10-27';
 /** AGSC-11-16: the shape every `agsc-surface-version` of `webmcp` takes. */
 const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
+
+/**
+ * AGSC-11-16: a `YYYY-MM-DD` value that names a day of the calendar (`2026-13-45` and
+ * `2027-02-29` have the form and name none). Arithmetic only: this context reads no clock.
+ */
+function isDate(value) {
+  const text = String(value);
+  if (!WEBMCP_VERSION_RE.test(text)) return false;
+  const [year, month, day] = text.split('-').map(Number);
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return day >= 1 && day <= (days || 0);
+}
+
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */
 const MCP_EXTENSION_ID = 'com.agenticsystemcore/knowledge';
 /** AGSC-11-18: the ONE member of this extension's settings object. */
@@ -194,12 +208,12 @@ function declare(options) {
   const opts = options || {};
   const base = opts.base || '/';
   const emitted = new Set(opts.emitted || []);
-  const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
+  const webmcpVersion = isDate(opts.webmcpVersion || '')
     ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
   // AGSC-11-16: `mcp` declares the revision its transport
   // speaks, an input echoed like the WebMCP date, defaulting to the newest one the
   // tool server speaks (AGSC-09-19: one value for a server that speaks two).
-  const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
+  const mcpVersion = isDate(opts.mcpVersion || '')
     ? String(opts.mcpVersion) : MCP_PROTOCOL_VERSION;
   const links = [];
   const restricted = opts.visibility === 'restricted';
@@ -398,6 +412,7 @@ module.exports = {
   WEBMCP_ANNOTATIONS,
   WEBMCP_SURFACE_VERSION,
   WEBMCP_VERSION_RE,
+  isDate,
   accepted,
   acceptedHrefs,
   acceptedSurfaces,

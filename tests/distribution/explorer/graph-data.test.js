@@ -128,7 +128,7 @@ test('property: the same document gives the same graph, whatever the order of it
     const two = data.explorerGraph({ '@graph': [{ '@id': BASE, '@type': 'Bundle' }, ...reversed] }, RELATIONS, 400);
     assert.deepStrictEqual(one, two);
     for (const link of one.links) assert.notStrictEqual(link.source, link.target, 'a self-link is drawn');
-  }));
+  }), { seed: 20260918 });
 });
 
 test('a graph written with no term for a type or a key (compact IRIs, `@id` objects) reads the same', () => {

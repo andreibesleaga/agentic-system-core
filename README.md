@@ -235,10 +235,11 @@ codes and output envelopes (AGSC-09-07 to AGSC-09-12) — the plugin contract of
 `docs/PLUGINS.md` (plugin API `1.0.0`), the eleven checkers run as programs
 (`node tools/<name>`), and the six names `require('agentic-system-core')` returns:
 `LINK_RELATION`, `PROFILE_URI`, `WELLKNOWN_SUFFIX`, `run`, `specVersion` and
-`version`. `package.json` declares no `exports` map, so every file under `src/`,
-`bin/` and `tools/` can still be required; none of them is part of the promise,
-and their names and signatures may change in any release. The one exception is
-`run()` of `bin/agsc.js`, the entry the `agsc-cli` alias package calls.
+`version`. From 1.1, `package.json` declares an `exports` map: besides the package
+itself, `bin/agsc.js` (whose `run()` the `agsc-cli` alias package calls),
+`package.json` and the files under `schema/`, `ontology/`, `spec/` and
+`tests/vectors/` can be required or read; no other file under `src/`, `bin/` or
+`tools/` can (`ERR_PACKAGE_PATH_NOT_EXPORTED`), and the checkers run as programs.
 
 **Upgrading from a release candidate.** `CHANGELOG.md` has one section for each
 step: [Upgrading from 1.0.0-rc.7](CHANGELOG.md#upgrading-from-100-rc7), under

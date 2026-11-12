@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const { describe, it } = require('node:test');
 
 const security = require('../../bench/security.js');
@@ -235,6 +236,24 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(r.equal, 1);
     assert.equal(r.equal + r.required_difference.length + r.differing.length, r.calls);
     assert.equal(r.per_tool.remember.required_difference, 1);
+  });
+
+  it('AGSC-04-25, AGSC-09-16: a Bundle inside a git repository is built in process with the content version `agsc mcp` derives', async () => {
+    const dir = path.join(tmpdir(), 'bundle-git');
+    fs.cpSync(FIXTURE, dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.gitconfig-empty'), '');
+    const env = {
+      GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_AUTHOR_EMAIL: 'operator@example.org', GIT_AUTHOR_NAME: 'Operator',
+      GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_EMAIL: 'operator@example.org', GIT_COMMITTER_NAME: 'Operator',
+      GIT_CONFIG_GLOBAL: path.join(dir, '.gitconfig-empty'), GIT_CONFIG_NOSYSTEM: '1', PATH: process.env.PATH,
+    };
+    for (const args of [['init', '-q', '-b', 'main'], ['add', '-A'], ['commit', '-q', '-m', 'bundle']]) {
+      assert.equal(spawnSync('git', args, { cwd: dir, env }).status, 0, `git ${args[0]}`);
+    }
+    const r = await parity.run(dir, { calls: [['brief', { selection: [] }]], per_item: [['read', { slug: '$slug' }]] });
+    assert.equal(r.stdio_exit, 0);
+    assert.deepEqual(r.differing, []);
+    assert.equal(r.transport_equal, r.calls);
   });
 
   it('AGSC-09-13, AGSC-09-16: on a node with the domain layer the in-process servers read the site vocabulary, as `agsc mcp` does', async () => {

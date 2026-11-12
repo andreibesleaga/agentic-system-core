@@ -19,24 +19,24 @@ const { finding } = require('./finding.js');
 const TRACKED_ENV_CODE = 'AGSC-E403';
 
 /**
- * Credential shapes, as literal-prefix or fixed-width patterns. Every regular
- * expression is linear-time: no nested quantifier, no backreference.
- * Sources are the providers' own published token formats; the list is
- * deliberately prefix-anchored so that ordinary prose cannot match it.
+ * Credential shapes, as literal-prefix or fixed-width patterns, each named with its
+ * article. Every regular expression is linear-time: no nested quantifier, no
+ * backreference. Sources are the providers' own published token formats; the list is
+ * deliberately prefix-anchored so that ordinary prose cannot match it. The shapes do
+ * not overlap, so one credential is one finding: the private-key block covers
+ * `OPENSSH` (one upper-case word), and `sk-` with 20 characters covers `sk-ant-` with 16.
  */
 const SHAPES = Object.freeze([
-  ['private-key block', /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/u],
-  ['OpenSSH private key', /-----BEGIN OPENSSH PRIVATE KEY-----/u],
-  ['PGP private key', /-----BEGIN PGP PRIVATE KEY BLOCK-----/u],
-  ['OpenAI-style token', /\bsk-[A-Za-z0-9_-]{20,}/u],
-  ['Anthropic token', /\bsk-ant-[A-Za-z0-9_-]{16,}/u],
-  ['GitHub token', /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/u],
-  ['GitHub fine-grained token', /\bgithub_pat_[A-Za-z0-9_]{20,}/u],
-  ['GitLab token', /\bglpat-[A-Za-z0-9_-]{20,}/u],
-  ['Slack token', /\bxox[abprs]-[A-Za-z0-9-]{10,}/u],
-  ['AWS access-key id', /\bAKIA[0-9A-Z]{16}\b/u],
-  ['Google API key', /\bAIza[0-9A-Za-z_-]{35}\b/u],
-  ['npm token', /\bnpm_[A-Za-z0-9]{36}\b/u],
+  ['a private-key block', /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/u],
+  ['a PGP private key', /-----BEGIN PGP PRIVATE KEY BLOCK-----/u],
+  ['an sk- API token', /\bsk-[A-Za-z0-9_-]{20,}/u],
+  ['a GitHub token', /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/u],
+  ['a GitHub fine-grained token', /\bgithub_pat_[A-Za-z0-9_]{20,}/u],
+  ['a GitLab token', /\bglpat-[A-Za-z0-9_-]{20,}/u],
+  ['a Slack token', /\bxox[abprs]-[A-Za-z0-9-]{10,}/u],
+  ['an AWS access-key id', /\bAKIA[0-9A-Z]{16}\b/u],
+  ['a Google API key', /\bAIza[0-9A-Za-z_-]{35}\b/u],
+  ['an npm token', /\bnpm_[A-Za-z0-9]{36}\b/u],
 ]);
 
 /**
@@ -73,7 +73,7 @@ function check(input = {}) {
   const findings = [];
   for (const [label, pattern] of SHAPES) {
     if (!pattern.test(text)) continue;
-    findings.push(finding('AGSC-E403', `a ${label}${where} (AGSC-08-15)`, base));
+    findings.push(finding('AGSC-E403', `${label}${where} (AGSC-08-15)`, base));
   }
   ASSIGNMENT.lastIndex = 0;
   for (;;) {

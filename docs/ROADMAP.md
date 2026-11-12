@@ -41,8 +41,9 @@ and anyone who wants to help shape what comes next. **Read after:**
 
 ## What 1.1 does
 
-1.1 is a MINOR release: it adds and removes nothing (AGSC-00-14). New checks are
-warnings, so a Bundle that passes its gate under 1.0 still passes.
+1.1 is a MINOR release: it removes nothing and adds only optional keys, values, rules and
+vectors (AGSC-00-14). New checks are warnings, so a Bundle that passes its gate under 1.0
+still passes.
 
 - **A stated meaning for every Link.** The relation table of AGSC-03-01 gives each key
   its inverse, whether it is symmetric or may be read transitively, and the kinds of

@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the seven tools.
+// Unit tests for the ten tools.
 // AGSC-08-18, AGSC-09-13, AGSC-09-13a, AGSC-09-14a, AGSC-09-14b.
 // The Bundle is the fixture, read through the FileSystem port; no clock, no
 // network, no randomness is reachable from any tool.
@@ -377,4 +377,13 @@ test('AGSC-09-13a: propose answers a frontmatter the writer cannot hold with the
   assert.strictEqual(answer.type, 'error');
   assert.strictEqual(answer.body.code, 'AGSC-E105');
   assert.match(answer.body.message, /nested deeper/u);
+});
+
+test('AGSC-09-13: every array argument of the published inputSchema says what its members are', () => {
+  // A tool validator of a model provider refuses an array schema without `items`; the slugs of
+  // a selection are strings and the entries of `sources` are objects (AGSC-02's source).
+  const arrays = manifest().tools.flatMap((tool) => Object.entries(tool.inputSchema.properties)
+    .filter(([, schema]) => schema.type === 'array').map(([name, schema]) => [tool.name, name, schema.items]));
+  assert.deepStrictEqual(arrays, [['brief', 'selection', { type: 'string' }], ['check', 'selection', { type: 'string' }],
+    ['compose', 'selection', { type: 'string' }], ['remember', 'sources', { type: 'object' }]]);
 });

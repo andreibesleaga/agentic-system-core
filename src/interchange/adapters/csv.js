@@ -89,7 +89,8 @@ function run(bundle, options) {
   const { entries, header } = memory.exportRecords(bundle, options);
   const rows = entries.map(({ item, record }) => [item.slug, item.type, item.title, item.description, item.tags,
     item.date, item.modified, record.iri, record.body, canonicalize(record)].map(cell));
-  const table = stringify([[...COLUMNS], ...rows], { escape_formulas: true, record_delimiter: 'windows' });
+  // A field holding a line break is quoted, a bare LF too: only CRLF ends a record (RFC 4180).
+  const table = stringify([[...COLUMNS], ...rows], { escape_formulas: true, quoted_match: /[\r\n]/u, record_delimiter: 'windows' });
   const note = [...header, '', `# ${FILE}`, '',
     `One row per published item of ${header[1].slice('bundle: '.length)}, under the licence and the Content Use Terms`
     + ' named above. The `agsc` column holds each item whole, for `agsc import --from csv`.', ''].join('\n');

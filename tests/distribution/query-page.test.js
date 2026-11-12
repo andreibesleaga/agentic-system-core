@@ -167,8 +167,11 @@ test('(c)(d)(e) the result has a table, a picture, two downloads; the share link
   const html = page();
   assert.match(html, /<div id="query-table" class="table-wrap"><\/div>/u);
   assert.match(html, /<figure id="query-picture" class="query-picture" hidden><\/figure>/u);
-  assert.match(html, /<a id="query-csv" data-format="csv" download="query-result\.csv" hidden>/u);
-  assert.match(html, /<a id="query-json" data-format="json" download="query-result\.json" hidden>/u);
+  // The script gives a link its href and its file name together, when there is a result: HTML
+  // allows `download` only on a link with an `href` (the Nu HTML Checker refused the page's two).
+  assert.match(html, /<a id="query-csv" data-format="csv" hidden>/u);
+  assert.match(html, /<a id="query-json" data-format="json" hidden>/u);
+  assert.deepStrictEqual(html.match(/<a\b(?![^>]*\bhref=)[^>]*\bdownload\b[^>]*>/gu), null);
   // The W3C CSV format writes a value as it is; the page says what a spreadsheet may do with one (audit of the query page).
   assert.ok(html.includes('The CSV file holds each value as the query gave it: a spreadsheet may run a value that starts with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> as a formula, so import the file with its columns as text.'));
   const share = /<a id="query-share" href="([^"]+)">/u.exec(html)[1];
@@ -234,9 +237,9 @@ test('the two scripts and the stylesheet are pinned: a change to what every node
   // the stylesheet changes these: update the pin in the same commit, and say in CHANGELOG.md
   // which bytes of every node change.
   const pins = {
-    [queryPage.SCRIPT_ROUTE]: '92fba81e82afdb9ed21da89bf0a8f8fc94cb944daf8cc55b9d3f0a73527c1ca4',
+    [queryPage.SCRIPT_ROUTE]: '8f2aecb319ccd24a50acfd672e27ef8dddc36245d93cc67ded74ba3d5fbf704a',
     [queryPage.WORKER_ROUTE]: 'f19c45d9cf2141b018b8c94428f2e2e80d3f019b6733b85b44641e4ec28ee61d',
-    [queryPage.STYLESHEET_ROUTE]: '2b5f1945f77110a853946311597013e67176a1a4044d83d1fd5b453483032bde',
+    [queryPage.STYLESHEET_ROUTE]: 'f74b5d2c5fabc5a0e744547be8022959c41759e6031877339be0c1b29c810e34',
   };
   for (const [route, pin] of Object.entries(pins)) assert.strictEqual(sha256(String(BUILT.files.get(route))), pin, route);
 });
@@ -279,4 +282,10 @@ test('(f) the vocabulary explorer of a build given no vocabulary terms still lis
   const html = queryPage.vocabularySection(undefined);
   assert.match(html, /<caption>The 0 classes of the vocabulary\.<\/caption>/u);
   assert.strictEqual([...html.matchAll(/<tr><td><code>[a-z-]+<\/code><\/td><td><code>/gu)].length, RELATIONS.length);
+});
+
+test('AGSC-06-39 (f): a cell of a vocabulary table wraps a long IRI, so no table scrolls out of reach of the keyboard at 390 px (WCAG 2.1.1)', () => {
+  // axe's scrollable-region-focusable: a table wider than the phone width, in a wrapper no key can
+  // reach, hid the cells of the site vocabulary's relation table on the demonstration node.
+  assert.match(queryPage.stylesheet(), /^#vocabulary td \{[^}]*overflow-wrap: anywhere;[^}]*\}$/mu);
 });

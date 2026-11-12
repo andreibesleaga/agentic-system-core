@@ -111,4 +111,16 @@ const SYMMETRIC = Object.freeze(new Set(RELATIONS.filter((r) => r.symmetric).map
 const COMPUTED_KEYS = Object.freeze(new Set(RELATIONS
   .filter((r) => !r.symmetric && !LINK_KEYS.includes(r.inverse)).map((r) => r.inverse)));
 
-module.exports = { RELATIONS, CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS };
+/**
+ * AGSC-03-03 / AGSC-11-12: the link-shaped names that are NOT among the fourteen
+ * and MUST warn rather than being silently treated as a Link. The set is closed on
+ * purpose: the reserved `peer-ref`, the untyped `mentions` of AGSC-03-11, and the
+ * foreign spellings AGSC-03-19/03-20 map on import. Such a key is the warning
+ * `AGSC-E304` of `links.js`; every other unknown key is `AGSC-E207` of `validate.js`,
+ * so that one key never carries two codes.
+ */
+const LINK_SHAPED_UNKNOWN = Object.freeze(new Set(['peer-ref', 'mentions', 'refines',
+  'alternative-to', 'conflicts-with', 'composed-of', 'mitigates', 'recommends',
+  'blockedBy', 'decidedBy', 'tests', 'traces-to']));
+
+module.exports = { RELATIONS, CORE_KEYS, MODE2_KEYS, LINK_KEYS, INVERSE, SYMMETRIC, COMPUTED_KEYS, LINK_SHAPED_UNKNOWN };

@@ -32,7 +32,7 @@ test('property: the field equals the oracle and parses back to the same 32 bytes
     assert.equal(field, oracle(bytes));
     const parsed = parseDictionary(field).get('sha-256');
     assert.ok(Buffer.from(parsed[0]).equals(crypto.createHash('sha256').update(bytes).digest()));
-  }), { numRuns: 200 });
+  }), { numRuns: 200, seed: 20260918 });
 });
 
 test('the pinned Structured Fields library reaches no clock, no network, no environment and no other module', () => {

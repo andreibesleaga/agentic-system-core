@@ -60,6 +60,16 @@ test('AGSC-02-05 / AGSC-02-05a: unknown, vendor and malformed keys', () => {
   assert.deepStrictEqual(validate.unknownKeys(null, {}), { known: [], vendor: [], unknown: [], malformed: [] });
 });
 
+test('AGSC-03-03: a link-shaped key is the one warning AGSC-E304 of the link check, never also AGSC-E207', () => {
+  const links = require('../../src/knowledge/links.js');
+  const authored = { ...CONCEPT, mentions: ['b'], 'peer-ref': ['b'] };
+  assert.deepStrictEqual(codes(authored), []);
+  assert.deepStrictEqual(codes({ ...authored, 'zzz-unknown': 'v' }), ['AGSC-E207']);
+  const warned = links.resolve([{ slug: 'a', ...authored }, { slug: 'b', type: 'concept' }]).errors
+    .filter((f) => f.code === 'AGSC-E304').map((f) => f.key);
+  assert.deepStrictEqual(warned.sort(), ['mentions', 'peer-ref']);
+});
+
 test('AGSC-02-21: a concept or cluster with no description warns AGSC-E408', () => {
   const { description, ...bare } = CONCEPT;
   const findings = validate.item(bare, { schemas: S });

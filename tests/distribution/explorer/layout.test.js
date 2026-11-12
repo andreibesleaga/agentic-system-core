@@ -28,7 +28,7 @@ test('property: the same graph is laid out to the same positions, every time', (
   fc.assert(fc.property(graphs, ([count, pairs]) => {
     const graph = graphOf(count, pairs);
     assert.deepStrictEqual(explorerLayout(graph, FRAME), explorerLayout(graphOf(count, pairs), FRAME));
-  }), { numRuns: 60 });
+  }), { numRuns: 60, seed: 20260918 });
 });
 
 test('property: every node lands inside the frame, less its margin, at a finite place', () => {
@@ -40,7 +40,7 @@ test('property: every node lands inside the frame, less its margin, at a finite 
       assert.ok(p.x >= FRAME.margin && p.x <= FRAME.width - FRAME.margin, `x ${p.x}`);
       assert.ok(p.y >= FRAME.margin && p.y <= FRAME.height - FRAME.margin, `y ${p.y}`);
     }
-  }), { numRuns: 60 });
+  }), { numRuns: 60, seed: 20260918 });
 });
 
 test('property: a link to a node that is not drawn changes nothing', () => {
@@ -48,7 +48,7 @@ test('property: a link to a node that is not drawn changes nothing', () => {
     const graph = graphOf(count, pairs);
     const stray = { ...graph, links: [...graph.links, { key: 'uses', source: 'n0', target: 'elsewhere' }] };
     assert.deepStrictEqual(explorerLayout(stray, FRAME), explorerLayout(graph, FRAME));
-  }), { numRuns: 30 });
+  }), { numRuns: 30, seed: 20260918 });
 });
 
 test('positions carry two decimals, so the picture\'s bytes do not depend on the last bits of a double', () => {

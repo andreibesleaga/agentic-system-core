@@ -33,7 +33,7 @@ test('property: a step always lands on an entry of the list', () => {
   fc.assert(fc.property(keys, fc.integer({ max: 50, min: 1 }), fc.nat(60), (key, count, at) => {
     const next = explorerStep(key, Math.min(at, count - 1), count);
     assert.ok(Number.isInteger(next) && next >= 0 && next < count);
-  }));
+  }), { seed: 20260918 });
 });
 
 test('finding matches the label, the type and the page of a node, ignoring case', () => {
@@ -110,5 +110,5 @@ test('property: the state never holds a view outside the zoom bounds, whatever t
     const state = events.reduce((s, e) => explorerReduce(s, e, FRAME), explorerStart(FRAME));
     assert.ok(state.view.w >= FRAME.width / 8 - 1e-9 && state.view.w <= FRAME.width * 2 + 1e-9, String(state.view.w));
     assert.ok(Math.abs(state.view.w / state.view.h - FRAME.width / FRAME.height) < 1e-9, 'the aspect ratio changed');
-  }));
+  }), { seed: 20260918 });
 });

@@ -60,3 +60,29 @@ test('AGSC-11-02: an unknown surface name or access class is a warning, never an
     ['AGSC-E210/warn']);
   assert.deepEqual(codes(withSurface({ 'agsc-access': ['none'], 'agsc-surface': ['x-acme-feed'], href: 'https://a.example/f' })), []);
 });
+
+test('AGSC-11-16: a webmcp version must be a real date, in the engine\'s check and in the independent checker', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const checker = require('../../tools/validate-wellknown');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-webmcp-date-'));
+  const webmcp = (version) => withSurface({
+    'agsc-access': ['consent'], 'agsc-surface': ['webmcp'], 'agsc-surface-version': [version], href: 'https://a.example/compose/',
+  });
+  let n = 0;
+  const independent = async (doc) => {
+    n += 1;
+    const at = path.join(dir, `doc-${n}.json`);
+    fs.writeFileSync(at, `${JSON.stringify(doc)}\n`);
+    let out = '';
+    await checker.run([at, '--level', '0', '--json'], { err: () => {}, out: (s) => { out += s; } });
+    return JSON.parse(out).findings.filter((f) => /webmcp/u.test(f.message)).map((f) => `${f.code}/${f.severity}`);
+  };
+  for (const [version, expected] of [['2026-10-27', []], ['2028-02-29', []], ['2026-13-45', ['AGSC-E210/error']],
+    ['2026-02-30', ['AGSC-E210/error']], ['2027-02-29', ['AGSC-E210/error']]]) {
+    assert.deepEqual(codes(webmcp(version)), expected, `engine ${version}`);
+    assert.deepEqual(await independent(webmcp(version)), expected, `checker ${version}`);
+  }
+  fs.rmSync(dir, { force: true, recursive: true });
+});

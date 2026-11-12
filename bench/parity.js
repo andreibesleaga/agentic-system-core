@@ -110,12 +110,18 @@ function inProcess(bundleDir, options = {}) {
   const mcpTools = require(path.join(REPO, 'src', 'distribution', 'mcp-tools.js'));
   const { siteModel } = require(path.join(REPO, 'src', 'application', 'cli', 'verbs', 'lint.js'));
 
+  const { createProcessRunner } = require(path.join(REPO, 'src', 'adapters', 'node-proc.js'));
+  const { buildOptions } = require(path.join(REPO, 'src', 'application', 'cli', 'verbs', '_helpers.js'));
+
   const fs = createFileSystem(bundleDir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(REPO)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   const { SPEC_VERSION } = require(path.join(REPO, 'src', 'shared', 'spec-version.js'));
-  // The engine's own version, as the stdio process states it (`agsc mcp`).
-  const { files } = site.build(bundle, { clock, fs }, { specVersion: options.specVersion || SPEC_VERSION, version: options.version || '0.0.0' });
+  // The build options of the `mcp` verb, git read included (the content version of AGSC-04-25),
+  // so a Bundle inside a repository is built as the stdio process builds it; the engine's own
+  // version, as that process states it.
+  const ports = { clock, fs, proc: createProcessRunner({ cwd: bundleDir, env: { PATH: process.env.PATH } }) };
+  const { files } = site.build(bundle, ports, buildOptions({ ports, specVersion: options.specVersion || SPEC_VERSION, version: options.version || '0.0.0' }));
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const bundleId = (bundle.config.bundle || {}).id;

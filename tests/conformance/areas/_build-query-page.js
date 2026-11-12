@@ -122,7 +122,8 @@ function markupChecks(want, run, ctx) {
   list.push(['the ten questions as examples', (questions.every((q) => offered.includes(q.question)) && buttons >= questions.length && questions.length === 10)
     === want.examples_include_the_ten_questions, JSON.stringify(offered)]);
   list.push(['a table and a picture', /<div id="query-table"/u.test(page) && /<figure id="query-picture"/u.test(page), 'the result containers']);
-  const downloads = [...page.matchAll(/<a id="query-[a-z]+" data-format="([a-z]+)" download="[^"]+"/gu)].map((m) => m[1]).sort();
+  // The script names the file (`download`) when it gives the link its `href`, so the page holds the link and its format.
+  const downloads = [...page.matchAll(/<a id="query-[a-z]+" data-format="([a-z]+)"/gu)].map((m) => m[1]).sort();
   list.push(['downloads', deepEqual(downloads, [...want.downloads].sort()), JSON.stringify(downloads)]);
   const share = attribute('query-share', 'href');
   list.push(['share link', want.share_link_holds_query_in === 'fragment' && share !== null && share.startsWith('#query='), share]);

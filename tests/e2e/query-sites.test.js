@@ -10,7 +10,7 @@
 //   * each of the ten examples, run from the keyboard alone, answers what the question's own
 //     function answers over that node's published items (src/knowledge/questions.js, the
 //     functions of graph-0030 to graph-0039);
-//   * axe-core finds no violation in the light and the dark colour scheme (bench/a11y.js tags);
+//   * axe-core finds no violation in the light and the dark colour scheme, at 390 and 1280 px (bench/a11y.js tags);
 //   * the time from the request to the engine being ready is printed (a figure to record, not
 //     a gate: the gate of 3 s is measured on the 5,000-item Bundle at a throttled link).
 //
@@ -90,11 +90,14 @@ for (const [name, source] of SITES) {
         assert.deepStrictEqual(requests.filter((url) => !url.startsWith(run.base)), [], `${name}: a request left the origin`);
         process.stdout.write(`# ${name}: /query/ ready in ${ms} ms on loopback; ${runs.filter((r) => JSON.stringify(r.expected) !== '[]').length} of 10 examples answer something\n`);
         await context.close();
+        // At the phone width too: a wide table there must wrap, not scroll out of reach of the keyboard.
         for (const scheme of ['light', 'dark']) {
-          const opened = await lane.openQuery(run, { scheme });
-          const violations = await lane.axeViolations(opened.page);
-          assert.deepStrictEqual(violations, [], `${name}, ${scheme}: ${violations.join('; ')}`);
-          await opened.context.close();
+          for (const width of [390, 1280]) {
+            const opened = await lane.openQuery(run, { scheme, width });
+            const violations = await lane.axeViolations(opened.page);
+            assert.deepStrictEqual(violations, [], `${name}, ${scheme}, ${width} px: ${violations.join('; ')}`);
+            await opened.context.close();
+          }
         }
       } finally {
         await run.close();

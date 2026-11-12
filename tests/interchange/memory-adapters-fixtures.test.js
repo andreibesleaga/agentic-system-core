@@ -222,6 +222,27 @@ test('csv: the export is RFC 4180 (CRLF, quoted fields) and the library reads ev
   assert.strictEqual(JSON.parse(rows[0].agsc).body, 'Line one, "quoted"\nline two\n');
 });
 
+test('csv: a field with a bare line break is quoted, so a reader that ends a record at any line break keeps the row whole', () => {
+  // Python's csv module and frictionless split an unquoted LF; only CRLF ends a record of this export.
+  const bundle = {
+    config: { site: { base: 'https://n.example/' } },
+    items: [{ body: 'l1\nl2\n', frontmatter: { prov: { operator: 'human:a', origin: 'human' }, title: 'Plain title', type: 'concept', kind: 'term' },
+      path: 'content/concepts/plain.md', slug: 'plain', type: 'concept' }],
+  };
+  const table = csv.run(bundle, { instant: '2026-01-01T00:00:00Z', sha256: () => 'x', specVersion: '1.0.0' }).files
+    .find((f) => f.path === 'items.csv').text;
+  assert.match(table, /,"l1\nl2\n",/u);
+  let quoted = false;
+  const bare = [];
+  for (let i = 0; i < table.length; i += 1) {
+    if (table[i] === '"') quoted = !quoted;
+    else if (table[i] === '\n' && table[i - 1] !== '\r' && !quoted) bare.push(i);
+  }
+  assert.deepStrictEqual(bare, [], 'an unquoted LF');
+  const { parse } = require('csv-parse/sync');
+  assert.strictEqual(JSON.parse(parse(table, { columns: true })[0].agsc).body, 'l1\nl2\n', 'the import reads it back');
+});
+
 test('basic-memory: notes become draft explainers; a relation of the fourteen (or an AGSC-03-19 synonym) is a Link', () => {
   const dir = temp('agsc-memfx-bm-');
   nodeFs.cpSync(path.join(FIXTURES, 'memory-basic-memory'), dir, { recursive: true });

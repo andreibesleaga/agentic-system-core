@@ -158,7 +158,7 @@ test('property: every generated figure compiles inside the SVG rules, and the vi
     for (const svg of svgs(view.html)) assert.deepStrictEqual(lint.svgViolations(svg), []);
     assert.strictEqual(graphView.itemSection(items[0], graphView.index([...items].reverse(), hrefOf)).html, view.html,
       'the order the items arrive in changes nothing');
-  }), { numRuns: 150 });
+  }), { numRuns: 150, seed: 20260918 });
 });
 
 test('a refused figure is AGSC-E412 and no figure, and the table still stands', () => {

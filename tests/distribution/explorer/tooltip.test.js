@@ -42,7 +42,7 @@ test('property: an excerpt never exceeds its bound, and excerpting it again chan
     const once = explorerExcerpt(text, max);
     assert.ok(once.length <= max, `${once.length} > ${max}`);
     assert.strictEqual(explorerExcerpt(once, max), once);
-  }));
+  }), { seed: 20260918 });
 });
 
 test('with room on every side the tooltip opens to the right of the node', () => {
@@ -74,7 +74,7 @@ test('property: the tooltip stays inside the picture and never covers its own no
     assert.ok(!covers(at, anchor), `covers its node at ${JSON.stringify(at)} for ${JSON.stringify(anchor)}`);
     // Deterministic: the same question gets the same place.
     assert.deepStrictEqual(explorerPlaceTip(anchor, TIP, FRAME, others, 8), at);
-  }));
+  }), { seed: 20260918 });
 });
 
 test('a picture smaller than the tooltip puts it at the top left corner', () => {

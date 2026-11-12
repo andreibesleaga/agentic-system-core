@@ -14,7 +14,7 @@ sequenceDiagram
   participant MC as document.modelContext
   participant PG as Page script (page tools)
   participant NODE as Same origin (published files)
-  PG->>MC: registerTool() x7 (search, read, links, compose, ask, propose, remember)
+  PG->>MC: registerTool() x10 (search, read, links, compose, ask, propose, remember, brief, explain, check)
   AG->>MC: executeTool("search", {query})
   MC->>PG: call search
   PG->>NODE: GET /search.json

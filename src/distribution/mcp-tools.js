@@ -590,6 +590,14 @@ const ARGUMENTS = Object.freeze({
 
 /** The JSON type of every argument that is not a string. */
 const ARGUMENT_TYPES = Object.freeze({ selection: 'array', sources: 'array', usage: 'object' });
+/** The members of an array argument: the slugs of a selection, the source objects of AGSC-02. */
+const ARGUMENT_ITEMS = Object.freeze({ selection: Object.freeze({ type: 'string' }), sources: Object.freeze({ type: 'object' }) });
+
+/** The published schema of one argument. */
+function argumentSchema(name) {
+  const type = ARGUMENT_TYPES[name] || 'string';
+  return type === 'array' ? { items: ARGUMENT_ITEMS[name], type } : { type };
+}
 
 const REQUIRED_ARGUMENTS = Object.freeze({
   ask: Object.freeze(['question']),
@@ -624,7 +632,7 @@ function manifest() {
       annotations: WEBMCP_ANNOTATIONS[name],
       description: DESCRIPTIONS[name],
       inputSchema: Object.freeze({
-        properties: Object.freeze(Object.fromEntries(ARGUMENTS[name].map((a) => [a, { type: ARGUMENT_TYPES[a] || 'string' }]))),
+        properties: Object.freeze(Object.fromEntries(ARGUMENTS[name].map((a) => [a, argumentSchema(a)]))),
         required: REQUIRED_ARGUMENTS[name],
         type: 'object',
       }),

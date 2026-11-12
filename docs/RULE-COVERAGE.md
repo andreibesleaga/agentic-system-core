@@ -52,7 +52,7 @@ Of those, 21 state a requirement with MUST, MUST NOT, REQUIRED or SHALL and name
 | AGSC-02-07 | `AGSC-E501` | `governance/prov.test.js` |
 | AGSC-02-23 | `AGSC-E409` | `governance/lint-order.test.js`, `interchange/status.test.js`, `standard/item-links-composition-wording.test.js` |
 | AGSC-03-02 | `AGSC-E301` | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +5 |
-| AGSC-03-03 | `AGSC-E207`, `AGSC-E302`, `AGSC-E303` +2 | `knowledge/links.test.js` |
+| AGSC-03-03 | `AGSC-E207`, `AGSC-E302`, `AGSC-E303` +2 | `knowledge/links.test.js`, `knowledge/validate.test.js` |
 | AGSC-03-09 | `AGSC-E301` | `standard/rules.test.js` |
 | AGSC-05-08 | `AGSC-E605` | `knowledge/nquads.test.js`, `knowledge/skos-export.test.js`, `validate-ontology` |
 | AGSC-05-22 | `AGSC-E203` | `standard/item-links-composition-wording.test.js`, `validate-ontology` |
@@ -209,7 +209,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-02-99 | VERIFIED | yes | `frontmatter-0031` | `e2e/modes/mode-2-project.test.js`, `governance/prov.test.js` | — | — |
 | AGSC-03-01 | VERIFIED | yes | — | `distribution/graph-view.test.js`, `distribution/tool-answers.test.js`, `e2e/modes/mode-2-project.test.js` +5 | `persona-a-reader.feature#Reader sees how the clusters connect and what each relation means` | — |
 | AGSC-03-02 | VERIFIED | — | — | `composition/compose.test.js`, `interchange/mapping.test.js`, `knowledge/domain-graph.test.js` +5 | — | — |
-| AGSC-03-03 | VERIFIED | — | — | `knowledge/links.test.js` | — | — |
+| AGSC-03-03 | VERIFIED | — | — | `knowledge/links.test.js`, `knowledge/validate.test.js` | — | — |
 | AGSC-03-04 | VERIFIED | yes | `links-0001`, `links-0003` | `acceptance/steps/persona-a.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` +1 | `persona-a-reader.feature#Reader opens a Concept page and sees evidence` | — |
 | AGSC-03-05 | VERIFIED | — | — | `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-03-06 | VERIFIED | — | — | `distribution/page-tools.test.js`, `knowledge/links.test.js` | — | — |
@@ -254,7 +254,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-04-22 | VERIFIED | yes | `conform-0001` | `composition/conform.test.js` | — | — |
 | AGSC-04-23 | VERIFIED | yes | `lint-0022` | `governance/lint-order.test.js`, `knowledge/unicode.test.js` | — | — |
 | AGSC-04-24 | VERIFIED | yes | `conform-0004` | `composition/conform.test.js` | — | — |
-| AGSC-04-25 | VERIFIED | yes | `build-0014` | `distribution/content-version-stamps.test.js`, `e2e/modes/mode-1-memory.test.js`, `interchange/llm-context.test.js` +3 | — | — |
+| AGSC-04-25 | VERIFIED | yes | `build-0014` | `bench/kit.test.js`, `distribution/content-version-stamps.test.js`, `e2e/modes/mode-1-memory.test.js` +4 | — | — |
 | AGSC-05-01 | VERIFIED | — | — | `distribution/routes.test.js`, `governance/fix.test.js`, `knowledge/nquads.test.js` | — | — |
 | AGSC-05-02 | VERIFIED | — | — | `knowledge/domain.test.js` | — | `validate-ontology` |
 | AGSC-05-03 | VERIFIED | — | — | `knowledge/nquads.test.js` | — | — |

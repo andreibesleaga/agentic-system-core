@@ -29,6 +29,7 @@ const { compile } = require('./schema.js');
 const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 const { withArticle } = require('../shared/article.js');
+const { LINK_SHAPED_UNKNOWN } = require('./relations.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -384,7 +385,8 @@ function item(frontmatter, options = {}) {
     findings.push(finding('AGSC-E204', `key name "${key}" does not match ^[a-z][a-z0-9_-]*$ (AGSC-02-05)`,
       { ...base, key, line: lineOf(keyLines, `/${key}`) }));
   }
-  for (const key of keys.unknown) {
+  // AGSC-03-03: a link-shaped key is the warning AGSC-E304 of links.js, never also this one.
+  for (const key of keys.unknown.filter((k) => !LINK_SHAPED_UNKNOWN.has(k))) {
     findings.push(finding('AGSC-E207', `unknown key "${key}" is preserved (AGSC-02-05)`,
       { ...base, key, severity: 'warn', line: lineOf(keyLines, `/${key}`) }));
   }

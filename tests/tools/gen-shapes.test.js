@@ -252,7 +252,7 @@ describe('tools/gen-shapes — Turtle text and the claim', () => {
     fc.assert(fc.property(fc.constant(inputs), (given) => {
       assert.equal(generator.generate(given.links, given.graphTable, given.schema).text,
         generator.generate(given.links, given.graphTable, given.schema).text);
-    }), { numRuns: 3 });
+    }), { numRuns: 3, seed: 20260918 });
   });
 
   it('the shape file is not named "validated by SHACL" anywhere outside the page the lane produced', () => {
