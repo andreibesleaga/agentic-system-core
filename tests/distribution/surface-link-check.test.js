@@ -80,7 +80,8 @@ test('AGSC-11-16: a webmcp version must be a real date, in the engine\'s check a
     return JSON.parse(out).findings.filter((f) => /webmcp/u.test(f.message)).map((f) => `${f.code}/${f.severity}`);
   };
   for (const [version, expected] of [['2026-10-27', []], ['2028-02-29', []], ['2026-13-45', ['AGSC-E210/error']],
-    ['2026-02-30', ['AGSC-E210/error']], ['2027-02-29', ['AGSC-E210/error']]]) {
+    ['2026-02-30', ['AGSC-E210/error']], ['2027-02-29', ['AGSC-E210/error']],
+    ['0000-02-29', []]]) {
     assert.deepEqual(codes(webmcp(version)), expected, `engine ${version}`);
     assert.deepEqual(await independent(webmcp(version)), expected, `checker ${version}`);
   }

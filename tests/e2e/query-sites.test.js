@@ -90,7 +90,7 @@ for (const [name, source] of SITES) {
         assert.deepStrictEqual(requests.filter((url) => !url.startsWith(run.base)), [], `${name}: a request left the origin`);
         process.stdout.write(`# ${name}: /query/ ready in ${ms} ms on loopback; ${runs.filter((r) => JSON.stringify(r.expected) !== '[]').length} of 10 examples answer something\n`);
         await context.close();
-        // At the phone width too: a wide table there must wrap, not scroll out of reach of the keyboard.
+        // At the phone width too: a table wider than the screen scrolls in a labelled region the keyboard reaches.
         for (const scheme of ['light', 'dark']) {
           for (const width of [390, 1280]) {
             const opened = await lane.openQuery(run, { scheme, width });
