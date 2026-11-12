@@ -15,7 +15,9 @@
 //   G5  the same phrase match against a term                  -> `uses`
 // A suggestion is made only for a pair of two different items that have no Link between
 // them in either direction (G4 is the exception: it exists because a lesson has no
-// `derived-from`, and the episode it names is usually already joined to it by a Link).
+// `derived-from`, and the episode it names is usually already joined to it by a Link),
+// and a `related` (G1 to G3) never for a pair with a cluster: AGSC-05-20 keeps a
+// Collection out of `skos:related`, and AGSC-03-25 warns about one.
 // Evidence that comes only from an item whose `prov.origin` is `ai-generated` is ignored:
 // a text a model wrote cannot ground another.
 //
@@ -44,15 +46,20 @@ function readFacts(items) {
     aiGenerated: new Set(views.filter((v) => v.fm.prov && v.fm.prov.origin === 'ai-generated').map((v) => v.slug)),
     edges,
     joined: new Set(edges.filter((e) => e.key !== 'mentions').map((e) => pairKey(e.source, e.target))),
+    clusters: new Set(views.filter((v) => v.type === 'cluster').map((v) => v.slug)),
     views,
   };
 }
+
+/** Whether a `related` may join `a` and `b`: neither is a cluster (AGSC-05-20, AGSC-03-25). */
+const relatable = (facts, a, b) => !facts.clusters.has(a) && !facts.clusters.has(b);
 
 /** G1: an inline link between two items that no Link joins. */
 function fromMentions(facts) {
   return facts.edges
     .filter((e) => e.key === 'mentions' && e.source !== e.target)
     .filter((e) => !facts.aiGenerated.has(e.source) && !facts.joined.has(pairKey(e.source, e.target)))
+    .filter((e) => relatable(facts, e.source, e.target))
     .map((e) => suggestion('G1', 'related', e.source, e.target, [{ kind: 'mention' }]));
 }
 
@@ -71,7 +78,7 @@ function fromSharedSources(facts) {
   for (const [i, first] of citing.entries()) {
     for (const second of citing.slice(i + 1)) {
       const shared = [...first.resources].filter((r) => second.resources.has(r)).sort(compareCodePoint);
-      if (shared.length >= 2 && !facts.joined.has(pairKey(first.slug, second.slug))) {
+      if (shared.length >= 2 && !facts.joined.has(pairKey(first.slug, second.slug)) && relatable(facts, first.slug, second.slug)) {
         out.push(suggestion('G2', 'related', first.slug, second.slug,
           shared.map((resource) => ({ kind: 'shared-source', resource }))));
       }
@@ -110,7 +117,7 @@ function fromPhrases(facts) {
     for (const reading of readings) {
       if (reading.slug === target.slug || facts.joined.has(pairKey(reading.slug, target.slug))) continue;
       const found = labels.filter((l) => containsPhrase(reading.text, l.folded));
-      if (found.length === 0) continue;
+      if (found.length === 0 || (!isTerm && !relatable(facts, reading.slug, target.slug))) continue;
       out.push(suggestion(isTerm ? 'G5' : 'G3', isTerm ? 'uses' : 'related', reading.slug, target.slug,
         found.map((l) => ({ kind: 'phrase', phrase: l.label }))));
     }

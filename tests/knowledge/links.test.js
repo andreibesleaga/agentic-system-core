@@ -338,6 +338,17 @@ test('AGSC-03-25: an unresolved target is not also judged; a missing kind on a c
   assert.strictEqual(noKind.length, 1);
 });
 
+test('AGSC-03-25: a related that joins a cluster warns at either end, since AGSC-05-20 keeps a Collection out of skos:related', () => {
+  const group = (slug, extra = {}) => ({ slug, type: 'cluster', ...extra });
+  const carried = (items) => warnings(items, 'AGSC-E315').map((f) => [f.slug, f.key]);
+  assert.deepStrictEqual(carried([thing('a', { related: ['c'] }), group('c')]), [['a', 'related']]);
+  assert.deepStrictEqual(carried([group('c', { related: ['a'] }), thing('a')]), [['c', 'related']]);
+  assert.deepStrictEqual(carried([group('c', { related: ['d'] }), group('d')]), [['c', 'related']]);
+  // Near misses: the other cells reading `any` stay silent at a cluster, and two notes stay silent.
+  assert.deepStrictEqual(carried([thing('a', { uses: ['c'], covers: ['c'] }), group('c')]), []);
+  assert.deepStrictEqual(carried([thing('a', { related: ['b'] }), thing('b')]), []);
+});
+
 test('AGSC-03-26: a supersedes target with no authored status is stable and warns', () => {
   assert.strictEqual(warnings([thing('n', { supersedes: ['o'] }), thing('o')], 'AGSC-E316').length, 1);
   assert.deepStrictEqual(warnings([thing('n', { supersedes: ['o'] }), thing('o', { status: 'deprecated' })], 'AGSC-E316'), []);

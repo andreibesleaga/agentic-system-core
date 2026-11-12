@@ -336,9 +336,11 @@ const isKind = (spec, target) => target.type === spec.type
 /**
  * AGSC-03-25: does `target` match the Expected target kinds cell of a key, for an item
  * `owner` that authors it? A cell reading `any` never fails; for `derived-from` its
- * narrower cell binds only when the owner is a lesson.
+ * narrower cell binds only when the owner is a lesson; the cell of `related` refuses a
+ * cluster at either end, which AGSC-05-20 keeps out of `skos:related`.
  */
 function matchesExpected(cell, owner, target) {
+  if (cell.noCluster && (owner.type === 'cluster' || target.type === 'cluster')) return false;
   if (cell.any) return cell.lessonTarget === undefined || owner.type !== 'lesson' || isKind(cell.lessonTarget, target);
   if (cell.sameFamily) return familyOf(owner.type) === familyOf(target.type);
   if (cell.sameType) return owner.type === target.type;

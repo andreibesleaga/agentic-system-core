@@ -219,6 +219,9 @@ function alternativeOf(text) {
 /** The Expected target kinds cell as data, or `null` when the generator does not read it. */
 function targetsOf(cell) {
   if (cell === 'any') return { any: true };
+  // The cell of `related` (AGSC-03-25): no shape of its own, since the SKOS integrity shape
+  // Collection-noRelated (AGSC-05-20) already refuses a cluster in `skos:related`.
+  if (cell === 'any but a `cluster`, at either end') return { any: true, noCluster: true };
   if (cell === 'same family') return { sameFamily: true };
   if (cell === 'same `type`') return { sameType: true };
   const lesson = cell.match(/^any; for a lesson, an `([a-z]+)`$/u);

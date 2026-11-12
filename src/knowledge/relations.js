@@ -17,7 +17,8 @@
 //   selfLink   what an item gets that names itself (AGSC-03-23): `warning`, or `cycle` (an error)
 //   targets    the Expected target kinds cell (AGSC-03-25), as data:
 //              { any } | { sameFamily } | { sameType } | { type, kinds? } | { oneOf: [...] };
-//              `lessonTarget` adds the narrower cell that binds when the item is a lesson
+//              `lessonTarget` adds the narrower cell that binds when the item is a lesson;
+//              `noCluster` (the cell of `related`) refuses a cluster at either end (AGSC-05-20)
 
 // Self-link readings (AGSC-03-23). The finding codes stay with the code that raises them:
 // a cycle is AGSC-E302 / AGSC-E303 in `links.js`, a warning is raised where the check lives.
@@ -43,7 +44,7 @@ function row(key, inverse, property, inverseProperty, fields) {
 /** AGSC-03-01, §3.1 table: the nine core keys, then the five Mode-2 keys. */
 const RELATIONS = Object.freeze([
   row('related', 'related', 'skos:related', undefined, { combiner: 'advisory', transitive: false,
-    selfLink: WARN_SELF, targets: ANY,
+    selfLink: WARN_SELF, targets: Object.freeze({ any: true, noCluster: true }),
     meaning: 'The two items are connected in meaning, and neither depends on the other.' }),
   row('broader', 'narrower', 'skos:broader', 'skos:narrower', { combiner: 'none', transitive: true,
     selfLink: CYCLE_SELF, targets: Object.freeze({ sameFamily: true }),

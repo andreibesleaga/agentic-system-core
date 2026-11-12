@@ -43,7 +43,7 @@ const itemsArbitrary = fc.tuple(...SLUGS.map((slug) => fc.record({
   kind: fc.constantFrom('pattern', 'spec', 'task', 'decision', 'explainer', 'architecture'),
   links: fc.dictionary(fc.constantFrom(...KEYS), fc.subarray(SLUGS, { maxLength: 3 }), { maxKeys: 4 }),
   status: fc.constantFrom(undefined, 'stable', 'deprecated'),
-  type: fc.constantFrom('concept', 'concept', 'lesson', 'procedure', 'episode', 'gate'),
+  type: fc.constantFrom('concept', 'concept', 'lesson', 'procedure', 'episode', 'gate', 'cluster'),
 }).map((r) => ({
   ...r.links,
   ...(r.type === 'concept' ? { kind: r.kind } : {}),
@@ -188,6 +188,20 @@ test('AGSC-09-13: check orders by item, code, key, target, and two combinations 
     ['a', 'AGSC-E314', 'requires', 'b', 'supersedes'],
     ['a', 'AGSC-E316', 'supersedes', 'b', undefined],
     ['b', 'AGSC-E313', 'related', 'b', undefined],
+  ]);
+});
+
+test('AGSC-09-13: check reports AGSC-E315 for a related that joins a cluster, at either end, as lint does (AGSC-03-25)', () => {
+  const items = [
+    { body: '', related: ['g'], slug: 'a', title: 'A', type: 'concept', kind: 'pattern' },
+    { body: '', related: ['a'], slug: 'g', title: 'G', type: 'cluster' },
+    { body: '', slug: 'u', title: 'U', type: 'concept', kind: 'pattern', uses: ['g'] },
+  ];
+  const { edges } = links.resolve(items);
+  const found = answers.toolLinkWarnings(edges, itemOfList(items));
+  assert.deepEqual(found.map((f) => [f.slug, f.code, f.key, f.target]), [
+    ['a', 'AGSC-E315', 'related', 'g'],
+    ['g', 'AGSC-E315', 'related', 'a'],
   ]);
 });
 

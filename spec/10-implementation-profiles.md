@@ -111,6 +111,7 @@ Trace: PRD-055; the classes of `docs/SPEC.md` §3 and AGSC-00-09…12 *are* thes
   | `lint-0048` | `lint` | 3 | suggestion generator G3 (AGSC-05-35) |
   | `lint-0049` | `lint` | 3 | suggestion generator G4 (AGSC-05-35) |
   | `lint-0050` | `lint` | 3 | suggestion generator G5 (AGSC-05-35) |
+  | `lint-0065` | `lint` | 3 | no `related` suggestion for a pair with a cluster (AGSC-05-35, AGSC-05-20) |
   | `lint-0057` | `lint` | 3 | the invariants of a node, checked by `verify` (AGSC-05-41, AGSC-09-20) |
   | `lint-0058` | `lint` | 3 | the invariants of a node, two sub-cases (AGSC-05-41, AGSC-09-20) |
   | `lint-0059` | `lint` | 3 | the competency questions of a node, checked by `verify` (AGSC-05-41, AGSC-09-20) |

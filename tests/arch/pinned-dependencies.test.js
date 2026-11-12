@@ -56,7 +56,7 @@ test('the lockfile pins every installed package to one exact version', () => {
 //   AGSC_AUDIT=1 node --test tests/arch/pinned-dependencies.test.js
 //
 // The result of the run this milestone recorded is 0 vulnerabilities.
-test('npm audit reports 0 vulnerabilities', { skip: process.env.AGSC_AUDIT !== '1' }, () => {
+test('npm audit reports 0 vulnerabilities', { skip: process.env.AGSC_AUDIT === '1' ? false : 'the audit lane reaches the npm registry and runs only with AGSC_AUDIT=1' }, () => {
   // Through a shell, so that Windows finds `npm.cmd`: a direct spawn of `npm`
   // fails there with ENOENT (Node refuses to spawn a .cmd file without a shell).
   const { execSync } = require('node:child_process');

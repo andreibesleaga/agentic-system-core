@@ -227,7 +227,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-03-21 | PROSE-ONLY | — | — | — | — | — |
 | AGSC-03-23 | VERIFIED | yes | `links-0010`, `links-0011` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk` | — |
 | AGSC-03-24 | VERIFIED | yes | `links-0012`, `links-0013` | `distribution/tool-answers.test.js`, `knowledge/links.test.js` | — | — |
-| AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
+| AGSC-03-25 | VERIFIED | yes | `links-0014`, `links-0015`, `links-0020` | `distribution/tool-answers.test.js`, `knowledge/links.test.js`, `knowledge/relations.test.js` | — | — |
 | AGSC-03-26 | VERIFIED | yes | `links-0016`, `links-0017` | `distribution/tool-answers.test.js`, `knowledge/links.test.js` | — | — |
 | AGSC-03-27 | VERIFIED | yes | `links-0018`, `links-0019` | `acceptance/steps/persona-i.js`, `distribution/domain-parity.test.js`, `knowledge/domain-keys.test.js` +2 | `persona-i-maintainer.feature#A note states its domain type, its role and a domain link the site vocabulary defines`, `persona-i-maintainer.feature#A domain type or a domain link the site vocabulary does not define is refused by lint and by the build`, `persona-i-maintainer.feature#The site's own invariants and competency questions are checked by verify and ci, never by lint` +1 | — |
 | AGSC-04-01 | VERIFIED | yes | — | `application/cli/eng2-verbs.test.js`, `composition/skills.test.js`, `connectors/examples.test.js` +12 | — | — |
@@ -276,7 +276,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-17 | VERIFIED | — | — | `knowledge/skos.test.js`, `tools/gen-shapes.test.js` | — | — |
 | AGSC-05-18 | VERIFIED | — | — | `knowledge/skos.test.js` | — | `validate-ontology` |
 | AGSC-05-19 | VERIFIED | yes | `graph-0022` | — | — | `validate-ontology` |
-| AGSC-05-20 | VERIFIED | — | — | `interchange/clusters.test.js`, `knowledge/nquads.test.js`, `knowledge/skos.test.js` | — | `validate-ontology` |
+| AGSC-05-20 | VERIFIED | — | — | `interchange/clusters.test.js`, `knowledge/links.test.js`, `knowledge/nquads.test.js` +2 | — | `validate-ontology` |
 | AGSC-05-21 | VERIFIED | yes | `lint-0041`, `lint-0045`, `lint-0064` | `governance/lint-constructs.test.js`, `governance/lint-contexts.test.js`, `knowledge/unicode.test.js` +1 | — | — |
 | AGSC-05-22 | VERIFIED | — | — | `standard/item-links-composition-wording.test.js` | — | `validate-ontology` |
 | AGSC-05-23 | VERIFIED | — | — | `arch/shacl-library.test.js`, `knowledge/closure.test.js`, `standard/item-links-composition-wording.test.js` +1 | — | — |
@@ -292,7 +292,7 @@ Test files are listed by path; at most three names are shown per cell.
 | AGSC-05-32 | VERIFIED | yes | `graph-0012` | `knowledge/nquads.test.js` | — | — |
 | AGSC-05-33 | VERIFIED | yes | `graph-0029` | `acceptance/steps/persona-c-tools.js`, `composition/brief.test.js`, `distribution/tool-answers.test.js` +1 | `persona-c-agent-mcp.feature#An agent asks why two items are linked, what to fix and what a selection needs, and cites a chunk` | — |
 | AGSC-05-34 | VERIFIED | yes | `graph-0030`, `graph-0031`, `graph-0032` +7 | `acceptance/steps/persona-a.js`, `distribution/query-examples.test.js`, `e2e/query-sites.test.js` +2 | `persona-a-reader.feature#Reader runs one of the ten questions of the graph on the query page with the keyboard alone` | — |
-| AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +2 | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/markdown.test.js` +2 | — | — |
+| AGSC-05-35 | VERIFIED | yes | `lint-0046`, `lint-0047`, `lint-0048` +3 | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/markdown.test.js` +2 | — | — |
 | AGSC-05-36 | VERIFIED | yes | `graph-0040` | `acceptance/steps/persona-h.js`, `application/cli/eng2-verbs.test.js`, `knowledge/skos-export.test.js` | — | — |
 | AGSC-05-37 | VERIFIED | yes | `graph-0041`, `graph-0042` | `acceptance/steps/persona-h.js`, `application/cli/suggest-closure-verbs.test.js`, `knowledge/closure.test.js` | — | — |
 | AGSC-05-38 | VERIFIED | yes | `lint-0052`, `lint-0053`, `lint-0054` +2 | `acceptance/steps/persona-i.js`, `application/domain-layer.test.js`, `distribution/query-examples.test.js` +3 | `persona-i-maintainer.feature#A site vocabulary is published with the graph, and every note keeps its item type`, `persona-i-maintainer.feature#A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker`, `persona-i-maintainer.feature#A site vocabulary whose inverse is a term the file does not define cannot write that term into the graph` | `validate-ontology` |

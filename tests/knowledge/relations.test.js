@@ -115,6 +115,7 @@ const kindList = (kinds) => (kinds.length === 1 ? kinds[0] : `${kinds.slice(0, -
 const oneTarget = (t) => (t.kinds ? `a concept of kind ${kindList(t.kinds)}` : `a ${t.type}`);
 function describeTargets(t) {
   if (t.lessonTarget) return 'any; for a lesson, an episode';
+  if (t.noCluster) return 'any but a cluster, at either end';
   if (t.any) return 'any';
   if (t.sameFamily) return 'same family';
   if (t.sameType) return 'same type';
@@ -143,7 +144,7 @@ test('AGSC-03-01: the frozen table of the specification and relations.js agree c
 
 test('AGSC-03-25: the expected target kinds of each key are the cells of the table', () => {
   const kinds = Object.fromEntries(relations.RELATIONS.map((r) => [r.key, r.targets]));
-  assert.deepStrictEqual(kinds.related, { any: true });
+  assert.deepStrictEqual(kinds.related, { any: true, noCluster: true });
   assert.deepStrictEqual(kinds.broader, { sameFamily: true });
   assert.deepStrictEqual(kinds.narrower, { sameFamily: true });
   assert.deepStrictEqual(kinds['derived-from'], { any: true, lessonTarget: { type: 'episode' } });

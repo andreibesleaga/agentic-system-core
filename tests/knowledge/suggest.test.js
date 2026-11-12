@@ -83,6 +83,17 @@ test('G5: the same match against a term suggests uses', () => {
   }]);
 });
 
+test('G1 to G3: no related is suggested for a pair with a cluster, which AGSC-05-20 keeps out of skos:related', () => {
+  const group = (slug, extra = {}) => ({ slug, type: 'cluster', title: `Group ${slug}`, prov: human, ...extra });
+  const sources = [{ resource: 'https://e.example/1' }, { resource: 'https://e.example/2' }];
+  assert.deepStrictEqual(suggest.suggestions([item('a', { body: 'See [c](c), the Group c.', sources }), group('c', { sources })]), []);
+  assert.deepStrictEqual(suggest.suggestions([group('c', { body: 'See [a](a), the Note a.' }), item('a')]), []);
+  // Near miss: uses toward a term (G5) is no SKOS relation, so a cluster's body still suggests it.
+  const term = item('t', { kind: 'term', title: 'Throttle' });
+  assert.deepStrictEqual(only(suggest.suggestions([group('c', { body: 'A throttle.' }), term]), 'G5').map((s) => [s.source, s.key, s.target]),
+    [['c', 'uses', 't']]);
+});
+
 test('G4: a lesson with no derived-from suggests each episode joined to it by any Link or mention', () => {
   const lesson = item('l', { type: 'lesson', kind: undefined, body: 'See [e2](../episodes/e2).' });
   const episodes = [item('e1', { type: 'episode', kind: undefined, related: ['l'] }), item('e2', { type: 'episode', kind: undefined })];

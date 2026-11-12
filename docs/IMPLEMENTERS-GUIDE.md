@@ -112,7 +112,7 @@ in no claim.
 
 * **Level 1:** `bundle-0001`, `bundle-0006`, `bundle-0007`, `bundle-0009`, `bundle-0010`, `bundle-0012`, `bundle-0013`, `bundle-0014`, `bundle-0015`, `bundle-0016`, `bundle-0017`, `bundle-0020`, `bundle-0021`, `fm-0021`, `fm-0022`, `fm-0023`, `fm-0024`, `fm-0025`, `fm-0026`, `fm-0027`, `disc-0005`, `disc-0019` and `disc-0023`.
 * **Level 2:** `bundle-0008`, `bundle-0011`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`, `disc-0018`, `disc-0020`, `disc-0021`, `disc-0026`, `disc-0027`, `disc-0028`, `disc-0029`, `disc-0030`, `disc-0031`, `disc-0032`, `disc-0033`, `disc-0035`, `disc-0036`, `disc-0037`, `disc-0038` and `lint-0026`.
-* **Level 3:** `bundle-0003`, `bundle-0004`, `bundle-0005`, `bundle-0018`, `bundle-0019`, `lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `lint-0046`, `lint-0047`, `lint-0048`, `lint-0049`, `lint-0050`, `lint-0057`, `lint-0058`, `lint-0059`, `lint-0063`, `adopt-0007`, `adopt-0008`, `adopt-0009`, `imp-0006`, `imp-0007`, `imp-0008`, `bnd-0046`, `bnd-0047`, `bnd-0048` and `bnd-0050`.
+* **Level 3:** `bundle-0003`, `bundle-0004`, `bundle-0005`, `bundle-0018`, `bundle-0019`, `lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `lint-0046`, `lint-0047`, `lint-0048`, `lint-0049`, `lint-0050`, `lint-0057`, `lint-0058`, `lint-0059`, `lint-0063`, `lint-0065`, `adopt-0007`, `adopt-0008`, `adopt-0009`, `imp-0006`, `imp-0007`, `imp-0008`, `bnd-0046`, `bnd-0047`, `bnd-0048` and `bnd-0050`.
 
 **What the claim states.** The implementation and its version, the Level, the full
 `spec_version`, the areas and how many cases ran and passed (every failed one by id), the

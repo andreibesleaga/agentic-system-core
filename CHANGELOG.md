@@ -43,7 +43,8 @@ section lists every file of a 1.0.1 node whose bytes change.
   for something else: `domain_type`, `domain_role`, `domain_context`, `domain_links` and `warrant`
   (AGSC-00-14, AGSC-02-25, AGSC-03-27, AGSC-05-40).
 - New warnings, with no exit code changed: `AGSC-E313` to `AGSC-E316` from the relation table
-  (AGSC-03-23 to AGSC-03-26); `AGSC-E423` for names and paths some file systems refuse and for
+  (AGSC-03-23 to AGSC-03-26), among them `AGSC-E315` for a `related` that joins a cluster, an edge the
+  graph files leave out (AGSC-05-20); `AGSC-E423` for names and paths some file systems refuse and for
   Unicode noncharacters (AGSC-01-40, AGSC-04-05); `AGSC-E108` for a byte-order mark or non-NFC text in
   `.env`, `security.txt`, `LICENSE-CONTENT` and SVG files (AGSC-01-14); `AGSC-E202` for a home-page
   description under 50 characters (AGSC-06-41); `AGSC-E506` when `content/index.md` and
@@ -66,7 +67,7 @@ section lists every file of a 1.0.1 node whose bytes change.
   kinds and meaning (AGSC-03-01); derived readings with their steps (AGSC-05-33); the ten questions of
   the graph, with their SPARQL texts in `docs/ontology-questions.json` (AGSC-05-34).
 - `lint --suggest` writes proposed Links with their evidence to `dist/suggestions.json` and never
-  writes `content/` (AGSC-05-35).
+  writes `content/`; it proposes no `related` for a pair with a cluster (AGSC-05-35).
 - `export --skos` writes `dist/export/skos.ttl` (AGSC-05-36); `import <file.ttl> --from skos` turns a
   SKOS thesaurus into draft items (AGSC-01-39).
 - `export --closure` writes `dist/export/closure.nt`, the triples an OWL 2 RL subset entails from the

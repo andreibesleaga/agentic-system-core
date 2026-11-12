@@ -180,14 +180,14 @@
         },
         "links": {
           "optional": 0,
-          "required": 19,
-          "total": 19,
+          "required": 20,
+          "total": 20,
           "withdrawn": 0
         },
         "lint": {
           "optional": 0,
-          "required": 48,
-          "total": 48,
+          "required": 49,
+          "total": 49,
           "withdrawn": 0
         },
         "prov": {
@@ -205,16 +205,16 @@
       },
       "vector_run": {
         "fail": 0,
-        "pass": 374,
+        "pass": 376,
         "pending": 0,
         "skip": 23,
-        "total": 397,
+        "total": 399,
         "withdrawn": 23
       },
       "vectors": {
         "optional": 2,
-        "required": 372,
-        "total": 397,
+        "required": 374,
+        "total": 399,
         "withdrawn": 23
       }
     },
@@ -4056,16 +4056,7 @@
   },
   "schema": "agsc.measurements.v1",
   "measured": [
-    "conformance",
-    "determinism",
-    "security",
-    "perf",
-    "retrieval",
-    "parity",
-    "tokens",
-    "a11y",
-    "package",
-    "install"
+    "conformance"
   ],
   "measured_for": "2026-01-01",
   "spec_version": "1.1.0"

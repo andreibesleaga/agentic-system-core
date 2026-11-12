@@ -2,7 +2,7 @@
 
 **Who this is for:** anyone checking what has been measured, on what, and with which command. **Read after:** [BENCHMARKS.md](BENCHMARKS.md) (the method).
 
-**Status: every one of the ten layers was measured on 2026-11-11, one after another, into one scratch directory, on the `1.1.0` tree (the specification and engine of this release, before the release tag).** `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. The figures outside the ten layers were measured on 2026-10-12 on the `1.0.0` tree and are not in the record; each is marked "1.0.0 run; not in the record" where it stands: the `verify` line of §4, the folder breakdown and the 1.0.0 install of §9, and the cost figures of §11. `tools/lint-claims --record` holds the measured regions of this page and of BENCHMARKS.md to the record. The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
+**Status: every one of the ten layers was measured on 2026-11-11, one after another, into one scratch directory, on the `1.1.0` tree (the specification and engine of this release, before the release tag).** The conformance layer (§1) was measured again on 2026-11-12, after two cases were added (`links-0020`, `lint-0065`); the other nine layers are those of 2026-11-11. `docs/measurements.json` is that run, assembled; each section below gives the command that produced its numbers. The figures outside the ten layers were measured on 2026-10-12 on the `1.0.0` tree and are not in the record; each is marked "1.0.0 run; not in the record" where it stands: the `verify` line of §4, the folder breakdown and the 1.0.0 install of §9, and the cost figures of §11. `tools/lint-claims --record` holds the measured regions of this page and of BENCHMARKS.md to the record. The same suite on macOS and Windows runs in the CI matrix on every push, not on this machine.
 
 Every number in the ten layers is generated into `docs/measurements.json` beside this file, so a reader can compare the record with the prose. Re-running any single line reproduces one table. The record names nodes, never the paths they were built into.
 
@@ -43,7 +43,7 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer conformance --scratch
 node tools/count-artifacts --json
 ```
 
-**The vector run.** `374 pass, 0 fail, 23 skip (23 withdrawn, 0 pending) of 397`. Of the 397 vectors, 372 are required, 2 are optional and 23 are withdrawn; a withdrawn vector stays in the set, carries the id of the case that replaces it, and is excluded from every claim, as AGSC-00-13 requires. The 20 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery export frontmatter graph import jcs ledger links lint prov slug`.
+**The vector run.** `376 pass, 0 fail, 23 skip (23 withdrawn, 0 pending) of 399`. Of the 399 vectors, 374 are required, 2 are optional and 23 are withdrawn; a withdrawn vector stays in the set, carries the id of the case that replaces it, and is excluded from every claim, as AGSC-00-13 requires. The 20 populated areas are `adopt boards boundary build bundle chunks cli compose conform discovery export frontmatter graph import jcs ledger links lint prov slug`.
 
 **Rule coverage.** The specification declares **385 rules** — 374 active, 11 reserved. Counted over the 374 active rules, a rule being reserved exactly when `tools/count-artifacts` says so:
 
@@ -79,7 +79,7 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch
 
 The 61 files are the build output (`www/`) of the reference fixture.
 
-`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; `agsc run-vectors tests/vectors` gives 114 pass and 0 fail — the other 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer, which only the engine checks in 1.1, and are not run, and 7 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
+`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; `agsc run-vectors tests/vectors` gives 115 pass and 0 fail — the other 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer, which only the engine checks in 1.1, and are not run, and 7 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
 
 ---
 
@@ -353,10 +353,10 @@ Every figure is from this document; nothing is rounded up. Rows from the 1.0.0 r
 
 | quantity | value |
 |---|---|
-| specification version measured | measured on 2026-11-11 at 1.1.0 |
+| specification version measured | measured on 2026-11-11 at 1.1.0 (the conformance layer on 2026-11-12) |
 | rules declared / active / reserved | 385 / 374 / 11 |
-| conformance vectors: total / required / optional / withdrawn | 397 / 372 / 2 / 23 |
-| vector run | 374 pass, 0 fail, 23 skipped (the 23 withdrawn) |
+| conformance vectors: total / required / optional / withdrawn | 399 / 374 / 2 / 23 |
+| vector run | 376 pass, 0 fail, 23 skipped (the 23 withdrawn) |
 | populated vector areas | 20 |
 | active rules with ≥ 1 vector | 211 of 374 (56 %) |
 | active rules named by no test, checker, vector or scenario | 4 of 374 (1 %) |
@@ -381,7 +381,7 @@ Every figure is from this document; nothing is rounded up. Rows from the 1.0.0 r
 | hosting of both reference nodes on Cloudflare Pages | 0 USD / month (189 and 219 files against a 20,000-file Free-plan limit; static requests unlimited) |
 | axe-core violations, 4 builds, 250 pages, both colour schemes, at 1200 × 900 | 0 |
 | tokens per item, demonstration node, median (o200k_base) | 49 in llms.txt, 204 of chunk text, 1197.5 as served in chunks.jsonl |
-| independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 20 areas: 114 pass and 0 fail, 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer and are not run |
+| independent implementations passing the vectors | 1 engine; a second (the Python checker distribution) runs 7 of 20 areas: 115 pass and 0 fail, 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer and are not run |
 | retrieval smoke run (`bench-v2`), demonstration node, search surface | recall@10 0.917, nDCG@10 0.737, P@1 0.583 (12 intents) |
 | npm package | 993 files, 3,418 KB packed, 11.06 MB unpacked; a runtime install holds 88 packages, the package included |
 
