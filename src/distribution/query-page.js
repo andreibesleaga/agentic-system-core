@@ -203,8 +203,7 @@ function stylesheet() {
     '.query-examples .question { margin: 0 0 0.35rem; font-weight: 600; }',
     '.query-table caption { text-align: left; caption-side: top; padding: 0 0 0.5rem; color: var(--muted); }',
     '.query-table td { font-family: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 0.85rem; overflow-wrap: anywhere; }',
-    '/* A long IRI in a vocabulary table wraps, so no table is wider than a phone screen (WCAG 2.1.1). */',
-    '#vocabulary td { overflow-wrap: anywhere; }',
+    '#vocabulary .table-wrap:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }',
     '.query-boolean { font-size: 1.1rem; font-weight: 600; }',
     '/* The picture of a graph result: the explorer\'s scene writer, drawn with these rules. */',
     '.query-picture { border: 1px solid var(--rule); border-radius: 4px; background: var(--bg-alt); padding: 0.5rem; }',
@@ -219,9 +218,13 @@ function stylesheet() {
   ].join('\n')}\n`;
 }
 
-/** A table of the vocabulary, its rows already escaped. */
+/**
+ * A table of the vocabulary, its rows already escaped. Its wrapper is a labelled region in the
+ * tab order: on a phone screen a wide table scrolls there, and a region that scrolls must be
+ * reachable by keyboard (WCAG 2.1.1), as a scrolling diagram is (`html.js`).
+ */
 function table(id, caption, headings, rows) {
-  return [`<div class="table-wrap"><table id="${id}">`, `<caption>${caption}</caption>`,
+  return [`<div class="table-wrap" tabindex="0" role="region" aria-labelledby="${id}-caption"><table id="${id}">`, `<caption id="${id}-caption">${caption}</caption>`,
     `<thead><tr>${headings.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>`,
     `<tbody>\n${rows.map((cells) => `<tr>${cells.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('\n')}\n</tbody>`,
     '</table></div>'].join('\n');

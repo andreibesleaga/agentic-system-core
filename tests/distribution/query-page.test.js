@@ -239,7 +239,7 @@ test('the two scripts and the stylesheet are pinned: a change to what every node
   const pins = {
     [queryPage.SCRIPT_ROUTE]: '8f2aecb319ccd24a50acfd672e27ef8dddc36245d93cc67ded74ba3d5fbf704a',
     [queryPage.WORKER_ROUTE]: 'f19c45d9cf2141b018b8c94428f2e2e80d3f019b6733b85b44641e4ec28ee61d',
-    [queryPage.STYLESHEET_ROUTE]: 'f74b5d2c5fabc5a0e744547be8022959c41759e6031877339be0c1b29c810e34',
+    [queryPage.STYLESHEET_ROUTE]: 'f49cf88e09ede76cd49f0e38eeaa6087ab48c070b9e2f9ffc6f857e16d646b93',
   };
   for (const [route, pin] of Object.entries(pins)) assert.strictEqual(sha256(String(BUILT.files.get(route))), pin, route);
 });
@@ -280,12 +280,20 @@ test('AGSC-06-39: when a build writes /query/, and the line that says why it doe
 
 test('(f) the vocabulary explorer of a build given no vocabulary terms still lists the fourteen keys', () => {
   const html = queryPage.vocabularySection(undefined);
-  assert.match(html, /<caption>The 0 classes of the vocabulary\.<\/caption>/u);
+  assert.match(html, /<caption id="vocabulary-class-table-caption">The 0 classes of the vocabulary\.<\/caption>/u);
   assert.strictEqual([...html.matchAll(/<tr><td><code>[a-z-]+<\/code><\/td><td><code>/gu)].length, RELATIONS.length);
 });
 
-test('AGSC-06-39 (f): a cell of a vocabulary table wraps a long IRI, so no table scrolls out of reach of the keyboard at 390 px (WCAG 2.1.1)', () => {
-  // axe's scrollable-region-focusable: a table wider than the phone width, in a wrapper no key can
-  // reach, hid the cells of the site vocabulary's relation table on the demonstration node.
-  assert.match(queryPage.stylesheet(), /^#vocabulary td \{[^}]*overflow-wrap: anywhere;[^}]*\}$/mu);
+test('AGSC-06-39 (f): a vocabulary table wider than a phone screen scrolls in a region the keyboard reaches (WCAG 2.1.1)', () => {
+  // axe's scrollable-region-focusable: at 390 px the site vocabulary's relation table of the
+  // demonstration node scrolled in a wrapper no key could reach. Each wrapper is a labelled
+  // region in the tab order, as a scrolling diagram is (html.js), and shows its focus.
+  const html = page();
+  const wrappers = [...html.matchAll(/<div class="table-wrap"([^>]*)><table id="(vocabulary-[a-z-]+)">\n<caption id="([^"]+)">/gu)];
+  assert.ok(wrappers.length >= 2, 'the vocabulary tables');
+  for (const [, attributes, id, caption] of wrappers) {
+    assert.strictEqual(attributes, ` tabindex="0" role="region" aria-labelledby="${id}-caption"`, id);
+    assert.strictEqual(caption, `${id}-caption`);
+  }
+  assert.match(queryPage.stylesheet(), /^#vocabulary \.table-wrap:focus-visible \{ outline: 2px solid var\(--focus\); outline-offset: 2px; \}$/mu);
 });
