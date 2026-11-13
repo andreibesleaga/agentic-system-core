@@ -233,7 +233,9 @@ test('AGSC-06-19: item and index pages embed Schema.org JSON-LD', () => {
   // Exactly the three types AGSC-06-19 names, and no fourth.
   assert.deepStrictEqual([...new Set(types.values())].sort(), ['Dataset', 'DefinedTerm', 'TechArticle']);
   for (const [route, value] of blocks) {
-    assert.strictEqual(value['@context'], 'https://schema.org', route);
+    // AGSC-06-41: the home page's block alone also names the PROV-O prefix; every other keeps the 1.0 context.
+    const context = route === '/index.html' ? ['https://schema.org', { prov: 'http://www.w3.org/ns/prov#' }] : 'https://schema.org';
+    assert.deepStrictEqual(value['@context'], context, route);
     assert.strictEqual(typeof value.url, 'string', route);
     assert.ok(value.url.startsWith('https://'), route);
   }

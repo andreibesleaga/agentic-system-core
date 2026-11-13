@@ -22,13 +22,13 @@ const { AGSC, built, linkset, splitItem } = require('./_world.js');
 const browser = require('./_browser.js');
 
 const BASE = 'https://agenticsystemcore.com/';
-const SEVEN = ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search'];
+const TEN = ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search'];
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const PROMPT = 'answer-from-this-memory-with-citations';
 const DRAFT = 'unreleased-idea';
 /** The three scripts an item page loads to offer the page tools (AGSC-09-16). */
 const PAGE_SCRIPTS = ['/compose/agsc-core.js', '/compose/agsc-page-tools.js', '/compose/webmcp.js'];
-/** One call of each of the seven tools, with the arguments both transports take. */
+/** One call of each of the ten tools, with the arguments both transports take. */
 const CALLS = [
   ['search', { query: 'handoff' }],
   ['read', { slug: 'handoff' }],
@@ -40,10 +40,15 @@ const CALLS = [
     actor: 'process:reader', at: '2026-01-01T00:00:00Z', body: 'Three tools failed at once and the retry budget held.',
     kind: 'episode', operator: 'human:andreibesleaga', title: 'A retry storm',
   }],
+  ['brief', { selection: ['a2a'] }],
+  ['explain', { key: 'required-by', source: 'mcp', target: 'a2a' }],
+  ['check', {}],
 ];
 /** The members a 1.0 chunk line may carry (AGSC-06-29); `x-` members aside. */
+// AGSC-06-29: the members of 1.0, and the three a 1.1 writer adds under their conditions
+// (`abstract`, `license_url`, `content_digest`); a 1.0 reader ignores those (AGSC-00-21).
 const CHUNK_MEMBERS = ['digest', 'id', 'iri', 'item', 'kind', 'license', 'links', 'ordinal', 'section',
-  'subkind', 'terms', 'text', 'title', 'trust', 'type'];
+  'subkind', 'terms', 'text', 'title', 'trust', 'type', 'abstract', 'license_url', 'content_digest'];
 
 const call = async (client, name, args) => (await client.callTool({ arguments: args, name })).structuredContent;
 
@@ -80,6 +85,8 @@ async function pageToolsOf(world) {
     location: { origin: 'http://127.0.0.1:8000', search: '' },
     Promise,
     TextEncoder,
+    // Web Crypto, as a browser has it: the page tool `brief` hashes the selection with it.
+    crypto: globalThis.crypto,
   };
   const context = vm.createContext(sandbox);
   for (const script of PAGE_SCRIPTS) vm.runInContext(files.get(script), context, { filename: script });
@@ -190,10 +197,10 @@ module.exports = [
     },
   },
   {
-    pattern: 'the server exposes exactly seven tools: "search", "read", "links", "compose", "propose", "ask", "remember"',
+    pattern: 'the server exposes exactly ten tools: "search", "read", "links", "compose", "propose", "ask", "remember", "brief", "explain", "check"',
     async run(world) {
-      const names = (await world.state.client.listTools()).tools.map((t) => t.name).sort();
-      assert.deepStrictEqual(names, SEVEN);
+      const names = (await world.state.client.listTools()).tools.map((t) => t.name);
+      assert.deepStrictEqual(names, TEN, 'the ten tools in code-point order (AGSC-09-13)');
     },
   },
   {
@@ -367,11 +374,12 @@ module.exports = [
     },
   },
   {
-    pattern: 'the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at" and its operator',
+    pattern: 'the agent calls tool "remember" with kind "episode", a title, a body, its actor, the instant "at", its operator, its agent and its model',
     async run(world) {
       world.state.result = await call(world.state.client, 'remember', {
-        actor: 'process:reader', at: '2026-01-01T00:00:00Z', body: 'Three tools failed at once and the retry budget held.',
-        kind: 'episode', operator: 'human:andreibesleaga', title: 'A retry storm',
+        actor: 'process:reader', agent: 'agent:reader', at: '2026-01-01T00:00:00Z',
+        body: 'Three tools failed at once and the retry budget held.',
+        kind: 'episode', model: 'm-1', operator: 'human:andreibesleaga', title: 'A retry storm',
       });
     },
   },
@@ -467,7 +475,7 @@ module.exports = [
     },
   },
   {
-    pattern: 'an agent runs those scripts with nothing but the node\'s own files to fetch, and calls each of the seven tools',
+    pattern: 'an agent runs those scripts with nothing but the node\'s own files to fetch, and calls each of the ten tools',
     async run(world) {
       const tools = await pageToolsOf(world);
       world.state.page = new Map();
@@ -476,7 +484,7 @@ module.exports = [
     },
   },
   {
-    pattern: 'a browser opens "/concepts/handoff/" offering "document.modelContext", and the agent calls each of the seven tools the page registers',
+    pattern: 'a browser opens "/concepts/handoff/" offering "document.modelContext", and the agent calls each of the ten tools the page registers',
     async run(world) {
       const opened = await browser.open(world, '/concepts/handoff/', {
         init: () => {
@@ -486,8 +494,8 @@ module.exports = [
           };
         },
       });
-      await opened.page.waitForFunction(() => Object.keys(window.__tools).length === 7, null, { timeout: 10000 });
-      assert.deepStrictEqual((await opened.page.evaluate(() => Object.keys(window.__tools))).sort(), SEVEN);
+      await opened.page.waitForFunction(() => Object.keys(window.__tools).length === 10, null, { timeout: 10000 });
+      assert.deepStrictEqual((await opened.page.evaluate(() => Object.keys(window.__tools))).sort(), TEN);
       world.state.page = new Map();
       for (const [name, args] of CALLS) {
         const text = await opened.page.evaluate(async ([n, a]) => {
@@ -503,7 +511,7 @@ module.exports = [
     pattern: 'every answer equals the answer the local tool server gives to the same call (AGSC-09-16)',
     async run(world) {
       const server = await serverAnswers(world);
-      assert.deepStrictEqual([...world.state.page.keys()].sort(), SEVEN);
+      assert.deepStrictEqual([...world.state.page.keys()].sort(), TEN);
       for (const [name] of CALLS) {
         assert.notStrictEqual(world.state.page.get(name).type, 'error', `${name}: ${JSON.stringify(world.state.page.get(name))}`);
         assert.deepStrictEqual(world.state.page.get(name), server.get(name), `${name}: the page and the tool server disagree`);

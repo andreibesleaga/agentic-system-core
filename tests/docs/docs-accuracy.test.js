@@ -176,7 +176,7 @@ for (const [rel, heading] of [['docs/USING-WITH-ASSISTANTS.md', '4.'], ['docs/gu
 
 test('the publishing guide says how to run both checkers against a locally served node', () => {
   const text = flat(section(read('docs/guides/publish.md'), '6.'));
-  assert.match(text, /\*\*On your own machine first\.\*\* `agsc-host serve` prints `http:\/\/127\.0\.0\.1:8080\/`/u);
+  assert.match(text, /\*\*On your own machine first\.\*\* `agsc-host serve` prints `http:\/\/localhost:8080\/` \(before 1\.1 it printed `http:\/\/127\.0\.0\.1:8080\/`\), and both checkers compare/u);
   assert.match(text, /set `site\.base` to `http:\/\/localhost:8080\/`, rebuild, serve, and run each checker on `http:\/\/localhost:8080\/\.well-known\/knowledge-linkset --level 2 --dev` \(the Python checker also needs `--allow-network`\); use `localhost`, not `127\.0\.0\.1`, in both places/u);
   assert.match(text, /`--dev` admits plain `http` to a loopback address and nothing else \(AGSC-09-93\)/u);
   // The paragraph is prose: the guide runner finds no new command block in section 6.
@@ -231,12 +231,12 @@ function scenario(text, id) {
   return flat(text.slice(start, next < 0 ? text.length : start + 4 + next));
 }
 
-test('use cases: what is not built names 1.1 or says it is not planned for a fixed version', () => {
+test('use cases: what is not built names a later MINOR or says it is not planned for a fixed version', () => {
   const text = read('docs/USE-CASES.md');
   assert.doesNotMatch(flat(text), /\b(wraps it|not runnable|not built) yet\b/u);
   assert.match(scenario(text, 'D2'), /no command wraps it, and none is planned for a fixed version/u);
-  assert.match(scenario(text, 'M3'), /channel adapters are planned for 1\.1/u);
-  assert.match(scenario(text, 'M5'), /runtime renderings[^.]*are planned for 1\.1/u);
+  assert.match(scenario(text, 'M3'), /channel adapters are planned for a later MINOR/u);
+  assert.match(scenario(text, 'M5'), /runtime renderings[^.]*are planned for a later MINOR/u);
 });
 
 // --- the seven file KINDS of a Harness (AGSC-07-12) ----------------------------------------
@@ -290,4 +290,12 @@ test('related work: the neighbours a reviewer asks about have rows', () => {
   assert.match(row(text, '*Knowledge-as-Skill:'), /arXiv 2609\.25991/u);
   assert.match(row(text, '*Complex Knowledge Curation'), /Skillful-Alhazen/u);
   assert.match(flat(row(text, 'MCP Skills extension')), /skill packs are files[^|]*nothing here forecloses/u);
+});
+
+// --- bench/README.md: the kit's table of paths -----------------------------------------------
+
+test('bench/README.md: every path its table names exists under bench/', () => {
+  const paths = read('bench/README.md').split('\n').map((l) => /^\| `([^`]+)` \|/u.exec(l)).filter(Boolean).map((m) => m[1]);
+  assert.ok(paths.length >= 10, `${paths.length} rows read`);
+  for (const rel of paths) assert.ok(fs.existsSync(path.join(ROOT, 'bench', ...rel.split('/'))), `bench/README.md names bench/${rel}, which does not exist`);
 });

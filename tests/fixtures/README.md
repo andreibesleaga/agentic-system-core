@@ -13,7 +13,9 @@ test data, byte for byte: a `README.md` inside a fixture folder is part of the f
 | `diagrams/` | diagram sources and their expected SVG (the compiler's golden files) |
 | `old-site-10/` | ten cards of the retired pattern site, for `import --from old-site` |
 | `pm-*/` | exports of project-board tools (GitHub, GitLab, Jira, Trello, Linear, Asana, Notion, Obsidian Kanban, Todo.txt, Markdown, and this node's own board format), for the `board` adapter |
+| `skos-thesaurus/` | one SKOS thesaurus in Turtle (a scheme, a collection, two concepts, and statements the import drops), invented for the `skos` adapter |
 | `skills-*/` | skills repositories in each layout the `skills` adapter reads |
+| `memory-*/` | the files of six memory tools, invented for the direct memory adapters: a Mem0 `getAll()` page, a Letta passage list, Zep episode and node pages (each in the shape of the tool's official client), a CSV table, Basic Memory notes, and a Claude Code project with `CLAUDE.md` and a memory folder (its `.claude/rules/` file is written by the test, because `.claude/` is ignored by the repository) |
 
 Changing a fixture changes what the tests prove; a change here needs the tests that use
 it re-read, and a golden file is regenerated only by the test that owns it.

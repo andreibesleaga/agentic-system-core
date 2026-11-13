@@ -1,0 +1,4 @@
+# The required value is absent.
+@prefix ex: <https://example.org/> .
+
+ex:doc a ex:Doc ; ex:status "draft" .

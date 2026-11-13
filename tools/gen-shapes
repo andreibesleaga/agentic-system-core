@@ -1,0 +1,478 @@
+#!/usr/bin/env node
+'use strict';
+// tools/gen-shapes — generates schema/item-shapes.ttl, the SHACL shapes of the RDF graph
+// of a node (`graph.nq`, `graph.ttl` and the SKOS view `skos.ttl`), from three sources
+// (AGSC-05-24, AGSC-09-90):
+//   1. `schema/item.schema.json` and the table of AGSC-05-26 in `spec/05-graph.md`:
+//      one property shape for each key the table maps to a datatype property (its
+//      datatype, at most one value, the closed list of the schema as `sh:in`, a key that
+//      a type of item requires as `sh:minCount 1`);
+//   2. the relation table of AGSC-03-01 in `spec/03-links.md`: the Expected target kinds
+//      column as a warning for each key that names a kind (AGSC-03-25, AGSC-E315), and
+//      the Self-link column as a warning or, where the table says cycle, an error
+//      (AGSC-03-23, AGSC-03-07, AGSC-03-08);
+//   3. the SKOS integrity rules AGSC-05-17 to AGSC-05-21, which are prose and so are
+//      written down here, one shape for each machine-checkable part.
+//
+// The shapes are INFORMATIVE. The engine's own checks (`agsc lint`) stay the normative
+// ones, and nothing here runs at build: the shapes run in a development lane, a SHACL
+// library at an exact version named in docs/SHACL-SHAPES.md. They use SHACL 1.0 Core
+// and SHACL-SPARQL only (W3C Recommendation, 20 July 2017), with SPARQL 1.1 and none of
+// the clauses SHACL-SPARQL forbids; the drafts SHACL 1.2 and RDF 1.2 are not used.
+//
+// INDEPENDENT BY CONSTRUCTION: no import from `src/` (AGSC-09-90); Node stdlib and the
+// sibling tool `gen-dc-profile`, whose table and schema readers and command line it shares.
+//
+//   gen-shapes [--check] [--json] [--quiet] [--help] [<root>]
+//
+// Every shape is named by an IRI of the shapes namespace (`ascs:`), never by a blank node,
+// so a validation result names its source shape in a way that can be looked up. With no
+// flag the tool writes the file. `--check` writes nothing and exits 1 when the committed
+// file differs. Exit 0 written or current, 1 fail, 2 usage. Deterministic: no clock, no
+// network, LF, shapes in the order of the sources.
+//
+// Findings (AGSC-09-11 envelope with `--json`):
+//   AGSC-E201  `schema/item.schema.json` is not JSON
+//   AGSC-E602  `--check`: the committed file differs from the derivation
+//   AGSC-E901  an input is missing, holds no table, or holds a cell the generator cannot read
+
+const profile = require('./gen-dc-profile');
+
+const { spans, walk } = profile;
+const OUTPUT = 'schema/item-shapes.ttl';
+const SCHEMA = 'schema/item.schema.json';
+const LINKS = 'spec/03-links.md';
+const GRAPH = 'spec/05-graph.md';
+const HELP = `gen-shapes [--check] [--json] [--quiet] [--help] [<root>]
+
+  Generates schema/item-shapes.ttl, the SHACL shapes of the RDF graph of a node, from
+  schema/item.schema.json, the relation table of spec/03-links.md and the table of
+  AGSC-05-26 in spec/05-graph.md. The shapes are informative and run in a development lane.
+
+  --check  write nothing; exit 1 when the committed file is not what the inputs give
+  --json   emit the AGSC-09-11 diagnostics envelope on stdout
+  --quiet  emit nothing; the exit code is the result
+  --help   this text
+
+  Exit 0 written or current, 1 fail, 2 usage.
+`;
+
+/** Thrown for an input the generator cannot read; the command turns it into AGSC-E901. */
+class InputError extends Error {}
+
+/** The prefixes of the file, in code-point order of the prefix name. */
+const PREFIXES = Object.freeze([
+  ['asc', 'https://w3id.org/agentic-system-core/ns#'],
+  ['ascs', 'https://w3id.org/agentic-system-core/shapes#'],
+  ['dcterms', 'http://purl.org/dc/terms/'],
+  ['prov', 'http://www.w3.org/ns/prov#'],
+  ['rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'],
+  ['schema', 'https://schema.org/'],
+  ['sh', 'http://www.w3.org/ns/shacl#'],
+  ['skos', 'http://www.w3.org/2004/02/skos/core#'],
+  ['xsd', 'http://www.w3.org/2001/XMLSchema#'],
+]);
+/** The prefixes a SPARQL constraint may use (declared once, by `ascs:Prefixes`). */
+const SPARQL_PREFIXES = Object.freeze(['asc', 'dcterms', 'prov', 'skos']);
+
+/** The class of each item type (AGSC-05-12). */
+const CLASS_OF_TYPE = Object.freeze({
+  concept: 'asc:Concept', lesson: 'asc:Lesson', episode: 'asc:Episode',
+  procedure: 'asc:Procedure', cluster: 'asc:Cluster', gate: 'asc:Gate',
+});
+const ITEM_CLASSES = Object.freeze(Object.values(CLASS_OF_TYPE));
+/** The same items in the SKOS view `skos.ttl` (AGSC-05-36), which holds no other type. */
+const SKOS_CLASSES = Object.freeze(['skos:Concept', 'skos:Collection']);
+/** The classes whose members are `skos:Concept`s (a lesson is a concept, AGSC-05-12). */
+const CONCEPT_CLASSES = Object.freeze(['asc:Concept', 'asc:Lesson', 'skos:Concept']);
+const COLLECTION_CLASSES = Object.freeze(['asc:Cluster', 'skos:Collection']);
+/** A "same family" of AGSC-03-25: `concept` and `lesson` count as one. */
+const FAMILIES = Object.freeze([CONCEPT_CLASSES, COLLECTION_CLASSES, ['asc:Episode'], ['asc:Procedure'], ['asc:Gate']]);
+/** "Same `type`" of AGSC-03-25: a lesson is not a concept here. */
+const SAME_TYPES = Object.freeze([['asc:Concept', 'skos:Concept'], ['asc:Lesson'], ['asc:Episode'], ['asc:Procedure'], ['asc:Cluster'], ['asc:Gate']]);
+/** The semantic relations of SKOS that AGSC-05-19 and AGSC-05-20 keep away from a Collection. */
+const SEMANTIC = Object.freeze(['broader', 'narrower', 'related']);
+
+// ---------------------------------------------------------------- Turtle text
+
+const ESCAPES = { '"': '\\"', '\n': '\\n', '\r': '\\r', '\\': '\\\\' };
+
+/** A Turtle string literal on one line. */
+const ttlString = (text) => `"${text.replace(/[\\"\n\r]/gu, (c) => ESCAPES[c])}"`;
+/** A Turtle long string literal, for SPARQL text. */
+const ttlLong = (text) => `"""${text.replace(/[\\"]/gu, (c) => ESCAPES[c])}"""`;
+const list = (items) => `( ${items.join(' ')} )`;
+const stringList = (values) => list(values.map(ttlString));
+const local = (curie) => curie.slice(curie.indexOf(':') + 1);
+
+/** One named shape as Turtle: `entries` are `[predicate, object]` pairs already written. */
+function render(name, entries) {
+  const lines = entries.map(([predicate, object], i) => `    ${predicate} ${object} ${i === entries.length - 1 ? '.' : ';'}`);
+  return `ascs:${name}\n${lines.join('\n')}\n`;
+}
+
+/** A shape as `{ name, entries }`; the type and the severity come in their fixed places. */
+function shape(name, type, body, severity) {
+  const head = [['a', `sh:${type}`]];
+  const tail = severity === undefined ? [] : [['sh:severity', `sh:${severity}`]];
+  return { entries: [...head, ...body, ...tail], name };
+}
+
+function propertyShape(name, path, body, { severity, message }) {
+  return shape(name, 'PropertyShape', [['sh:path', path], ...body, ['sh:message', ttlString(message)]], severity);
+}
+
+function nodeShape(name, targets, body, severity) {
+  return shape(name, 'NodeShape', [...targets, ...body], severity);
+}
+
+const targetClasses = (classes) => classes.map((c) => ['sh:targetClass', c]);
+const references = (names) => names.map((name) => ['sh:property', `ascs:${name}`]);
+
+/** A SHACL-SPARQL constraint (SHACL 1.0 section 5): a message, the prefixes, a SELECT. */
+function sparql(message, select) {
+  const text = select.map((line) => `        ${line}`).join('\n');
+  return ['sh:sparql', `[\n        a sh:SPARQLConstraint ;\n        sh:message ${ttlString(message)} ;\n        sh:prefixes ascs:Prefixes ;\n        sh:select ${ttlLong(`\n${text}\n        `)}\n    ]`];
+}
+
+const inList = (variable, curies) => `${variable} IN (${curies.join(', ')})`;
+
+// ---------------------------------------------------------------- the item schema
+
+/** The branches of the item schema, each with the class of its type. */
+function branchesOf(schema) {
+  if (!Array.isArray(schema.oneOf) || schema.oneOf.length === 0) throw new InputError(`${SCHEMA} has no oneOf branches: there is no type of item to shape`);
+  return schema.oneOf.map((branch) => {
+    const type = branch.properties && branch.properties.type && branch.properties.type.const;
+    if (!CLASS_OF_TYPE[type]) throw new InputError(`${SCHEMA} has a branch for the type ${JSON.stringify(type)}, which AGSC-05-12 gives no class`);
+    return { branch, cls: CLASS_OF_TYPE[type], type };
+  });
+}
+
+const capital = (cls) => local(cls);
+
+/** The row's `sh:in` list, from the closed list of the item schema (empty when it has none). */
+const picklist = (schema, row) => (row.fromConfig ? [] : profile.picklistOf(schema, row.key));
+
+function columnShape(scope, row, schema, required) {
+  const values = picklist(schema, row);
+  const body = [
+    ['sh:datatype', row.datatype],
+    ...(required ? [['sh:minCount', '1']] : []),
+    ['sh:maxCount', '1'],
+    ...(values.length > 0 ? [['sh:in', stringList(values)]] : []),
+  ];
+  const detail = `${values.length > 0 ? `one of ${values.join(', ')}` : `a ${row.datatype} value`}${required ? ', required' : ', at most one'}`;
+  return propertyShape(`${scope}-${local(row.property)}`, row.property, body,
+    { message: `${row.property} must be ${detail} (AGSC-05-26, ${SCHEMA})` });
+}
+
+/**
+ * The shapes of the AGSC-05-26 rows of one subject. A row of an item is common to every type
+ * when the top of the item schema holds the key, and belongs to the types whose branch holds
+ * it otherwise (`kind` is a concept's, `level` a gate's).
+ */
+function itemShapes(rows, schema) {
+  const branches = branchesOf(schema);
+  const common = [];
+  const perClass = new Map(branches.map((b) => [b.cls, []]));
+  for (const row of rows) {
+    if (row.fromConfig || walk(schema, schema, row.key) !== undefined) { common.push(columnShape('Item', row, schema, false)); continue; }
+    const owners = branches.filter((b) => walk(schema, b.branch, row.key) !== undefined);
+    if (owners.length === 0) throw new InputError(`the key ${row.key} of the table in ${GRAPH} is in no branch of ${SCHEMA}`);
+    for (const owner of owners) {
+      const required = (owner.branch.required || []).includes(row.key.split('.')[0]);
+      perClass.get(owner.cls).push(columnShape(capital(owner.cls), row, schema, required));
+    }
+  }
+  const nodes = branches.map((b) => nodeShape(`${capital(b.cls)}Shape`, targetClasses([b.cls]),
+    references([...common, ...perClass.get(b.cls)].map((s) => s.name))));
+  return [...common, ...branches.flatMap((b) => perClass.get(b.cls)), ...nodes];
+}
+
+/** The shapes for the rows of one subject other than an item (Bundle, Source, Review). */
+function plainShapes(scope, cls, rows, schema) {
+  const properties = rows.map((row) => columnShape(scope, row, schema, false));
+  return [...properties, nodeShape(`${scope}Shape`, targetClasses([cls]), references(properties.map((s) => s.name)))];
+}
+
+function schemaShapes(graphTable, schema) {
+  const rows = graphTable.map(profile.readRow);
+  const of = (id) => rows.filter((row) => profile.SHAPES.find((s) => s.id === id).word.test(row.subject));
+  return [
+    ...itemShapes(of('item'), schema),
+    ...plainShapes('Bundle', 'asc:Bundle', of('bundle'), schema),
+    ...plainShapes('Source', 'asc:Source', of('source'), schema),
+    ...plainShapes('Review', 'asc:Review', of('review'), schema),
+  ];
+}
+
+// ---------------------------------------------------------------- the relation table
+
+/** One alternative of an Expected target kinds cell: `a \`concept\` of \`kind\` \`spec\` or \`task\``. */
+function alternativeOf(text) {
+  const found = text.match(/^an? `([a-z]+)`(?: of `kind` (.+))?$/u);
+  if (!found || !CLASS_OF_TYPE[found[1]]) return null;
+  return { kinds: found[2] ? spans(found[2]) : [], type: found[1] };
+}
+
+/** The Expected target kinds cell as data, or `null` when the generator does not read it. */
+function targetsOf(cell) {
+  if (cell === 'any') return { any: true };
+  // The cell of `related` (AGSC-03-25): no shape of its own, since the SKOS integrity shape
+  // Collection-noRelated (AGSC-05-20) already refuses a cluster in `skos:related`.
+  if (cell === 'any but a `cluster`, at either end') return { any: true, noCluster: true };
+  if (cell === 'same family') return { sameFamily: true };
+  if (cell === 'same `type`') return { sameType: true };
+  const lesson = cell.match(/^any; for a lesson, an `([a-z]+)`$/u);
+  if (lesson) return CLASS_OF_TYPE[lesson[1]] ? { any: true, lessonTarget: lesson[1] } : null;
+  const alternatives = cell.split(/, (?=an? `)| or (?=an? `)/u).map(alternativeOf);
+  return alternatives.every(Boolean) ? { oneOf: alternatives } : null;
+}
+
+/** The rows of the table of AGSC-03-01; `null` when the specification holds no such table. */
+function relationRows(specText) {
+  const lines = specText.split('\n');
+  const start = lines.findIndex((line) => line.startsWith('| Key (authored) |'));
+  if (start === -1) return null;
+  const rows = [];
+  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i += 1) {
+    const cells = lines[i].split('|').slice(1, -1).map((cell) => cell.trim());
+    const [key, inverse, , property, , , , selfLink, kinds] = cells;
+    const targets = targetsOf(kinds);
+    if (targets === null) throw new InputError(`${LINKS}: the Expected target kinds cell "${kinds}" of the key ${key} is not one the generator reads`);
+    rows.push({ code: spans(selfLink)[0], cycle: selfLink.startsWith('cycle'), inverse: spans(inverse)[0],
+      key: spans(key)[0], properties: spans(property), targets });
+  }
+  return rows.length > 0 ? rows : null;
+}
+
+/** `FILTER` text that holds when the two ends of an edge are NOT in one of the given sets. */
+function differentSets(sets) {
+  const same = sets.map((set) => `(${inList('?from', set)} && ${inList('?to', set)})`);
+  return `FILTER (!(${same.join(' || ')}))`;
+}
+
+/** The SPARQL text of "the target must be of the kind of the item" for same family and same type. */
+function sameSelect(sets) {
+  const all = [...new Set(sets.flat())];
+  return ['SELECT $this ?value WHERE {', '  $this $PATH ?value .', '  $this a ?from . ?value a ?to .',
+    `  FILTER (${inList('?from', all)} && ${inList('?to', all)})`, `  ${differentSets(sets)}`, '}'];
+}
+
+/** One alternative of a target kind as an inline node shape: the class, and the `kind` list if any. */
+function alternativeShape({ type, kinds }) {
+  const kind = kinds.length > 0 ? ` ; sh:property [ sh:path asc:kind ; sh:in ${stringList(kinds)} ]` : '';
+  return `[ sh:class ${CLASS_OF_TYPE[type]}${kind} ]`;
+}
+
+function describeKinds({ oneOf }) {
+  return oneOf.map(({ type, kinds }) => (kinds.length > 0 ? `a ${type} of kind ${kinds.join(' or ')}` : `a ${type}`)).join(', or ');
+}
+
+/** The property shape of "the target of this key is of the expected kind" (AGSC-03-25), or `null` for `any`. */
+function targetShape(row) {
+  const path = row.properties[0];
+  const make = (body, message) => propertyShape(`Link-${row.key}-target`, path, body,
+    { message: `${message} (AGSC-03-25, AGSC-E315)`, severity: 'Warning' });
+  const { targets } = row;
+  if (targets.sameFamily) {
+    return make([sparql('AGSC-E315: the target of this key should belong to the same family as the item', sameSelect(FAMILIES))],
+      `the target of ${row.key} should belong to the family of the item`);
+  }
+  if (targets.sameType) {
+    return make([sparql('AGSC-E315: the target of this key should have the same type as the item', sameSelect(SAME_TYPES))],
+      `the target of ${row.key} should have the type of the item`);
+  }
+  if (targets.lessonTarget) {
+    const cls = CLASS_OF_TYPE[targets.lessonTarget];
+    return make([sparql(`AGSC-E315: the target of derived-from of a lesson should be an ${targets.lessonTarget}`, [
+      'SELECT $this ?value WHERE {', '  $this a asc:Lesson . $this $PATH ?value . ?value a ?class .',
+      `  FILTER NOT EXISTS { ?value a ${cls} }`, '}'])],
+    `the target of ${row.key} of a lesson should be an ${targets.lessonTarget}`);
+  }
+  if (targets.oneOf) {
+    const shapes = targets.oneOf.map(alternativeShape);
+    const body = shapes.length === 1 ? [['sh:node', shapes[0]]] : [['sh:or', list(shapes)]];
+    return make(body, `the target of ${row.key} should be ${describeKinds(targets)}`);
+  }
+  return null;
+}
+
+/** The shape of "an item that names itself" for the keys the table marks as a warning (AGSC-03-23). */
+function selfLinkShape(rows) {
+  const properties = rows.filter((row) => !row.cycle).map((row) => row.properties[0]);
+  const select = ['SELECT $this ?path ?value WHERE {', '  $this ?path ?value .', `  FILTER (${inList('?path', properties)} && ?value = $this)`, '}'];
+  return nodeShape('SelfLinkShape', properties.map((p) => ['sh:targetSubjectsOf', p]),
+    [sparql('AGSC-E313: an item should not list itself under a Link key', select)], 'Warning');
+}
+
+/** The cycle shapes: one for each key the table marks `cycle`, `broader` and `narrower` as one (AGSC-03-07, AGSC-03-08). */
+function cycleShapes(rows) {
+  const byKey = new Map(rows.map((row) => [row.key, row]));
+  const done = new Set();
+  const shapes = [];
+  for (const row of rows.filter((r) => r.cycle)) {
+    if (done.has(row.key)) continue;
+    const partner = byKey.get(row.inverse);
+    const mutual = partner !== undefined && partner.cycle && partner.inverse === row.key;
+    done.add(row.key);
+    if (mutual) done.add(partner.key);
+    const properties = mutual ? [row.properties[0], partner.properties[0]] : [row.properties[0]];
+    const path = mutual ? `(${row.properties[0]}|^${partner.properties[0]})+` : `${row.properties[0]}+`;
+    const message = `${row.code}: ${mutual ? `${row.key} and ${partner.key} form` : `${row.key} forms`} a cycle`;
+    shapes.push(nodeShape(`NoCycle-${row.key}`, properties.map((p) => ['sh:targetSubjectsOf', p]),
+      [sparql(message, ['SELECT $this WHERE {', `  $this ${path} $this .`, '}'])]));
+  }
+  return shapes;
+}
+
+function linkShapes(rows) {
+  const targets = rows.map(targetShape).filter(Boolean);
+  const restricted = rows.filter((row) => targetShape(row) !== null);
+  const node = nodeShape('LinkTargetsShape', restricted.map((row) => ['sh:targetSubjectsOf', row.properties[0]]), references(targets.map((s) => s.name)));
+  return [...targets, node, selfLinkShape(rows), ...cycleShapes(rows)];
+}
+
+// ---------------------------------------------------------------- the SKOS integrity rules
+
+const SKOS_SEMANTIC = SEMANTIC.map((name) => `skos:${name}`);
+
+const noCollection = '[ sh:or ( [ sh:class asc:Cluster ] [ sh:class skos:Collection ] ) ]';
+
+/** AGSC-05-17: the three label and scheme requirements of a Concept, and the S37 guard on `skos:member`. */
+function conceptShapes() {
+  const properties = [
+    propertyShape('Concept-inScheme', 'skos:inScheme', [['sh:minCount', '1'], ['sh:or', '( [ sh:class asc:Bundle ] [ sh:class skos:ConceptScheme ] )']],
+      { message: 'a concept is in the scheme of the Bundle: one skos:inScheme to the Bundle (AGSC-05-17)' }),
+    propertyShape('Concept-prefLabel', 'skos:prefLabel', [['sh:datatype', 'rdf:langString'], ['sh:minCount', '1'], ['sh:uniqueLang', 'true']],
+      { message: 'a concept has a skos:prefLabel, exactly one for each language tag (AGSC-05-17)' }),
+    propertyShape('Concept-altLabel', 'skos:altLabel', [['sh:datatype', 'rdf:langString']],
+      { message: 'an alias is a skos:altLabel with a language tag (AGSC-05-17)' }),
+    propertyShape('Concept-noMember', 'skos:member', [['sh:maxCount', '0']],
+      { message: 'a concept is not a collection and has no skos:member (AGSC-05-18, SKOS S37)' }),
+  ];
+  return [...properties, nodeShape('ConceptSkosShape', targetClasses(CONCEPT_CLASSES), references(properties.map((s) => s.name)))];
+}
+
+/** AGSC-05-19 and AGSC-05-20: a Collection is in no semantic relation, as subject or as object. */
+function collectionShapes() {
+  const subject = SEMANTIC.map((name) => propertyShape(`Collection-no${name[0].toUpperCase()}${name.slice(1)}`, `skos:${name}`, [['sh:maxCount', '0']],
+    { message: `a collection has no skos:${name}; nesting is skos:member (AGSC-05-19, AGSC-05-20)` }));
+  const object = SEMANTIC.map((name) => propertyShape(`Relation-${name}`, `skos:${name}`, [['sh:not', noCollection]],
+    { message: `the object of skos:${name} is a concept, never a collection (AGSC-05-20)` }));
+  return [...subject, nodeShape('CollectionSkosShape', targetClasses(COLLECTION_CLASSES), references(subject.map((s) => s.name))),
+    ...object, nodeShape('SemanticRelationShape', SKOS_SEMANTIC.map((p) => ['sh:targetSubjectsOf', p]), references(object.map((s) => s.name)))];
+}
+
+/** AGSC-05-21, the qSKOS checks a graph can show: missing definitions, undefined resources, orphans. */
+function qualityShapes(rows) {
+  const everything = [...ITEM_CLASSES, ...SKOS_CLASSES];
+  const edges = [...SKOS_SEMANTIC, 'skos:member', 'skos:inScheme', ...rows.flatMap((row) => row.properties)];
+  const undefinedSelect = ['SELECT $this ?path ?value WHERE {', '  $this ?path ?value .', `  FILTER (${inList('?path', edges)})`,
+    '  FILTER NOT EXISTS { ?value a ?type }', '}'];
+  const orphanClasses = ['asc:Concept', 'asc:Lesson', 'asc:Episode', 'asc:Procedure', 'asc:Gate', 'skos:Concept'];
+  const orphanSelect = ['SELECT $this WHERE {',
+    '  FILTER NOT EXISTS { ?other ?link $this . FILTER (?other != $this && ?link NOT IN (asc:mentions, skos:hasTopConcept)) }', '}'];
+  const definition = propertyShape('Definition-required', 'skos:definition', [['sh:minCount', '1']],
+    { message: 'AGSC-E408: a concept or cluster has a skos:definition (AGSC-05-21, missing definitions; AGSC-02-21)', severity: 'Warning' });
+  return [definition, nodeShape('DefinitionShape', targetClasses([...CONCEPT_CLASSES, ...COLLECTION_CLASSES]), references([definition.name])),
+    nodeShape('UndefinedResourceShape', targetClasses(everything),
+      [sparql('AGSC-E301: a Link points at a resource the graph does not define (AGSC-05-21, undefined resources)', undefinedSelect)]),
+    nodeShape('OrphanShape', targetClasses(orphanClasses),
+      [sparql('AGSC-E305: no item or collection points at this item (AGSC-05-21, missing in-links; AGSC-03-10)', orphanSelect)], 'Warning')];
+}
+
+// ---------------------------------------------------------------- the file
+
+const SECTIONS = Object.freeze([
+  ['Shapes from schema/item.schema.json and the table of AGSC-05-26', 'schema'],
+  ['Shapes from the relation table of AGSC-03-01 (AGSC-03-23, AGSC-03-25, AGSC-03-07, AGSC-03-08)', 'links'],
+  ['Shapes from the SKOS integrity rules AGSC-05-17 to AGSC-05-21', 'skos'],
+]);
+
+function header() {
+  const prefixes = PREFIXES.map(([name, iri]) => `@prefix ${name}: <${iri}> .`).join('\n');
+  return `# schema/item-shapes.ttl — SHACL shapes for the RDF graph of an AgenticSystemCore node.
+# GENERATED by tools/gen-shapes from schema/item.schema.json, spec/03-links.md and spec/05-graph.md
+# (AGSC-05-24). Do not edit by hand: run \`node tools/gen-shapes\`. \`--check\` fails when this file is stale.
+#
+# INFORMATIVE. The engine's checks (\`agsc lint\`) are the normative ones; nothing here runs at build.
+# SHACL 1.0 Core and SHACL-SPARQL (W3C Recommendation, 20 July 2017), SPARQL 1.1. The graph to
+# check is \`graph.nq\` or \`graph.ttl\` of a build, or \`skos.ttl\` of \`export --skos\`. A shape with
+# severity sh:Warning stands for a warning of \`agsc lint\`. Overlapping labels (AGSC-05-21) need
+# Unicode case folding, which SPARQL does not have, and stay with the lint. The IRIs of the shapes
+# name results; they are not dereferenceable.
+${prefixes}
+`;
+}
+
+function prefixDeclarations() {
+  const declare = SPARQL_PREFIXES.map((name) => `[ sh:prefix ${ttlString(name)} ; sh:namespace ${ttlString(PREFIXES.find(([n]) => n === name)[1])}^^xsd:anyURI ]`);
+  return render('Prefixes', [['sh:declare', declare.join(' ,\n        ')]]);
+}
+
+/** The shapes of the three sources, in file order. */
+function shapesOf(links, graphTable, schema) {
+  return [schemaShapes(graphTable, schema), linkShapes(links), [...conceptShapes(), ...collectionShapes(), ...qualityShapes(links)]];
+}
+
+/** The whole file and the number of shapes in it. */
+function generate(links, graphTable, schema) {
+  const groups = shapesOf(links, graphTable, schema);
+  const body = groups.map((shapes, i) => `# ${'-'.repeat(60)}\n# ${SECTIONS[i][0]}\n\n${shapes.map((s) => render(s.name, s.entries)).join('\n')}`);
+  const count = groups.reduce((total, shapes) => total + shapes.length, 0);
+  return { count, text: `${header()}\n${prefixDeclarations()}\n${body.join('\n')}` };
+}
+
+// ---------------------------------------------------------------- the command
+
+/** Read the three inputs, or say which one is missing, not JSON, or holds no table. */
+function readInputs(root) {
+  const findings = [];
+  const schemaText = profile.readInput(root, SCHEMA, findings, 'the shapes');
+  const linksText = profile.readInput(root, LINKS, findings, 'the shapes');
+  const graphText = profile.readInput(root, GRAPH, findings, 'the shapes');
+  let schema = null;
+  if (schemaText !== null) {
+    try { schema = JSON.parse(schemaText); } catch (e) { findings.push(profile.finding('AGSC-E201', SCHEMA, `not JSON: ${e.message}`)); }
+  }
+  let links = null;
+  try {
+    links = linksText === null ? null : relationRows(linksText);
+    if (linksText !== null && links === null) findings.push(profile.finding('AGSC-E901', LINKS, 'the table of AGSC-03-01 ("| Key (authored) |") was not found: shapes of nothing are not generated'));
+  } catch (e) {
+    if (!(e instanceof InputError)) throw e;
+    findings.push(profile.finding('AGSC-E901', LINKS, e.message));
+  }
+  const graphTable = graphText === null ? null : profile.tableCells(graphText);
+  if (graphText !== null && graphTable === null) findings.push(profile.finding('AGSC-E901', GRAPH, 'the table of AGSC-05-26 ("| Frontmatter key |") was not found: shapes of nothing are not generated'));
+  return { findings, graphTable, links, schema };
+}
+
+/** Write the file, or with `check` compare it. Returns the findings and the shape count. */
+function apply(root, check) {
+  const inputs = readInputs(root);
+  if (inputs.findings.length > 0) return { count: 0, findings: inputs.findings };
+  let made;
+  try { made = generate(inputs.links, inputs.graphTable, inputs.schema); } catch (e) {
+    if (!(e instanceof InputError)) throw e;
+    return { count: 0, findings: [profile.finding('AGSC-E901', SCHEMA, e.message)] };
+  }
+  return profile.writeOrCheck(root, check, OUTPUT, made,
+    `${OUTPUT} is not what ${SCHEMA}, ${LINKS} and ${GRAPH} generate: run tools/gen-shapes`);
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out?:(s:string)=>void, err?:(s:string)=>void}} [io]
+ * @returns {number} 0 written or current, 1 fail, 2 usage
+ */
+function run(argv, io = {}) {
+  return profile.runGenerator({ apply, help: HELP, output: OUTPUT, unit: 'shapes', verb: 'gen-shapes' }, argv, io);
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, generate, readInputs, relationRows, run, targetsOf, ttlLong, ttlString };

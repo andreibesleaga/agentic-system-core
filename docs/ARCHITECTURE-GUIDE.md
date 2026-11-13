@@ -44,7 +44,7 @@ Source: [diagrams/arch-system-overview.md](diagrams/arch-system-overview.md).
   the `search` tool gives; nothing leaves the page's origin. Without script the page
   is the list of every published item.
 - **Readers.** A person reads pages; an agent or crawler starts at the discovery
-  document; a browser's own agent calls the seven tools the page registers
+  document; a browser's own agent calls the ten tools the page registers
   (AGSC-09-16); a local assistant runs `agsc mcp` over the Bundle (AGSC-09-13).
 - **Other nodes.** A node names its peers; a *client* walks from one node to the next.
   A node never fetches another node (AGSC-11-13).
@@ -67,7 +67,7 @@ reached during a build (AGSC-04-03).
 ![C4 containers](diagrams-rendered/arch-c4-container-1.svg)
 
 Source: [diagrams/arch-c4-container.md](diagrams/arch-c4-container.md). `agsc` has
-sixteen verbs (AGSC-09-07). `agsc-host` is a separate helper for hosting. The nine
+sixteen verbs (AGSC-09-07). `agsc-host` is a separate helper for hosting. The eleven
 checkers in `tools/` import nothing from the engine, so what they check is the
 standard itself and a built node, not the engine's opinion of them (AGSC-09-90).
 
@@ -81,7 +81,7 @@ Source: [diagrams/arch-c4-component.md](diagrams/arch-c4-component.md).
 |---|---|---|
 | Knowledge | items, links, the graph and its four RDF views, chunks, adoption, the content version | `src/knowledge/` |
 | Governance & Provenance | provenance, lints, gates, the derived ledger, boards, agent lanes | `src/governance/` |
-| Composition | selection and closure, the Harness, skill packs | `src/composition/` |
+| Composition | selection and closure, the Harness, skill packs, the brief and the blueprint beside the Harness | `src/composition/` |
 | Distribution | every route, page, header and surface of a built node | `src/distribution/` |
 | Boundary | peers and federation, visibility, the agent-surface contract | `src/boundary/` |
 | Interchange (supporting) | foreign formats in and out | `src/interchange/` |
@@ -107,16 +107,22 @@ instant comes from `SOURCE_DATE_EPOCH` or the last commit, never the wall clock
 (AGSC-04-09), which is why two builds, on two machines, give the same bytes
 (AGSC-04-01, AGSC-04-02).
 
+From 1.1 the pages also carry the graph view, the build writes `/query/` and the
+tabular chunk index, and a node that uses the domain layer adds its own vocabulary to the
+graph; `verify` and `ci` check the node's invariants and questions. The picture shows the
+steps of 1.0, which keep their order. What 1.1 adds is listed in
+[ROADMAP.md](ROADMAP.md).
+
 ## 4. One page tool call
 
 ![A browser agent calls a page tool](diagrams-rendered/flow-page-tool-call-1.svg)
 
 Source: [diagrams/flow-page-tool-call.md](diagrams/flow-page-tool-call.md). The page
-registers the seven tools only when the browser offers `document.modelContext`; without
+registers the ten tools only when the browser offers `document.modelContext`; without
 it, the page works unchanged. A tool reads the node's own published files from the same
 origin — no other host, no key, no cookie (AGSC-06-05) — and answers what the local
 tool server answers for the same input on a Bundle whose items are all listed
-(AGSC-00-05); vector `cli-0003` proves it call by call. The local tool server also
+(AGSC-00-05); vector `cli-0026` (the successor of the withdrawn `cli-0003`) proves it call by call. The local tool server also
 reads draft, retired and release-gated items, which a page never sees (AGSC-09-16,
 vector `cli-0008`). `propose` and `remember` return text and write nothing
 (AGSC-09-16).
@@ -135,7 +141,7 @@ Source: [diagrams/flow-conformance-chain.md](diagrams/flow-conformance-chain.md)
 4. The **checkers** check the specification, the vectors and a built node without
    importing the engine (AGSC-09-90).
 5. A **claim** names one Level and one released version and rests on a green run
-   (AGSC-10-01); the reference engine claims Level 3 at 1.0.0 (AGSC-10-05,
+   (AGSC-10-01); the reference engine claims Level 3 at 1.1.0 (AGSC-10-05,
    [its claim](CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 [RULE-COVERAGE.md](RULE-COVERAGE.md) lists, for every active rule, the checks that

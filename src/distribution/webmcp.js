@@ -2,8 +2,8 @@
 /**
  * CONTEXT Distribution (Emission) — Surface: WebMCP, the browser transport.
  * Implements AGSC-09-16: where a browser exposes `document.modelContext`, the
- * `/compose/` and item pages register the SAME seven tools as AGSC-09-13,
- * with identical names, identical argument names and results byte-identical to
+ * `/compose/` and item pages register the SAME ten tools as AGSC-09-13,
+ * with identical names, identical argument names and results equal as values to
  * the local MCP server's for the same input and Bundle. Registration is
  * FEATURE-DETECTED: with no `document.modelContext` the page works unchanged
  * and registers nothing. On this transport `propose` and `remember` are
@@ -17,7 +17,7 @@
  * `distribution/mcp-tools.js` and dispatches to the very same `call`
  * implementation, reached through `globalThis.AGSC_TOOLS`. That is why the two
  * manifests and the two results cannot drift — there is one implementation,
- * not two (`cli-0003`). It contains no network call, no key and no server
+ * not two (`cli-0026`). It contains no network call, no key and no server
  * (AGSC-09-16), and no third-party origin (AGSC-06-05); it is a separate file
  * so that the `script-src 'self'` policy of AGSC-06-17 admits it.
  */
@@ -43,7 +43,7 @@ function script(options) {
 (function () {
   var MANIFEST = ${JSON.stringify(list)};
   var LOCAL_ONLY = ${JSON.stringify(LOCAL_ONLY_TOOLS)};
-  var state = { localOnlyCalls: 0, manifest: MANIFEST, registered: 0, transport: 'webmcp' };
+  var state = { localOnlyCalls: 0, manifest: MANIFEST, registered: 0, rejected: [], transport: 'webmcp' };
   globalThis.AGSC_WEBMCP = state;
 
   function invoke(name, args) {
@@ -67,14 +67,27 @@ function script(options) {
 
   for (var i = 0; i < MANIFEST.tools.length; i += 1) {
     (function (tool) {
-      context.registerTool({
-        annotations: tool.annotations,
-        description: tool.description,
-        execute: function (args) { return invoke(tool.name, args); },
-        inputSchema: tool.inputSchema,
-        name: tool.name
-      });
-      state.registered += 1;
+      // The browser may refuse a registration, by throwing or by a rejected promise (a name
+      // already registered, say). The tool is then not registered, the others still are,
+      // and the page goes on working.
+      var result;
+      try {
+        result = context.registerTool({
+          annotations: tool.annotations,
+          description: tool.description,
+          execute: function (args) { return invoke(tool.name, args); },
+          inputSchema: tool.inputSchema,
+          name: tool.name
+        });
+      } catch (e) {
+        state.rejected.push(tool.name);
+        return;
+      }
+      if (result && typeof result.then === 'function') {
+        result.then(function () { state.registered += 1; }, function () { state.rejected.push(tool.name); });
+      } else {
+        state.registered += 1;
+      }
     }(MANIFEST.tools[i]));
   }
 }());

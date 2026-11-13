@@ -74,7 +74,6 @@ const frontmatterModule = require('../../knowledge/frontmatter.js');
 const yaml = require('../../knowledge/yaml.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
 const { compareCodePoint, nfc, singleLine } = require('../../knowledge/unicode.js');
-const { provenanceLines } = require('../../knowledge/provenance-header.js');
 const { titleFor } = require('../../knowledge/adopt.js');
 const { finding } = require('../../knowledge/validate.js');
 const { neutraliseSingleLine } = require('../mapping.js');
@@ -82,8 +81,8 @@ const okf = require('../okf.js');
 const steer = require('../steer.js');
 const ownRecord = require('../own-record.js');
 const { decodeRecord, encodeRecord } = ownRecord;
-const { isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
-const { withoutTrailingFeeds, withoutTrailingSlashes } = require('../../shared/trailing.js');
+const { exportHeader, isObject, itemText, lessonText, oneLine, plain, yamlString } = require('../records.js');
+const { withoutTrailingFeeds } = require('../../shared/trailing.js');
 const { lineText } = require('../../shared/key-value-line.js');
 
 /** The name this adapter answers to on `export --to` and `import --from`. */
@@ -204,15 +203,7 @@ function continuityEntry(item, record) {
  * @returns {{files:Array<{path:string, text:string, sha256:string}>, findings:Array<object>}}
  */
 function run(bundle, options) {
-  const config = (bundle && bundle.config) || {};
-  const site = config.site || {};
-  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
-  const license = (config.bundle && config.bundle.license_prose) || chunks.TERMS;
-  const header = provenanceLines({
-    bundle: base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
-    license, specVersion: options.specVersion, terms: chunks.termsFor(license),
-  });
-  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  const { config, base, header, bundleVersion } = exportHeader(bundle, options);
 
   const entries = ((bundle && bundle.items) || [])
     .filter((item) => item && item.frontmatter)
@@ -745,16 +736,16 @@ function plan(files, options) {
       for (const [key, value] of Object.entries(candidate.fm)) fm[key] = value;
       if (candidate.type === 'procedure' && derived.title !== candidate.name) fm['x-gabbe-name'] = candidate.name;
       fm['x-gabbe-source'] = `${path}:${candidate.line}`;
-      if (tainted.all || tainted.entries.has(candidate.line)) {
-        // AGSC-06-30 keeps a draft out of every published surface; a kit states no
-        // licence, so nothing that arrived under a forged line may publish itself.
-        fm.status = 'draft';
-        totals.draft_untrusted += 1;
-        findings.push(finding('AGSC-E506', `${path}:${candidate.line}: imported as status: draft: it carried an`
-          + ' untrusted agsc-item line and a GABBE kit states no licence this adapter recognises as open, so it'
-          + ' is never published (AGSC-06-30) until a person has the right to publish it and changes the status',
-        { file: path, line: candidate.line, severity: 'warn' }));
-      }
+      // AGSC-01-22 (from 1.1): every foreign record is a draft, which AGSC-06-30 keeps out of
+      // every published surface; a kit states no licence this adapter recognises as open.
+      const untrusted = tainted.all || tainted.entries.has(candidate.line);
+      fm.status = 'draft';
+      if (untrusted) totals.draft_untrusted += 1;
+      findings.push(finding('AGSC-E506', `${path}:${candidate.line}: imported as status: draft: it comes from a kit`
+        + ` this node does not own${untrusted ? ' and carried an untrusted agsc-item line' : ''}, and a GABBE kit`
+        + ' states no licence this adapter recognises as open, so it is never published (AGSC-06-30) until a person'
+        + ' has the right to publish it and changes the status (AGSC-01-22)',
+      { file: path, line: candidate.line, severity: 'warn' }));
       if (candidate.synthesized === 'severity') synthesizedSeverity += 1;
       const clean = neutraliseSingleLine(fm);
       items.push({ body: nfc(String(candidate.body)), fm: plain(clean.frontmatter), foreign: true, slug, type: candidate.type });

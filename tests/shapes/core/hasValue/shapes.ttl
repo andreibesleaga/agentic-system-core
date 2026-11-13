@@ -1,0 +1,15 @@
+# sh:hasValue on a named property shape of severity sh:Warning.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:DocShape
+    a sh:NodeShape ;
+    sh:property exs:DocApproved ;
+    sh:targetClass ex:Doc .
+
+exs:DocApproved
+    a sh:PropertyShape ;
+    sh:hasValue "approved" ;
+    sh:path ex:status ;
+    sh:severity sh:Warning .

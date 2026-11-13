@@ -8,6 +8,8 @@ level: L2
 checks:
   - schema
   - links
+  - provenance
+  - determinism
   - review
 enforce:
   - status-check

@@ -104,7 +104,7 @@ echo checkout answers
 checkout answers
 ```
 ITEM
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 git init -q -b main && git add -A && git commit -q -m 'checkout'
 agsc lint
@@ -140,6 +140,95 @@ in `dist/harness/<name>/` and the archive beside it. On a built site, the page
 runtime (`--emit crewai` and the others the specification lists) is refused with
 `AGSC-E203`; `--emit ./my-emitter.js` runs a rendering you write as a plugin
 ([PLUGINS.md](../PLUGINS.md)).
+
+Add `--brief` and `compose` also explains the composition, in four files beside the Harness
+(in the folder whose name is the Harness folder's with `.companion` added): `BRIEF.md` for you,
+`context.md` for an agent, `brief.json` for a program and `brief.mmd` as a diagram. They say why
+each item is there, the order to adopt them in (an item comes after what it requires), what is
+missing, and a checklist. The Harness files do not change, and `"compose": {"brief": true}` in
+`agsc.config.json` asks for the brief on every run. When a member states a domain type, a role, a
+context or a warrant (the domain layer, [mode-1.md](mode-1.md)), the brief also lists those parts:
+under `## Domain` in `BRIEF.md`, on the member's entry in `brief.json` and in its section of
+`context.md`.
+
+```bash demo
+agsc compose retry-with-backoff smoke-test --brief > /dev/null 2>&1
+brief="$(ls -d dist/harness/*.companion)"
+ls "$brief"
+sed -n '/^## Dependency order/,/^## Gaps/p' "$brief/BRIEF.md"
+```
+
+```text expect
+BRIEF.md
+brief.json
+brief.mmd
+context.md
+## Dependency order
+
+1. `idempotency-key`
+2. `retry-with-backoff`
+3. `smoke-test`
+
+## Gaps
+```
+
+A brief is written for a composition that is not valid too, where no Harness is: its checklist
+then says which conflict to resolve. `--narrate <agent>` would add a summary written by a model;
+this distribution ships no way to reach a model, so it answers `AGSC-E001` and writes the brief
+alone.
+
+One brief is cut short. Its `derived` list holds a reading, with its whole path, for each pair of
+items on a chain of `requires` (or another chain key), so it grows with the cube of the chain's
+length. Above 1,000,000 path steps, which a chain of 145 items passes, `derived` keeps the first
+readings in their order and `derived_total` says how many there are, as `search` does with its
+hits; below that bound the brief has no `derived_total`.
+
+Keep a selection as an item and you have a **saved architecture**: a concept of
+`kind: architecture` whose body holds the selection in a `yaml agsc-selection` block.
+`compose --from <slug> --brief` then also writes the architecture's **blueprint** into
+`blueprint/` of the same folder: the first three levels of the C4 model as Mermaid diagrams
+(`c4-context.mmd`, `c4-containers.mmd`, `c4-components.mmd`), one decision record for each
+decision a selected item names with `decided-by`, and `build-plan.md`, one step per item in the
+order to adopt them, with what each step needs and what checks it. JSON Schema, OpenAPI and test
+scaffolds are not part of a blueprint in 1.1. On a built site the item's page shows the brief and
+links `/compose/?from=<slug>`, where the browser shows the same brief and offers it, with the
+blueprint, for download — each as its own archive, never inside the Harness archive.
+
+````bash demo
+rm -rf dist/harness
+cat > content/concepts/checkout-plan.md <<'ITEM'
+---
+type: concept
+kind: architecture
+title: Checkout plan
+description: The saved selection of a checkout service that retries safely and is tested after each deploy.
+prov:
+  origin: human
+  operator: human:you
+---
+
+# Checkout plan
+
+```yaml agsc-selection
+- retry-with-backoff
+- smoke-test
+```
+ITEM
+agsc compose --from checkout-plan --brief > /dev/null 2>&1
+blueprint="$(ls -d dist/harness/*.companion)/blueprint"
+ls "$blueprint"
+sed -n '/^### Step/p' "$blueprint/build-plan.md"
+````
+
+```text expect
+build-plan.md
+c4-components.mmd
+c4-containers.mmd
+c4-context.mmd
+### Step 1 — adopt `idempotency-key`
+### Step 2 — adopt `retry-with-backoff`
+### Step 3 — adopt `smoke-test`
+```
 
 ## 3. The `run` verb (off by default)
 
@@ -180,7 +269,7 @@ cat > run1.json <<JSON
 JSON
 agsc trace run1.json
 git add -A && git commit -qm 'a recorded run'
-agsc build > /dev/null
+agsc build > /dev/null 2>&1
 sed -n '/## Monthly spend/,/^- cap/p' www/now.md
 ```
 

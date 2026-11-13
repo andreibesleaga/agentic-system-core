@@ -17,6 +17,11 @@
 // graph-0026 the Turtle profile, the whole file               AGSC-05-10
 // graph-0027 an export block is reserved: real lint and build  AGSC-02-22
 // graph-0028 graph.jsonld and the per-item files, whole        AGSC-05-09
+// graph-0029 the readings of the Link graph, each with reasons  AGSC-05-33
+// graph-0030 to graph-0039 the ten questions, one each          AGSC-05-34
+// graph-0040 the SKOS view written by export --skos, whole       AGSC-05-36
+// graph-0043 the context address is not the ontology version   AGSC-05-09
+// graph-0046 a site's invariants and competency questions      AGSC-05-41
 //
 // Dispatch is on the `input`/`expected` member names present, which is what
 // `tests/vectors/README.md` tells a port to do.
@@ -27,10 +32,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const nq = require('../../../src/knowledge/nquads.js');
+const domain = require('../../../src/knowledge/domain.js');
 const turtle = require('../../../src/knowledge/turtle.js');
 const jsonldView = require('../../../src/knowledge/jsonld.js');
 const jcs = require('../../../src/knowledge/jcs.js');
 const linksModule = require('../../../src/knowledge/links.js');
+const derive = require('../../../src/knowledge/derive.js');
+const questions = require('../../../src/knowledge/questions.js');
+const { RELATIONS } = require('../../../src/knowledge/relations.js');
 const fixture = require('../../knowledge/_graph-fixture.js');
 const { checks } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
@@ -40,13 +49,15 @@ const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex'
 /**
  * The emission options a vector's input asks for. Every line of `graph.nq` is a quad
  * named by the Bundle IRI (AGSC-04-15), so the graph term is never chosen by the
- * vector's shape.
+ * vector's shape. A case that states a site vocabulary (AGSC-05-38) is a node that uses
+ * the domain layer: the vocabulary is loaded as the build loads `domain.vocabulary`.
  */
 function optionsFor(input) {
   return {
     base: (input.site && input.site.base) || input.base,
     ...(input.bundle ? { bundle: input.bundle } : {}),
     ...(input.attachment_bytes ? { attachmentBytes: input.attachment_bytes } : {}),
+    ...(typeof input.vocabulary === 'string' ? { domain: domain.load(input.vocabulary, { contexts: [] }) } : {}),
     sha256,
   };
 }
@@ -324,6 +335,167 @@ function forbiddenCheck(forbidden, vector, options, nquads, text) {
   return [`forbidden ${forbidden}`, false, 'this handler does not implement that clause'];
 }
 
+/** The RDF property a reading's key is written with, or null (`derivation-of` has none, AGSC-05-23). */
+function propertyOfKey(key) {
+  if (nq.LINK_PROPERTIES[key]) return nq.LINK_PROPERTIES[key].property;
+  const owner = RELATIONS.find((r) => r.inverse === key);
+  return owner && nq.LINK_PROPERTIES[owner.key].inverse ? nq.LINK_PROPERTIES[owner.key].inverse : null;
+}
+
+/**
+ * graph-0029 — the readings of AGSC-05-33, computed from the edges and in order; and no
+ * transitive or closure reading is a triple of the dataset (they are never stored).
+ */
+function readingsCase(vector) {
+  const { items } = vector.input;
+  const got = derive.readings(linksModule.resolve(items).edges);
+  const list = [['readings', jcs.canonicalize(got) === jcs.canonicalize(vector.expected.readings),
+    `got ${jcs.canonicalize(got)}`]];
+  const options = optionsFor({ ...vector.input, base: 'https://a.example/' });
+  const lines = nq.toNQuads(items, options).split('\n');
+  const iri = (slug) => nq.itemIri(items.find((i) => i.slug === slug), options);
+  const stored = got.filter((r) => r.because[0].rule === 'transitive' || r.because[0].rule === 'closure')
+    .filter((r) => propertyOfKey(r.key) !== null
+      && lines.some((line) => line.startsWith(`<${iri(r.source)}> <${propertyOfKey(r.key)}> <${iri(r.target)}> `)));
+  list.push(['graph_files_unchanged', (stored.length === 0) === vector.expected.graph_files_unchanged,
+    `stored readings: ${JSON.stringify(stored.map((r) => [r.source, r.key, r.target]))}`]);
+  return checks(list);
+}
+
+/**
+ * graph-0040 — AGSC-05-36: the SKOS view of the graph, the WHOLE file. The view is read
+ * from the `graph.nq` the same items give, which is what `export --skos` does with the
+ * build's own `graph.nq`; the scheme record comes from the same configuration keys.
+ */
+function skosCase(vector) {
+  const skosExport = require('../../../src/knowledge/skos-export.js');
+  const nquads = nq.toNQuads(vector.input.items, optionsFor(vector.input));
+  const got = skosExport.skosView(nquads, skosExport.schemeRecord(vector.input));
+  return checks([['skos', got === vector.expected.skos, `got\n${got}`]]);
+}
+
+/**
+ * graph-0041, graph-0042 — AGSC-05-37: the closure file, the WHOLE of it. The closure is read
+ * from the `graph.nq` the same items give and from the vocabulary files in force: the
+ * engine's `ontology/agsc.ttl`, and the case's site vocabulary where it states one.
+ */
+function closureCase(vector, ctx) {
+  const closureModule = require('../../../src/knowledge/closure.js');
+  const nquads = nq.toNQuads(vector.input.items, optionsFor(vector.input));
+  const vocabularies = [fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8')];
+  if (typeof vector.input.vocabulary === 'string') vocabularies.push(vector.input.vocabulary);
+  const got = closureModule.closure(nquads, vocabularies);
+  return checks([
+    ['closure', got.text === vector.expected.closure, `got\n${got.text}`],
+    ['warnings', jcs.canonicalize(got.warnings.map((w) => w.code)) === jcs.canonicalize(vector.expected.warnings),
+      jcs.canonicalize(got.warnings.map((w) => w.code))],
+  ]);
+}
+
+/** graph-0030 to graph-0039 — one of the ten questions of AGSC-05-34 over the shared fixture. */
+function questionCase(vector) {
+  const { items, question, subject, selection, at } = vector.input;
+  const got = questions.answer(question, items, { subject, selection, at });
+  return checks([[`question ${question}`, jcs.canonicalize(got) === jcs.canonicalize(vector.expected.answer),
+    `got ${jcs.canonicalize(got)}`]]);
+}
+
+/**
+ * graph-0046 — AGSC-05-41: the site's invariants and competency questions, evaluated over one
+ * data graph: the `graph.nq` the items give, with the closure of AGSC-05-37 under the engine's
+ * ontology and the case's site vocabulary. Below the verbs: the records of the evaluation itself.
+ */
+function invariantsCase(vector, ctx) {
+  const siteChecks = require('../../../src/knowledge/site-checks.js');
+  const { input, expected } = vector;
+  const got = siteChecks.check({
+    base: input.site.base,
+    graph: nq.toNQuads(input.items, optionsFor(input)),
+    items: input.items,
+    questions: { file: 'domain/questions.json', text: JSON.stringify(input.questions) },
+    shapes: { file: 'domain/shapes.ttl', text: input.shapes },
+    ontology: fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8'),
+    vocabulary: { file: 'domain/vocabulary.ttl', text: input.vocabulary },
+  });
+  const invariants = got.invariants.map(({ focus, message, severity, shape }) => ({ focus, message, severity, shape }));
+  const answers = got.questions.map(({ id, result }) => ({ id, result }));
+  return checks([
+    ['invariants', jcs.canonicalize(invariants) === jcs.canonicalize(expected.invariants), jcs.canonicalize(invariants)],
+    ['questions', jcs.canonicalize(answers) === jcs.canonicalize(expected.questions), jcs.canonicalize(answers)],
+    ['no subset fault', got.findings.every((f) => f.code !== 'AGSC-E420'), JSON.stringify(got.findings)],
+  ]);
+}
+
+/** One item as a Markdown file: the front matter is JSON-valued YAML, which the parser reads. */
+function itemFile(item) {
+  const { body, ...front } = item;
+  const lines = Object.entries(front).map(([key, value]) => `${key}: ${JSON.stringify(value)}`);
+  return `---\n${lines.join('\n')}\n---\n\n${body || 'A short body.'}\n`;
+}
+
+/**
+ * graph-0043 — the context address of `graph.jsonld` (AGSC-05-09): the same Bundle built at
+ * Level 0 twice, the vocabulary reporting one ontology version and then another, names the
+ * context version `1.0.0` both times and gives byte-identical documents.
+ */
+function contextAddressCase(vector, ctx) {
+  const os = require('node:os');
+  const { createFileSystem, readOntology, readSchemas } = require('../../../src/adapters/node-fs.js');
+  const { createClock } = require('../../../src/adapters/node-clock.js');
+  const { loadBundle } = require('../../../src/application/bundle.js');
+  const validate = require('../../../src/knowledge/validate.js');
+  const site = require('../../../src/distribution/site.js');
+  const root = (ctx && ctx.root) || '.';
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'agsc-graph-0043-'));
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'fixtures', 'minimal', 'agsc.config.json'), 'utf8'));
+    config.site.base = vector.input.site.base;
+    fs.writeFileSync(path.join(scratch, 'agsc.config.json'), JSON.stringify(config));
+    fs.mkdirSync(path.join(scratch, 'content', 'concepts'), { recursive: true });
+    for (const item of vector.input.items) {
+      fs.writeFileSync(path.join(scratch, 'content', 'concepts', `${item.slug}.md`), itemFile(item));
+    }
+    const port = createFileSystem(scratch);
+    const bundle = loadBundle(port, { schemas: validate.schemas(readSchemas(root)) });
+    const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+    const terms = turtle.ontologyTerms(readOntology(root));
+    const documents = vector.input.ontology_versions.map((ontologyVersion) => site.build(bundle,
+      { clock, fs: port }, { level: 0, ontologyTerms: terms, ontologyVersion, specVersion: '1.0.0', version: '0.0.2' })
+      .files.get('/graph.jsonld'));
+    const urls = documents.map((d) => JSON.parse(d)['@context']);
+    return checks([
+      ['context_url', urls.every((u) => u === vector.expected.context_url), JSON.stringify(urls)],
+      ['graph_jsonld_identical_across_ontology_versions',
+        documents.every((d) => d === documents[0]) === vector.expected.graph_jsonld_identical_across_ontology_versions,
+        'the documents differ across ontology versions'],
+    ]);
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/**
+ * graph-0044 — AGSC-05-38 and AGSC-05-39: the WHOLE `graph.nq` of a node with a site
+ * vocabulary, and the `@type` that `graph.jsonld` gives each node the case names (an item
+ * with a domain type has two classes, listed in code-point order of their IRIs), with the
+ * term names of the context generated from `ontology/agsc.ttl` (AGSC-06-32).
+ */
+function siteVocabularyCase(vector, ctx) {
+  const options = optionsFor(vector.input);
+  const nquads = nq.toNQuads(vector.input.items, options);
+  const context = jsonldView.context(
+    turtle.ontologyTerms(fs.readFileSync(path.join((ctx && ctx.root) || '.', 'ontology', 'agsc.ttl'), 'utf8')),
+    jsonldView.allExternalProperties(),
+  );
+  const nodes = new Map(jsonldView.toJsonLd(vector.input.items, { ...options, context })['@graph'].map((node) => [node['@id'], node]));
+  const list = [['nquads', nquads === vector.expected.nquads, `got\n${nquads}`]];
+  for (const [id, type] of Object.entries(vector.expected.jsonld_type)) {
+    const got = (nodes.get(id) || {})['@type'];
+    list.push([`@type of ${id}`, jcs.canonicalize(got === undefined ? null : got) === jcs.canonicalize(type), JSON.stringify(got)]);
+  }
+  return checks(list);
+}
+
 /** graph-0021/0022/0023/0024 — the dataset of a set of items. */
 function itemsCase(vector) {
   const options = optionsFor(vector.input);
@@ -384,6 +556,13 @@ module.exports.run = guarded((vector, ctx) => {
   const expected = vector.expected || {};
   if (expected.graph_jsonld !== undefined) return jsonldWholeCase(vector, ctx);
   if (typeof expected.turtle === 'string' && expected.turtle.startsWith('@prefix ')) return wholeFileCase(vector);
+  if (typeof expected.skos === 'string') return skosCase(vector);
+  if (typeof expected.closure === 'string') return closureCase(vector, ctx);
+  if (Array.isArray(expected.invariants) && Array.isArray(expected.questions)) return invariantsCase(vector, ctx);
+  if (typeof input.question === 'number') return questionCase(vector);
+  if (Array.isArray(expected.readings)) return readingsCase(vector);
+  if (Array.isArray(input.ontology_versions)) return contextAddressCase(vector, ctx);
+  if (expected.jsonld_type !== undefined) return siteVocabularyCase(vector, ctx);
   if (Array.isArray(input.items)) return itemsCase(vector);
   return { status: 'fail', detail: `graph: no handler for the input shape ${Object.keys(input).join(', ')}` };
 });

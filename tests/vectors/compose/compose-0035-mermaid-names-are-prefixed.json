@@ -1,0 +1,80 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-25 as amended 2026-11-10: in `brief.mmd` a member's node is named `n_` and its slug with each `-` written `_`, so that a member named `end`, a word Mermaid reserves, or `system`, the name of the architecture in the C4 files of AGSC-07-29, is a node like any other. `end` requires `system`, and `flow-chart` uses `end`; the selection is `end` and `flow-chart`, and the closure adds `system`. The case states the flowchart lines, after the four comment lines that `diagram.mmd` opens with: the nodes in dependency order (`flow-chart` and `system` have no dependency and come by slug, `end` after `system`), then the authored edges inside the selection in the order of `relations`. Derived by hand from the rule.",
+  "expected": {
+    "cases": [
+      {
+        "flowchart": "flowchart TD\n  n_flow_chart[\"flow-chart\"]\n  n_system[\"system\"]\n  n_end[\"end\"]\n  n_end -->|requires| n_system\n  n_flow_chart -->|uses| n_end\n",
+        "name": "reserved-words-as-slugs"
+      }
+    ]
+  },
+  "id": "compose-0035",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "description": "About end.",
+            "kind": "pattern",
+            "requires": [
+              "system"
+            ],
+            "slug": "end",
+            "sources": [
+              {
+                "resource": "https://example.org/end"
+              }
+            ],
+            "title": "end",
+            "type": "concept"
+          },
+          {
+            "description": "About system.",
+            "kind": "pattern",
+            "slug": "system",
+            "sources": [
+              {
+                "resource": "https://example.org/system"
+              }
+            ],
+            "title": "system",
+            "type": "concept"
+          },
+          {
+            "description": "About flow-chart.",
+            "kind": "pattern",
+            "slug": "flow-chart",
+            "sources": [
+              {
+                "resource": "https://example.org/flow-chart"
+              }
+            ],
+            "title": "flow-chart",
+            "type": "concept",
+            "uses": [
+              "end"
+            ]
+          }
+        ],
+        "name": "reserved-words-as-slugs",
+        "selection": [
+          "end",
+          "flow-chart"
+        ]
+      }
+    ],
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-07-25"
+}

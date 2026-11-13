@@ -63,35 +63,44 @@ test('AGSC-10-02: a Level-0 node is described by the routes it serves, and its c
   assert.match(rule, /not routes/u, 'the rule says that the files of the Bundle are not routes');
 });
 
-test('AGSC-00-20: the eleven capabilities of the reference distribution are planned for 1.1, and none is "not planned"', () => {
+test('AGSC-00-20: nine capabilities of the reference distribution are planned for a later MINOR, the direct memory adapters ship in 1.1, and none is "not planned"', () => {
   const rule = normative(ruleText(OVERVIEW, 'AGSC-00-20'));
-  const at = rule.search(/planned for 1\.1 as capabilities of the reference distribution/u);
-  assert.ok(at >= 0, 'the list of capabilities planned for 1.1 was not found');
+  const at = rule.search(/Planned for a later MINOR as capabilities of the reference distribution/u);
+  assert.ok(at >= 0, 'the list of capabilities planned for a later MINOR was not found');
   const list = rule.slice(at, rule.indexOf('**2.0**', at) > 0 ? rule.indexOf('**2.0**', at) : undefined);
-  const eleven = {
+  const nine = {
     'an ingest stub and channel adapters': [/ingest stub/u, /channel adapters/u],
     'init examples, type folders, forge workflow, init options': [/example Concepts/u, /type folders/u, /forge workflow/u, /--forge/u, /--host/u],
-    'direct memory adapters': [/Mem0/u, /Letta/u, /Zep/u, /CSV/u],
     'other skill install trees and install from a site': [/install trees/u, /from a published site/u],
-    'GHCR, Homebrew, Nix and a PyPI wrapper': [/GHCR/u, /Homebrew/u, /Nix/u, /PyPI/u],
+    'a container image, Homebrew, Nix and a PyPI wrapper': [/container image/u, /Homebrew/u, /Nix/u, /PyPI/u],
     'git mirror and weekly attested snapshot': [/git mirror/u, /weekly attested snapshot/u],
     'a model client for the review lane': [/model client for the review lane/u],
     narrate: [/narrate/u],
-    'Basic Memory and Claude Code memory adapters': [/Basic Memory/u, /Claude Code/u],
     'Deno, Bun and Workers': [/Deno/u, /Bun/u, /Workers/u],
     'a model adapter for the agent lane': [/model adapter for the agent lane/u],
   };
-  for (const [name, patterns] of Object.entries(eleven)) {
-    for (const p of patterns) assert.match(list, p, `${name}: ${p} is not in the list planned for 1.1`);
+  for (const [name, patterns] of Object.entries(nine)) {
+    for (const p of patterns) assert.match(list, p, `${name}: ${p} is not in the list planned for a later MINOR`);
   }
+  // Settled on 9 November 2026: the direct memory adapters are a capability of the
+  // reference distribution in 1.1 (AGSC-01-26a, a MAY), no longer planned for a later MINOR.
+  for (const p of [/Mem0/u, /Letta/u, /Zep/u, /CSV/u, /Basic Memory/u, /memory files/u]) {
+    assert.doesNotMatch(list, p, `${p} is still in the list planned for a later MINOR`);
+  }
+  const shipped = rule.slice(rule.search(/Capabilities of the reference distribution in 1\.1/u), at);
+  assert.match(shipped, /benchmark kit/u);
+  for (const p of [/Mem0/u, /Letta/u, /Zep/u, /CSV/u, /Basic Memory/u, /Claude Code's memory files/u, /AGSC-01-26a/u]) {
+    assert.match(shipped, p, `${p} is not among the capabilities of the reference distribution in 1.1`);
+  }
+  assert.match(ruleText(OVERVIEW, 'AGSC-00-20'), /\*\(Amended 2026-11-09 for 1\.1\.0: [^)]*memory adapters/u, 'the move carries a dated note');
   assert.doesNotMatch(OVERVIEW, /declared scope of (?:any|no) version|not planned/u);
 });
 
 test('AGSC-00-20: the items already sent to 1.1 are named, and an unknown key is AGSC-E004 only in the configuration', () => {
   const rule = normative(ruleText(OVERVIEW, 'AGSC-00-20'));
-  for (const p of [/provenance/u, /duplicate-of/u, /import/u, /search and ask/u, /2025-11-25/u, /2026-07-28/u, /isError/u,
+  for (const p of [/provenance/u, /duplicate-of/u, /import/u, /answers of `search` and `ask`/u, /2025-11-25/u, /2026-07-28/u, /isError/u,
     /failed conformance case/u, /Content-Digest/u, /Cursor/u, /security\.txt/u, /immutable/u, /model-adapter plugin kind/u,
-    /ledger names the author/u, /different `?spec_version`? values/u, /punctuation or letters outside ASCII/u, /sources\[\]`? entry it keeps/u]) {
+    /trailing ledger entry that no longer names the builder/u, /different `?spec_version`? values/u, /punctuation or letters outside ASCII/u, /`remember` checking the `id` of a `sources\[\]` entry/u]) {
     assert.match(rule, p, `${p} is not named in the declared scope`);
   }
   assert.doesNotMatch(rule, /unknown key as `AGSC-E004` as today/u);

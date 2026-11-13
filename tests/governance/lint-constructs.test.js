@@ -10,8 +10,8 @@ const assert = require('node:assert');
 const lint = require('../../src/governance/lint.js');
 const markdown = require('../../src/knowledge/markdown.js');
 
-function item({ slug, title = 'T', body = '', type = 'concept', status }) {
-  const frontmatter = { type, title, ...(status === undefined ? {} : { status }) };
+function item({ slug, title = 'T', body = '', type = 'concept', status, aliases }) {
+  const frontmatter = { type, title, ...(status === undefined ? {} : { status }), ...(aliases === undefined ? {} : { aliases }) };
   return { body, frontmatter, path: `content/${type}s/${slug}.md`, slug, type };
 }
 const codes = (findings) => findings.map((f) => f.code);
@@ -81,6 +81,20 @@ test('AGSC-05-21: two published items of one type with equal folded titles are o
   assert.ok(codes(lint.lint({ items })).includes('AGSC-E416'));
   const released = [item({ slug: 'x', title: 'Same' }), { ...item({ slug: 'y', title: 'same' }), frontmatter: { type: 'concept', title: 'same', release: 'r2' } }];
   assert.deepStrictEqual(codes(lint.checkOverlappingLabels(released, { releases: { r2: false } })), []);
+});
+
+test('AGSC-05-21: an alias counts as a label; the finding is on the later path and names the earliest item', () => {
+  const items = [
+    item({ slug: 'one', title: 'Alpha', aliases: ['Router'] }),
+    item({ slug: 'two', title: 'Beta', aliases: ['router'] }),
+    item({ slug: 'three', title: 'router' }),
+    item({ slug: 'solo', title: 'Echo', aliases: ['echo'] }), // its own alias equals its own title: no pair
+    item({ slug: 'other', title: 'Gamma', aliases: ['Alpha'], type: 'procedure' }), // another type
+  ];
+  const findings = lint.checkOverlappingLabels(items, {});
+  assert.deepStrictEqual(findings.map((f) => f.slug), ['three', 'two']);
+  assert.match(findings[0].message, /"one"/u);
+  assert.match(findings[1].message, /"one"/u);
 });
 
 test('AGSC-01-07: a compiled .svg under content/diagrams/ is AGSC-E205; a source or an attachment is not', () => {

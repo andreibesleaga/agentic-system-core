@@ -1,0 +1,8 @@
+# blank node: a property shape that is a blank node is only the object of sh:property.
+@prefix ex: <https://example.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+[]
+    sh:minCount 1 ;
+    sh:path ex:title ;
+    sh:targetClass ex:C .

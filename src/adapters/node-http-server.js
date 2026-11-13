@@ -1,5 +1,6 @@
 'use strict';
-// ADAPTER — a read-only HTTP server over a build directory (`agsc-host serve`).
+// ADAPTER — a read-only HTTP server over a build directory (`agsc-host serve`), and the
+// socket of the tool server's HTTP transport (`agsc mcp --http`, `listenWith`).
 //
 // The server owns the socket and the file reads; WHAT to answer is not decided
 // here. Every request is handed, with a fresh view of the directory, to the
@@ -76,15 +77,34 @@ function handle(dir, answer, req, res) {
  */
 function listen(options) {
   const dir = path.resolve(options.site);
-  const server = http.createServer((req, res) => handle(dir, options.answer, req, res));
+  return listenWith((req, res) => handle(dir, options.answer, req, res), options);
+}
+
+/**
+ * Listen with a request handler the application layer wires in (`agsc mcp --http`, whose
+ * handler is the MCP transport of `distribution/mcp-http.js`). The socket and the address are
+ * this adapter's; what each request is answered with is the handler's. A handler that rejects
+ * destroys the response instead of leaving the socket open or throwing on it.
+ * Resolves once listening, with the URL of the root.
+ * @param {(req:http.IncomingMessage, res:http.ServerResponse) => (void|Promise<void>)} handler
+ * @param {{port?:number, bind?:string}} options
+ * @returns {Promise<{server:http.Server, url:string}>}
+ */
+function listenWith(handler, options) {
+  const server = http.createServer((req, res) => {
+    Promise.resolve().then(() => handler(req, res)).catch((e) => res.destroy(e));
+  });
   return new Promise((resolve, reject) => {
+    const bind = options.bind || 'localhost';
     server.once('error', reject);
-    server.listen(options.port === undefined ? 8080 : options.port, options.bind || 'localhost', () => {
+    server.listen(options.port === undefined ? 8080 : options.port, bind, () => {
       const address = server.address();
-      const host = address.family === 'IPv6' ? `[${address.address}]` : address.address;
+      // The name `localhost` is reported as asked: it is the one plain-http base the
+      // configuration admits (AGSC-01-18), and a client that resolves it may get ::1.
+      const host = bind === 'localhost' ? bind : address.family === 'IPv6' ? `[${address.address}]` : address.address;
       resolve({ server, url: `http://${host}:${address.port}/` });
     });
   });
 }
 
-module.exports = { inside, listen };
+module.exports = { inside, listen, listenWith };

@@ -137,8 +137,9 @@ test('the engine: the local tools read every item, the resources are the publish
   config.releases = { later: false };
   write('agsc.config.json', `${JSON.stringify(config, null, 2)}\n`);
 
-  const env = { ...process.env, NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' };
-  delete env.AGSC_DOI;
+  const env = {};
+  for (const [name, value] of Object.entries(process.env)) if (!name.startsWith('AGSC_')) env[name] = value;
+  Object.assign(env, { NO_COLOR: '1', SOURCE_DATE_EPOCH: '1767225600' });
   const built = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agsc.js'), 'build'], { cwd: dir, encoding: 'utf8', env });
   assert.strictEqual(built.status, 0, built.stderr);
   const routes = routesOf(path.join(dir, 'www'));

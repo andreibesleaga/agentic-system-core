@@ -1,0 +1,58 @@
+{
+  "area": "links",
+  "description": "Derived from AGSC-03-25 and AGSC-05-20: the Expected target kinds cell of `related` reads any but a cluster, at either end, because a cluster is a `skos:Collection`, which AGSC-05-20 keeps out of `skos:related`, and the graph files leave such an edge out. The warning AGSC-E315 is carried by the item that authors the key: `note-a` names the cluster `grp`, and `grp` names the note `note-b`. Near misses that stay silent: `note-c` is related to `note-b` (two notes), and `note-b` uses the cluster (the cell of `uses` reads any, and `asc:uses` is no SKOS relation). The two findings are in slug order.",
+  "expected": {
+    "errors": [],
+    "warnings": [
+      {
+        "code": "AGSC-E315",
+        "slug": "grp"
+      },
+      {
+        "code": "AGSC-E315",
+        "slug": "note-a"
+      }
+    ]
+  },
+  "id": "links-0020",
+  "input": {
+    "items": [
+      {
+        "kind": "principle",
+        "related": [
+          "grp"
+        ],
+        "slug": "note-a",
+        "type": "concept"
+      },
+      {
+        "related": [
+          "note-b"
+        ],
+        "slug": "grp",
+        "type": "cluster"
+      },
+      {
+        "kind": "principle",
+        "related": [
+          "note-b"
+        ],
+        "slug": "note-c",
+        "type": "concept"
+      },
+      {
+        "kind": "principle",
+        "slug": "note-b",
+        "type": "concept",
+        "uses": [
+          "grp"
+        ]
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-03-25"
+}

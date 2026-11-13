@@ -1,0 +1,7 @@
+# NoCycle-broader: broader in a cycle of two (AGSC-E303).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:a a asc:Concept ; skos:broader ex:b .
+ex:b a asc:Concept ; skos:broader ex:a .

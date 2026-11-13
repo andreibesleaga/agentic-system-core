@@ -1,9 +1,7 @@
 'use strict';
-// tests/docs/reader-table.test.js — README.md and docs/START-HERE.md both open with the
-// same reader table ("Who it is for, what you get, try it"). Each is a front door, so
-// both keep it; this test keeps the two in step: the same readers in the same order,
-// and the same "What you get today" cell for each reader. The "Try it" cells may
-// differ (the README links to GitHub, START-HERE to its neighbours).
+// tests/docs/reader-table.test.js — the reader table ("Who it is for, what you get, try it") is
+// kept in ONE place, docs/START-HERE.md, and README.md links to it instead of carrying a copy,
+// so the two front doors cannot drift apart.
 //
 // Deterministic: reads two files; no clock, no network.
 
@@ -13,26 +11,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+const read = (rel) => fs.readFileSync(path.join(ROOT, ...rel.split('/')), 'utf8');
+const TABLE = /^\| Reader \| What you get today \| Try it \|$/mu;
 
-/** The rows of the first table whose header starts with "| Reader |": [reader, what you get]. */
-function readerRows(rel) {
-  const lines = fs.readFileSync(path.join(ROOT, ...rel.split('/')), 'utf8').split('\n');
-  const start = lines.findIndex((line) => /^\| Reader \| What you get today \|/u.test(line));
-  assert.ok(start >= 0, `${rel} has no "| Reader | What you get today |" table`);
-  const rows = [];
-  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i += 1) {
-    const cells = lines[i].split('|').map((c) => c.trim());
-    rows.push([cells[1], cells[2]]);
-  }
-  return rows;
-}
-
-test('README.md and docs/START-HERE.md carry the same reader table (readers and what they get)', () => {
-  const readme = readerRows('README.md');
-  const startHere = readerRows('docs/START-HERE.md');
-  assert.ok(readme.length >= 10, `README.md reader table has only ${readme.length} rows`);
-  assert.deepEqual(startHere.map((r) => r[0]), readme.map((r) => r[0]), 'the readers differ or are in another order');
-  for (const [i, [reader, what]] of readme.entries()) {
-    assert.equal(startHere[i][1], what, `"What you get today" differs for "${reader}"`);
-  }
+test('docs/START-HERE.md carries the reader table, and README.md links to it instead of a copy', () => {
+  const lines = read('docs/START-HERE.md').split('\n');
+  const start = lines.findIndex((line) => TABLE.test(line));
+  assert.ok(start >= 0, 'docs/START-HERE.md has no "| Reader | What you get today | Try it |" table');
+  const rows = lines.slice(start + 2).findIndex((line) => !line.startsWith('|'));
+  assert.ok(rows >= 10, `docs/START-HERE.md reader table has only ${rows} rows`);
+  const readme = read('README.md');
+  assert.ok(!TABLE.test(readme), 'README.md carries a copy of the reader table');
+  assert.ok(readme.includes('docs/START-HERE.md#who-it-is-for-what-you-get-try-it'), 'README.md does not link to the table');
 });

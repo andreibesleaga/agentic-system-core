@@ -116,6 +116,12 @@ describe('validate-ontology — the faults', () => {
     assert.ok(json.findings.some((f) => f.code === 'AGSC-E203' && /disjointUnionOf/u.test(f.message)));
   });
 
+  it('skos:definition on a term is an allowed annotation (the 1.1 Meaning column, AGSC-03-01)', () => {
+    const root = ontologyRoot(`${CONCEPT}skos:definition a owl:AnnotationProperty .\n\nasc:uses a owl:ObjectProperty ;\n    rdfs:label "uses" ;\n    skos:definition "The subject needs the object to work as described." .\n`);
+    const { json } = envelope('validate-ontology', [root]);
+    assert.deepEqual(json.findings.filter((f) => /skos:definition|definition/u.test(f.message)), []);
+  });
+
   it('a declared type outside OWL 2 RL is AGSC-E203', () => {
     const root = ontologyRoot(`${CONCEPT}asc:reflexive a owl:ReflexiveProperty .\n`);
     const { json } = envelope('validate-ontology', [root]);
@@ -202,10 +208,10 @@ describe('validate-ontology — the helper it exports', () => {
 });
 
 describe('validate-ontology — the real distribution', () => {
-  it('the shipped ontology passes, with 52 terms', () => {
+  it('the shipped ontology passes, with 53 terms', () => {
     const result = capture('validate-ontology', [REPO]);
     assert.equal(result.code, 0);
-    assert.match(result.out, /12 classes, 40 properties, 0 error, 0 warn/u);
+    assert.match(result.out, /12 classes, 41 properties, 0 error, 0 warn/u);
     assert.equal(result.err, '');
   });
 });

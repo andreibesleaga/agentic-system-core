@@ -21,7 +21,10 @@
 
 const frontmatter = require('../knowledge/frontmatter.js');
 const validate = require('../knowledge/validate.js');
+const { pathGrammarError } = require('../knowledge/links.js');
+const { typedPeers } = require('../knowledge/contexts.js');
 const yaml = require('../knowledge/yaml.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-03-11 / AGSC-02-95: where a Bundle's non-item files live. */
 const ASSETS_DIR = 'content/assets';
@@ -118,7 +121,9 @@ function loadBundle(ports, options) {
     const split = frontmatter.split(indexText, { file: 'content/index.md' });
     let parsed = {};
     try {
-      parsed = yaml.parse(split.yamlText || '');
+      const read = yaml.parseWithDepth(split.yamlText || '');
+      parsed = read.value;
+      findings.push(...frontmatter.nestingWarnings(read.depth, 'content/index.md'));
     } catch (e) {
       findings.push(Object.freeze({
         code: e && e.code ? e.code : 'AGSC-E105',
@@ -132,17 +137,104 @@ function loadBundle(ports, options) {
       ? validate.applyTypes(parsed, opts.schemas.bundle.schema || {})
       : parsed;
     index = Object.freeze({ body: split.body, frontmatter: typed });
+    findings.push(...rootDisagreements(typed, config));
   }
+
+  const domain = domainInputs(fs, config, findings);
+  const crosswalks = crosswalkInputs(fs, config, findings);
 
   return Object.freeze({
     assets: Object.freeze(assets),
     byslug: new Map(items.map((i) => [i.slug, i])),
     config,
+    ...(crosswalks === null ? {} : { crosswalks }),
+    ...(domain === null ? {} : { domain }),
     findings: Object.freeze(findings),
     index,
     items: Object.freeze(items),
     root: fs.root === undefined ? '' : fs.root,
   });
+}
+
+/**
+ * AGSC-01-41: the files the `domain` object names are inputs of the Bundle, read with it.
+ * Each named file that is absent is `AGSC-E901`; the text of each file is kept (`vocabulary`,
+ * `shapes`, `questions`, or `null` when it is not named or not read): the site vocabulary for
+ * the lint, the build and the export to judge and publish (AGSC-05-38), the shapes and the
+ * questions for `verify` and `ci` to check (AGSC-09-20). A path outside the grammar of
+ * AGSC-01-35 is not read: the schema reports it. A configuration with no `domain` object gives
+ * `null`, and the record keeps its 1.0 shape.
+ */
+function domainInputs(fs, config, findings) {
+  const object = config && config.domain;
+  if (object === null || typeof object !== 'object' || Array.isArray(object)) return null;
+  const texts = { questions: null, shapes: null, vocabulary: null };
+  for (const key of ['vocabulary', 'shapes', 'questions']) {
+    const path = object[key];
+    if (typeof path !== 'string' || pathGrammarError(path) !== null) continue;
+    if (!fs.exists(path)) {
+      findings.push(Object.freeze({
+        code: 'AGSC-E901', file: path, message: `domain.${key} names ${path}, which is not there (AGSC-01-41)`, severity: 'error',
+      }));
+    } else {
+      texts[key] = readRefusable(fs, path, findings);
+    }
+  }
+  return Object.freeze(texts);
+}
+
+/**
+ * AGSC-11-24: the crosswalk files the typed entries of `peers[]` name are inputs of the Bundle,
+ * read with it, as the files of the `domain` object are. Each named file that is absent is
+ * `AGSC-E901`; the result maps each path read to its text. A configuration with no typed peer
+ * that names a crosswalk gives `null`, and the record keeps its 1.0 shape. The statements are
+ * checked by the lint (`boundary/federation.js#readCrosswalk`); no peer is read here.
+ */
+function crosswalkInputs(fs, config, findings) {
+  const named = typedPeers(config).map((peer) => peer.crosswalk)
+    .filter((path) => typeof path === 'string' && pathGrammarError(path) === null);
+  if (named.length === 0) return null;
+  const texts = new Map();
+  for (const path of new Set(named)) {
+    if (!fs.exists(path)) {
+      findings.push(Object.freeze({
+        code: 'AGSC-E901', file: path, message: `a peer's crosswalk names ${path}, which is not there (AGSC-11-24)`, severity: 'error',
+      }));
+      continue;
+    }
+    const text = readRefusable(fs, path, findings);
+    if (text !== null) texts.set(path, text);
+  }
+  return texts;
+}
+
+/**
+ * AGSC-00-17 and AGSC-01-04 (as amended for 1.1.0): the Bundle root document and
+ * the configuration may disagree. The configuration governs, and nothing else
+ * changes, so each difference is a warning that names the root document: a
+ * different `spec_version` is AGSC-E506, a different `base` (a trailing slash is
+ * not a difference) is AGSC-E204. A value missing on either side is not compared;
+ * the root's own schema check reports a missing required key.
+ */
+function rootDisagreements(rootFrontmatter, config) {
+  const root = rootFrontmatter || {};
+  const cfg = config || {};
+  const out = [];
+  const warn = (code, message) => out.push(Object.freeze({
+    code, file: 'content/index.md', message, severity: 'warn',
+  }));
+  if (typeof root.spec_version === 'string' && typeof cfg.spec_version === 'string'
+      && root.spec_version !== cfg.spec_version) {
+    warn('AGSC-E506', `content/index.md declares spec_version ${root.spec_version} and agsc.config.json declares `
+      + `${cfg.spec_version}; the configuration's value governs (AGSC-00-17)`);
+  }
+  const siteBase = cfg.site && cfg.site.base;
+  if (typeof root.base === 'string' && typeof siteBase === 'string'
+      && withoutTrailingSlashes(root.base) !== withoutTrailingSlashes(siteBase)) {
+    warn('AGSC-E204', `content/index.md declares base ${root.base} and site.base is ${siteBase}; `
+      + 'every IRI is formed from site.base (AGSC-01-04)');
+  }
+  return out;
 }
 
 /** The file stem of an item path: its name without the final `.md`. */

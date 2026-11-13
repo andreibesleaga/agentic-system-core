@@ -1,7 +1,7 @@
 'use strict';
 // The supported Node floor is stated once in package.json and TESTED on that exact
 // version by CI: the lowest entry of every workflow matrix is the floor, and the
-// alias package states the same one. If they drift, a release could claim a
+// packages under packages/ state the same one. If they drift, a release could claim a
 // version no run ever exercised.
 
 const test = require('node:test');
@@ -33,9 +33,18 @@ const byVersion = (a, b) => {
   return 0;
 };
 
-test('package.json, the alias package and the lowest CI matrix entry name one Node floor', () => {
+/** Every companion package's manifest under packages/, root-relative (packages/README.md). */
+function companionManifests() {
+  return fs.readdirSync(path.join(ROOT, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(ROOT, 'packages', entry.name, 'package.json')))
+    .map((entry) => `packages/${entry.name}/package.json`).sort();
+}
+
+test('package.json, every package under packages/ and the lowest CI matrix entry name one Node floor', () => {
   const floor = floorOf(JSON.parse(read('package.json')).engines.node);
-  assert.strictEqual(floorOf(JSON.parse(read('packages/agsc-cli/package.json')).engines.node), floor);
+  const companions = companionManifests();
+  assert.ok(companions.includes('packages/agsc-cli/package.json'), companions.join(', '));
+  for (const manifest of companions) assert.strictEqual(floorOf(JSON.parse(read(manifest)).engines.node), floor, manifest);
   for (const workflow of ['.github/workflows/test.yml', '.github/workflows/release.yml']) {
     const lowest = [...matrixOf(workflow)].sort(byVersion)[0];
     assert.strictEqual(lowest, floor, `${workflow}: the lowest Node in the matrix is ${lowest}, the floor is ${floor}`);

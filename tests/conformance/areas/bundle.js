@@ -2,8 +2,9 @@
 // Conformance area `bundle`. bundle-0001 (MAJOR tolerance and unknown-key
 // preservation, AGSC-00-15). bundle-0003..0005 (the agent lane, AGSC-01-36/38),
 // bundle-0006 and bundle-0008 (configuration), bundle-0007, bundle-0009 and
-// bundle-0010 (the fixture with files added, through the real `lint`) — dispatched
-// here by vector.id since their input shapes differ from bundle-0001's.
+// bundle-0010 (the fixture with files added, through the real `lint`), bundle-0018 and
+// bundle-0019 (the diagram grammar and its bytes, AGSC-01-42) — dispatched here by
+// vector.id since their input shapes differ from bundle-0001's.
 
 const frontmatter = require('../../../src/knowledge/frontmatter.js');
 const validate = require('../../../src/knowledge/validate.js');
@@ -73,6 +74,37 @@ function reservedConfigCase(vector, ctx) {
 }
 
 /**
+ * The environment the command line sees. `git_history: false` runs the case with no
+ * `SOURCE_DATE_EPOCH` unless `input.environment` states one (tests/vectors/README.md), so
+ * the build instant is the clock's own default; every other case fixes the epoch.
+ */
+function environmentOf(vector) {
+  if (vector.input.git_history === false) return { ...(vector.input.environment || {}) };
+  return { SOURCE_DATE_EPOCH: '1767225600' };
+}
+
+/** `{ repository-relative path: SHA-256 }` of every file under `root`, for before-and-after comparisons. */
+function snapshot(root) {
+  const path = require('node:path');
+  const nodeFs = require('node:fs');
+  const crypto = require('node:crypto');
+  const files = {};
+  const walk = (dir) => {
+    for (const entry of nodeFs.readdirSync(dir, { withFileTypes: true })) {
+      const at = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(at);
+      else {
+        // A symbolic link is compared by its target text, never followed (it may name a folder).
+        const bytes = entry.isSymbolicLink() ? Buffer.from(nodeFs.readlinkSync(at)) : nodeFs.readFileSync(at);
+        files[path.relative(root, at).split(path.sep).join('/')] = crypto.createHash('sha256').update(bytes).digest('hex');
+      }
+    }
+  };
+  walk(root);
+  return files;
+}
+
+/**
  * The minimal fixture with the vector's files added, in a scratch directory that is
  * removed afterwards, and the real `lint --json` run over it through the CLI's own
  * entry point: the shape of every case whose input is `bundle` plus `add_files`
@@ -85,7 +117,7 @@ function onFixture(vector, ctx, inspect) {
   const nodeFs = require('node:fs');
   const os = require('node:os');
   const { main } = require('../../../src/application/cli/main.js');
-  const { createFileSystem } = require('../../../src/adapters/node-fs.js');
+  const { portOf } = require('./_listed-names.js');
   const { captureStream } = require('./_shared.js');
   const engineRoot = (ctx && ctx.root) || '.';
   const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
@@ -106,15 +138,18 @@ function onFixture(vector, ctx, inspect) {
     nodeFs.symlinkSync(target, at, kind);
   }
   try {
+    const before = snapshot(root);
     const stdout = captureStream();
     const stderr = captureStream();
-    const exit = main(['lint', '--json', '--quiet'], {
-      env: { SOURCE_DATE_EPOCH: '1767225600' }, ports: { fs: createFileSystem(root) }, root,
+    // `input.argv` names the verb and its flags (`lint --suggest`); a case without it runs `lint`.
+    const exit = main([...(vector.input.argv || ['lint']), '--json', '--quiet'], {
+      // The names the vector lists, also where a case-insensitive disk kept one of two (bundle-0014).
+      env: environmentOf(vector), ports: { fs: portOf(root, vector.input.add_files || {}) }, root,
       specVersion: (vector.options || {}).spec_version, stderr, stdout, version: (vector.options || {}).spec_version,
     });
     let findings = [];
     try { findings = JSON.parse(stdout.text() || '{}').findings || []; } catch (e) { findings = []; }
-    return inspect({ exit, findings, root });
+    return inspect({ before, exit, findings, root });
   } finally { nodeFs.rmSync(root, { force: true, recursive: true }); }
 }
 
@@ -153,15 +188,56 @@ function variantFileAt10Case(vector, ctx) {
  * each entry a subset of one finding's members, and no finding beyond them — and
  * `expected.lint.exit` the exit code.
  */
+/**
+ * The fixture cases: what the verb `input.argv` names (`lint` without it) reports, as
+ * `expected.lint` or, for `verify`, `expected.verify` — the WHOLE list of findings, each
+ * entry a subset of one finding's members, and the exit code. A case with `input.cases[]`
+ * runs each sub-case on its own copy of the fixture, with its own `add_files`, against the
+ * entry of `expected.cases[]` of the same `name` (lint-0058).
+ */
 function fixtureLintCase(vector, ctx) {
-  return onFixture(vector, ctx, ({ exit, findings }) => {
-    const want = vector.expected.lint;
+  if (!Array.isArray(vector.input.cases)) return fixtureRun(vector, ctx, vector.expected, '');
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const results = vector.input.cases.map((sub) => fixtureRun(
+    { ...vector, input: { ...vector.input, add_files: sub.add_files } }, ctx, byName.get(sub.name) || {}, `${sub.name}: `,
+  ));
+  return checks(results.map((r, n) => [vector.input.cases[n].name, r.status === 'pass', r.detail]));
+}
+
+/**
+ * One run of the fixture with the vector's files added, against `expected.lint` or
+ * `expected.verify`. A `verify` case with `git_history: false` builds with no history and no
+ * `SOURCE_DATE_EPOCH`, so every build warns `AGSC-E606` (AGSC-04-09): that warning belongs to
+ * the environment the case asks for, not to the rule it pins, and is left out of the list.
+ */
+function fixtureRun(vector, ctx, expected, label) {
+  return onFixture(vector, ctx, ({ before, exit, findings: reported, root }) => {
+    const verb = expected.verify === undefined ? 'lint' : 'verify';
+    const findings = verb === 'verify' && vector.input.git_history === false
+      ? reported.filter((f) => f.code !== 'AGSC-E606') : reported;
+    const want = expected[verb];
     const m = findingsMatch(want.findings, findings);
-    return checks([
-      [`lint exit ${want.exit}`, exit === want.exit, `exit ${exit}`],
-      ['lint findings', m.ok && findings.length === want.findings.length,
+    const list = [
+      [`${label}${verb} exit ${want.exit}`, exit === want.exit, `exit ${exit}`],
+      [`${label}${verb} findings`, m.ok && findings.length === want.findings.length,
         `${m.detail} ${JSON.stringify(findings.map((f) => [f.code, f.file, f.severity, f.slug]))}`],
-    ]);
+    ];
+    const after = snapshot(root);
+    // `file_bytes`: the exact bytes of files the run wrote.
+    for (const [file, text] of Object.entries(expected.file_bytes || {})) {
+      const got = after[file] === undefined ? null : require('node:fs').readFileSync(require('node:path').join(root, file), 'utf8');
+      list.push([`${file} bytes`, got === text, `got ${JSON.stringify(got)}`]);
+    }
+    // `written_only_under`: every file that is new or changed lies under that folder, so
+    // the content tree (and the rest of the Bundle) has the same hashes as before the run.
+    if (expected.written_only_under !== undefined) {
+      const folder = `${expected.written_only_under}/`;
+      const touched = Object.keys(after).filter((file) => after[file] !== before[file]);
+      const removed = Object.keys(before).filter((file) => after[file] === undefined);
+      list.push([`written only under ${folder}`, removed.length === 0 && touched.every((file) => file.startsWith(folder)),
+        `changed outside: ${JSON.stringify([...touched, ...removed].filter((file) => !file.startsWith(folder)))}`]);
+    }
+    return checks(list);
   });
 }
 
@@ -192,7 +268,42 @@ function specVersionCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * bundle-0018 and bundle-0019 (AGSC-01-42) — the diagram source grammar and the bytes
+ * it compiles to. Each case compiles one source for the slug it names: an accepted
+ * source must give exactly the expected SVG and no finding; a refused one no SVG and
+ * only `AGSC-E412` errors, each naming a line of the source.
+ */
+function diagramCase(vector) {
+  const diagrams = require('../../../src/knowledge/diagrams.js');
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    const got = diagrams.compile(input.source, { slug: input.slug });
+    list.push([`${input.name} svg`, got.svg === want.svg, JSON.stringify(got.svg)]);
+    const m = findingsMatch(want.findings || [], got.findings);
+    const onlyThese = got.findings.every((f) => (want.findings || []).some((w) => w.code === f.code));
+    list.push([`${input.name} findings`, m.ok && onlyThese, `${m.detail} ${JSON.stringify(got.findings.map((f) => f.code))}`]);
+    const lines = input.source.split('\n').length;
+    list.push([`${input.name} names a line`, got.findings.every((f) => Number.isInteger(f.line) && f.line >= 1 && f.line <= lines),
+      JSON.stringify(got.findings.map((f) => f.line))]);
+  }
+  return checks(list);
+}
+
 const B_HANDLERS = {
+  'bundle-0019': diagramCase,
+  'bundle-0018': diagramCase,
+  'bundle-0012': reservedConfigCase,
+  'bundle-0021': fixtureLintCase,
+  'bundle-0020': fixtureLintCase,
+  'bundle-0015': fixtureLintCase,
+  'bundle-0014': fixtureLintCase,
+  'bundle-0013': fixtureLintCase,
+  'bundle-0011': specVersionCase,
+  'bundle-0017': fixtureLintCase,
+  'bundle-0016': fixtureLintCase,
   'bundle-0010': fixtureLintCase,
   'bundle-0009': fixtureLintCase,
   'bundle-0008': specVersionCase,

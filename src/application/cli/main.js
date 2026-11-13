@@ -15,6 +15,7 @@ const { checkBoundaryConfig } = require('../../boundary/visibility.js');
 const { createClock, isMalformedEpoch } = require('../../adapters/node-clock.js');
 const pluginLoader = require('../plugin-loader.js');
 const { canonicalize } = require('../../knowledge/jcs.js');
+const { versionLine } = require('../../shared/version-line.js');
 
 const VERBS = [
   'init', 'lint', 'build', 'verify', 'ci', 'export', 'import', 'compose',
@@ -22,15 +23,16 @@ const VERBS = [
 ];
 
 /**
- * The ONE place the engine states which version of the specification it
- * implements (AGSC-09-11's `spec_version` member; AGSC-00-14). Everything else
+ * The version of the specification the engine implements (AGSC-09-11's
+ * `spec_version` member; AGSC-00-14), from its one place, `shared/spec-version.js`. Everything else
  * — every envelope, every report, `llms.txt`'s provenance header, the
  * `/compose/` page — takes it from here through `ctx.specVersion`, so a release
- * bump is one edit. A test harness may still pin a per-vector value
+ * bump is one edit. The graph files and the now line are the exception: they state
+ * the version the Bundle declares (AGSC-05-26, AGSC-06-22). A test harness may still pin a per-vector value
  * (`options.spec_version`), which is what keeps a released vector reproducible
  * across an rc bump (AGSC-00-16).
  */
-const SPEC_VERSION = '1.0.0';
+const { SPEC_VERSION } = require('../../shared/spec-version.js');
 
 // The five global flags of AGSC-09-09; every verb parser gets these.
 const GLOBAL_FLAGS = [
@@ -59,11 +61,11 @@ const VERB_FLAGS = {
   // `lint --fix` alone. `agsc lint --self` is therefore the usage error the rule
   // requires — with the hint of `RETIRED_FLAGS` below, so that an operator following
   // `docs/PLAN.md`'s older definition-of-done line is told what replaced it.
-  lint: new Map([['--fix', 'bool']]),
+  lint: new Map([['--fix', 'bool'], ['--suggest', 'bool']]),
   export: new Map([
     ['--markdown', 'bool'], ['--okf', 'bool'], ['--jsonld', 'bool'],
-    ['--jsonl', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
-    ['--zip', 'bool'],
+    ['--jsonl', 'bool'], ['--skos', 'bool'], ['--closure', 'bool'], ['--steer', 'bool'], ['--target', 'value'], ['--to', 'value'],
+    ['--zip', 'bool'], ['--manifest', 'bool'],
   ]),
   // AGSC-01-22/23: `--from` names the foreign format; `--dry-run` reports the plan
   // and writes nothing (AGSC-09-09). The flags of the
@@ -87,8 +89,15 @@ const VERB_FLAGS = {
   // not yet name it: the proposed wording is on the specification items list
   // and the archive is never a file OF the Harness, which AGSC-07-12
   // closes at seven kinds — it is written beside the directory and never inside it.
-  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool']]),
+  // `--brief` writes the brief of AGSC-07-25 beside the Harness, in `<dir>.companion/`;
+  // `--narrate <agent>` is the narration step of AGSC-07-28, which needs `--brief`
+  // (AGSC-09-09).
+  compose: new Map([['--from', 'value'], ['--emit', 'value'], ['--out', 'value'], ['--zip', 'bool'],
+    ['--brief', 'bool'], ['--narrate', 'value']]),
   skills: new Map([['--zip', 'bool']]),
+  // AGSC-09-18: `--http <port>` serves the ten tools over Streamable HTTP instead of standard
+  // input and output; `--bind <address>`, a loopback address, needs it (AGSC-09-09).
+  mcp: new Map([['--http', 'value'], ['--bind', 'value']]),
   build: new Map([['--level', 'value']]),
   ci: new Map([['--level', 'value']]),
 };
@@ -101,7 +110,7 @@ const VERB_FLAGS = {
  */
 const RETIRED_FLAGS = Object.freeze({
   lint: {
-    '--self': 'AGSC-09-09 defines `--fix` and no other flag on `lint`, and `--self` was read by'
+    '--self': 'AGSC-09-09 defines `--fix` and `--suggest` and no other flag on `lint`, and `--self` was read by'
       + ' no code. To check this DISTRIBUTION rather than a Bundle, run the nine independent'
       + ' validators of AGSC-09-90: `for t in tools/validate-*; do node $t --json || exit 1; done`,'
       + ' plus `node tools/count-artifacts --json`. To lint a BUNDLE, run `agsc lint` from its root.',
@@ -194,6 +203,13 @@ const ADAPTER_FLAGS = {
       // the directory holds.
       board: new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value'],
         ['--format', 'value']]),
+      // The SKOS adapter reads one Turtle file (AGSC-01-39): it offers `--replace` for
+      // AGSC-01-23 and nothing else, since a thesaurus states no content version.
+      skos: new Map([['--replace', 'bool']]),
+      // The six direct memory adapters (PRD-070) offer what the GABBE adapter offers:
+      // none of those tools publishes a content version of its own.
+      ...Object.fromEntries(['mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code'].map((name) => [name,
+        new Map([['--replace', 'bool'], ['--allow-newer', 'bool'], ['--source-version', 'value']])])),
     },
   },
   // `export --to skills --layout <name>`: the foreign layout to write.
@@ -380,18 +396,18 @@ const GLOBAL_FLAG_NAMES = Object.freeze(['--json', '--quiet', '--plain', '--no-i
  */
 const VERB_PURPOSE = Object.freeze({
   init: 'adopts a folder of Markdown notes into a Bundle',
-  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations',
+  lint: 'runs every check of a Bundle and writes nothing; with --fix, applies the normalisations; with --suggest, writes dist/suggestions.json',
   build: 'writes the site and its machine-readable files into build.out',
-  verify: 'builds twice and compares the bytes; with --ledger, recomputes the ledger chain',
-  ci: 'runs the checks, two builds and the comparison, and writes the gate verdict',
+  verify: 'builds twice and compares the bytes, and checks the node\'s own shapes and questions where domain names them; with --ledger, recomputes the ledger chain',
+  ci: 'runs the checks, two builds and the comparison, and the node\'s own shapes and questions where domain names them, and writes the gate verdict',
   export: 'writes one export: Markdown, OKF, JSON-LD, JSONL, steering files or a memory adapter',
-  import: 'imports a folder of another format through the adapter named by --from',
+  import: 'imports a folder (a Turtle file for skos) of another format through the adapter named by --from',
   compose: 'composes the selected items and writes their Harness',
   propose: 'writes the Proposal of a change to one item, for a pull request',
   review: 'runs the review lane: checks, a label and a comment, never a model call',
   refresh: 'runs the agent lane named by --agent; this engine runs it with --dry-run',
   skills: 'emits every skill pack, installs them under a target, or imports one pack',
-  mcp: 'serves the seven tools over standard input and output',
+  mcp: 'serves the ten tools over standard input and output; with --http, over Streamable HTTP on a loopback address',
   run: 'runs the steps of a procedure; opt-in through run.enabled',
   trace: 'records a captured agent run as an Episode; opt-in through run.enabled',
   conform: 'runs the conformance cases of a Level and writes the report',
@@ -428,13 +444,13 @@ function usageText(version) {
 const VERB_USAGE = Object.freeze({
   build: 'agsc build [--level <n>]',
   ci: 'agsc ci [--level <n>]',
-  compose: 'agsc compose <slug> [<slug>…] | agsc compose --from <slug>',
+  compose: 'agsc compose <slug> [<slug>…] [--brief [--narrate <agent>]] | agsc compose --from <slug> [--brief [--narrate <agent>]]',
   conform: 'agsc conform [--level <n>] [--to <path>]',
-  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--steer [--target <name>[,<name>…]]|--to <adapter>',
-  import: 'agsc import <source-dir> --from <adapter> [--dry-run]',
+  export: 'agsc export --markdown|--okf|--jsonld|--jsonl|--skos|--closure|--steer [--target <name>[,<name>…]]|--to <adapter> [--manifest]',
+  import: 'agsc import <source-dir> --from <adapter> [--dry-run] (--from skos takes a Turtle file in place of the folder)',
   init: 'agsc init',
-  lint: 'agsc lint [--fix]',
-  mcp: 'agsc mcp [<path>]',
+  lint: 'agsc lint [--fix] [--suggest]',
+  mcp: 'agsc mcp [<path>] [--http <port> [--bind <address>]]',
   propose: 'agsc propose <slug>',
   refresh: 'agsc refresh --agent <name> [--task <slug>] [--dry-run]',
   review: 'agsc review',
@@ -519,7 +535,7 @@ function helpText(version, verb) {
  *   are honoured (AGSC-09-09); never read from `process.env` directly here.
  * - root: the Bundle root (default '.').
  * - specVersion/version: OPTIONAL overrides for the envelope's corresponding
- *   members; default to SPEC_VERSION ('1.0.0') and package.json's
+ *   members; default to SPEC_VERSION (shared/spec-version.js) and package.json's
  *   version. A test
  *   harness pins these per-vector (e.g. cli-0002's options.version) so the
  *   envelope stays reproducible independent of the engine's own release.
@@ -544,8 +560,7 @@ function main(argv, ctx) {
 
   // --version (AGSC-09-09) short-circuits everything else.
   if (args.includes('--version')) {
-    if (jsonMode) writeLine(stdout, JSON.stringify({ version }) + '\n');
-    else writeLine(stdout, `agsc ${version}\n`);
+    writeLine(stdout, versionLine(version, jsonMode ? 'json' : 'text'));
     return 0;
   }
 
@@ -735,8 +750,10 @@ function main(argv, ctx) {
       .then(() => verbModule.run(verbCtx))
       .then(() => 0, (e) => {
         const code = e && typeof e.code === 'string' && REGISTERED_CODE.test(e.code) ? e.code : 'AGSC-E901';
-        writeFindingLine(stderr, { code, severity: 'error', message: `${verb}: ${e && e.message}` });
-        return 1;
+        const finding = { code, severity: 'error', message: `${verb}: ${e && e.message}` };
+        writeFindingLine(stderr, finding);
+        // AGSC-09-08: a usage fault (`mcp --bind` without `--http`, AGSC-E003) is exit 2.
+        return exitClass([finding]);
       });
   }
 
@@ -826,10 +843,10 @@ function exitClass(findings) {
 
 /**
  * The verbs that write nothing whatever the configuration says: `lint` without
- * `--fix` and `verify` read the Bundle and report.
+ * `--fix` or `--suggest`, and `verify`, read the Bundle and report.
  */
 function writesNothing(verb, verbFlags) {
-  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true);
+  return verb === 'verify' || (verb === 'lint' && verbFlags.fix !== true && verbFlags.suggest !== true);
 }
 
 /**
@@ -867,7 +884,7 @@ function plainWhere(f) {
 }
 
 module.exports = {
-  main, ENVIRONMENT_CLASS_CODES, RETIRED_FLAGS, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
+  main, SPEC_VERSION, USAGE_CLASS_CODES, VERBS, VERB_FLAGS, VERB_PURPOSE,
   VERB_USAGE,
   adapterFlagsFor, buildEnvelope, compareFindings, flagsFor,
 };

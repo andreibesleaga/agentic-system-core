@@ -155,3 +155,42 @@ test('(a) agsc compose with no slug and no --from is AGSC-E003, exit 2, and writ
   assert.equal(one.exit, 0, one.err);
   assert.equal(one.dist, true);
 });
+
+test('AGSC-09-13a as amended 2026-11-10: an argument whose JSON type is not the one the inputSchema publishes is AGSC-E201, on both transports', () => {
+  const hosts = transports();
+  const calls = [
+    ['search', { query: { a: 1 } }], ['ask', { question: 42 }], ['read', { slug: ['supervisor'] }],
+    ['explain', { key: 'requires', source: 1, target: 'handoff' }], ['links', { slug: true }],
+    ['remember', { body: 'b', kind: 'concept', title: 'A title', usage: [1] }],
+    ['remember', { body: 'b', kind: 'concept', sources: 'https://example.org/', title: 'A title' }],
+  ];
+  for (const [name, args] of calls) {
+    const local = plain(hosts.local.call(name, args));
+    assert.equal(local.type, 'error', `${name} ${JSON.stringify(args)}`);
+    assert.equal(local.body.code, 'AGSC-E201', `${name} ${JSON.stringify(args)}`);
+    assert.deepEqual(plain(hosts.module.call(name, args)), local, `module ${name}`);
+    assert.deepEqual(plain(hosts.emitted.call(name, args)), local, `emitted ${name}`);
+  }
+  // The published types still pass: a string query is searched, as before.
+  assert.notEqual(plain(hosts.local.call('search', { query: 'handoff' })).type, 'error');
+});
+
+test('the type check reads the same types as the published inputSchema of every tool (AGSC-09-13a, AGSC-09-16)', () => {
+  const sample = { array: ['x'], object: { a: 1 }, string: 'x' };
+  for (const tool of mcpTools.manifest().tools) {
+    for (const [key, { type }] of Object.entries(tool.inputSchema.properties)) {
+      for (const [other, value] of Object.entries(sample)) {
+        const fault = pageTools.pageArgumentTypeFault(tool.name, { [key]: value });
+        assert.equal(fault === null, other === type, `${tool.name}.${key} (${type}) given ${other}`);
+      }
+    }
+  }
+});
+
+test('a check selection that is null is still AGSC-E201 on both transports: the tool, not the type check, judges a null', () => {
+  const hosts = transports();
+  const local = plain(hosts.local.call('check', { selection: null }));
+  assert.equal(local.body.code, 'AGSC-E201');
+  assert.deepEqual(plain(hosts.module.call('check', { selection: null })), local);
+  assert.deepEqual(plain(hosts.emitted.call('check', { selection: null })), local);
+});

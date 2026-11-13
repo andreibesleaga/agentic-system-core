@@ -1,0 +1,20 @@
+[
+  {
+    "component": "ClassConstraintComponent",
+    "focus": "https://example.org/car",
+    "message": "A car is owned by a person. | Auton omistaa henkilö.",
+    "path": "https://example.org/owner",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#CarOwner",
+    "value": "\"Bob\""
+  },
+  {
+    "component": "ClassConstraintComponent",
+    "focus": "https://example.org/car",
+    "message": "A car is owned by a person. | Auton omistaa henkilö.",
+    "path": "https://example.org/owner",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#CarOwner",
+    "value": "https://example.org/bob"
+  }
+]

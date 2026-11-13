@@ -14,7 +14,7 @@ The AgenticSystemCore specification and its reference engine, in one tree:
   rule, the rule wins.
 - **The engine** — `src/` (five bounded contexts, a supporting context, an application
   layer, ports and adapters), `bin/` (the `agsc` and `agsc-host` commands), `index.js`.
-- **The checkers** — `tools/` (nine standalone checkers that import nothing from
+- **The checkers** — `tools/` (eleven standalone checkers that import nothing from
   `src/`, plus maintainer tools).
 - **Everything else** — `tests/` (every level), `features/` (persona scenarios),
   `docs/` (explanations, none normative), `examples/`, `bench/`, `internet-draft/`,
@@ -45,7 +45,11 @@ only under the system temporary directory. Keep them that way.
   registered one fits.
 - **Do not edit generated files by hand**: `docs/GLOSSARY.md`
   (`node tools/gen-glossary`), `docs/RULE-COVERAGE.md` (`node tools/rule-coverage
-  --write`), `docs/measurements.json` (`node bench/measure.js`).
+  --write`), `docs/measurements.json` (`node bench/measure.js`), `docs/ONTOLOGY-QUESTIONS.md`
+  (`node tools/gen-ontology-questions`), `schema/item-shapes.ttl` (`node tools/gen-shapes`),
+  `docs/REQUIREMENTS-MATRIX.md` (`node tools/requirements-matrix --write`), and every file of
+  `src/` or `bench/runners/` whose first line reads `// generated from src-ts/…` (edit its TypeScript source
+  under `src-ts/`, then `npm run build:ts`; [docs/ENGINEERING.md](docs/ENGINEERING.md) §8).
 - **Do not add a dependency** unless a maintained, permissively licensed library at an
   exact pinned version replaces hand-written parsing of a standard format; no library
   may use the network or the clock at run time; `npm audit` must stay at 0.
@@ -76,4 +80,8 @@ only under the system temporary directory. Keep them that way.
 
 A published node is read by agents through its own files — `/.well-known/knowledge-linkset`,
 `/llms.txt`, `/chunks.jsonl`, the graph dumps — or through `agsc mcp`; see
-[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
+[docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md). From 1.1 the tool server is
+built on the official MCP SDK and speaks revision 2026-07-28 beside 2025-11-25 (stdio) or alone
+(`--http`, loopback); a node may also publish an A2A agent card, two opt-in catalogue files and
+`/chunks-index.toon`. The outside standards and the version of each are in
+[docs/PROTOCOLS.md](docs/PROTOCOLS.md); the protocol modules are TypeScript under `src-ts/`.

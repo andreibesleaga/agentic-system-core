@@ -23,10 +23,10 @@
  * recorded on the specification items list rather than presented as the
  * rule's: `pre-commit` runs `agsc lint` and nothing else; `CODEOWNERS` assigns every
  * path to the forge logins of `channels[].owner` (AGSC-01-18), falling back to the
- * identifier of `bundle.operator`; `ruleset.json` requires, under one active branch
- * rule, the single check a CI job reports — the job that runs `agsc ci` (`CI_CHECK`)
- * — because a ruleset requiring the gate check names one by one names statuses no
- * job reports, and a forge that imports it blocks every merge.
+ * identifier of `bundle.operator`; `ruleset.json` is a GitHub ruleset (`ruleset()`) that
+ * requires a reviewed pull request and, as the one status check, the job that runs
+ * `agsc ci` (`CI_CHECK`) — because a ruleset requiring the gate check names one by one
+ * names statuses no job reports, and a forge that imports it blocks every merge.
  *
  * Drift (AGSC-08-12): "Where the repository already carries the corresponding file
  * and its bytes differ, `ci` MUST report the difference as `AGSC-E707` and MUST NOT
@@ -131,6 +131,42 @@ function owners(config) {
   return [...out].sort(compareCodePoint);
 }
 
+/**
+ * `ruleset.json`: a GitHub repository ruleset in the shape its "Import a ruleset" takes
+ * (<https://docs.github.com/en/rest/repos/rules>), one active rule set on the default
+ * branch: a pull request with one approval and the Code Owners' review (the review that
+ * the gate check `review` stands for, which `agsc ci` cannot enforce itself), and the one
+ * status a CI job reports.
+ */
+function ruleset() {
+  return {
+    bypass_actors: [],
+    conditions: { ref_name: { exclude: [], include: ['~DEFAULT_BRANCH'] } },
+    enforcement: 'active',
+    name: 'agsc',
+    rules: [
+      {
+        parameters: {
+          dismiss_stale_reviews_on_push: false,
+          require_code_owner_review: true,
+          require_last_push_approval: false,
+          required_approving_review_count: 1,
+          required_review_thread_resolution: false,
+        },
+        type: 'pull_request',
+      },
+      {
+        parameters: {
+          required_status_checks: [{ context: CI_CHECK }],
+          strict_required_status_checks_policy: false,
+        },
+        type: 'required_status_checks',
+      },
+    ],
+    target: 'branch',
+  };
+}
+
 /** The four artefacts, as text, for the values a Bundle actually enforces. */
 function compile(items, config) {
   const names = checkNames(items);
@@ -152,12 +188,7 @@ function compile(items, config) {
           ? '# No owner is declared in this Bundle, so no path is assigned.'
           : `* ${list.map((o) => `@${o}`).join(' ')}`, ''].join('\n'));
     } else if (value === 'ruleset') {
-      files.set(TARGETS[value], `${canonicalize({
-        enforcement: 'active',
-        name: 'agsc',
-        rules: { required_status_checks: [CI_CHECK] },
-        target: 'branch',
-      })}\n`);
+      files.set(TARGETS[value], `${canonicalize(ruleset())}\n`);
     }
   }
   return new Map([...files.keys()].sort(compareCodePoint).map((k) => [k, files.get(k)]));

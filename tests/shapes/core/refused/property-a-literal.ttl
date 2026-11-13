@@ -1,0 +1,9 @@
+# sh:property: the value is a literal, not a shape.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property "title" ;
+    sh:targetClass ex:C .

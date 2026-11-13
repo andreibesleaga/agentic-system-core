@@ -23,6 +23,11 @@
 //      the current one: greater is a bump, equal is a release of the version the
 //      tree already carries (nothing to write), smaller is refused; `--apply`
 //      writes a bump into both files and adds the changelog heading.
+// 1c. EVERY OTHER COPY OF THE VERSION. The citation file, the Claude Code plugin and
+//      its marketplace entry, the agent skill and its plugin copy, and the manifest
+//      of the Claude Desktop bundle (`.mcpb`) each state the package version once;
+//      each must equal `package.json#version`, and `--apply` writes it (and the
+//      release date into `CITATION.cff`). A file that is absent is not checked.
 //   2. THE CHANGELOG SECTION. `CHANGELOG.md` must carry `## [Unreleased]`, and
 //      either something under it or a section already naming the version in
 //      `package.json`; the release must have — or, under `--apply`, gain — a
@@ -66,7 +71,7 @@
 //      specification, carries the package tag alone), whose workflow publishes after
 //      the maintainer approves the `release` environment. Every git command in it is the maintainer's; this tool runs none.
 //
-// This tool is NOT one of the nine command contracts of AGSC-09-90 — it validates
+// This tool is NOT one of the eleven command contracts of AGSC-09-90 — it validates
 // no normative artefact — so it is deliberately named `release` and not
 // `validate-*`, and the `for t in tools/validate-*` gate does not pick it up. It
 // speaks the same AGSC-09-11 envelope so that one reader reads every tool.
@@ -75,16 +80,31 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
-const ALIAS_DIR = path.join('packages', 'agsc-cli');
+const ALIAS_DIR = 'packages/agsc-cli';
 /** The MCP Registry entry of the npm package; it names `mcpName` and the npm version. */
 const SERVER_JSON = 'server.json';
+/**
+ * 1c. Every other file that states the package version: the path, and a pattern whose
+ * first group is the version (`date` marks the one value `--apply` sets to the release
+ * date instead). Each pattern matches one line of its file.
+ */
+const VERSION_SITES = Object.freeze([
+  ['.claude-plugin/marketplace.json', /"version": "([^"]+)"/u],
+  ['.github/mcpb/manifest.json', /"version": "([^"]+)"/u],
+  ['CITATION.cff', /^version: (\S+)$/mu],
+  ['CITATION.cff', /^date-released: (\S+)$/mu, 'date'],
+  ['plugins/agentic-system-core/.claude-plugin/plugin.json', /"version": "([^"]+)"/u],
+  ['plugins/agentic-system-core/skills/agentic-system-core/SKILL.md', /^ {2}version: "([^"]+)"$/mu],
+  ['skills/agentic-system-core/SKILL.md', /^ {2}version: "([^"]+)"$/mu],
+]);
 /** The sibling repository publishes to PyPI at the same version. */
 const PYTHON_DIR = 'agentic-system-core-python';
 const HELP = `tools/release [--version <x.y.z>] [--apply] [--json] [--quiet] [--help] [<root>]
 
   The release lane of docs/PLAN.md §7, as a check. Nothing is ever published by
   this script: its default mode is a dry run and --apply writes only the version
-  strings (package.json, the alias, server.json) and the changelog heading.
+  strings (package.json, the alias, server.json and the other copies of the
+  version, with the release date in CITATION.cff) and the changelog heading.
 
   --version <x.y.z>  the release being prepared (semver; greater than the current
                      package.json version is a bump, equal means the tree already
@@ -197,15 +217,42 @@ function envelopeOf(findings, declared, version) {
   };
 }
 
+/**
+ * The first version number in the text, or 'unknown'. The number cannot start inside a
+ * run of digits (`(?<!\d)`): a start there would read the same run again to the end.
+ */
+function versionIn(text) {
+  return (text.match(/(?<!\d)\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+}
+
 function specVersion(root) {
   try {
-    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
-      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+    return versionIn(fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8'));
   } catch { return 'unknown'; }
 }
 
 function readJson(at) {
   try { return JSON.parse(fs.readFileSync(at, 'utf8')); } catch { return null; }
+}
+
+/**
+ * Every companion package under `packages/`: each sub-folder holding a readable
+ * `package.json`, as `{dir, manifest}` in folder-name order (`dir` is root-relative,
+ * with `/`). A new package is checked and bumped with the alias, by being there.
+ *
+ * @param {string} root
+ * @returns {Array<{dir:string, manifest:object}>}
+ */
+function companionPackages(root) {
+  let names;
+  try {
+    names = fs.readdirSync(path.join(root, 'packages'), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  } catch {
+    names = [];
+  }
+  return names.map((name) => ({ dir: `packages/${name}`, manifest: readJson(path.join(root, 'packages', name, 'package.json')) }))
+    .filter((one) => one.manifest !== null);
 }
 
 /**
@@ -532,6 +579,47 @@ function serverEntryFindings(entry, manifest) {
   return findings;
 }
 
+/** 1c. The text of each version site that exists, keyed by path. */
+function versionSiteTexts(root) {
+  const texts = new Map();
+  for (const [file] of VERSION_SITES) {
+    if (texts.has(file)) continue;
+    try { texts.set(file, fs.readFileSync(path.join(root, file), 'utf8')); } catch { /* absent: not checked */ }
+  }
+  return texts;
+}
+
+/** 1c. A version site that states another version than the engine's. */
+function versionSiteFindings(texts, version) {
+  const findings = [];
+  for (const [file, pattern, kind] of VERSION_SITES) {
+    if (kind === 'date' || !texts.has(file)) continue;
+    const stated = pattern.exec(texts.get(file));
+    if (stated === null || stated[1] !== version) {
+      findings.push(finding('AGSC-E202', file, 1, `${file} states version "${stated === null ? 'none' : stated[1]}"`
+        + ` and the engine is ${version}; one version, in one place`));
+    }
+  }
+  return findings;
+}
+
+/** 1c under `--apply`: the new version (and the date) written into each site that exists. */
+function applyVersionSites(root, texts, version, date) {
+  const written = [];
+  for (const [file, text] of texts) {
+    let updated = text;
+    for (const [site, pattern, kind] of VERSION_SITES) {
+      if (site !== file) continue;
+      const value = kind === 'date' ? date : version;
+      updated = updated.replace(pattern, (line, old) => line.replace(old, value));
+    }
+    if (updated === text) continue;
+    fs.writeFileSync(path.join(root, file), updated);
+    written.push(file);
+  }
+  return written;
+}
+
 // --------------------------------------------------------------------------
 // 2. The changelog.
 // --------------------------------------------------------------------------
@@ -693,23 +781,27 @@ function run(argv, io = {}) {
 
   const manifest = readJson(path.join(root, 'package.json'));
   if (manifest === null) { err(`release: ${root}/package.json is unreadable\n`); return 2; }
-  const alias = readJson(path.join(root, ALIAS_DIR, 'package.json'));
+  const companions = companionPackages(root);
   const findings = [];
 
-  // 1. one version, in one place.
-  if (alias === null) {
+  // 1. one version, in one place: the alias, and every other companion package under
+  // `packages/` (packages/README.md: a package's version and its dependency on the
+  // engine always equal the engine's own version).
+  if (!companions.some((one) => one.dir === ALIAS_DIR)) {
     findings.push(finding('AGSC-E901', `${ALIAS_DIR}/package.json`, 1,
       'the alias package is absent; docs/PLAN.md §7 publishes it beside the engine'));
-  } else {
-    if (alias.version !== manifest.version) {
-      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
-        `the alias is at ${alias.version} and the engine at ${manifest.version}; one version, in one place`));
+  }
+  for (const { dir, manifest: companion } of companions) {
+    const what = dir === ALIAS_DIR ? 'the alias' : `the package ${dir}`;
+    if (companion.version !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${dir}/package.json`, 1,
+        `${what} is at ${companion.version} and the engine at ${manifest.version}; one version, in one place`));
     }
-    const pinned = (alias.dependencies || {})['agentic-system-core'];
-    if (pinned !== manifest.version) {
-      findings.push(finding('AGSC-E202', `${ALIAS_DIR}/package.json`, 1,
-        `the alias depends on "${pinned}" and the engine is ${manifest.version}; an alias`
-        + ' pins the exact version it aliases, never a range'));
+    const pinned = (companion.dependencies || {})['agentic-system-core'];
+    if ((dir === ALIAS_DIR || pinned !== undefined) && pinned !== manifest.version) {
+      findings.push(finding('AGSC-E202', `${dir}/package.json`, 1,
+        `${what} depends on "${pinned}" and the engine is ${manifest.version}; a companion package`
+        + ' pins the exact engine version it ships with, never a range'));
     }
   }
   // 1b. the MCP Registry entry (`server.json`, published to the registry by the
@@ -717,6 +809,9 @@ function run(argv, io = {}) {
   // and carries the npm version, on the server and on its npm package entry.
   const serverEntry = readJson(path.join(root, SERVER_JSON));
   if (serverEntry !== null) findings.push(...serverEntryFindings(serverEntry, manifest));
+  // 1c. every other copy of the version.
+  const siteTexts = versionSiteTexts(root);
+  findings.push(...versionSiteFindings(siteTexts, manifest.version));
   // Equal is not a fault: the first release of a version the tree already carries
   // (the versions were written when the release candidate was drafted) has nothing
   // to bump, so the checklist leaves out the two bump steps.
@@ -762,12 +857,15 @@ function run(argv, io = {}) {
       const bumped = { ...manifest, version };
       fs.writeFileSync(path.join(root, 'package.json'), `${JSON.stringify(bumped, null, 4)}\n`);
       written.push('package.json');
-      if (alias !== null) {
-        const aliasBumped = {
-          ...alias, dependencies: { ...alias.dependencies, 'agentic-system-core': version }, version,
+      for (const { dir, manifest: companion } of companions) {
+        const pinsEngine = companion.dependencies && companion.dependencies['agentic-system-core'] !== undefined;
+        const companionBumped = {
+          ...companion,
+          ...(pinsEngine ? { dependencies: { ...companion.dependencies, 'agentic-system-core': version } } : {}),
+          version,
         };
-        fs.writeFileSync(path.join(root, ALIAS_DIR, 'package.json'), `${JSON.stringify(aliasBumped, null, 4)}\n`);
-        written.push(`${ALIAS_DIR}/package.json`);
+        fs.writeFileSync(path.join(root, dir, 'package.json'), `${JSON.stringify(companionBumped, null, 4)}\n`);
+        written.push(`${dir}/package.json`);
       }
       if (serverEntry !== null) {
         const bumpedEntry = {
@@ -777,6 +875,7 @@ function run(argv, io = {}) {
         fs.writeFileSync(path.join(root, SERVER_JSON), `${JSON.stringify(bumpedEntry, null, 2)}\n`);
         written.push(SERVER_JSON);
       }
+      written.push(...applyVersionSites(root, siteTexts, version, date));
       const updated = applyChangelog(changelog, version, date);
       if (updated !== changelog) {
         fs.writeFileSync(path.join(root, 'CHANGELOG.md'), updated);
@@ -803,8 +902,8 @@ function run(argv, io = {}) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  ALIAS_DIR, HELP, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
+  ALIAS_DIR, HELP, companionPackages, PYTHON_DIR, SHIPPED_TEST_PATHS, TOOLING_IGNORES, WORKFLOW,
   applyChangelog, canonicalize, changelogFindings, checklist, hygieneFindings, isGreater, neverShipped,
-  packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, walk,
-  withoutTrailingSlashes, workflowFindings,
+  packFindings, packList, pep440, pypiFindings, releaseDate, run, specMentions, VERSION_SITES, walk,
+  withoutTrailingSlashes, workflowFindings, versionIn,
 };

@@ -21,6 +21,7 @@ test('every public artefact carries the CORS pair and no credentials header (AGS
 });
 
 test('a restricted node applies the wildcard to the discovery document alone (AGSC-11-20)', () => {
+  // Requirement: PRD-087 (docs/PRD.md).
   const sets = headers.headerSets({ visibility: 'restricted' });
   assert.deepStrictEqual(setFor(sets, WELLKNOWN_PATH).map(([k]) => k).filter((k) => k.startsWith('Access-Control')),
     ['Access-Control-Allow-Origin', 'Access-Control-Expose-Headers']);
@@ -84,6 +85,19 @@ test('AGSC-06-01: only the board JSON exports are typed JSON; the HTML board pag
   assert.ok(covers('/boards/*.json', '/boards/project-board.json'));
 });
 
+test('AGSC-06-17, AGSC-07-19: /skills/*.json is typed JSON where the skills index is written; the skills pages keep their own type', () => {
+  const typed = (sets, route) => setFor(sets, route).filter(([k]) => k === 'Content-Type').map(([, v]) => v);
+  const routes = ['/skills/index.html', '/skills/index.json', '/skills/agent-patterns/SKILL.md'];
+  // The discovery document declares the index `application/json` (its `rel#skills` link), so it is served so.
+  assert.deepStrictEqual(typed(headers.headerSets({}, routes), '/skills/*.json'), ['application/json; charset=utf-8']);
+  assert.deepStrictEqual(typed(headers.headerSets({ visibility: 'restricted' }, routes), '/skills/*.json'),
+    ['application/json; charset=utf-8'], 'the type does not depend on the visibility');
+  assert.deepStrictEqual(typed(headers.headerSets({}, routes), '/skills/*'), [], 'a `/skills/*` type would also cover the HTML page and SKILL.md');
+  assert.deepStrictEqual(headers.headerSets({}, ['/index.html']).filter((s) => s.route === '/skills/*.json'), [],
+    'a node that writes no skills index gets no block, so its _headers is unchanged');
+  assert.ok(headers.headersFile({}, routes).includes('/skills/*.json\n  Content-Type: application/json; charset=utf-8\n'));
+});
+
 // Before the fix, the writer put the CORS pair and the content type
 // of fourteen addresses into two blocks each, and the reference host served only one of
 // two blocks written for the same address — so the discovery document and the thirteen other
@@ -113,3 +127,27 @@ for (const visibility of ['public', 'restricted']) {
     }
   });
 }
+
+const ENGINE_WASM = '/query/vendor/oxigraph-0.5.13/web_bg.wasm';
+
+test('AGSC-06-39, AGSC-06-17: /query/* gets one block, only where the page and a WebAssembly engine are emitted, and only it admits WebAssembly', () => {
+  const without = headers.headerSets({}, ['/index.html', '/graph.nq']);
+  assert.ok(!without.some((set) => set.route.startsWith('/query/')));
+  assert.ok(!headers.headersFile({}, ['/index.html']).includes('wasm-unsafe-eval'));
+  // A page whose engine is not compiled to WebAssembly keeps the site-wide policy: the rule
+  // admits 'wasm-unsafe-eval' only for such an engine.
+  const plain = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js']);
+  assert.ok(!plain.some((set) => set.route.startsWith('/query/')));
+  assert.ok(!headers.headerSets({}, ['/index.html', ENGINE_WASM]).some((set) => set.route.startsWith('/query/')), 'no page, no block');
+  const sets = headers.headerSets({}, ['/index.html', '/query/index.html', '/query/agsc-query.js', ENGINE_WASM]);
+  const query = sets.filter((set) => set.route === '/query/*');
+  assert.strictEqual(query.length, 1);
+  assert.deepStrictEqual(query[0].headers, [['!', 'Content-Security-Policy'], ['Content-Security-Policy', headers.QUERY_SECURITY_POLICY]]);
+  // The one source added, and nothing else changed.
+  assert.strictEqual(headers.QUERY_SECURITY_POLICY.replace(" 'wasm-unsafe-eval'", ''), headers.SECURITY_POLICY);
+  assert.match(headers.QUERY_SECURITY_POLICY, /script-src 'self' 'wasm-unsafe-eval';/u);
+  for (const set of sets.filter((s) => s.route !== '/query/*')) {
+    assert.ok(!JSON.stringify(set.headers).includes('wasm-unsafe-eval'), set.route);
+  }
+  assert.match(headers.headersFile({}, ['/query/index.html', ENGINE_WASM]), /\n\/query\/\*\n {2}! Content-Security-Policy\n {2}Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval';/u);
+});

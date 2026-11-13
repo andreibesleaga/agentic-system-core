@@ -12,15 +12,21 @@ const { describe, it } = require('node:test');
 
 const { TOOLS, capture } = require('./helpers');
 
-/** The nine command contracts of AGSC-09-90, plus the two generators of PRD-054. */
-const NINE = Object.freeze([
+/** The eleven command contracts of AGSC-09-90: seven validators and four generators. */
+const ELEVEN = Object.freeze([
   'validate-spec', 'validate-schemas', 'validate-ontology', 'validate-vectors',
   'validate-wellknown', 'validate-features', 'validate-diagrams',
-  'gen-spec-html', 'gen-ns',
+  'gen-spec-html', 'gen-ns', 'gen-dc-profile', 'gen-shapes',
 ]);
 /** The libraries a tool MAY use: the engine's own pins (AGSC-09-90). */
 const PINNED = Object.freeze(['ajv', 'ajv-formats', 'fast-xml-parser', 'json-canonicalize',
   'markdown-it', 'n3', 'yaml']);
+/**
+ * The one maintainer tool that requires a development dependency: tools/build-ts compiles
+ * the TypeScript parts with the pinned compiler. It checks no artefact of the format and
+ * never ships (tests/arch/package-manifest.test.js holds the shipped list).
+ */
+const MAINTAINER_DEV = Object.freeze({ 'build-ts': ['typescript'] });
 
 function sources() {
   return fs.readdirSync(TOOLS).sort().map((name) => ({
@@ -30,9 +36,9 @@ function sources() {
 }
 
 describe('tools/ are independent of the engine (AGSC-09-90)', () => {
-  it('ships the nine command contracts the rule names', () => {
+  it('ships the eleven command contracts the rule names', () => {
     const present = fs.readdirSync(TOOLS).sort();
-    for (const name of NINE) assert.ok(present.includes(name), `tools/${name} is missing`);
+    for (const name of ELEVEN) assert.ok(present.includes(name), `tools/${name} is missing`);
   });
 
   it('no tool requires anything under src/', () => {
@@ -54,7 +60,8 @@ describe('tools/ are independent of the engine (AGSC-09-90)', () => {
           ? specifier.split('/').slice(0, 2).join('/')
           : specifier.split('/')[0];
         assert.ok(['fs', 'path', 'crypto', 'https', 'http', 'dns', 'net', 'child_process'].includes(pkg)
-          || PINNED.includes(pkg), `tools/${name} requires ${specifier}, which is not an engine pin`);
+          || PINNED.includes(pkg) || (MAINTAINER_DEV[name] || []).includes(pkg),
+        `tools/${name} requires ${specifier}, which is not an engine pin`);
       }
     }
   });
@@ -69,7 +76,7 @@ describe('tools/ are independent of the engine (AGSC-09-90)', () => {
   });
 
   it('every tool answers --help with exit 0 and writes nothing to stderr', () => {
-    for (const name of NINE) {
+    for (const name of ELEVEN) {
       if (name === 'validate-vectors' || name === 'validate-wellknown') continue;   // left out of this loop; validate-wellknown's run() is asynchronous
       const result = capture(name, ['--help']);
       assert.equal(result.code, 0, name);

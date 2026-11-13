@@ -1,0 +1,4 @@
+# One of the two values is the one required.
+@prefix ex: <https://example.org/> .
+
+ex:doc a ex:Doc ; ex:status "approved" , "final" .

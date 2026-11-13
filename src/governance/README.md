@@ -18,6 +18,8 @@
 | `cleanroom.js` | the clean-room lint: refused phrases copied from other works |
 | `fix.js` | `lint --fix`: the mechanical repairs a lint may make |
 | `finding.js` | the one place a Governance finding is built |
+| `portable-names.js` | the portable-name check of file and slug names (reserved device names, case collisions, length) |
+| `text-files.js` | the text-file rules shared by the lints: encoding, line endings, the trailing line feed |
 | `agents.js` | agent declarations, what an agent may propose, and the spend cap |
 | `ledger.js` | the ledger derived from the history, its hash chain and `verify --ledger` |
 | `auto-merge.js` | the history check of a channel set to `auto`: every commit after the root is a merge carrying one of the three trailers |

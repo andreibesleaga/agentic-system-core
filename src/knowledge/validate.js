@@ -3,7 +3,8 @@
 // Implements AGSC-00-15 (unknown keys preserved), AGSC-01-03 (placement),
 // AGSC-01-11 (slug identity), AGSC-01-18 (closed configuration), AGSC-02-05 and
 // AGSC-02-05a (key names, the `x-` vendor namespace), AGSC-02-07/AGSC-08-01 (prov),
-// AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds) and the §9.4 code precedence.
+// AGSC-02-21 (AGSC-E408), AGSC-02-24 (length bounds), the §9.4 code precedence, and the
+// code of the `warrant` faults of AGSC-02-25 (AGSC-E512).
 // `aiProvenance` is AGSC-08-01's conditional `agent`/`model` check, which the lint lane
 // runs (governance/lint.js) and loading an item does not.
 //
@@ -20,12 +21,15 @@
 //   required                             -> AGSC-E202, except `prov` -> AGSC-E501
 //                                          and `prov.operator` -> AGSC-E503
 //   `broader` maxItems on a cluster      -> AGSC-E308   (never AGSC-E201)
+//   `warrant` required, `warrant.type` enum -> AGSC-E512 (AGSC-02-25, AGSC-05-40)
 //   unknown configuration key            -> AGSC-E004
 //   anything else no code names          -> AGSC-E201
 
 const { compile } = require('./schema.js');
 const { nfc, codePointLength, compareCodePoint, isWellFormed } = require('./unicode.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
+const { withArticle } = require('../shared/article.js');
+const { LINK_SHAPED_UNKNOWN } = require('./relations.js');
 
 /** AGSC-01-02: the folder each `type` lives in. */
 const TYPE_PLURAL = Object.freeze({
@@ -298,6 +302,11 @@ const RESERVED_CONFIG_NAMES = Object.freeze(['routing', 'rdfxml', 'feed']);
 /** §9.4 precedence. `ctx` is `item`, `index` or `config`. */
 function codeFor(error, ctx) {
   const { keyword, path, params } = error;
+  // AGSC-02-25, AGSC-05-40: a warrant with no source or type (one that is no object has
+  // neither), or a type outside the three.
+  if (ctx === 'item' && (((keyword === 'required' || keyword === 'type') && path === '/warrant') || (keyword === 'enum' && path === '/warrant/type'))) {
+    return 'AGSC-E512';
+  }
   if (keyword === 'required') {
     const missing = params.missingProperty;
     if (ctx !== 'config' && path === '' && missing === 'prov') return 'AGSC-E501';
@@ -305,6 +314,8 @@ function codeFor(error, ctx) {
     return 'AGSC-E202';
   }
   if (keyword === 'enum' || keyword === 'const') return 'AGSC-E203';
+  // AGSC-01-41: a context namespace outside the form is AGSC-E209, as a repeated one is.
+  if (keyword === 'pattern' && ctx === 'config' && /^\/domain\/contexts\/\d+\/namespace$/u.test(path)) return 'AGSC-E209';
   if (keyword === 'pattern' || keyword === 'minLength' || keyword === 'maxLength') return 'AGSC-E204';
   if (keyword === 'maxItems' && /(^|\/)broader$/u.test(path)) return 'AGSC-E308';
   if (keyword === 'format') return 'AGSC-E204';
@@ -317,8 +328,9 @@ function codeFor(error, ctx) {
  * `routing`, `agents[0].routing`. A JSON Pointer names the CONTAINER of an
  * `additionalProperties` error and not the offending key, so "/: must NOT have
  * additional properties" left the reader to guess which of their keys was wrong —
- * and AGSC-00-25 makes that guess matter, because one of the names a 1.0 tool
- * rejects here is a name reserved to 1.1.
+ * and AGSC-00-25 makes that guess matter, because one of the names a 1.0 or 1.1 tool
+ * rejects here is a name reserved to a later MINOR (AGSC-00-20 as amended for
+ * 1.1.0).
  *
  * @param {{path:string, keyword:string, params:object}} error
  * @returns {string}
@@ -373,7 +385,8 @@ function item(frontmatter, options = {}) {
     findings.push(finding('AGSC-E204', `key name "${key}" does not match ^[a-z][a-z0-9_-]*$ (AGSC-02-05)`,
       { ...base, key, line: lineOf(keyLines, `/${key}`) }));
   }
-  for (const key of keys.unknown) {
+  // AGSC-03-03: a link-shaped key is the warning AGSC-E304 of links.js, never also this one.
+  for (const key of keys.unknown.filter((k) => !LINK_SHAPED_UNKNOWN.has(k))) {
     findings.push(finding('AGSC-E207', `unknown key "${key}" is preserved (AGSC-02-05)`,
       { ...base, key, severity: 'warn', line: lineOf(keyLines, `/${key}`) }));
   }
@@ -384,7 +397,7 @@ function item(frontmatter, options = {}) {
   // (AGSC-02-92, vector adopt-0003).
   if (DESCRIPTION_REQUIRED_TYPES.includes(frontmatter.type)
       && (frontmatter.description == null || frontmatter.description === '')) {
-    findings.push(finding('AGSC-E408', `a ${frontmatter.type} carries no description (AGSC-02-21)`,
+    findings.push(finding('AGSC-E408', `${withArticle(frontmatter.type)} carries no description (AGSC-02-21)`,
       { ...base, severity: 'warn' }));
   }
 
@@ -498,6 +511,9 @@ function config(configObject, options = {}) {
     const segs = String(e.path || '').split('/').filter((seg) => seg !== '');
     if (elsewhere.includes(segs[0]) && RANGE_KEYWORDS.includes(e.keyword)
       && (segs.length >= 2 || segs[0] === 'visibility' || segs[0] === 'federation')) continue;
+    // AGSC-01-41: a repeated context is reported once, member by member, as AGSC-E209 by
+    // `knowledge/domain.js#configFindings`, which `lint` runs beside this check.
+    if (e.keyword === 'uniqueItems' && e.path === '/domain/contexts') continue;
     // AGSC-01-18 / AGSC-00-25: `agsc.config.json` is the one CLOSED surface of this
     // format, so an unknown key is a refusal and not a preserved unknown — and the
     // refusal names the key, because a reserved name (`routing`) and a typo are

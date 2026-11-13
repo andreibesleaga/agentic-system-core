@@ -21,7 +21,7 @@
   },
   "level": "withdrawn",
   "options": {
-    "spec_version": "1.0.0"
+    "spec_version": "1.1.0"
   },
   "reason": "Withdrawn for 1.0.0 (2026-10-12). The case was required, and its member `initialization_handshake` describes MCP revision 2026-07-28, which has no initialization handshake; a transport that speaks revision 2025-11-25 (AGSC-11-16), as the reference transport does, has nothing that member can be compared with, so no runner of that transport could check it and a pass asserted nothing about it. Its `observed` list and the name `discover_and_per_request_identical` describe the same revision. Superseded by bnd-0042, which states the same settings object of AGSC-11-18 in members that hold for revision 2025-11-25: the `initialize` result of every session. A case for revision 2026-07-28 waits for the version that serves it (AGSC-00-20).",
   "rule": "AGSC-11-18",

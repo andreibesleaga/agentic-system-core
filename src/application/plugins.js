@@ -126,7 +126,7 @@ const KINDS = Object.freeze({
     never: 'write a file, or pass over no input at all',
     reads: Object.freeze(['the distribution\'s own files']),
     rules: Object.freeze(['AGSC-09-90', 'AGSC-09-91', 'AGSC-09-92']),
-    selector: 'one of the nine of AGSC-09-90',
+    selector: 'one of the eleven of AGSC-09-90',
   }),
 });
 

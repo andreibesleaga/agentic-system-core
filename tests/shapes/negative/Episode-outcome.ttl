@@ -1,0 +1,5 @@
+# Episode-outcome: an episode with no outcome.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:e a asc:Episode .

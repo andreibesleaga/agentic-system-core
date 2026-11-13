@@ -42,7 +42,7 @@ const ONE_CASE_PER_AREA = Object.freeze({
   chunks: 'chk-0002',
   cli: 'cli-0005',
   compose: 'compose-0014',
-  conform: 'conform-0003',
+  conform: 'conform-0004',
   discovery: 'disc-0009',
   export: 'export-0001',
   frontmatter: 'fm-0004',

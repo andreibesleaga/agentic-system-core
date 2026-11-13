@@ -3,18 +3,21 @@
 **Who this is for:** someone connecting an agent, a framework or a repository to a node. **Read after:** [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
 
 This page answers one question: **"I use tool X — how does it get at a node's
-knowledge?"** There are seven ways in, and every one of them already exists in the
+knowledge?"** There are ten ways in, and every one of them already exists in the
 engine. Pick by what your tool reads.
 
 | route | what the node gives you | the command | suits |
 |---|---|---|---|
 | **1. Steering file** | a Markdown file at the path your coding agent reads on every session | `agsc export --steer --target <name>` | always-on context for a coding agent |
 | **2. Skill packs** | one Agent Skills folder per cluster, checked against a lockfile | `agsc skills`, then `agsc skills install <dir>` | step-by-step procedures |
-| **3. Live tools** | an MCP server with seven tools and every item as a resource | `agsc mcp` | an assistant that searches and reads while it works |
+| **3. Live tools** | an MCP server with ten tools and every item as a resource | `agsc mcp` | an assistant that searches and reads while it works |
 | **4. Memory archive** | a COGX archive another memory system imports | `agsc export --to cogx` (and `agsc import --from cogx`) | a framework that keeps its own memory store |
 | **5. Agent kit (GABBE)** | a GABBE kit's own folders — skills, guides, memory files | `agsc export --to gabbe` (and `agsc import --from gabbe <kit>`) | a project run with the GABBE kit |
 | **6. Skills repositories** | skills and rule packs traded with the collections people already share (Agent Skills, Claude Code plugins and marketplaces, Cursor and Windsurf rules), from a local clone | `agsc import --from skills <dir>` and `agsc export --to skills` | a team that already keeps a skills collection |
 | **7. Project tools** | a live board's tasks as the import and export files of a tracker (Jira, Trello and others) | `agsc import --from board --format <tool> <dir>` and `agsc export --to board --format <tool>` | a team that plans in a tracker |
+| **8. Link diagrams** | one Mermaid flowchart per item and per cluster | `agsc export --to mermaid` | a page, wiki or vault that renders Mermaid |
+| **9. A SKOS thesaurus** | a thesaurus kept in a taxonomy tool becomes draft items (import only) | `agsc import thesaurus.ttl --from skos` | a vocabulary you already maintain as SKOS |
+| **10. Memory tools, directly** | the files of Mem0, Letta, Zep, a CSV table, Basic Memory or Claude Code's memory folder (from 1.1) | `agsc export --to <tool>` and `agsc import --from <tool> <dir>` | a team that already keeps its memory in one of these tools |
 
 Nothing here needs a network connection or a key on the node's side. The
 [examples](../examples/connectors/README.md) show each route working; the ones for
@@ -96,14 +99,19 @@ links, no `allowed-tools`.
 
 ## Route 3 — live tools (MCP)
 
-`agsc mcp`, run in the node's folder, starts a local MCP server over stdio with
-seven tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember` —
+`agsc mcp`, run in the node's folder, starts a local MCP server over stdio (or, with
+`--http <port>`, over Streamable HTTP on the loopback address, from 1.1) with
+ten tools — `search`, `read`, `links`, `compose`, `propose`, `ask`, `remember`, `brief`,
+`explain`, `check` —
 and every item as a resource. It never writes: `propose` and `remember` hand back
 text for a person to save. The set-up for Claude Desktop, Claude Code, Cursor,
 VS Code and Codex CLI is in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
-Two facts to keep in mind: the official MCP SDK this engine uses speaks protocol
-revision `2025-11-25`, and MCP's tool annotations carry no "untrusted content"
-flag, so the untrusted mark travels in each result's own `trust` member.
+Two facts to keep in mind: the server speaks protocol revision `2026-07-28` and,
+over standard input and output, to a client that opens with `initialize`, revision
+`2025-11-25` as well (the HTTP form speaks `2026-07-28` only) (it is built
+on the official MCP SDK, `@modelcontextprotocol/server`), and MCP's tool annotations
+carry no "untrusted content" flag, so the untrusted mark travels in each result's own
+`trust` member.
 
 ## Route 4 — the memory archive (COGX)
 
@@ -112,7 +120,11 @@ shape it translates Mem0, LangMem, Letta/MemGPT and Zep/Graphiti memories into w
 they are migrated into Cognee. One archive from a node is read by Cognee; the other
 systems reach Cognee through the same format, not the archive (Cognee's own
 documentation, docs.cognee.ai/examples/migrate-memory-systems, read 2026-09-24:
-migration works into Cognee only).
+migration works into Cognee only). From 1.1 the engine also writes and reads the files of
+Mem0, Letta, Zep, a CSV table, Basic Memory and Claude Code's memory folder directly, as a
+capability of the reference distribution (AGSC-00-20 as amended on 2026-11-09, AGSC-01-26a):
+that is [Route 10](#route-10--memory-tools-directly-mem0-letta-zep-csv-basic-memory-claude-code).
+This route stays the one through Cognee.
 
 ```sh
 agsc export --to cogx       # writes dist/export/cogx/
@@ -151,8 +163,9 @@ unless you add `--replace`, and a second import of the same archive changes noth
   lessons (severity `info`), memory blocks become procedures, and facts become
   typed Links when both ends were imported and the predicate is one of the fourteen
   Link kinds. Every item is marked `prov.origin: imported` with your node's
-  operator. Whatever the mapping does not use is kept in `x-cogx-rest`, so nothing
-  is silently dropped. **Not imported, and reported:** episodes (a COGX episode has
+  operator and arrives as a **draft**, with the warning `AGSC-E506`, so nothing of it
+  is published until you change its status (AGSC-01-22). Whatever the mapping does not
+  use is kept in `x-cogx-rest`, so nothing is silently dropped. **Not imported, and reported:** episodes (a COGX episode has
   no outcome, which an episode here must have), documents (they are the raw text the
   other records were derived from) and raw nodes (there is no item type for them).
 - **Refused:** an archive containing `permissions.json` (remove it — it holds
@@ -215,8 +228,10 @@ nothing.
   each dated `PROJECT_STATE.md` line and each decision-log entry whose action type is
   a decision becomes a concept of kind `decision`; each `AUDIT_LOG.md` row and
   decision-log entry that states an outcome (`PASS`, `FAIL`, `OK`, `PARTIAL`) becomes
-  an episode. Every item is marked `prov.origin: imported` with your node's operator
-  and names the kit file and line it came from (`x-gabbe-source`). A kit publishes no
+  an episode. Every item is marked `prov.origin: imported` with your node's operator,
+  arrives as a **draft** with the warning `AGSC-E506` (nothing of it is published until
+  you change its status, AGSC-01-22) and names the kit file and line it came from
+  (`x-gabbe-source`). A kit publishes no
   content version of its own, so `prov.source_version` is written only when you pass
   `--source-version` (the kit's commit, for instance).
 - **Not imported, and reported:** an `AUDIT_LOG.md` bullet entry (`- <date> | <actor>
@@ -261,7 +276,9 @@ the folder.
 `--list` prints what each layout found would import — name, file, licence, version,
 how many files are dropped, and whether it would arrive as a draft — and writes
 nothing. With no `--layout` the import takes the first layout found, in the order
-marketplace, plugin, Agent Skills, Cursor, Windsurf, and names the others.
+marketplace, plugin, Agent Skills, Cursor, Windsurf, that would import something, and
+names the others; a marketplace file whose plugins all name a source outside the clone is
+skipped in favour of the next layout (from 1.1).
 
 **From a clone into a node.** A skill becomes a procedure: its `description` becomes
 `when`, its body is kept as written, and it is marked `prov.origin: imported` with
@@ -284,15 +301,23 @@ frontmatter is kept whole in `x-skills-rest`.
   resolve until the body is edited. A plugin's `commands/` and `agents/` are reported
   and not mapped. A plugin whose `source` is another repository is named and never
   fetched.
-- **The licence check.** The licence is read from the skill's `license` key (an SPDX
-  name such as `Apache-2.0`, or a sentence naming a bundled file such as
-  `LICENSE.txt`, which is then read), else from a licence file beside the skill, else
-  from the plugin, else from the collection's root licence. A skill whose licence is
-  not a recognised open licence — or that has none — is imported with
-  `status: draft` and a warning, so it is **never published** until a person has read
-  the terms and changed the status. Anthropic's four document skills arrive this way.
-  A recognised licence is carried and reported once: check it agrees with your
-  node's `bundle.license_prose` before you publish.
+- **The licence check, and the draft rule.** The licence is read from the skill's
+  `license` key (an SPDX name such as `Apache-2.0`, or a sentence naming a bundled file
+  such as `LICENSE.txt`, which is then read), else from a licence file beside the skill,
+  else from the plugin, else from the collection's root licence. **Every skill comes in
+  as `status: draft`**, whatever its licence, so it is **never published** until a person
+  has read the terms and changed the status (from 1.1; before that only a skill whose
+  licence was not a recognised open one was a draft). The warning says which case it is:
+  Anthropic's four document skills, whose licence is not open, and a skill with no
+  licence say so; a skill with an open licence says the licence is open and the draft is
+  the rule. A recognised licence is carried in `x-skills-license` and reported once:
+  check it agrees with your node's `bundle.license_prose` before you publish.
+- **Once a skill is published, its pack carries its licence.** A pack that lists a
+  member with an `x-skills-license` ends with a "Notices" section: a fenced list with
+  the member's title, its address, the licence the source stated, the source file and,
+  when known, the version. A pack with no such member has no section and is byte for
+  byte what it was before 1.1. The foreign layouts of `export --to skills` carry the
+  section too.
 - As with every import: nothing is written if an item already here would be
   overwritten (add `--replace` if you mean it), `--dry-run` shows the plan, a second
   import of the same clone changes nothing, and a record of another major version of
@@ -347,7 +372,7 @@ where a link is given):
 | Asana | project › **Export/Print › CSV** | `*.csv` | a CSV with Asana's export columns (`Section/Column` = state), for Asana's CSV importer |
 | Notion | database page › **••• › Export › Markdown & CSV** ([export](https://www.notion.com/help/export-your-content): "Full page databases will be exports as a CSV file") | `*.csv` (the 32-character id Notion appends to the file name is dropped) | a CSV (`Name`, `Status`, `Type`, `Assignee`, `Tags`, `Due`, …) for **Merge with CSV** or a new import |
 | Obsidian Kanban | the board **is** the Markdown file in the vault | `*.md` with `kanban-plugin` frontmatter | a board file: one lane per state, `@{date}` due dates, a `**Complete**` lane |
-| Markdown task lists | any `.md` with `- [ ]` / `- [x]` lines | `*.md` (`# Title` = board, `## Heading` = state) | one `.md` per board, one `##` section per state |
+| Markdown task lists | any `.md` with `- [ ]` / `- [x]` lines; from 1.1 also `- [/]` (in progress) and `- [-]` (cancelled) | `*.md` (`# Title` = board, `## Heading` = state) | one `.md` per board, one `##` section per state |
 | Todo.txt | the `todo.txt` file ([format](https://github.com/todotxt/todo.txt)) | `*.txt` (`+project` = board, `@context` = label, `due:`, `state:`) | one `.txt` per board, with `state:` for the states Todo.txt cannot say |
 | another node (a peer) | download its `/boards/<cluster>.json` | `*.json` (a board index is named and skipped) | the same board-export shape; its tasks come in as read-only drafts whose `x-board-id` is the peer's task IRI, so a task here can be `blocked-by` the copy |
 
@@ -403,7 +428,7 @@ itself, and the import never publishes: every foreign row is a draft.
 
 ### Working a live board with agents
 
-Agents and assistants work a board through the same seven tools, locally (`agsc mcp`)
+Agents and assistants work a board through the same ten tools, locally (`agsc mcp`)
 or in the page — no new transport and no hosted server. Every write is a **prepared
 Proposal**: the tool returns it, and a person (or a standing decision) merges it.
 
@@ -465,6 +490,123 @@ flowchart LR
   n_supervisor -->|uses| n_handoff
 ```
 
+## Route 9 — a SKOS thesaurus in (Turtle), import only
+
+```sh
+agsc import thesaurus.ttl --from skos --dry-run   # see the plan, and every statement it would drop
+agsc import thesaurus.ttl --from skos             # write the draft items
+```
+
+A vocabulary kept in a taxonomy tool is usually exported as SKOS, in Turtle
+([SKOS Reference](https://www.w3.org/TR/skos-reference/), W3C Recommendation of
+18 August 2009). The file is read with `n3`, the RDF library the engine already
+carries, and mapped as AGSC-01-39 says:
+
+| in the file | in the node |
+|---|---|
+| a `skos:Concept` | a `concept` of kind `term`; its slug is the slug of its title (`-2`, `-3` when two titles collide) |
+| the `skos:prefLabel` in your `i18n.default` language, else the untagged one, else the one with the least language tag | the `title` (a concept with no label is titled by the last part of its IRI) |
+| each `skos:altLabel` (and a SKOS-XL `literalForm`) | an entry of `aliases` |
+| the `skos:definition` that sorts first | the `description` when it has 40 to 200 characters; otherwise the first paragraph of the body, with a warning |
+| `skos:broader`, `skos:narrower`, `skos:related` between two concepts of the file | the links of the same names |
+| a `skos:ConceptScheme`, `skos:Collection` or `skos:OrderedCollection` | a `cluster`; its concepts list it in `clusters`, and a collection inside a collection is its `broader` |
+| a `dcterms:source` that is an http or https address | an entry of `sources` |
+| the concept's own IRI; the `dcterms:license` of its scheme | `x-skos-iri`; `x-skos-license` |
+
+**Every item arrives as a draft**, so nothing is published until you change its status.
+**Nothing is dropped silently:** notations, notes, the mapping properties (`exactMatch` and
+the others), a second label or definition, a link to something that is not in the file,
+and any statement about a class or an individual are each one `AGSC-E506` warning that
+names the subject and the predicate. A second import of the same file changes nothing
+(`--replace` lets a changed file replace items already here). A scheme or collection
+that states no `skos:definition` has no description, which `lint` warns about
+(`AGSC-E408`).
+
+The other direction is `agsc export --skos`, which writes the SKOS view of the node's own
+graph. A file written that way is read like any other thesaurus: it has no root document
+of this node, so it counts as foreign and every item is a draft.
+
+## Route 10 — memory tools, directly: Mem0, Letta, Zep, CSV, Basic Memory, Claude Code
+
+From 1.1 the engine writes and reads the files of six memory tools itself. Like every memory
+adapter, none of them reaches the network (AGSC-00-24): `agsc export` writes a file, and you
+send it to the service with the service's own official client; to import, you save what that
+client returns as a file and point `agsc import` at its folder. No client is installed with
+the engine.
+
+```sh
+agsc export --to mem0                 # writes dist/export/mem0/
+agsc import --from mem0 ./mem0-back   # reads the *.json files of ./mem0-back
+```
+
+| `--to` / `--from` | what the export writes | how it reaches the tool | what the import reads |
+|---|---|---|---|
+| `mem0` | `memories.json`: for each item, the two arguments of the client's `add()` — `messages` and `options` (`infer: false`, so the text is stored as written; the item whole in `metadata.agsc`) | Mem0's official client `mem0ai` (shapes read at 3.3.1): `client.add(m.messages, { ...m.options, userId })` for each record | a `getAll()` page or a list of memories, in the client's camelCase or the REST API's snake_case |
+| `letta` | `passages.json`: one archival passage per item (`text`, `tags`, the item whole in `metadata.agsc`) | Letta's official client `@letta-ai/letta-client` (1.12.1): `client.archives.passages.createMany(archiveId, { passages })` | a list of passages (a bare array, or under `passages`, `items` or `data`) |
+| `zep` | `episodes.json`: one graph episode per item (`data`, `type: "text"`, `sourceDescription` = the item's address, `referenceTime` from its date, the item whole in `metadata.agsc` as one base64 string, because the client allows only scalar metadata values and at most 10 keys) | Zep's official client `@getzep/zep-cloud` (4.1.0): `client.graph.episode.add(graphUuid, episode)` for each episode | a list or page of episodes, or of nodes |
+| `csv` | `items.csv` (RFC 4180, CRLF, one row per item: `slug`, `type`, `title`, `description`, `tags`, `date`, `modified`, `iri`, `body`, and the item whole in `agsc`) and `PROVENANCE.md`; a cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is written behind one `'`, so a spreadsheet shows it as text and never runs it as a formula | any spreadsheet or table loader | every `*.csv`; its header row names the columns |
+| `basic-memory` | one note per item at `<type>/<slug>.md`: frontmatter `title`, `type`, `tags`, `permalink`, `created`, `modified`; the body; the item's Links as `- <key> [[<slug>]]` relations | copy the folder into a Basic Memory project | every `*.md` note |
+| `claude-code` | an auto-memory folder: `memory/MEMORY.md` (one index line per item) and one topic file per item (`name`, `description`, `type: reference`) | copy the files into `~/.claude/projects/<project>/memory/`; Claude Code loads no more than 200 lines or 25 KB of `MEMORY.md`, and a longer index is reported as the warning `AGSC-E506` | `CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/**/*.md`, and the topic files of every folder that holds a `MEMORY.md` |
+
+Published items only leave (drafts, retired and release-gated items never do), and every
+export carries the provenance header with the licence and the Content Use Terms: inside the
+JSON files as `agsc_provenance`, in each Markdown file, and beside the CSV table in
+`PROVENANCE.md`. `export --steer --target claude` already writes a `CLAUDE.md`, so
+`--to claude-code` writes the memory folder only.
+
+Sending the Mem0 file, as a sketch to run with your own key (the engine never runs it):
+
+```js
+// npm install mem0ai@3.3.1, then: node --input-type=module < send.mjs
+import fs from 'node:fs';
+import MemoryClient from 'mem0ai';
+const client = new MemoryClient({ apiKey: process.env.MEM0_API_KEY });
+const { memories } = JSON.parse(fs.readFileSync('dist/export/mem0/memories.json', 'utf8'));
+for (const m of memories) await client.add(m.messages, { ...m.options, userId: 'team' });
+fs.mkdirSync('mem0-back', { recursive: true });
+fs.writeFileSync('mem0-back/memories.json', JSON.stringify(await client.getAll(/* the filters you need */)));
+```
+
+**What an import brings back.** A record that carries an item of this node (in
+`metadata.agsc`, the `agsc` column or an `<!-- agsc-item … -->` line), from this node's
+`site.base` or a declared peer, comes back exactly as it was written, with
+`prov.source_version`. Everything else is foreign and arrives as a **draft**, with
+`prov.origin: imported` and your `bundle.operator`, and is never published until a person
+changes its status:
+
+| tool | a foreign record becomes | kept in `x-<tool>-*` keys |
+|---|---|---|
+| Mem0 | a lesson: the memory text under `## Lesson`, severity `info`, the creation date | `x-mem0-id`, `x-mem0-categories`, and every other member in `x-mem0-rest` |
+| Letta | a lesson, the same way | `x-letta-id`, `x-letta-tags`, `x-letta-rest` (the embedding included) |
+| Zep | an episode: a lesson; a node: a concept of kind `term`, its summary the body | `x-zep-uuid`, `x-zep-labels`, `x-zep-rest` |
+| CSV | a concept of kind `explainer`: `title` (or `name`), `body` (or `content`, `text`, `memory`), `description` when it is one line of 40–200 characters, `date` | `x-csv-tags`, `x-csv-description`, every other column in `x-csv-rest` |
+| Basic Memory | a concept of kind `explainer`, the note body as written; a relation named by one of the fourteen Link keys (or a synonym of AGSC-03-19, such as `refines`) to another note of the same import becomes that Link | `x-basic-memory-type`, `-tags`, `-permalink`, `-modified`, `-rest` |
+| Claude Code | `CLAUDE.md` and rule files: a concept of kind `principle`; a `feedback` memory: a lesson; any other memory: a concept of kind `explainer` | `x-claude-path`, `x-claude-name`, `x-claude-description`, `x-claude-type`, `x-claude-rest` |
+
+A record with no text, a note whose frontmatter is not the YAML subset of AGSC-02-02, and a
+CSV file the library cannot read are reported and skipped; nothing is invented. Each of the six
+takes `--dry-run`, `--replace`, `--allow-newer` and `--source-version <v>` (the content version
+of a source that publishes none). The keys each adapter claims are listed in
+[`src/interchange/README.md`](../src/interchange/README.md).
+
+## Checking an export that travels — `--manifest`
+
+```sh
+agsc export --okf --manifest      # dist/export/okf/export-manifest.json, beside the files
+agsc import dist/export/okf --from okf   # recomputes what the manifest states
+```
+
+`--manifest` adds one file to the root of each export a run writes: the SHA-256 of every
+other file of the export (written as the value of an HTTP `Content-Digest` field,
+[RFC 9530](https://www.rfc-editor.org/rfc/rfc9530.html), `sha-256=:<base64>:`), the number of published
+items, a digest of the list of their addresses, the content version, the bundle hash (the
+SHA-256 of the build's `graph.nq`) and the specification version. When you import a folder
+that holds the manifest, the import recomputes the file digests, the item count and the
+items digest and reports each difference as an `AGSC-E506` warning naming the file; it
+then imports as it would without a manifest. It finds a copy that was damaged or edited
+on the way. It is not a signature: the manifest travels with the files it describes, so
+whoever can change one can change the other.
+
 ## Which route for which framework
 
 | framework | route | what to do |
@@ -474,6 +616,10 @@ flowchart LR
 | Cursor | 1 + 3 | `examples/connectors/cursor/connect.js` |
 | GitHub Copilot, Gemini CLI, Kiro, Windsurf, Cline, Aider | 1 | the matching `--target`; mind the Windsurf and Aider notes |
 | Cognee (and, through Cognee, what it imported from Mem0, Letta, LangMem, Zep/Graphiti) | 4 | `agsc export --to cogx`, then `cognee` reads the archive |
+| Mem0, Letta, Zep | 10 | `agsc export --to mem0` (or `letta`, `zep`), then send the file with the tool's official client; `agsc import --from mem0 <dir>` the other way |
+| Basic Memory | 10 | `agsc export --to basic-memory`, copy the notes into a project; `agsc import --from basic-memory <dir>` the other way |
+| Claude Code's memory folder | 10 (+ 1) | `agsc export --to claude-code`, copy `memory/` into the project's memory folder; `agsc import --from claude-code <dir>` reads `CLAUDE.md`, rules and memories |
+| a spreadsheet or table store | 10 | `agsc export --to csv`; `agsc import --from csv <dir>` |
 | LangGraph / LangChain | 4, or the chunk corpus | `examples/connectors/frameworks/records.js … langgraph`, then `store.put` |
 | AutoGen | the chunk corpus | `records.js … autogen` gives `MemoryContent`-shaped records |
 | CrewAI | 2 + the chunk corpus | skills for procedures; keep the item IRI in the text, because CrewAI rewrites memories it consolidates |
@@ -488,7 +634,7 @@ test: they need the framework installed. The record shapes they read are produce
 
 ## Checking a node in CI and before a commit
 
-- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.0.1` (the package tag, or its full commit SHA)
+- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.1.0` (the package tag, or its full commit SHA)
   runs `agsc ci` with the engine at that ref. Give the job `contents: read` and check
   out with `fetch-depth: 0`. See the root `action.yml`.
 - **pre-commit:** the hook `agsc-lint` from `.pre-commit-hooks.yaml` runs `agsc lint`

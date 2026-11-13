@@ -12,7 +12,7 @@
 // 3. The governance chapter: the commits a node with an auto channel signs are the
 //    commits the auto-merge clause checks.
 // 4. The bundle chapter: a root base that differs from the configured site base is not
-//    reported at 1.0; reporting it is listed for 1.1.
+//    reported at 1.0; from 1.1 it is the warning AGSC-E204.
 // 5. The conformance chapter: a configuration value that breaks its key's schema is a
 //    finding with exit 1; the exit-2 class of invalid configuration is a name the tool
 //    does not know, a version it does not implement, a run or trace invocation while
@@ -79,18 +79,20 @@ test('the governance chapter: on a node with an auto channel, the commits that c
   assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: /u);
 });
 
-test('the bundle chapter: a root base that differs from the site base is not reported at 1.0, and reporting it is planned for 1.1', () => {
+test('the bundle chapter: a root base that differs from the site base is not reported at 1.0, and from 1.1 it is the warning AGSC-E204', () => {
   const block = rule(read('spec/01-bundle.md'), 'AGSC-01-04');
   const text = plain(withoutNotes(block));
   assert.match(text, /it MUST equal site\.base/u, 'the requirement itself stays');
   assert.doesNotMatch(text, /a mismatch is AGSC-E204/u);
   assert.match(text, /a 1\.0 writer forms every IRI from site\.base/u);
   assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: a 1\.0 writer forms every IRI from site\.base; reporting a root base that differs from site\.base as AGSC-E204 is planned for 1\.1 \(AGSC-00-20\)\.\)/u);
-  assert.match(SCOPE, /a root base that differs from site\.base reported as AGSC-E204 \(AGSC-01-04\)/u);
+  assert.match(plain(block), /\(Amended 2026-10-29 for 1\.1\.0: from 1\.1 lint, build and ci report a root base that differs from site\.base \(compared after a trailing slash is stripped from both\) as the warning AGSC-E204, naming the file; the warning changes no exit code and no emitted byte/u);
+  assert.match(SCOPE, /when a root base differs from site\.base \(AGSC-01-04\)/u);
   const registry = read('spec/09-conformance.md').split('\n').find((l) => l.startsWith('| `AGSC-E204` |'));
   assert.ok(registry, 'the registry has no AGSC-E204 row');
   const rules = registry.split('|')[3];
-  assert.doesNotMatch(rules, /AGSC-01-04/u, 'the AGSC-E204 row still names a rule that does not raise it at 1.0');
+  assert.match(rules, /AGSC-01-04/u, 'the AGSC-E204 row does not name the rule that raises it from 1.1');
+  assert.match(plain(registry), /from 1\.1, a root document whose base differs from site\.base \(AGSC-01-04\)/u);
 });
 
 test('the conformance chapter, exit codes: a configuration value that breaks its key\'s schema is a finding with exit 1', () => {
@@ -124,7 +126,8 @@ test('the governance chapter, agent lanes: a lane of kind process names its kind
   assert.match(b, /prov\{origin: ai-generated, agent: <name>, model: <entry\.model>, operator: <entry\.operator>\}/u);
   assert.match(b, /for a lane of kind: process, which declares no model \(AGSC-01-36\) and calls none, the model value is its kind, process, so that the item still names a model as AGSC-08-01 requires/u);
   assert.doesNotMatch(b, /\b(MUST|SHALL|SHOULD|REQUIRED|RECOMMENDED|OPTIONAL)\b[^;]*kind, process/u, 'the clarification adds no requirement keyword');
-  assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: \(b\) did not say which model a lane of kind process names; it names its kind, as the reference engine writes it\. No behaviour changes\.\)\* \[/u, 'the note stands at the end of the rule, before its trace bracket');
+  // A later dated note (2026-11-10, on (c)) may follow it; the 1.0.0 note stays among the notes at the end.
+  assert.match(plain(block), /\(Amended 2026-10-12 for 1\.0\.0: \(b\) did not say which model a lane of kind process names; it names its kind, as the reference engine writes it\. No behaviour changes\.\)\*(?: \*\(Amended [^\n]*?\)\*)* \[/u, 'the note stands at the end of the rule, before its trace bracket');
 });
 
 test('the overview chapter, declared scope: the other items decided for 1.1 are listed', () => {
@@ -137,10 +140,12 @@ test('the overview chapter, declared scope: the other items decided for 1.1 are 
   assert.match(SCOPE, /\(Amended 2026-10-12 for 1\.0\.0: /u);
 });
 
-test('the overview chapter, "This version": it names the normative references section and both exceptions of the vector rule', () => {
+test('the overview chapter, "This version": it describes the version the chapter declares, and both exceptions of the vector rule', () => {
   const note = plain(CH00.split('\n').find((l) => l.startsWith('> **This version.**')));
-  assert.match(note, /It adds one section, §0\.7, which lists the documents the rules already cite normatively, and adds, renumbers and removes no rule/u);
-  assert.doesNotMatch(note, /adds no section/u);
+  const declared = /^`spec_version: "([^"]+)"`/mu.exec(CH00)[1];
+  assert.ok(note.startsWith(`> **This version.** ${declared} is a MINOR release`), `the note names ${declared}, the version this chapter declares`);
+  assert.match(note, /it adds keys, rules and test cases and renumbers or removes no rule \(AGSC-00-14\)/u);
+  assert.match(note, /AGSC-00-20 lists what it makes normative/u);
   assert.match(note, /a released vector is withdrawn and replaced rather than edited, except the specification-version string it carries and its rule member, re-pointed when the rule it named is retired into another \(AGSC-00-16\)/u);
 });
 

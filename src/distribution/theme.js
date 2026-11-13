@@ -49,6 +49,12 @@ body {
 }
 a { color: var(--link); text-underline-offset: 0.15em; }
 a:focus-visible, [tabindex]:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* The element a #fragment link lands on (a heading, a rule, a reference) is marked, so the reader sees where the jump
+   went. A chunk anchor is an empty span opening its h2 or h3, so that heading is marked instead; main, the skip link's
+   target, is not. The two outline rules stay apart: a browser without :has() drops the whole rule that names it. */
+:target { scroll-margin-top: 1rem; }
+:target:not(main, span) { outline: 2px dashed var(--accent); outline-offset: 4px; }
+:is(h2, h3):has(> span:target) { outline: 2px dashed var(--accent); outline-offset: 4px; }
 .skip { position: absolute; left: 1rem; top: -3rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--rule); z-index: 1; }
 .skip:focus { top: 1rem; }
 header.site { border-bottom: 1px solid var(--rule); }

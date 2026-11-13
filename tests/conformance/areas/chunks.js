@@ -1,9 +1,13 @@
 'use strict';
-// Conformance area `chunks` — AGSC-06-26…31.
+// Conformance area `chunks` — AGSC-06-26…31, AGSC-06-37, AGSC-06-44, AGSC-06-45.
 // chk-0001 record shape and ids, chk-0002 the size bound, chk-0003 exclusions and
 // attachment chunks, chk-0004 the fence rule, chk-0005 the file bytes, chk-0006 the
 // numeric ordinal order, chk-0008 the shards and the manifest, whose first member
-// is `bundle_version` (AGSC-06-31).
+// is `bundle_version` (AGSC-06-31); from 1.1 chk-0009 the `abstract` member
+// (AGSC-06-29), chk-0010 the tabular index `/chunks-index.toon` (AGSC-06-37), chk-0014
+// the digest, count and set commitment of the chunks surface link, chk-0015 the licence
+// URL and the `content_digest` member (AGSC-06-44) and chk-0016 the text that never
+// begins with a line feed (AGSC-06-45). The cases with `input.cases` are in CASE_HANDLERS.
 
 //
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of
@@ -14,6 +18,8 @@
 // ordinals gives, which the records must not follow.
 
 const chunks = require('../../../src/knowledge/chunks.js');
+const chunksIndex = require('../../../src/knowledge/chunks-index.js');
+const { sha256Field } = require('../../../src/knowledge/digest-field.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, subsetOf } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
@@ -38,16 +44,82 @@ function itemsOf(input) {
   return out;
 }
 
-function recordsOf(vector) {
-  const input = vector.input;
+/**
+ * The records of one input — the vector's own, or one of its cases. The licence URL is
+ * the node's (AGSC-06-44), from `bundle` and whether the node emits `/legal/`.
+ */
+function recordsOfInput(input) {
+  const config = { bundle: input.bundle, site: input.site };
   return chunks.records(itemsOf(input), {
     base: input.site.base,
     maxBytes: (input.chunks || {}).max_bytes,
     attachmentBytes: input.attachment_bytes,
+    license: (input.bundle || {}).license_prose,
+    licenseUrl: chunks.licenseUrl(config, { legal: input.legal_emitted === true }),
+    contentDigest: (input.chunks || {}).content_digest === true,
   }).records;
 }
 
+const recordsOf = (vector) => recordsOfInput(vector.input);
+
+/** The expected entry of each case, by name. */
+const byName = (list) => new Map((list || []).map((c) => [c.name, c]));
+
+/** chk-0010 (AGSC-06-37): the bytes of `/chunks-index.toon`, its header and the cut identifiers of each row. */
+function indexCase(vector) {
+  const wanted = byName(vector.expected.cases);
+  const list = [];
+  for (const input of vector.input.cases) {
+    const want = wanted.get(input.name) || {};
+    const records = recordsOfInput(input);
+    const bytes = chunksIndex.chunksIndexToon(records);
+    list.push([`${input.name} bytes`, bytes === want.output, JSON.stringify(bytes)]);
+    list.push([`${input.name} header`, bytes.split('\n')[0] === want.header, bytes.split('\n')[0]]);
+    if (want.row_prefixes !== undefined) {
+      const cut = records.map((r) => [r.id.slice(0, 16), r.digest.slice(0, 16)]);
+      list.push([`${input.name} row prefixes`, deepEqual(cut, want.row_prefixes), JSON.stringify(cut)]);
+    }
+  }
+  return checks(list);
+}
+
+/** chk-0014 (AGSC-06-44): the digest, the count and the set commitment of the chunks surface link. */
+function commitmentCase(vector) {
+  const wanted = byName(vector.expected.cases);
+  const list = [];
+  for (const input of vector.input.cases) {
+    const want = wanted.get(input.name) || {};
+    const records = recordsOfInput(input);
+    const facts = chunks.commitment(records);
+    const digest = sha256Field(chunks.serialize(records, canonicalize));
+    list.push([`${input.name} digest`, digest === want.digest, digest]);
+    list.push([`${input.name} agsc-chunk-count`, facts.count === want.agsc_chunk_count, facts.count]);
+    list.push([`${input.name} agsc-chunk-set`, facts.set === want.agsc_chunk_set, facts.set]);
+    if (want.chunk_set_input_bytes !== undefined) {
+      // The commitment's input, recomputed here from the rule's words: each id as 64 hex
+      // characters and one LF, in file order.
+      const input64 = records.map((r) => `${r.id}\n`).join('');
+      list.push([`${input.name} commitment input bytes`, Buffer.byteLength(input64) === want.chunk_set_input_bytes
+        && sha256Field(input64) === facts.set, String(Buffer.byteLength(input64))]);
+    }
+  }
+  return checks(list);
+}
+
+/** chk-0015 (AGSC-06-44 with AGSC-06-29): the licence URL and the optional `content_digest` of each line. */
+function licenceCase(vector) {
+  const wanted = byName(vector.expected.cases);
+  return checks(vector.input.cases.map((input) => {
+    const records = recordsOfInput(input);
+    const want = (wanted.get(input.name) || {}).lines;
+    return [input.name, want !== undefined && deepEqual(want, records), JSON.stringify(records)];
+  }));
+}
+
+const CASE_HANDLERS = { 'chk-0010': indexCase, 'chk-0014': commitmentCase, 'chk-0015': licenceCase };
+
 module.exports.run = guarded((vector) => {
+  if (CASE_HANDLERS[vector.id] !== undefined) return CASE_HANDLERS[vector.id](vector);
   const expected = vector.expected;
   const list = recordsOf(vector);
   const result = [];
@@ -68,6 +140,12 @@ module.exports.run = guarded((vector) => {
     const emitted = ordinals.slice(0, expected.lexical_order_is_wrong.split(',').length).join(',');
     result.push(['a string sort of the ordinals gives the stated wrong order', lexical === expected.lexical_order_is_wrong, lexical]);
     result.push(['the records do not follow it', emitted !== expected.lexical_order_is_wrong, emitted]);
+  }
+  if (expected.text_never_begins_with_a_line_feed !== undefined) {
+    // AGSC-06-45: no text begins with a line feed, chunk 0 included.
+    const none = list.every((r) => !r.text.startsWith('\n'));
+    result.push(['no text begins with a line feed', none === expected.text_never_begins_with_a_line_feed,
+      JSON.stringify(list.map((r) => r.text.slice(0, 8)))]);
   }
   if (expected.citation_anchor_for_line_1 !== undefined) {
     const anchor = chunks.citationAnchor(list[1].id);

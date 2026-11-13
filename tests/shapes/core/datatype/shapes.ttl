@@ -1,0 +1,13 @@
+# sh:datatype on a blank property shape, with the target sh:targetNode.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+exs:BoxShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:datatype xsd:integer ;
+        sh:path ex:size
+    ] ;
+    sh:targetNode ex:box .

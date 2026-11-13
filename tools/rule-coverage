@@ -351,6 +351,7 @@ function measure(root) {
   const acceptance = new Map();
   let scenariosTotal = 0;
   let scenariosPending = 0;
+  let scenariosConditional = 0;
   for (const f of walk(root, 'features', (rel) => rel.endsWith('.feature'))) {
     for (const s of featureScenarios(read(f))) {
       const key = `${path.basename(f)}#${s.name}`;
@@ -358,6 +359,7 @@ function measure(root) {
       scenarioKeys.add(key);
       scenariosTotal += 1;
       if (pending.has(key) && !pending.get(key).runs) { scenariosPending += 1; continue; }
+      if (pending.has(key)) scenariosConditional += 1;
       for (const id of s.ids) {
         if (!activeSet.has(id)) continue;
         if (!acceptance.has(id)) acceptance.set(id, []);
@@ -445,6 +447,7 @@ function measure(root) {
   const totals = {
     acceptance_scenarios: scenariosTotal,
     acceptance_scenarios_pending: scenariosPending,
+    acceptance_scenarios_conditional: scenariosConditional,
     active: rules.length,
     by_acceptance: rules.filter((r) => r.acceptance.length).length,
     by_checker: rules.filter((r) => r.checkers.length).length,
@@ -532,7 +535,7 @@ function render(result) {
   out.push(`| Executed acceptance scenario | ${totals.by_acceptance} |`);
   out.push(`| Checker header | ${totals.by_checker} |`);
   out.push('');
-  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending, each with a reason in its own file under \`tests/acceptance/pending/\`. ${totals.by_acceptance === 0
+  out.push(`Acceptance scenarios: ${totals.acceptance_scenarios} in \`features/\` (a Scenario Outline counts once), of which ${totals.acceptance_scenarios_pending} are pending and ${totals.acceptance_scenarios_conditional} conditional, each with a reason in its own file under \`tests/acceptance/pending/\`. ${totals.by_acceptance === 0
     ? 'The executed scenarios carry no rule id in their text; the rules they check are named by `// verifies` markers in their step files, counted as tests.'
     : `The executed scenarios name ${totals.by_acceptance} rules in their tags or steps; their step files also name the rules they check in \`// verifies\` markers, counted as tests.`}`);
   out.push('');

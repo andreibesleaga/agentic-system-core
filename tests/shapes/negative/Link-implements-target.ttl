@@ -1,0 +1,6 @@
+# Link-implements-target: implements a concept of kind term (AGSC-E315).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; asc:implements ex:b .
+ex:b a asc:Concept ; asc:kind "term" .

@@ -1,0 +1,156 @@
+{
+  "area": "discovery",
+  "description": "AGSC-06-34 with AGSC-11-16 and AGSC-11-21, as amended 2026-11-10: the card lists every responder as an A2A interface and carries the a2a-card version as their protocolVersion, so it is written only when every responder is an A2A one (version a2a:<version>) and the a2a-card version is a bare A2A version. In mcp-responder the responder is an MCP server, and in version-not-bare the a2a-card version is a2a:1.0: no card is written, the warning AGSC-E210 says why, and the discovery document does not declare a2a-card, which the node does not serve. In a2a-responder the card is written and declared. Beside disc-0031, which covers a card with no responder. Derived by hand from the rules.",
+  "expected": {
+    "cases": [
+      {
+        "declares_a2a_card": false,
+        "file": null,
+        "findings": [
+          {
+            "code": "AGSC-E210",
+            "severity": "warn"
+          }
+        ],
+        "name": "mcp-responder"
+      },
+      {
+        "declares_a2a_card": false,
+        "file": null,
+        "findings": [
+          {
+            "code": "AGSC-E210",
+            "severity": "warn"
+          }
+        ],
+        "name": "version-not-bare"
+      },
+      {
+        "declares_a2a_card": true,
+        "findings": [],
+        "name": "a2a-responder"
+      }
+    ]
+  },
+  "id": "disc-0035",
+  "input": {
+    "cases": [
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "mcp-responder",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "1.0"
+          },
+          {
+            "access": "none",
+            "surface": "responder",
+            "target": "https://a.example/mcp",
+            "version": "mcp:2026-07-28"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "version-not-bare",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "a2a:1.0"
+          },
+          {
+            "access": "none",
+            "surface": "responder",
+            "target": "https://a.example/a2a",
+            "version": "a2a:1.0"
+          }
+        ],
+        "visibility": "public"
+      },
+      {
+        "bundle_version": "v1.4.0",
+        "description": "A node of the Agentic Knowledge Web.",
+        "name": "a2a-responder",
+        "packs": [
+          {
+            "description": "Recurring shapes for arranging agents and the work that passes between them, gathered in one place.",
+            "name": "agent-patterns",
+            "path": "/skills/agent-patterns/SKILL.md"
+          },
+          {
+            "description": "How a worker hands work back.",
+            "name": "hand-back",
+            "path": "/skills/hand-back/SKILL.md"
+          }
+        ],
+        "site": {
+          "base": "https://a.example/",
+          "title": "Example Node"
+        },
+        "spec_version": "1.0.0",
+        "surfaces": [
+          {
+            "access": "none",
+            "surface": "a2a-card",
+            "target": "https://a.example/.well-known/agent-card.json",
+            "version": "1.0"
+          },
+          {
+            "access": "none",
+            "surface": "responder",
+            "target": "https://a.example/a2a",
+            "version": "a2a:1.0"
+          }
+        ],
+        "visibility": "public"
+      }
+    ]
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-06-34"
+}

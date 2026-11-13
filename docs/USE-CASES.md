@@ -29,7 +29,7 @@ Bundle's own folder.
 - **Who:** one person, their assistant, one local server.
 - **Data flow:** files on disk → the local MCP server → the assistant's context.
   Nothing leaves the machine and no key exists.
-- **Surfaces:** the seven MCP tools and the item resources.
+- **Surfaces:** the ten MCP tools and the item resources.
 - **Mode:** 1, used locally.
 - **Commands:** `agsc mcp` (configured in the assistant as in
   [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md)). The assistant calls
@@ -119,9 +119,8 @@ Bundle's own folder.
   Windsurf rules.
 - **Data flow:** a local clone → items (a skill becomes a procedure, a rule a concept
   of kind `explainer`), each keeping its source file, layout and licence. Anything
-  that would execute is dropped and reported, and a skill whose licence is not a
-  recognised open one arrives as a draft, so it is never published until a person
-  has read its terms. Out again: the node's packs, laid out for one of the five
+  that would execute is dropped and reported, and every skill arrives as a draft,
+  so it is never published until a person has read its terms. Out again: the node's packs, laid out for one of the five
   tools. The engine downloads nothing.
 - **Surfaces:** the skill packs, through the skills adapter.
 - **Mode:** 3.
@@ -280,7 +279,7 @@ Bundle's own folder.
 - **Proven by:** `tests/governance/agents.test.js` (the agent-lane conditions) and
   `tests/distribution/forge.test.js` (the enforcement files a forge needs). The merges
   run on the forge; **no channel adapter ships** at 1.0, so the channel itself does
-  not run: channel adapters are planned for 1.1 (AGSC-00-20).
+  not run: channel adapters are planned for a later MINOR (AGSC-00-20).
 
 ### M4 — Cost that cannot run away
 
@@ -315,13 +314,16 @@ Bundle's own folder.
 - **Commands:** `agsc compose <slug> [<slug>…]` writes `dist/harness/<name>/`; add
   `--zip` for one archive. The runtime emitters (`--emit crewai` and the other five
   names) are named by the specification and refused at 1.0 with `AGSC-E203`; their
-  runtime renderings are planned for 1.1 (AGSC-00-20).
+  runtime renderings are planned for a later MINOR (AGSC-00-20). From 1.1, `--brief`
+  also writes the brief beside the Harness, never in it: why each concept is there, a
+  dependency order, the gaps and a checklist (AGSC-07-25); `/compose/` shows the same
+  brief.
 - **Proven by:** `tests/acceptance/use-cases/use-cases.test.js`.
 
 ### M6 — The same page, answered by the browser's own agent
 
 - **Who:** a visitor and their browser's agent.
-- **Data flow:** the seven tools are registered on the page itself, with no install
+- **Data flow:** the ten tools are registered on the page itself, with no install
   and no server of ours; the page reads the node's published files, and each tool's
   result equals the local server's for the same input. `propose` and `remember`
   hand back text. The node's discovery document is what tells an agent the tools
@@ -375,7 +377,7 @@ Bundle's own folder.
   and, prepared again against the merged state, it is refused. The build then
   publishes the new state on the board page and under `/boards/`, and the content
   version moves.
-- **Surfaces:** `/boards/`, the seven tools (local and in-page), the proposal patch.
+- **Surfaces:** `/boards/`, the ten tools (local and in-page), the proposal patch.
 - **Mode:** 5.
 - **Commands:** `agsc mcp` (the agents' tool server); `git apply <patch>` and a
   commit, or a pull request, by the person; `agsc lint`; `agsc build`.

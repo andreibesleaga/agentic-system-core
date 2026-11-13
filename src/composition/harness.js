@@ -65,6 +65,28 @@ function singleLine(s) {
 }
 
 /**
+ * A one-line text as a YAML scalar value (AGSC-07-15, AGSC-07-19): the text itself when a
+ * standard YAML reader reads it back as that same string, else its double-quoted form
+ * (JSON's string form is YAML 1.2's, §7.3.1). A plain `true`, `123`, `null` or `a: b` is a
+ * boolean, a number, null or a map to such a reader, and a leading `[`, `{`, `&`, `*`, `!`,
+ * `|`, `>`, `%`, `@`, quote or backtick, or `- `, `? ` or `: `, or a later `: ` or ` #`,
+ * is YAML syntax, and so is leading or trailing white space, which a plain scalar loses. Every other text keeps its bytes. The decision needs no parser because
+ * the Harness is also emitted in a page (`tests/composition/skill-frontmatter-yaml.test.js`
+ * holds it to the `yaml` package over a generated corpus).
+ */
+function yamlScalar(text) {
+  const value = String(text);
+  const first = value.charAt(0);
+  const syntax = value === '' || /^[ \t]|[ \t]$/.test(value)
+    || '[]{},#&*!|>\'"%@`'.indexOf(first) !== -1
+    || ('-?:'.indexOf(first) !== -1 && (value.length === 1 || /^[ \t]/.test(value.slice(1))))
+    || value.indexOf(': ') !== -1 || value.indexOf(':\t') !== -1 || value.charAt(value.length - 1) === ':'
+    || value.indexOf(' #') !== -1 || value.indexOf('\t#') !== -1;
+  const other = /^(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+|[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/.test(value);
+  return syntax || other ? JSON.stringify(value) : value;
+}
+
+/**
  * Writer-side defence for a value interpolated INSIDE an HTML comment: the
  * provenance header of AGSC-06-15 that every Harness file carries. A `-->` (or
  * `--!>`) in `bundle.license_prose` would close the comment early and spill the
@@ -479,14 +501,22 @@ function workspaceDsl(result, options) {
   return `${lines.join('\n')}\n`;
 }
 
+/**
+ * The four comment lines `diagram.mmd` opens with (AGSC-07-12): the licence sentence, the
+ * selection digest, the build instant and the terms. `brief.mmd` opens with exactly these
+ * lines (AGSC-07-25), and so does each C4 file of a blueprint after its level (AGSC-07-29).
+ */
+function mermaidHead(options) {
+  return [`%% ${licenceSentence(options.licenseProse)}`,
+    `%% selection digest: ${options.selectionDigest}`,
+    `%% generated at: ${options.instant}`,
+    `%% terms: ${terms(options.licenseProse)}`];
+}
+
 /** `diagram.mmd` — a Mermaid flowchart of the same relationships (AGSC-07-12). */
 function diagramMmd(result, options) {
   const list = members(result, options.items);
-  const lines = [`%% ${licenceSentence(options.licenseProse)}`,
-    `%% selection digest: ${options.selectionDigest}`,
-    `%% generated at: ${options.instant}`,
-    `%% terms: ${terms(options.licenseProse)}`,
-    'flowchart LR'];
+  const lines = [...mermaidHead(options), 'flowchart LR'];
   for (const member of list) {
     lines.push(`  ${dslIdentifier(member.slug)}[${quoted(member.slug)}]`);
   }
@@ -587,8 +617,8 @@ function skillFiles(result, options) {
   const out = [];
   for (const member of members(result, options.items)) {
     if (member.type !== 'procedure') continue;
-    const lines = ['---', `name: ${singleLine(member.slug)}`,
-      `description: ${singleLine(member.description === '' ? member.title : member.description)}`,
+    const lines = ['---', `name: ${yamlScalar(singleLine(member.slug))}`,
+      `description: ${yamlScalar(singleLine(member.description === '' ? member.title : member.description))}`,
       'license: ' + terms(options.licenseProse),
       '---', '',
       `# ${singleLine(member.title)}`, '',
@@ -769,15 +799,16 @@ function emit(result, options) {
  * The portable surface, in dependency order — the list `composition/browser.js`
  * emits as the browser bundle of AGSC-07-13.
  */
-const PORTABLE = Object.freeze(['singleLine', 'commentSafe', 'assistance', 'contentVersion', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
+const PORTABLE = Object.freeze(['singleLine', 'yamlScalar', 'commentSafe', 'assistance', 'contentVersion', 'terms', 'structureLicence', 'linkKeys', 'fixedFiles',
   'harnessName', 'arc42Sections', 'canonicalJson', 'pairs', 'dslRelationships',
   'mermaidEdges', 'isEmitted', 'linksOf', 'members', 'memberOrder', 'provenanceHeader',
   'licenceSentence', 'withoutTrailingFeeds', 'fenceProse', 'constraintLines', 'harnessJsonld', 'agentsMd',
-  'dslIdentifier', 'quoted', 'relationships', 'workspaceDsl', 'diagramMmd', 'arc42Md',
+  'dslIdentifier', 'quoted', 'relationships', 'workspaceDsl', 'mermaidHead', 'diagramMmd', 'arc42Md',
   'decisionRecords', 'skillFiles', 'selectionDigestInput', 'allowedToolsKey', 'executableViolations', 'emit']);
 
 module.exports = {
   PORTABLE,
+  yamlScalar,
   agentsMd,
   allowedToolsKey,
   arc42Md,
@@ -804,6 +835,7 @@ module.exports = {
   memberOrder,
   members,
   mermaidEdges,
+  mermaidHead,
   pairs,
   provenanceHeader,
   quoted,

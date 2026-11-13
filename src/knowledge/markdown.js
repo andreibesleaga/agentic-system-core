@@ -282,6 +282,21 @@ function links(body) {
   return scan(body).links;
 }
 
+/**
+ * The text a reader reads in a body (AGSC-05-35): the text of each paragraph, heading and
+ * list item, with soft line breaks as spaces. A code span, an image and a raw HTML tag are
+ * replaced by a NUL, which is neither a letter nor a digit and so never joins the words
+ * beside it into a phrase; a fenced or indented code block is left out. One line per block.
+ */
+function proseText(body) {
+  const inline = scan(body).tokens.filter((token) => token.type === 'inline');
+  return inline.map((token) => token.children.map((child) => {
+    if (child.type === 'text' || child.type === 'text_special') return child.content;
+    if (child.type === 'softbreak' || child.type === 'hardbreak') return ' ';
+    return /_(?:open|close)$/u.test(child.type) ? '' : '\u0000';
+  }).join('')).join('\n');
+}
+
 /** Every fenced block with its info string preserved verbatim (AGSC-02-22). */
 function fences(body) {
   return scan(body).fences;
@@ -314,6 +329,7 @@ function fenceProse(text) {
 
 module.exports = {
   fenceProse,
+  proseText,
   constructs,
   anchorOf,
   assignAnchors,

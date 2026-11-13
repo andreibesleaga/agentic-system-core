@@ -1,0 +1,24 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "8c1f2a4e-1b7d-4c55-9a43-0f2d7b1e6a01",
+      "memory": "Prefers dark mode in every editor",
+      "userId": "alice",
+      "hash": "5b0e7c0f2c1a",
+      "categories": ["preferences"],
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-02T09:30:00.000Z",
+      "metadata": { "source": "chat" }
+    },
+    {
+      "id": "2d9e6b10-7f43-4a1e-8c2b-5e4f9a0d3c12",
+      "memory": "Works on the billing service\nOwns its deploys on Fridays",
+      "user_id": "alice",
+      "created_at": "2026-08-03T12:00:00Z",
+      "immutable": false
+    }
+  ]
+}

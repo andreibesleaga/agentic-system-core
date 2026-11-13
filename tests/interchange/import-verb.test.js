@@ -117,7 +117,9 @@ test('AGSC-01-26a: a --from value outside the set is AGSC-E203, exit 1, and name
   assert.match(result.envelope.findings[0].message, /okf/u);
   // The `okf` reader of AGSC-01-22 was added later; `--selection` stays the `old-site`
   // adapter's own flag and is required for that adapter alone.
-  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board']);
+  // From 1.1 the six direct memory adapters follow (PRD-070).
+  assert.deepStrictEqual([...verb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board', 'skos',
+    'mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code']);
   assert.deepStrictEqual([...verb.SELECTION_REQUIRED], ['old-site']);
 });
 
@@ -136,6 +138,11 @@ test('AGSC-09-09: an adapter\'s own flags are ADAPTER-SCOPED', () => {
   // tolerance limit, and is a usage error under any other adapter or none.
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'okf']).keys()],
     ['--replace', '--allow-newer']);
+  // The six direct memory adapters (PRD-070) take what the GABBE adapter takes.
+  for (const name of ['mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code']) {
+    assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', name]).keys()],
+      ['--replace', '--allow-newer', '--source-version'], name);
+  }
   assert.deepStrictEqual([...main.adapterFlagsFor('import', ['--from', 'notion']).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('import', []).keys()], []);
   assert.deepStrictEqual([...main.adapterFlagsFor('lint', ['--from', 'old-site']).keys()], []);
@@ -289,6 +296,15 @@ test('a declared peer reaches the emitted discovery document (AGSC-10-12/AGSC-11
   const text = JSON.stringify(linkset);
   assert.ok(text.includes('https://b.example/.well-known/knowledge-linkset'), 'the peer is not published');
   assert.ok(text.includes('rel#peer'), 'the peer link carries no peer relation');
+});
+
+test('a typed peer keeps its relationship and crosswalk through an import (AGSC-11-24)', () => {
+  const typed = { crosswalk: 'peers/b.ttl', relationship: 'translation-layer', url: 'https://b.example/.well-known/knowledge-linkset' };
+  const dir = workspace({ peers: [typed] });
+  run(IMPORT, dir);
+  const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
+  assert.deepStrictEqual(config.peers, [typed]);
+  assert.deepStrictEqual(verb.identity(config).options.peers, [typed]);
 });
 
 test('readOldSite(): a corpus read through an injected port, tolerating what it must', () => {

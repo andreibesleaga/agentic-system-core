@@ -16,10 +16,10 @@ ready-made folders.
 | Guide | Who it is for | What you get |
 |---|---|---|
 | [Mode 0 — a folder of notes becomes a checked site](mode-0.md) | a person with Markdown notes | a static site with search, a graph and files for assistants; changes as proposals |
-| [Mode 1 — memory for an assistant, and nodes that check each other](mode-1.md) | a developer connecting an assistant; two publishers | a local tool server with seven tools; two nodes that name and check each other |
+| [Mode 1 — memory for an assistant, and nodes that check each other](mode-1.md) | a developer connecting an assistant; two publishers | a local tool server with ten tools; two nodes that name and check each other; an optional domain layer of your own classes and rules |
 | [Mode 2 — a project's decisions, specifications, tasks and gates](mode-2.md) | a team with coding assistants | checked decision, specification and task files; a board; the files a forge needs; one steering file for every assistant |
 | [Mode 3 — procedures as installable skills](mode-3.md) | a team with repeatable procedures | one skill pack per cluster with a lockfile; install, publish, bring skills in |
-| [Mode 4 — a selection becomes a starting harness](mode-4.md) | an architect | a checked selection written as seven kinds of file and an archive; the opt-in `run` verb |
+| [Mode 4 — a selection becomes a starting harness](mode-4.md) | an architect | a checked selection written as seven kinds of file and an archive, with a brief beside it on request; the opt-in `run` verb |
 | [Mode 5 — the live board](mode-5.md) | people and agents sharing tasks | a board with who holds what; agent lanes with owners, budgets and limits; claims as proposals |
 | [Publish — put a node online and check it live](publish.md) | anyone with a node that builds | the node at an `https:` address of your own, with the host's settings written for you, checked live by both checkers |
 

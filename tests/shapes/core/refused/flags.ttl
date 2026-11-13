@@ -1,0 +1,13 @@
+# sh:flags: sh:pattern is in the subset only without flags.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:flags "i" ;
+        sh:path ex:slug ;
+        sh:pattern "^[a-z]+$"
+    ] ;
+    sh:targetClass ex:C .

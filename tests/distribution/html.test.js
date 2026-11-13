@@ -177,24 +177,20 @@ test('AGSC-02-13: a compiled diagram the allow-list refuses is AGSC-E412 and no 
   assert.ok(!page.includes('<figure class="diagram"'), page);
 });
 
-// A person reads the item page, not the graph: the typed Links an item authors, a
-// task's state and dependencies and a gate's level and checks are shown there, so a
-// `contradicts` pair or a blocked task is visible without an agent (AGSC-03-01,
-// AGSC-02-99, AGSC-08-09).
-test('an item page shows its typed Links, a task its state, a gate its level and checks', () => {
-  const links = [
-    { key: 'contradicts', targets: [{ href: '/concepts/b/', title: 'B' }] },
-    { key: 'blocked-by', targets: [{ href: '/concepts/c/', title: 'C <x>' }] },
-  ];
+// A person reads the item page, not the graph: the relations of an item (AGSC-06-38,
+// written by graph-view.js and tested there), a task's state and dependencies and a
+// gate's level and checks are shown there, so a `contradicts` pair or a blocked task is
+// visible without an agent (AGSC-03-01, AGSC-02-99, AGSC-08-09).
+test('an item page shows its relations section, a task its state, a gate its level and checks', () => {
+  const relations = '<h2 id="links">Relations</h2>\n<p>The relations.</p>';
   const task = html.itemPage({ slug: 'a', title: 'A', body: '', type: 'concept', kind: 'task', task_state: 'TASK_STATE_WORKING' },
-    { ...OPTIONS, links });
+    { ...OPTIONS, relations });
   assert.match(task, /<dt>Task state<\/dt><dd><code>TASK_STATE_WORKING<\/code><\/dd>/u);
-  assert.match(task, /<h2 id="links">Links<\/h2>/u);
-  assert.match(task, /contradicts[^\n]*<a href="\/concepts\/b\/">B<\/a>/u);
-  assert.match(task, /blocked-by[^\n]*<a href="\/concepts\/c\/">C &lt;x&gt;<\/a>/u);
+  assert.ok(task.includes(relations), 'the section is placed whole');
+  assert.ok(task.indexOf(relations) < task.indexOf('class="views"'), 'before the machine views');
   const unset = html.itemPage({ slug: 'a', title: 'A', body: '', type: 'concept', kind: 'task' }, OPTIONS);
   assert.match(unset, /<dt>Task state<\/dt><dd><code>TASK_STATE_UNSPECIFIED<\/code><\/dd>/u);
-  assert.ok(!unset.includes('id="links"'), 'no Links section without a link');
+  assert.ok(!unset.includes('id="links"'), 'no relations section without a relation');
   const gate = html.itemPage({ slug: 'g', title: 'G', body: '', type: 'gate', level: 'L2', checks: ['schema', 'review'] }, OPTIONS);
   assert.match(gate, /<dt>Level<\/dt><dd><code>L2<\/code><\/dd>/u);
   assert.match(gate, /<dt>Checks<\/dt><dd><code>schema<\/code>, <code>review<\/code><\/dd>/u);

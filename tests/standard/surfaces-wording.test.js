@@ -71,16 +71,17 @@ test('spec/06, the licence dialects: each sentence that makes a build fail names
   for (const s of failing) assert.match(s, /AGSC-E\d{3}/u, `no code in: ${s.slice(0, 160)}`);
 });
 
-test('spec/06 and docs/SPEC.md: /llms.txt is not called a profile of llms.txt, and the missing summary is said', () => {
+test('spec/06 and docs/SPEC.md: /llms.txt is not called a profile of llms.txt, and the summary a v2 parser reads is said (from 1.1)', () => {
   for (const [name, text] of [['spec/06', CH06], ['docs/SPEC.md', SPEC_DOC]]) {
     assert.doesNotMatch(text, /profile of llms\.txt/iu, `${name} still calls /llms.txt a profile of llms.txt`);
   }
-  for (const id of ['AGSC-06-13', 'AGSC-06-13a']) {
-    assert.match(rule(CH06, id).replace(/\s+/gu, ' '), /a v2 parser reads no summary/u, id);
-  }
+  // 1.1 (AGSC-06-13, AGSC-06-13a): the summary follows the H1, so a v2 parser reads it.
+  assert.match(rule(CH06, 'AGSC-06-13').replace(/\s+/gu, ' '), /so a v2 parser reads the summary again/u);
+  assert.match(rule(CH06, 'AGSC-06-13a').replace(/\s+/gu, ' '), /the summary follows the H1/u);
   const row = registerRows(SPEC_DOC, '4. Standards Register').find((l) => l.startsWith('| llms.txt |'));
   assert.ok(row, 'no llms.txt row in the register');
-  assert.match(row, /a v2 parser reads no summary/u);
+  // 1.1 (AGSC-06-13a): the summary follows the H1, so a v2 parser reads it; the 1.0 note stays in the rule.
+  assert.match(row, /a v2 parser reads the summary/u);
 });
 
 test('spec/06, the llms.txt index: every listed item is reachable, as spec/00 names that set', () => {

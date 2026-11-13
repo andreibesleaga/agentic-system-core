@@ -7,12 +7,13 @@
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const { readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
+const { readEngineFiles, readOntology, readSchemas, safeJoin } = require('../../../adapters/node-fs.js');
 const validate = require('../../../knowledge/validate.js');
 const links = require('../../../knowledge/links.js');
 const ledger = require('../../../governance/ledger.js');
 const contentVersion = require('../../../knowledge/content-version.js');
 const turtle = require('../../../knowledge/turtle.js');
+const queryPage = require('../../../distribution/query-page.js');
 const { loadBundle } = require('../../bundle.js');
 const { withOverrides } = require('../../config/load.js');
 
@@ -42,6 +43,7 @@ const US = String.fromCharCode(31);
  * followed by the paths the commit changed, which `--name-only` prints after it.
  */
 const GIT_LOG_FORMAT = '--format=%x00%H%x1f%P%x1f%ct%x1f%D%x1f%B%x00';
+const GIT_AUTHOR_FORMAT = '--format=%H%x1f%ae';
 /**
  * The reference production of AGSC-08-20b, extended shape: first-parent, oldest
  * first, and `--name-only` for `files[]`. `core.quotepath=off` keeps a non-ASCII
@@ -73,17 +75,40 @@ function schemas() {
  * only place that can hand the vocabulary to the build; without it, a built context
  * would carry none of the `asc:` term definitions.
  *
- * @returns {{terms: Array<object>, version: string|null}}
+ * @returns {{terms: Array<object>, text: string, version: string|null}}
  */
 function ontology() {
   if (vocabulary === null) {
     const text = readOntology(ENGINE_ROOT);
     vocabulary = Object.freeze({
       terms: Object.freeze(turtle.ontologyTerms(text)),
+      text,
       version: turtle.ontologyVersion(text),
     });
   }
   return vocabulary;
+}
+
+/** The query page's input, read once per process (`queryPageInput`). */
+let queryInput = null;
+
+/**
+ * AGSC-06-39: what the build needs for `/query/` that is the engine's and no Bundle's: the
+ * files of the vendored query engine (`distribution/query-page.js#ENGINE`), by their
+ * source names, and the data file of the ten questions the page offers as examples
+ * (`docs/ontology-questions.json`, AGSC-05-34). Read once per process.
+ * @returns {{engine: Map<string,Buffer>, questions: Buffer}} `questions` as the bytes of the file.
+ */
+function queryPageInput() {
+  if (queryInput === null) {
+    const questions = 'docs/ontology-questions.json';
+    const read = readEngineFiles([...queryPage.ENGINE_SOURCES, questions], ENGINE_ROOT);
+    queryInput = Object.freeze({
+      engine: new Map(queryPage.ENGINE.files.map((f, k) => [f.source, read.get(queryPage.ENGINE_SOURCES[k])])),
+      questions: read.get(questions),
+    });
+  }
+  return queryInput;
 }
 
 /** The loaded Bundle of AGSC-01-01…01-04, from the verb's port bag. */
@@ -177,6 +202,7 @@ function buildOptions(ctx, extra) {
     level: Number.isInteger(level) ? level : undefined,
     ontologyTerms: ontology().terms,
     ontologyVersion: ontology().version,
+    queryPage: queryPageInput(),
     specVersion: ctx.specVersion,
     version: ctx.version,
     ...(extra || {}),
@@ -302,7 +328,42 @@ function gitLog(ctx) {
     if (author !== null) commit.author = author;
     commits.push(commit);
   }
+  if (hasActorMap(ctx.config)) {
+    const emails = authorEmails(ctx);
+    for (const commit of commits) if (emails.has(commit.sha)) commit.author_email = emails.get(commit.sha);
+  }
   return ledger.produce(commits);
+}
+
+/** Whether `ledger.actors` of AGSC-01-18 holds at least one address. */
+function hasActorMap(config) {
+  const actors = config && config.ledger && config.ledger.actors;
+  return actors !== null && typeof actors === 'object' && Object.keys(actors).length > 0;
+}
+
+/**
+ * AGSC-08-20b (1.1): the author address of every commit of the chain, by sha, in ASCII
+ * lower case. It is asked for only when `ledger.actors` is configured, in a second
+ * process, so a Bundle without the map reads the history exactly as under 1.0. A
+ * commit the answer does not name gets no address.
+ *
+ * @param {object} ctx the verb context.
+ * @returns {Map<string, string>}
+ */
+function authorEmails(ctx) {
+  const emails = new Map();
+  let result;
+  try {
+    result = ctx.ports.proc.run('git', ['log', '--first-parent', '--reverse', GIT_AUTHOR_FORMAT, 'HEAD']);
+  } catch (e) {
+    return emails;
+  }
+  if (!result || result.code !== 0 || typeof result.stdout !== 'string') return emails;
+  for (const line of result.stdout.split('\n')) {
+    const [sha, email] = line.split(US);
+    if (/^[0-9a-f]{40,64}$/u.test(sha) && email) emails.set(sha, email);
+  }
+  return emails;
 }
 
 /**
@@ -466,6 +527,7 @@ module.exports = {
   bundleVersionOf,
   resolvedConfig,
   buildOptions,
+  queryPageInput,
   levelRefusal,
   contentTree,
   gitLog,

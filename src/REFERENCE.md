@@ -75,7 +75,17 @@ source text the compose page's bundle carries, uses the module's own portable
 (a "key: value" line, a heading's text), read with one match of the head, one search
 for a line terminator and one slice. The patterns they replaced (a run of blanks, then
 `(.*)$` or `(.+)$`) read the rest of the line again for every blank they gave back when
-the line held a carriage return, U+2028 or U+2029.
+the line held a carriage return, U+2028 or U+2029. `src/shared/article.js` holds
+`withArticle(word)`: the word with "a" or "an" before it by its first letter, for a message
+that names a type, a kind or a format at run time. `src/shared/version-line.js` holds
+`versionLine(version, form = 'text')`: `agsc <version>` and a line feed, or for `form`
+`'json'` the object `{"version":"<version>"}` and a line feed, which is what `agsc --version`
+prints (AGSC-09-09). It is the one module compiled from TypeScript so far
+(`src-ts/shared/version-line.ts`, by `tools/build-ts`; `docs/ENGINEERING.md` §8), and
+`application/cli/main.js` prints its `--version` line through it; the bytes are those of 1.0.
+`src/shared/spec-version.js` holds `SPEC_VERSION`, the version of the specification the engine
+implements (AGSC-00-14), in one place: the command line, the discovery reader and the built-in
+deployment profiles read it, so a release moves one line.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -113,7 +123,7 @@ gathered before the fault.
 | `knowledge/yaml.js` | Knowledge | AGSC-02-01…04 — the YAML failsafe subset and its rejections |
 | `knowledge/frontmatter.js` | Knowledge | AGSC-02-01, 01-14, 01-16 — the block, the body, the Item record |
 | `knowledge/schema.js` | Knowledge | AGSC-00-09, 02-24, 01-10 — the JSON Schema 2020-12 validator and `oneOf` discrimination |
-| `knowledge/validate.js` | Knowledge | AGSC-00-15, 01-03, 01-11, 01-18, 02-05, 02-05a, 02-07, 02-21, 02-24 and the §9.4 code precedence |
+| `knowledge/validate.js` | Knowledge | AGSC-00-15, 01-03, 01-11, 01-18, 02-05, 02-05a, 02-07, 02-21, 02-24 and the §9.4 code precedence; from 1.1 the `warrant` faults of AGSC-02-25 take `AGSC-E512` |
 | `knowledge/slug.js` | Knowledge | AGSC-01-10, 01-11, 01-23, 02-91 — grammar, uniqueness, slugifier, collisions |
 | `knowledge/jcs.js` | Knowledge | AGSC-04-04…06, 04-21 — RFC 8785 with NFC first, plus the I-JSON check |
 | `knowledge/adopt.js` | Knowledge | AGSC-02-90…93 — total, idempotent, byte-preserving adoption |
@@ -122,6 +132,7 @@ gathered before the fault.
 | `adapters/node-clock.js` | — | Clock over `SOURCE_DATE_EPOCH`; AGSC-04-09/10 |
 | `adapters/node-proc.js` | — | ProcessRunner: `execFileSync`, no shell, scrubbed environment, timeout |
 | `adapters/node-network-refusing.js` | — | Network that refuses every call (AGSC-04-03) |
+| `adapters/node-http-server.js` | — | the socket of the two local servers: `listen`, the read-only server of `agsc-host serve` over a build directory (what it answers is the `local` profile's decision), and `listenWith(handler, {port, bind})`, the socket of `agsc mcp --http` (AGSC-09-18), which hands each request to the MCP transport and destroys the response of a handler that rejects |
 
 The other modules of `knowledge/`, `governance/`, `composition/`, `distribution/`,
 `boundary/`, `interchange/` and `application/` are listed in §6 to §10 and documented
@@ -151,7 +162,7 @@ the verb → module table.
 
 ```js
 // knowledge/unicode.js
-nfc(s); codePointLength(s); compareCodePoint(a, b); compareUtf16(a, b);
+nfc(s); foldCase(s) /* NFC, upper then lower case: the label folding of AGSC-05-21 */; codePointLength(s); compareCodePoint(a, b); compareUtf16(a, b);
 checkCombining(s, max = 256); isWellFormed(s)
 
 // knowledge/yaml.js — throws YamlError { code: 'AGSC-E10x' | 'AGSC-E904', line, col, message }
@@ -204,14 +215,8 @@ Standard formats are not reimplemented here. Every dependency is pinned to an ex
 version, is permissively licensed, reaches neither the network nor the clock at
 runtime, and is loadable from CommonJS.
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| YAML failsafe subset | `yaml` | 2.9.1 | ISC |
-| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT |
-| `format` keyword | `ajv-formats` | 3.0.1 | MIT |
-| RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT |
-| property tests (dev) | `fast-check` | 4.10.1 | MIT |
-| ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `yaml`, `ajv`, `ajv-formats`, `json-canonicalize`, `fast-check`, `typescript`, `@types/node`, `typescript-eslint`, `fflate`, `csv-parse`, `csv-stringify`.
 
 What the engine writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or
@@ -349,10 +354,8 @@ construct an adapter.
 
 ### Libraries (ADR-019)
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| `.env` raw tokenising | `dotenv` (`.parse()` only, never `.config()`) | 18.0.3 | BSD-2-Clause |
-| argv parsing | `commander` | 15.0.0 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `dotenv`, `commander`.
 
 **`.env`** — `application/config/env.js#parseDotenv` calls `dotenv.parse(text)` for
 the raw `NAME=value` tokenising; the `^AGSC_[A-Z0-9_]+$` name filter, the
@@ -404,8 +407,9 @@ AGSC-01-18) and `run.enabled` (`false`, AGSC-09-94). `application/config/load.js
 applies them explicitly (`PROSE_DEFAULTS`, cited by rule id);
 `application/config/env.js#allDefaults` derives only what `config.schema.json`
 literally declares, mechanically, never hand-typed. The table gives `build.feed` no
-value: it is a name reserved to 1.1, a configuration file that names it is refused with
-`AGSC-E004` (AGSC-00-20), and nothing at 1.0 reads it.
+value: it is a name reserved to a later MINOR (AGSC-00-20 as amended for
+1.1.0), a configuration file that names it is refused with `AGSC-E004` (AGSC-00-20), and
+nothing at 1.0 or 1.1 reads it.
 
 ### `tasks[]` enforcement (AGSC-08-28(c))
 
@@ -434,13 +438,14 @@ lint to the same Findings in the same order.
 | Path | Context | Implements |
 |---|---|---|
 | `knowledge/markdown.js` | Knowledge | AGSC-02-20, 02-22, 03-13 — the subset renderer, the preserved info strings, the heading-anchor algorithm |
-| `knowledge/links.js` | Knowledge | AGSC-03-01…03-13, AGSC-01-35, AGSC-11-12 — the fourteen keys, inverses, cycles, cluster bounds, orphans, body references |
+| `knowledge/links.js` | Knowledge | AGSC-03-01…03-13, AGSC-01-35, AGSC-11-12 — the fourteen keys, inverses, cycles, cluster bounds, orphans, body references; from 1.1, with the option `domain`, the domain links of AGSC-03-27 (`AGSC-E317`) |
+| `knowledge/link-graph.js` | Knowledge | AGSC-03-01, AGSC-06-30 — the typed Links between published items, the members of a cluster, the title an item is drawn with; read by the Mermaid export and by `distribution/graph-view.js` |
 | `governance/injection.js` | Governance | AGSC-08-13 — `injection-scan` (`AGSC-E401`, `AGSC-E402`) |
 | `governance/secrets.js` | Governance | AGSC-08-15, AGSC-01-37 — `no-secrets` and the tracked `.env` (`AGSC-E403`) |
 | `governance/pii.js` | Governance | AGSC-08-16 — `no-pii` (`AGSC-E404`) |
 | `governance/cleanroom.js` | Governance | AGSC-08-17 — `clean-room` (`AGSC-E405`) |
 | `governance/finding.js` | Governance | the one place a Governance Finding adds a member |
-| `governance/lint.js` | Governance | AGSC-08-13…17 composed, plus AGSC-01-34, 01-35, 02-21, 02-22, 02-23, 02-96, 02-98, 04-23; sorted per AGSC-09-10 |
+| `governance/lint.js` | Governance | AGSC-08-13…17 composed, plus AGSC-05-21 (`AGSC-E416`), AGSC-08-31 (`AGSC-E417`, `checkMinimumSources`), AGSC-01-34, 01-35, 02-21, 02-22, 02-23, 02-96, 02-98, 04-23; sorted per AGSC-09-10 |
 | `governance/prov.js` | Governance | AGSC-08-01…08-09, AGSC-10-02, AGSC-10-17 — provenance, trailers, Gates, the claim limit |
 
 ### Public API of these modules
@@ -450,13 +455,36 @@ lint to the same Findings in the same order.
 anchorOf(text); assignAnchors(texts); anchors(body) -> { anchors, headings, errors }
 render(body) -> { html, headings, anchors, fences, links }
 headings(body); fences(body); links(body); selectionFences(body); scan(body)
+proseText(body) -> string   // the body without fenced code, for the phrase search of AGSC-05-35 (G3)
 
 // knowledge/links.js
 LINK_KEYS (14); CORE_KEYS (9); MODE2_KEYS (5); INVERSE; SYMMETRIC
-resolve(items, { assets? }) -> { edges, errors, inverses, cycle, cycles, chain,
+resolve(items, { assets?, domain? }) -> { edges, errors, inverses, cycle, cycles, chain,
   chains, parents, resolved, unresolved, skipped_external }
+// (with `domain`, the model of knowledge/domain.js#load, `domain_links` become edges and AGSC-E317 is raised, AGSC-03-27)
+domainEdges(items, model) -> [{ key, origin: 'authored'|'inverse'|'symmetric', source, target }]   // the domain links alone, for the brief's relations (AGSC-07-25); [] without a model
 anchors(body); findCycle(adjacency, nodes); pathGrammarError(relative, fromDir)
 resolveInside(fromDir, relative); dirOf(path); view(item)
+// (resolve also raises the warnings AGSC-E313 to E316 through the columns of knowledge/relations.js)
+
+// knowledge/link-graph.js (pure)
+titleOf(item) -> string                             // its title, else its slug
+linksOf(item) -> [{source, key, target}]            // the Links it authors, unfiltered, in key order
+edgesOf(items, published) -> [{source, key, target}]   // every Link between two published items, code-point order
+touching(edges, slug); membersOf(cluster, items); among(edges, slugs)
+
+// knowledge/derive.js
+readings(edges) -> [{ source, key, target, because: [{ rule, from: [[s, k, t], …] }] }]   // AGSC-05-33
+
+// knowledge/questions.js (AGSC-05-34; pure; items are the published projection)
+answer(number, items, { subject, selection?, at? }) -> the answer of question 1..10
+mustTake / neverWith / replacedBy / blockers (items, slug) -> slug[]
+missingPorts(items, slug, selection) -> portName[]            // a port the subject produces is provided
+verification(items, slug) -> { verified_by: slug[], verifies: slug[] }
+lineage(items, slug) -> { episodes: slug[], lineage: slug[] }
+underCluster(items, slug) -> { clusters: slug[], items: slug[] }
+unhealthy(items, selection, at) -> [{ slug, reasons }]        // deprecated, draft, retired, stale
+sourcesAndSharers(items, slug) -> { shared: [{ items, resource }], sources: resource[] }
 
 // governance/{injection,secrets,pii,cleanroom}.js
 check(input) -> Finding[]              // input carries { text, file, slug, line, … }
@@ -478,10 +506,8 @@ checkClaims(config, proposal, board) -> { accepted, findings, held_after }
 
 ### Libraries
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| Markdown (CommonMark 0.31.2 + GFM tables) | `markdown-it` | 15.0.3 | MIT |
-| XML/SVG allow-list | `fast-xml-parser` | 5.11.1 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `markdown-it`, `fast-xml-parser`.
 
 `markdown-it` runs `{html:false, linkify:false, typographer:false}`: raw HTML never
 passes through, a bare URL is never turned into a link behind the author's back, and
@@ -516,10 +542,19 @@ by discipline.
 
 | Path | Implements |
 |---|---|
-| `knowledge/nquads.js` | AGSC-05-01…03 (IRIs), 05-12/13 (classes), 05-14/15 (Source and Review fragment IRIs), 05-16 (Links and inverses), 05-26/05-30 (the frontmatter → property table), 05-29 (attachments), 05-31/32 (literal forms and escaping), 04-13/15/16 (the sort that is the canonicalisation), 06-33 (static fragments) |
+| `knowledge/nquads.js` | AGSC-05-01…03 (IRIs), 05-12/13 (classes), 05-14/15 (Source and Review fragment IRIs), 05-16 (Links and inverses), 05-26/05-30 (the frontmatter → property table), 05-29 (attachments), 05-31/32 (literal forms and escaping), 04-13/15/16 (the sort that is the canonicalisation), 06-33 (static fragments); from 1.1, with the option `domain` (the model of `domain.js#load`), 05-38 (the site vocabulary's triples in the Bundle graph; `siteVocabulary: false` leaves them out of a per-item view) and 05-39 (the domain triples of an item); 05-40 (the two triples of a valid `warrant`, read by `warrants.js#warrantOf`, on every node) |
 | `knowledge/skos.js` | AGSC-05-12/13, 05-17…05-20 — the SKOS integrity rules, IRI-free and injected with a resolver so that `nquads.js` may require it without a cycle |
+| `knowledge/skos-export.js` | AGSC-05-36 — `skosView(nquadsText, record)` and `schemeRecord(config)`: the SKOS view `export --skos` writes, read from the text of `graph.nq` with `n3` and written by `turtle.serialize` with a block of its own |
+| `knowledge/closure.js` | AGSC-05-37 — `closure(nquadsText, vocabularies)` returns `{text, warnings}`: the triples the RL subset (`prp-dom`, `prp-rng`, `prp-spo1`, `prp-symp`, `prp-inv1`, `prp-inv2`, `prp-trp`, `cax-sco`; `prp-irp` as the warning `AGSC-E313`) entails and the inputs do not hold, in the Bundle's graph, sorted, one LF at the end; `RULES` is the rule list as data. Run by the `Reasoner` of `n3`; reads through `turtle.parse` |
+| `knowledge/domain.js` | AGSC-05-38, AGSC-01-41, with the reading half of AGSC-05-39 — `check(text, {file, contexts})` returns the `AGSC-E420` findings of a site vocabulary, one per fault of the rules (a) to (g), sorted by message; `load(text, {contexts})` returns the frozen model the graph writer reads (`namespace`, `ontology`, `triples` as terms of `nquads.js`, `terms` the IRIs the file types, which a crosswalk may not name (AGSC-11-24), `contextOf(item)`, `classFor(item)`, `itemClassOf(classIri)` (the one item class above a class, AGSC-05-38 (e)), `propertyFor(item, name)` with the inverse or symmetric edge, `computed` for the side of an `owl:inverseOf` pair that is not authored and `inverseName`, AGSC-03-27; a pair is read only when both sides are object properties the file defines, AGSC-05-38 (f)), or `null` for a text that is not Turtle; `configFindings(config, {items})` returns the faults of the `domain` object the schema cannot see (`AGSC-E204`, `AGSC-E209`, `AGSC-E301`); `itemFindings(items, {model, vocabulary, contexts})` returns the `AGSC-E418` findings of AGSC-02-25 (a `domain_type` that names no class, or a class under another item class than the item's type, or on a node with no vocabulary file; a `domain_context` that names no declared context). Reads through `turtle.parse`. `tools/validate-ontology` holds the same rules for a site vocabulary; `tests/tools/validate-ontology-parity.test.js` keeps the two equal |
+| `knowledge/contexts.js` | AGSC-08-32, AGSC-11-24, AGSC-01-41 — `declared(config)` returns the frozen well-formed entries `{cluster, namespace}` of `domain.contexts` in their order and `declaresContexts(config)` whether there is one; `contextOf(entries)` returns the function from an item (flat or frontmatter) to the cluster slug of its context (its `domain_context` when that names a declared context, else its primary cluster `clusters[0]` when declared, else `null`); `namespaceOf(entries)` the function from a context to its namespace; `peerUrl(entry)` and `peerUrls(peers)` the address of a plain or typed `peers[]` entry, by which every writer names a peer (the discovery document, the footer, the peer citations, the import identity); `isTypedPeer(entry)` whether an entry is in the typed form and `typedPeers(config)` those entries. Read by `governance/lint.js` (`AGSC-E419`), `domain.js#load`, `composition/context-map.js` and `boundary/federation.js` |
+| `knowledge/warrants.js` | AGSC-05-40, AGSC-02-25 — `warrantOf(item)` returns the item's warrant as the rule shapes it, the frozen `{source, type}`, or `null` when there is no `warrant` or it breaks the rule (no object, no source, an empty or multi-line source, a kind outside `TYPES`); a member the rule does not name is never read. `TYPES` is the three kinds of ANSI/NISO Z39.19-2005 (R2010). `nquads.js` writes the two triples from it (`dcterms:source`, `asc:warrant`); the faults are the item schema's (`AGSC-E512`, `AGSC-E204`) |
+| `knowledge/shacl-core.js` | AGSC-05-41 — `check(text, {file})` returns the `AGSC-E420` findings of a shapes file, one per way it leaves the SHACL Core subset (a term of `sh:` the subset does not name, a node shape named by a blank node, a property shape without exactly one path of the subset, a parameter value of the wrong kind or stated twice), sorted by message; `evaluate(text, quads, {file})` returns `{findings, results}`: the findings of `check`, and then nothing is evaluated, or the results of the pinned `rdf-validate-shacl` over the quads (graph names ignored) as `{component, focus, message, path, severity, shape, value}`, ordered by focus node, source shape and path by code point; `COMPONENTS` lists the twelve constraint components. Reads through `turtle.parse`; runs the library synchronously and never follows `owl:imports` |
+| `knowledge/competency.js` | AGSC-05-41 — `check(text, {file})` returns the `AGSC-E420` findings of a questions file (not a JSON array of objects with exactly `expected`, `id`, `query` and `question`; an id that is no slug or is repeated; a query that is not SPARQL 1.1 or leaves the subset, including a `SELECT` whose `ORDER BY` leaves out a projected variable or that has `LIMIT` without such an `ORDER BY`; an `expected` that is not a boolean for `ASK` or `{rows}` of N-Triples strings and `null` for `SELECT`), sorted by message; `evaluate(text, quads, {file})` returns `{findings, results}`: the findings of `check`, or of a query the engine refuses, and then nothing is answered, or `{answer, expected, id, question, result}` by id, `result` being `agrees` or `differs`. `SUBSET` is the subset as data. Parsed by the pinned `@traqula/parser-sparql-1-1`, answered by the pinned `oxigraph` over the quads (graph names dropped), handed to it as N-Triples it writes; the walk refuses every query outside the subset before the engine sees it |
+| `knowledge/site-checks.js` | AGSC-09-20 over AGSC-05-41 — `check({base, graph, items, ontology, vocabulary, shapes, questions})` returns `{findings, invariants, questions}`: nothing for a node that declares neither file; otherwise the data graph (`graph.nq` with its closure, `closure.js`), the shapes run by `shacl-core.js` and the questions by `competency.js`, and the findings `AGSC-E420`, `AGSC-E421` (an error for `sh:Violation`, a warning otherwise, naming the focus item's slug and file where the focus is an item) and `AGSC-E422` (naming the question's id); a call with no `graph` throws, and only a vocabulary that is not Turtle is reported as `AGSC-E420` on it |
+| `knowledge/suggest.js` | AGSC-05-35 — `suggestions(items)` (the sorted list of generators G1 to G5, each `{evidence, generator, key, source, target}`) and `file(items, bundleVersion)` (the JCS text of `dist/suggestions.json`) |
 | `knowledge/turtle.js` | AGSC-05-10 (the stable-Turtle profile), 05-31 (a plain literal is bare in Turtle), and the vocabulary reader that feeds AGSC-06-32 |
-| `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`), AGSC-05-04b (`memory://`, `AGSC-E309`) |
+| `knowledge/jsonld.js` | AGSC-05-09 (`graph.jsonld`), AGSC-06-32 (`/ns/context.jsonld`; an IRI with no term is written as the compact IRI of a prefix of the context, as the round trip needs, else as itself), AGSC-05-04b (`memory://`, `AGSC-E309`) |
 | `knowledge/rdfxml.js` | AGSC-05-06 — RESERVED at 1.x, not emitted; kept correct by an isomorphism test |
 
 ```js
@@ -538,8 +573,9 @@ labels(item, {lang}); membership(items, resolve)
 turtleIri(v); turtleTerm(term); turtlePredicate(v); prefixBlock(); serialize(quads)
 toTurtle(items, options); parse(text, options); ontologyTerms(turtleText); ontologyVersion(turtleText)
 // knowledge/jsonld.js
-context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl(ontologyVersion)
+context(ontologyTerms, externalProperties) -> object; allExternalProperties(); persistentContextUrl() [the constant context version]
 contextFrom(…); expandCompact(v); termName(compact, ascNames, locals); restrictTo(…)
+compactionTable(contextObject) -> { terms, prefixes }; compactName(iri, table)   // how graph.jsonld names a member; shared with explorer/page.js
 resolveMemory(value, {bundleId}) -> { slug } | { finding }
 toJsonLd(items, options) -> object
 // knowledge/rdfxml.js
@@ -548,10 +584,8 @@ escapeXml(s); qname(iri); propertyElement(p, o); serialize(quads); toRdfXml(item
 
 ### Libraries
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| RDF parsing (Turtle, N-Quads) | `n3` | 2.7.12 | MIT |
-| JSON-LD processing (the round-trip proof only) | `jsonld` | 9.0.0 | BSD-3-Clause |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `n3`, `jsonld`, `rdf-validate-shacl`, `@traqula/parser-sparql-1-1`, `oxigraph`.
 
 `n3` is the reader everywhere this engine reads RDF: the vocabulary file behind the
 context generator, the blank-node check of AGSC-05-08, and the round-trip test that
@@ -571,6 +605,34 @@ emitter asynchronous for no gain. It proves the AGSC-06-32 round trip —
 convert it to N-Quads to prove it isomorphic to `graph.nq` — and it is a runtime
 dependency only because that conformance area ships in the package. `rdfxml.js` is
 hand-written, and its test re-parses its output with `fast-xml-parser`.
+
+`rdf-validate-shacl` (Zazuko) is the SHACL processor, and only `knowledge/shacl-core.js`
+requires it (`tests/arch/shacl-library.test.js`, which also proves the build never reaches
+it, AGSC-05-23). It evaluates the shapes of a site's own invariants (AGSC-05-41); the shapes
+of `schema/item-shapes.ttl` stay in the pySHACL development lane (AGSC-05-24). It is an ES
+module, loaded with `require()` (Node 22.12 and later load an ES module that has no
+top-level `await` this way, so the floor 22.13.0 does). Its `validate()` is asynchronous
+only to load `owl:imports`; the wrapper never loads them (no network, AGSC-08-30) and runs
+the two synchronous steps that follow through the members the library's type declarations
+make public, so the verbs stay synchronous; `tests/knowledge/shacl-core.test.js` checks the
+results against `validate()` on every shared fixture. What the library cannot know, the
+wrapper adds: the subset of AGSC-05-41 and its refusal (`AGSC-E420`), names for blank
+property shapes and inverse paths taken from the file rather than a parser's labels, and
+the order of the results.
+
+`@traqula/parser-sparql-1-1` (Comunica) reads a site's competency queries, and `oxigraph`
+answers them; only `knowledge/competency.js` requires either (`tests/arch/sparql-library.test.js`,
+which also proves that the build, `lint` and the tool server never reach it or
+`knowledge/site-checks.js`). Traqula is the parser that SPARQL.js's author deprecated
+SPARQL.js in favour of; Oxigraph is the engine of the SPARQL development lane of the ten
+questions (pyoxigraph 0.5.13), so the engine and the lane run the same evaluator. Neither knows
+the subset of AGSC-05-41, so the wrapper walks the parsed query and refuses everything else
+(`AGSC-E420`) before the engine sees it: the subset has no function and no `SERVICE`, so no
+query reads a clock, draws a random number or opens a connection. Oxigraph is WebAssembly
+loaded synchronously; its store holds the data graph as N-Triples the wrapper writes from the
+quads `turtle.js` read, so RDF text is still read in one place. The verbs require the check only
+for a node that declares `domain.shapes` or `domain.questions` (`verbs/_site-checks.js`), so a
+node without them loads none of the three libraries.
 
 ### Three decisions recorded here
 
@@ -604,16 +666,32 @@ drive them, `init` and `ci`.
 
 | Path | Context | Implements |
 |---|---|---|
-| `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards |
+| `knowledge/chunks.js` | Knowledge | AGSC-06-26…31 — the two cuts, the identifier, the record, the exclusions, the shards; from 1.1 the members `abstract`, `license_url` and `content_digest` (AGSC-06-29, AGSC-06-44), the text that starts at its first line that is not blank (AGSC-06-45) and the count and set commitment of the chunks surface (AGSC-06-44) |
+| `knowledge/chunks-index.js` | Knowledge | AGSC-06-37 — the tabular chunk index `chunks-index.toon`, written by the pinned TOON encoder; one writer for the build's `/chunks-index.toon` and the `llm-context` adapter |
+| `knowledge/digest-field.js` | Knowledge | AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17 — the RFC 9530 value `sha-256=:<base64>:`, the RFC 9651 Dictionary written by `structured-headers` over a node:crypto SHA-256 |
 | `governance/ledger.js` | Governance | AGSC-08-20…24 — the derivation, the production of the git-log file, the chain, `verify --ledger` |
 | `governance/auto-merge.js` | Governance | AGSC-08-26(g) — the history check of a channel set to `auto`, read from the git-log file |
 | `governance/boards.js` | Governance | AGSC-10-13, AGSC-10-16…18 — the board exports, the derived `done` and `claimed_by`, the WIP limit |
 | `distribution/search.js` | Distribution | AGSC-06-16, AGSC-06-21, AGSC-06-23 — the normative tokenizer and the index |
-| `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files |
+| `distribution/llms.js` | Distribution | AGSC-06-13, 06-13a, 06-14, 06-15 — the byte layout of the two text files; `LLMS_ROUTE` and `LLMS_MEDIA_TYPE`, which every page names (AGSC-06-46). Own code: no llms.txt writer on npm is the convention's own, and none writes the provenance comment or escapes exactly `\`, `[`, `]` and `(` as AGSC-06-13a asks |
 | `distribution/discovery.js` | Distribution | AGSC-06-07…12, 06-35, 10-12, 11-16, 11-20, 11-23 — the link set, its validator, the peer check |
-| `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects` |
+| `distribution/headers.js` | Distribution | AGSC-06-04, 06-17, 11-03, 11-04, 11-05 — `_headers` and `_redirects`; AGSC-06-40 — the FAIR Signposting links of `/` in the one `Link` field of its block, after the AGSC-11-05 value; the blocks of the card and the two catalogue files where the build wrote them |
+| `distribution/well-known.js` | Distribution | AGSC-06-07, 06-08, 06-34, 06-42, 11-16 — the well-known files in order: the agent card, the discovery document with its declared surfaces (`declaredSurfaces`, moved here from `site.js`), the catalogue files over the bytes of the other two |
+| `distribution/a2a-card.js` | Distribution | compiled from `src-ts/distribution/a2a-card.ts` — AGSC-06-34 with AGSC-06-07: the A2A 1.0 agent card, typed as the official SDK's `AgentCard` and written by its codec (`AgentCard.toJSON`), JCS and one LF; own code only for `skills` `[]` and the bytes; AGSC-E210 for a card without a responder (error), and no card with the warning AGSC-E210 when a responder is not `a2a:` or the `a2a-card` version is not a bare A2A version (an MCP endpoint is not an A2A interface) |
+| `distribution/ai-catalog.js` | Distribution | AGSC-06-42 — `/.well-known/ard.json` and `/.well-known/ai-catalog.json` on `discovery.ai_catalog`: one entry per file pointed at, its SHA-256 over the served bytes; AGSC-E209 for a host that is not a domain name, AGSC-E202 for no `bundle.id` |
 | `distribution/now.js` | Distribution | AGSC-06-22, AGSC-08-25 — the NOW state and the monthly spend meter |
-| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates |
+| `distribution/html.js` | Distribution | AGSC-06-02, 06-05, 06-18…20, 06-24, 06-25 — the page templates; from 1.1 AGSC-06-46: `describedby` `/llms.txt` (`text/plain`) in every `<head>` after the discovery document's link, and `alternate` `text/markdown` to `/pages/<slug>.md` on an item page; AGSC-06-38 (places the graph view's sections on an item page); AGSC-02-13, 02-98 (`inlineDiagram`, the one path every inline figure is compiled and checked through); from 1.1 the `/compose/` form inside one workspace block shown when the list is painted (no layout shift), with the cluster and tag filters and the places of the verdict in words, the brief and its downloads (AGSC-07-25), and the brief section on an architecture's page |
+| `distribution/architecture-brief.js` | Distribution | AGSC-07-25, AGSC-07-24 — the brief on the item page of a saved architecture, written by the build over the listed items: the summary, the dependency order, the gaps, the checklist (each list at most 50 entries) and the link to `/compose/?from=<slug>` |
+| `distribution/graph-view.js` | Distribution | AGSC-06-38 — the figure and relations table of an item page (backlinks, meanings, at most 24 rows), the map of a cluster's members, the overview and legend of `/clusters/` |
+| `distribution/domain-view.js` | Distribution | AGSC-06-38 (the domain sentences), AGSC-08-32 — on a node with a site vocabulary, the item's domain type, role, context and warrant in a definition list under the relations table, each with its label, and the columns "Domain type" and "Domain context" where a row's item has one; and whether the two page scripts carry the domain parts (only when a listed item states a key of AGSC-02-25) |
+| `distribution/clusters-page.js` | Distribution | AGSC-06-38, AGSC-06-01 — what `/clusters/` adds below its list, and the two files it loads |
+| `distribution/page-head.js` | Distribution | AGSC-06-01 (`/assets/<path>`) — the icon a page links and the `og:image` build option (1.1; no rule names either) |
+| `distribution/site-views.js` | Distribution | AGSC-06-01, AGSC-06-02, AGSC-06-38, AGSC-06-39, AGSC-07-25, AGSC-05-38 — the 1.1 views of a build that `site.js#buildSite` writes: `itemViews` (an item page's tags, Cluster row, members, map, relations and brief), `siteVocabularyOf`, `queryPageFacts`, `emptyFolder` (pure) |
+| `distribution/explorer/*.js` | Distribution | AGSC-06-38, AGSC-06-05, AGSC-06-17, AGSC-06-20 — the explorer of `/clusters/`, shipped as the source text of its portable functions |
+| `distribution/query-page.js` | Distribution | AGSC-06-39, AGSC-06-01, AGSC-06-05, AGSC-06-17, AGSC-06-20, AGSC-06-21 — the `/query/` page, its script, worker and stylesheet, and the files of the vendored engine |
+| `distribution/query-examples.js` | Distribution | AGSC-06-39 (b), (f), AGSC-05-34, AGSC-05-41, AGSC-05-38 — the examples of `/query/` filled in from the node, the node's competency questions and its site vocabulary's terms |
+| `distribution/query/*.js` | Distribution | AGSC-06-39 — the query page's portable functions: the tokenizer and the refusal (`tokens.js`), what a result shows (`view.js`), the worker over the engine (`engine.js`), the page's wiring (`main.js`) |
+| `distribution/vendor/oxigraph-0.5.13/` | Distribution | AGSC-06-39 — one release of the query engine (Oxigraph 0.5.13, WebAssembly), its licence texts and the crates compiled into it with their licence texts; not the engine's code, pinned by SHA-256 |
 | `distribution/site.js` | Distribution | AGSC-06-01 and AGSC-04-01/02 — `build`, `write`, `verify` |
 | `distribution/init.js` | Distribution | AGSC-02-94, AGSC-02-95, AGSC-01-37 — the adoption use case |
 | `distribution/ci.js` | Distribution | AGSC-09-08 — lint → build → verify and the exit codes |
@@ -622,15 +700,18 @@ drive them, `init` and `ci`.
 
 ```js
 // knowledge/chunks.js
-records(items, { base, maxBytes, license, attachmentBytes, releases }) -> { records, findings }
+records(items, { base, maxBytes, license, attachmentBytes, releases, licenseUrl, contentDigest }) -> { records, findings }
+commitment(records) -> { count, set }              // AGSC-06-44: agsc-chunk-count and agsc-chunk-set
+fromFirstLine(text) -> string                      // AGSC-06-45: the text from its first line that is not blank
 serialize(records, canonicalize) -> string        // one JCS line per chunk, one trailing LF
 files(records, canonicalize, { itemsPerShard }) -> { files: [{path, text}], manifest }
 sections(body); splitBySize(text, maxBytes); cutPoints(body)
 chunkId(iri, section, ordinal); digestOf(text); citationAnchor(id)
+citationRecord(line, bundleVersion) -> the citation record of AGSC-09-13 that the tool `read` carries
 itemIri(base, item); linksOf(item); isPublished(item, releases); byteLength(s)
 
 // governance/ledger.js
-derive(gitLog, contentTree, version, { epoch }) -> { entries, ledger, head }
+derive(gitLog, contentTree, { actors, epoch }) -> { entries, ledger, head }   // the builder is always process:agsc (AGSC-08-20a)
 verify(ledger, wellknown) -> Finding[]            // AGSC-E701 / AGSC-E702
 produce(commits) -> gitLog                        // AGSC-08-20b
 parseTrailers(message); publishedHead(wellknown); hashEntry(prev, entry); actorOf(signedOffBy)
@@ -646,8 +727,9 @@ tokenize(text) -> string[]; stripFencedCode(body); tokenizerInput(item)
 index(items) -> { docs, terms }; files(items, { itemsPerShard }) -> { files, manifest }
 
 // distribution/llms.js
-llmsTxt(bundle, { generatedAt, specVersion, terms }) -> string
+llmsTxt(bundle, { generatedAt, specVersion, terms, bundleVersion, visibility }) -> string
 llmsFullTxt(bundle, { … }) -> string; sectionBlocks(bundle); primaryCluster(item); iriOf(base, item)
+LLMS_ROUTE   // '/llms.txt'; LLMS_MEDIA_TYPE 'text/plain' (AGSC-06-46)
 
 // distribution/discovery.js
 linkset(config, { level, ledgerHead, digests, counts, generatedAt, specVersion,
@@ -658,8 +740,40 @@ countsOf(items); digestOf(bytes); wellknownUrl(base); href(base, route); attribu
 WELLKNOWN_SUFFIX WELLKNOWN_PATH WELLKNOWN_ALIAS MEDIA_TYPE PROFILE REL
 
 // distribution/headers.js
-headerSets(config) -> [{route, headers: [[name, value], …]}]
-headersFile(config) -> string; redirectsFile(renames) -> string; etag(hex)
+headerSets(config, routes) -> [{route, headers: [[name, value], …]}]   // a ['!', name] entry detaches a header
+headersFile(config, routes) -> string; redirectsFile(renames) -> string; etag(hex)
+homeLinks(config, routes) -> [{href, rel, type?}]; homeLinkField(config, routes) -> string   // AGSC-06-40
+
+// distribution/well-known.js
+files({ config, emitted, level, ledgerHead, bundleVersion, generatedAt, specVersion, items, description,
+        packs, legal, pages }) -> { files: Map<route, text>, findings, skipped }
+agentCard({ config, bundleVersion, specVersion, description, packs }) -> { text, findings }
+declaredSurfaces({ base, config, emitted, mcpServed, webmcpVersion }) -> [{surface, target, version, access}]   // an a2a-card that gets no card is not declared (AGSC-11-16)
+
+// distribution/a2a-card.js (compiled from src-ts/distribution/a2a-card.ts)
+cardBytes({ title, description, tagline, bundleVersion, specVersion, visibility, surfaces, packs }) -> string | null
+card(input) -> AgentCard; eligible(surfaces); cardFindings(surfaces) -> Finding[]   // AGSC-E210 (error: no responder; warn: not an A2A card)
+CARD_PATH DEFAULT_BINDING SKILL_TAGS
+
+// distribution/ai-catalog.js
+catalogueFiles({ config, description, discoveryBytes, cardBytes }) -> { files: Map<route, text>, findings }
+domainName(base) -> string | null; ARD_PATH AI_CATALOG_PATH ARD_MEDIA_TYPE AI_CATALOG_MEDIA_TYPE
+
+// distribution/front-page.js
+frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOptions, render, schemaOrg, served, site, textBytes })
+  -> { html, findings }
+datasetBlock({ config, description, hasLegal, instant, name, served }) -> object; catalogBlock(same) -> object | null  // DCAT 3, on discovery.dcat
+creatorOf(config, base); datasetFindings(description)
+
+// knowledge/chunks.js (AGSC-06-44)
+licenseUrl(config, { legal }) -> string | null
+
+// knowledge/chunks-index.js (AGSC-06-37)
+chunksIndexToon(records) -> string                 // header chunks[<n>]{id,item,kind,section,ordinal,title,digest}: and one row per line
+indexRows(records); short(hex); INDEX_COLUMNS
+
+// knowledge/digest-field.js (RFC 9530, RFC 9651)
+sha256Field(bytes) -> 'sha-256=:<base64>:'
 
 // distribution/now.js
 state(items, config, { instant, allItems }) -> object
@@ -667,12 +781,82 @@ spend(items, config, { month }) -> { month, episodes, spent_usd, cap_usd, ratio,
 counts(items); staleItems(items, instant); nowMarkdown(state)
 
 // distribution/html.js
-shell(page); itemPage(item, options); indexPage({title, description, entries}, options)
+shell(page); itemPage(item, options); indexPage({title, description, entries, after?}, options)   // page.stylesheets: the page's own, after the theme
 nowPage(markdown, options); notFoundPage(options); aboutPage({verbs, personas}, options)
 escapeHtml(value); termsLine(licenseProse); HONEST_LIMIT
+diagramFigure(item, source, options); inlineDiagram(source, {slug, item, file, accessibleName?, caption?}, options) -> { html, findings }
+
+// distribution/graph-view.js (pure; the caller passes the listed items, AGSC-06-30)
+index(items, hrefOf) -> { bySlug, incoming, hrefOf }
+relationRows(item, views) -> [{key, direction: 'outgoing'|'incoming', other}]   // outgoing first, keys in AGSC-03-01 order
+itemSection(item, views, { svgViolations?, columns?, after? }) -> { html, findings }   // '' without a relation, or for a retired item; heading `#links` unless the body's own heading has that anchor; `after` right under the table
+clusterSection(cluster, views, { svgViolations?, columns? }) -> { html, findings }   // '' when no member links another, or for a retired cluster; heading `#member_links`
+// (a symmetric key both items state is one row, one arc and one overview count)
+relationsTable(rows, columns, views, filtered?); itemFigureSource(item, rows); membersOfCluster(cluster, views)
+overviewRows(clusters, views) -> [{source, key, target, count}]   // Links between members of two different clusters, counted
+overviewSection(clusters, views, { svgViolations? }) -> { html, findings }   // figure, relation filter (no script), table; '' without clusters; says how many clusters the figure left out
+legendSection() -> string                         // the fourteen keys, the key read backwards, the meaning
+ITEM_COLUMNS; CLUSTER_COLUMNS; NEIGHBOURS_DRAWN = 24; MEMBERS_DRAWN = 24; MEMBER_LINKS_DRAWN = 24
+
+// distribution/domain-view.js (pure; AGSC-06-38, the domain layer)
+pages({ bundle, config, items, model, routeOf }) -> { views, itemSection(item) -> { html, findings }, scripts }   // views = graph-view index(items, routeOf); the domain parts only when bundle.domain.vocabulary is present
+scripts(items, config, model, all?) -> { contexts: [cluster slug], edges, withheld } | undefined   // the `domain` option of the two page-script bundles: the declared contexts that are listed, links.js#domainEdges over the listed items and brief.js#domainWithheld over every item; undefined when no listed item states a domain key or a domain link
+ROLE_WORDS   // the five roles of AGSC-02-25, as words
+
+// distribution/page-head.js (pure)
+iconOf(files) -> { href, type } | null; ogImageOf(option, base) -> { url, alt? } | null   // throws on a url that is neither https:// nor a site path
+
+// distribution/site-views.js (pure)
+itemViews({ bundle, config, entryOf, instant, items, pageItems, routeOf, siteVocabulary }) -> { itemParts(item) -> { findings, options }, membersOf, scripts, tags, views }
+siteVocabularyOf(bundle, config); graphDomainOf(config, siteVocabulary) -> model | null   // an empty model for a domain object with no vocabulary (AGSC-05-39)
+queryPageFacts(options, facts); emptyFolder(plural); CLUSTER_MEMBERS_SHOWN
+
+// distribution/clusters-page.js (pure)
+view({ items, views, contextObject, graphEmitted, specVersion }) -> { render, assets: [[route, text]], findings }
+ROUTE = '/clusters/'
+
+// distribution/explorer/ (PORTABLE: each module lists the functions emitted as their own source text)
+explorerGraph(doc, relations, max) -> { nodes: [{id, type, label, summary, route}], links: [{source, key, target}], total }
+// (draws the entries of the six item types with an item route, not retired: no vocabulary term, no Source)
+explorerText(value); explorerRoute(iri, base); explorerNeighbours(graph, id)        // graph-data.js
+explorerLayout(graph, {width, height, margin}) -> [{id, x, y}]                      // layout.js, no random number
+explorerExcerpt(text, max); explorerPlaceTip(anchor, tip, frame, others, gap) -> {left, top, side}   // tooltip.js
+explorerStep(key, index, count); explorerMatches(node, words); explorerStart(frame); explorerReduce(state, event, frame)   // controller.js
+explorerScene(graph, positions, state); explorerList(graph, state); explorerDetail(graph, id, meanings); explorerTip(node);
+explorerVisible(graph, query); explorerRadius(node); explorerBuild(doc, tree, ns?)   // view.js
+explorerMain(win, api); explorerWire(win, api, graph, positions)                    // main.js, the browser lane only
+// explorer/page.js
+script({ relations, specVersion }) -> string; stylesheet() -> string; section() -> string
+relationTerms(contextObject) -> [{key, term, meaning, symmetric}]   // the term through knowledge/jsonld.js#compactionTable, #compactName
+SCRIPT_ROUTE = '/clusters/agsc-explorer.js'; STYLESHEET_ROUTE = '/clusters/agsc-explorer.css'; MAX_NODES = 400
+GRAPH_ROUTE = '/graph.jsonld'; FRAME = { width: 800, height: 560, margin: 24 }
+
+// distribution/query-page.js (pure; AGSC-06-39)
+decision({ site, graphServed, input, pages }) -> { on, skipped }   // on unless site.query_page is false, no graph.nq, or no engine given
+files({ engine, questions, ontologyTerms, specVersion, items, base, instant, domain }, pageOptions) -> [[route, text | Buffer]]   // the page, its assets, the engine; domain = { questions: text, vocabulary: model } | null
+script({ specVersion }) -> string; workerScript({ specVersion }) -> string; stylesheet() -> string
+examplesSection(questions, { values, iriOf, titleOf, siteQuestions }) -> string; vocabularySection(ontologyTerms, siteTerms?) -> string
+ENGINE = { name, package, version, licence, folder, route, module, files: [{ source, served, bytes, sha256 }] }; ENGINE_SOURCES   // a .wasm among the files gives /query/* its block (headers.js)
+ROUTE = '/query/'; SCRIPT_ROUTE; WORKER_ROUTE; STYLESHEET_ROUTE; GRAPH_ROUTE = '/graph.nq'; ROWS_SHOWN = 200; MAX_NODES = 150; FIRST_QUERY
+// distribution/query-examples.js (pure; AGSC-06-39 (b), (f); build time only, never shipped)
+exampleValues(items, at) -> [{ number, subject, selection, at, fits }]   // the ten questions, in order
+exampleText(question, prefixes, values, iriOf) -> string; exampleNote(values, titleOf) -> string
+siteQuestions(text) -> [{ id, query, question }]   // AGSC-05-41, shape only; [] when the file is not of that shape
+siteTerms(model) -> { ontology, classes: [{ iri, label, parents, meaning }], relations: [{ iri, label, parents, inverse, meaning }] } | null   // AGSC-05-38
+// distribution/query/ (PORTABLE: each module lists the functions emitted as their own source text)
+queryTokens(text) -> [{kind, text}]; queryCheck(text) -> { form, refusal, dataset, fresh }; queryRefusal(check) -> string | null; queryHighlight(text)   // tokens.js; a `<` after a value inside an expression is "less than", never an IRI; a comment ends at CR or LF; a bare word holding a refused word refuses; a local-name escape (`ex:a\#`) and an IRI code point escape (`\u0041`) are part of the token; a local name ends at a second run of bare full stops and a variable at a hyphen, as the engine reads them; `fresh`: the query calls RAND, NOW, UUID, STRUUID or BNODE
+queryShortName(iri, prefixes) -> string | null; queryTermText(term, prefixes); queryTable(result, limit, prefixes); queryGraph(result, prefixes, max) -> { nodes, links, total } | null; queryPictureText(graph)
+querySummary(answer); queryShareHref(text) -> '#query=…'; queryFromHash(hash) -> text | null   // view.js
+queryAnswer(ox, store, text) -> { form, json, csv } | { form, error }; queryGraphStore(ox, quads); querySelectCsv(ox, json) -> string   // engine.js: the engine's own result writers; a `fresh` SELECT runs once and its CSV is read back from its JSON
+queryWorkerMain(scope, ox, graphRoute); queryMain(win, api)          // engine.js, main.js: the browser lane only
+// adapters/node-fs.js: readEngineFiles(relatives, engineRoot?) -> Map<path, Buffer>
+// application/cli/verbs/_helpers.js: queryPageInput() -> { engine: Map<source, Buffer>, questions: Buffer }   // read once per process
 
 // distribution/site.js
 build(bundle, ports, options) -> { files: Map<route, string>, findings, skipped, state, ledgerHead }
+//   options.ogImage = { url, alt? }: the image every page with an address announces as og:image — an https:// address,
+//   or a site path ('/assets/card.png') resolved against site.base; anything else throws. No config key sets it.
+//   Every page links /assets/favicon.svg (else /assets/favicon.png) as its icon when the build publishes that asset.
 write(files, ports) -> string[]; verify(bundle, ports, options) -> Finding[]   // AGSC-E602
 routeOf(item); sitemap(base, routes, instant); robots(base); tdmrep(base); securityTxt(base, expires)
 
@@ -727,26 +911,32 @@ asks for, on the artefacts the implementations share.
 ## 10. Composition, the node boundary and the two tool transports
 
 The Composition context (`composition/`), the Boundary context (`boundary/`) and the
-tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-stdio.js`,
+tool surfaces of Distribution (`distribution/mcp-tools.js`, `mcp-core.js`,
 `mcp-resources.js`, `webmcp.js`, `page-tools.js`). The Bundle loader they share is
 `application/bundle.js` (§11.3).
 
 | Path | Context | Implements |
 |---|---|---|
 | `composition/compose.js` | Composition | AGSC-07-03…07-10 — the five steps in the normative order, the AGSC-07-09 verdict and every ordering; AGSC-07-23 wiring; AGSC-11-22's selection half |
-| `composition/architecture.js` | Composition | AGSC-02-97, AGSC-07-24 — the saved composition: the `yaml agsc-selection` block, `compose --from`, the stale `verdict_digest` warning |
+| `composition/architecture.js` | Composition | AGSC-02-97, AGSC-07-24 — the saved composition: the `yaml agsc-selection` block, `compose --from`, the stale `verdict_digest` warning; `isArchitecture`, which decides whether `compose --from <slug> --brief` writes the blueprint outputs (AGSC-07-29) |
 | `composition/harness.js` | Composition | AGSC-07-12, AGSC-07-13, AGSC-07-15…07-17 — the seven file kinds of a Harness and their bytes — and the two AGSC-07-23 renderings |
+| `composition/context-map.js` | Composition | AGSC-07-30 (with AGSC-08-32, AGSC-11-24) — the context map of a composition: `context-map.json` in the companion directory `<harness dir>.companion/`, beside the Harness and never in it, only for a node that declares contexts; nothing in `harness.js` reads it (`tests/arch/context-map.test.js`) |
+| `composition/brief.js` | Composition | AGSC-07-25…07-27 (with AGSC-00-05, AGSC-05-33, AGSC-08-32 for the domain paragraph) — the brief of a composition, valid or not: `brief.json` (JCS), `BRIEF.md`, `context.md` (at most 65,536 bytes) and `brief.mmd`, in the companion directory `<harness dir>.companion/`; the dependency order, the gaps and the checklist; only listed items are named. PORTABLE: `composition/browser.js` carries it in the page bundle when asked (`bundle({ brief: true })`), so the page and the command line write the same bytes; nothing in `harness.js` reads it (`tests/arch/brief.test.js`). It writes no narration (AGSC-07-28). Above a bound of 1,000,000 steps in the paths of `derived` (`derivedBound`; the member grows with the cube of a chain's length) `derived` keeps its first readings, built in order, and `derived_total` counts them all (AGSC-07-25 as amended 2026-11-10) |
+| `composition/blueprint.js` | Composition | AGSC-07-29 (with AGSC-00-05, AGSC-07-26) — the blueprint outputs of a saved architecture, in `blueprint/` of the directory beside the Harness: `c4-context.mmd`, `c4-containers.mmd`, `c4-components.mmd` (the first three C4 levels as Mermaid), `decisions/NNNN-<slug>.md` (one MADR record per distinct `decided-by` target of a member) and `build-plan.md` (one step per member in dependency order); read from the brief's own parts, so only listed items are named; JSON Schema, OpenAPI and test scaffolds are not outputs at 1.1; the architecture's title is a Mermaid label (`mermaidLabel`: a quote is `#quot;`). PORTABLE: the page bundle carries it with the brief; nothing in `harness.js` reads it (`tests/arch/brief.test.js`) |
 | `composition/skills.js` | Composition | AGSC-07-19…22 — the published skill packs, one per Cluster, and their lockfile |
+| `composition/skill-format.js` | Composition | AGSC-07-22 (with AGSC-07-15, AGSC-00-14) — the Agent Skills check of a `SKILL.md` before it is written: the frontmatter read by `knowledge/frontmatter.js#split` and `knowledge/yaml.js` (the pinned `yaml`), then the six fields; `check(text, {directory, file, harness})` → findings (an error means the file is not written; in a Harness file a bound fault is the warning `AGSC-E204`); `harnessFindings(kinds.skills)` for one Harness emission. Own code: the format's reference validator is Python, and the npm ports answer messages, not the five codes |
 | `composition/conform.js` | Composition | AGSC-09-01…09-03, AGSC-04-22, AGSC-04-24, AGSC-10-15 — the claim, the Level's area set, the divergence verdicts, the report |
 | `composition/archive.js` | Composition | / — the `.zip` PACKAGING of a multi-file result (the Harness of AGSC-07-12, the skill packs of AGSC-07-19, an export root of AGSC-01-26…28). PORTABLE: it is in the bundle of AGSC-07-13, so the `/compose/` page's "download all" link and `--zip` build the same bytes. STORE only, entries in code-point path order, the AGSC-04-09 build instant in UTC, nothing optional written. Never a file OF a Harness (AGSC-07-12 closes that set) and never a build INPUT (AGSC-01-16, `AGSC-E903`) |
 | `boundary/surfaces.js` | Boundary | AGSC-11-16…11-19, AGSC-11-21, AGSC-10-14 — declaration, pinning, the floor in each surface's vocabulary, and the ONE place a foreign protocol version is named |
 | `boundary/visibility.js` | Boundary | AGSC-11-01…11-05, AGSC-11-20, AGSC-11-22 — parameters, reserved values, CORS, ETag/`no-cache`, the profile carriers, retirement |
-| `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones |
-| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the seven tools and the one envelope |
-| `distribution/mcp-stdio.js` | Distribution | AGSC-09-13 over stdio JSON-RPC, AGSC-11-18's MCP half; the wiring of AGSC-09-14b's resources and prompt |
+| `boundary/federation.js` | Boundary | AGSC-11-06…11-15, AGSC-11-23, AGSC-11-24, AGSC-10-12, AGSC-06-35 — peers, transport, addresses, redirects, the walk, citation, contribution, boards, tombstones, and the context maps between nodes (a typed peer's relationship and crosswalk, checked before any fetch, applied by the client only) |
+| `distribution/mcp-tools.js` | Distribution | AGSC-09-13, 09-13a, 09-14a, 09-14b, AGSC-08-18 — the ten tools and the one envelope; from 1.1 the bound on `search`/`ask`, the citation records of `read`, and `brief` over the listed set, `explain` and `check` over the Bundle on disk (with no selection, `check` checks every listed item) |
+| `distribution/mcp-core.js` | Distribution | compiled from `src-ts/distribution/mcp-core.ts` — AGSC-09-19 with AGSC-09-13, 09-13a, 09-14b and AGSC-11-18's MCP half: one official SDK server (`@modelcontextprotocol/server`) for the ten tools, the resources and the prompt (`createServer`, which both transports use); `isError` beside the envelope, a tool the server does not serve is -32602; over stdio (`serveStdio`) revision 2026-07-28 and, to a client that opens with `initialize`, 2025-11-25, through `StdioRevisionGate`, which adds the four points of AGSC-09-19 the SDK answers otherwise; the first request fixes the revision of the process |
+| `distribution/mcp-http.js` | Distribution | compiled from `src-ts/distribution/mcp-http.ts` — AGSC-09-18 with AGSC-09-19 for its results: the Streamable HTTP transport of `mcp --http`, wiring only — the SDK's `createMcpHandler` (`legacy: 'reject'`: revision 2026-07-28 only, stateless, one server per request from `mcp-core.serverFactory`, the header checks, 405, 202, 404) and `@modelcontextprotocol/node` (`toNodeHandler`, the `Host` and `Origin` guards over `allowedHosts(bind)`); own code only for the path `/mcp` and for `subscriptions/listen` as an unknown method. Opens no socket |
 | `distribution/mcp-resources.js` | Distribution | AGSC-09-14b's OTHER MCP primitives — every published item, `graph.jsonld` and `llms.txt` as read-only resources (`memory://` URIs, AGSC-05-04b) and the one prompt "answer from this memory with citations". A projection of the build's own route map, so a resource is the published bytes and never a second rendering |
 | `distribution/webmcp.js` | Distribution | AGSC-09-16 — the browser registration script, feature-detected, write tools local-only |
-| `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME seven tools over the published routes, emitted as source text per AGSC-07-13 |
+| `distribution/page-tools.js` | Distribution | AGSC-09-16's browser half — the SAME ten tools over the published routes, emitted as source text per AGSC-07-13 |
+| `distribution/tool-answers.js` | Distribution | AGSC-09-13 and AGSC-09-16 for what 1.1 adds to the tools — the bound, the citation records from the published chunk lines, `explain` over the readings of AGSC-05-33, `check` over the Link warnings of AGSC-03-23…03-26, `brief` over AGSC-07-25 — PORTABLE: the local server calls it and the page-tool script carries its source text |
 
 ### Public API of these modules
 
@@ -760,11 +950,42 @@ indexBySlug(items); slugOf(item); frontmatterOf(item)
 selectionBlock(item) -> { blocks, findings, selection }
 composeFrom(items, slug) -> { findings, result, selection }
 selectionFences(body)
+isArchitecture(item) -> boolean   // a Concept of kind architecture (AGSC-07-29)
 // composition/harness.js
 isEmitted(result); dslRelationships(result); mermaidEdges(result); pairs(result)
+// composition/skill-format.js — AGSC-07-22
+check(text, {directory, file, harness?}) -> findings   // [] when the SKILL.md passes; an error: not written
+harnessFindings(kinds.skills) -> findings   // a bound fault in a Harness skill file is the warning AGSC-E204
+FIELDS; DESCRIPTION_MAX (1024); COMPATIBILITY_MAX (500)
+// composition/context-map.js — AGSC-07-30
+contextMap(result, {contexts, items, peers, bundleVersion, instant, licenseProse, selectionDigest, specVersion}) -> object | null
+contextMapFiles(result, options) -> [['context-map.json', text]] | []   // [] for a node with no contexts or an invalid composition
+FILE
+// composition/brief.js — AGSC-07-25…07-27
+briefOf(result, {items, listed?, bundleVersion, instant, licenseProse, selectionDigest, specVersion, base}) -> the brief.json object
+briefFiles(result, options) -> [['BRIEF.md', text], ['brief.json', text], ['brief.mmd', text], ['context.md', text]]
+dependencyOrder(selection, edges); briefEdges(listedIndex(options))   // listed: slugs; absent = every item
+mermaidName('n' | 's', slug) -> the Mermaid name of a node or a Concept subgraph in brief.mmd and blueprint/c4-*.mmd (AGSC-07-25, AGSC-07-29)
+derivedBound() -> 1000000   // above it `derived` keeps its first readings and brief.json gains `derived_total` (AGSC-07-25 as amended 2026-11-10)
+chainReadings(edges, members, bound?) -> { readings, total }; walkFrom(adjacency, source) -> Map
+// the domain paragraph of AGSC-07-25 (DOMAIN_PORTABLE; options.contexts = the clusters domain.contexts declares, options.domainEdges = knowledge/links.js#domainEdges)
+briefDomainOf(result, options); briefDomainFiles(result, options)   // = briefOf / briefFiles when no member has a domain part and no domain link joins
+domainOf(item, contexts?) -> { context?, role?, type?, warrant? } | null   // null when the item states none of the four keys of AGSC-02-25
+domainWithheld(items, listed?, contexts?) -> [slug]   // the listed items whose context is an item that is not listed (AGSC-07-25, AGSC-06-38, AGSC-09-16)
+domainWithin(domain, named) -> domain | null   // the context left out when `named` is false; null when no part is left
+domainRelations(relations, domainEdges, listed, selection) -> relations   // the domain links of options.domainEdges join `relations` (AGSC-07-25, AGSC-03-27)
+briefDomainParts(result, options) -> { edges, members, record, domains: Map }; briefDomainMd(parts, options); contextDomainMd(parts, options)
+// composition/blueprint.js — AGSC-07-29
+blueprintFiles(result, {architecture, ...the options of briefOf}) -> [['blueprint/build-plan.md', text], ['blueprint/c4-components.mmd', text], ['blueprint/c4-containers.mmd', text], ['blueprint/c4-context.mmd', text], ['blueprint/decisions/NNNN-<slug>.md', text]…] | []   // [] when the architecture is not listed
+// composition/browser.js
+bundle({ specVersion, brief?, domain? }) -> the page script; exportedNames({ brief?, domain? })   // brief: carry brief.js and blueprint.js too (default false); domain = { contexts, edges, withheld } (DOMAIN: listed declared contexts, domain links between listed items, withheld listed items): with brief, the domain paragraph too, and AGSC_CORE.briefOf / briefFiles are the domain paragraph's over those contexts
+// distribution/architecture-brief.js — AGSC-07-25 on an architecture's page
+section(item, {instant, items, route}) -> html | ''   // '' unless item is a saved architecture whose selection block reads
 // composition/conform.js
 areasForLevel(level); claimCompleteness(claim); divergenceVerdict(d, options)
-divergenceVerdicts(list, options); crossImplementationClaim(claimed); report(input)
+divergenceVerdicts(list, options); report(input)
+crossImplementationClaim(claimed) -> {accepted, excepted, rejected, reason}   // AGSC-04-24; excepted: accepted file -> members no case pins (export-manifest.json -> ['spec_version'])
+CROSS_IMPLEMENTATION; CROSS_IMPLEMENTATION_1_1   // the 1.0 routes and Harness kinds; the 1.1 files, each {artefact, cases, except, named_by, test(name)}
 // boundary/surfaces.js
 declare({base, emitted, mcpServed, surfaces}) -> link objects
 validate({declared, emittedUndeclared, resolves, pinningVectors, responderDeclared}) -> Finding[]
@@ -779,25 +1000,42 @@ checkBoundaryConfig(config) -> Finding[]; retirement(items, {base}); retiredAt(i
 // boundary/federation.js
 effectiveFederation(config); peerBase(url); peerLinks(config)
 checkScheme(url, {dev}); checkAddresses(addresses, {dev}); followRedirects(peer, hops, options)
-walk({start, fetch, federation}) -> { error, ignoredByFanOut, notDescended, partial, requests, skipped, visited }
+walk({start, fetch, federation, resolved, dev}) -> { error, ignoredByFanOut, notDescended, partial, requests, skipped, visited }
 normaliseReference(raw) -> { error, url }; peerCitations(items, {base, peers}); serializeQuads(quads)
 linkKeyBoundary(items); checkContribute(config); contributeLinks(config, {clientSupports})
 checkRelated(config); relatedLinks(config); mutualCheck(nodes); clientUnion(dumps)
 mergeBoards(boards); peerResults({localHits, peerHits, peer})
+// AGSC-11-24: context maps between nodes
+readCrosswalk(text, {file, base, contexts, items, terms}) -> { findings, statements: [{local, match, peer}] }   // AGSC-E209
+peerFaults(entry, {read, where, base, contexts, items, terms}) -> { findings, statements }   // AGSC-E203, E202, E901, E209; no fetch
+contextMapResults({peer, results, statements}) -> results with relationship, crosswalk[{match, local}], trust "untrusted"
+RELATIONSHIPS; CROSSWALK_MATCHES
 // distribution/mcp-tools.js
-tools(bundle, {config}) -> { call(name, args) -> envelope, manifest() }
+tools(bundle, {config, artifacts, domain}) -> { call(name, args) -> envelope, manifest() }   // artifacts: the build's route map; domain: the site vocabulary (knowledge/domain.js#load), for the brief's domain links
 manifest(); tokenize(text); envelope(source, type, body); errorEnvelope(source, code, message)
-// distribution/mcp-stdio.js
-createServer(bundle, options) -> { resources, server, toolset };  serve(ctx) -> Promise<void>
-// distribution/mcp-resources.js — AGSC-09-14b beside the seven tools
+// distribution/mcp-core.js — serverFactory shares one toolset and catalogue among the servers it makes
+serverFactory(bundle, options) -> () => { resources, server, toolset };  createServer(bundle, options) -> { resources, server, toolset }
+serveStdio({bundle, stdin, stdout, artifacts, config, domain, version}) -> { close() }   // the `mcp` verb's stdio entry
+// distribution/mcp-http.js — AGSC-09-18; the application layer listens and hands each request to `handle`
+createHttpHandler(bundle, {artifacts, config, domain, version, bind}) -> { handle(req, res) -> Promise<void>, close() }
+allowedHosts(bind?) -> ['127.0.0.1', 'localhost', '[::1]', <bind as a URL host>];  MCP_HTTP_PATH = '/mcp'
+// distribution/mcp-resources.js — AGSC-09-14b beside the ten tools
 catalogue(bundle, {artifacts, config}) -> { list(), read(uri), prompts(), prompt(name, args) }
 memoryUri(bundleId, name); promptText(question); PROMPT_NAME; PROMPT_TITLE; ARTEFACTS
 // distribution/webmcp.js
 script({manifest}) -> the page script;  LOCAL_ONLY_TOOLS
 // distribution/page-tools.js — the page half of AGSC-09-16
-bundle({bundleId, specVersion}) -> the page-tool script;  PORTABLE
-pageCorpus(sources, {bundleId}) -> { base, bundleId, bySlug, index, items }
-pageToolset(corpus, core) -> { call(name, args) -> envelope }   // core = AGSC_CORE
+bundle({bundleId, licenseProse, specVersion, domain?}) -> the page-tool script;  PORTABLE   // domain = { contexts, withheld }: search and read carry the domain parts (API.DOMAIN_CONTEXTS, API.DOMAIN_WITHHELD)
+pageCorpus(sources, {bundleId, licenseProse}) -> { base, bundleId, bySlug, chunks, claimed, host, index, items, licenseProse }
+pageToolset(corpus, core, hash?) -> { call(name, args) -> envelope }   // core = AGSC_CORE; `brief` -> a promise with the page's Web Crypto
+pageArgumentTypeFault(name, supplied) -> message | null   // AGSC-09-13a: an argument of another JSON type than the inputSchema states; both call paths use it
+// distribution/tool-answers.js — the portable answers of the tools of 1.1
+toolBounded(hits) -> {hits, total?}; toolHost(map) -> {bundleVersion, instant, specVersion}
+toolChunkIndex(map) -> {bySlug, incomplete, missing}; toolCitationRecord(line, bundleVersion)
+toolExplanation(edges, key, source, target); toolLinkWarnings(edges, itemOf)
+toolBrief(core, facts, selection, hash) -> {body} | {fault: {code, message}} (or a promise of it)   // AGSC-E901 without a build instant
+toolDomainAnswer(name, answer, domainOf) -> answer   // AGSC-09-13: `domain` on search hits and the read body of an item with a part; DOMAIN_PORTABLE
+toolWithDomain(record, domain); toolDomainToolset(toolset, corpus, core, contexts, withheld?) -> { call }   // the page's toolset through toolDomainAnswer, parts from core.domainOf, the context of a withheld item left out by core.domainWithin
 pageSplitFrontmatter(text); pageParseFrontmatter(yamlText); pageApplyTypes(value, key)
 pageEdges(items); pageAnchors(body); pageInlineTargets(body); pageTokenize(text)
 // application/bundle.js — `ports` is the port bag {fs, clock, proc, network}
@@ -806,10 +1044,8 @@ loadBundle(ports, { schemas }) -> Bundle
 
 ### Libraries (ADR-019)
 
-| Need | Library | Version | Licence |
-|---|---|---|---|
-| MCP stdio server | `@modelcontextprotocol/sdk` | 1.32.1 | MIT |
-| TOON tabular encoding (`export --to llm-context`) | `@toon-format/toon` | 4.1.1 | MIT |
+Each is a row of the one library table, with its version, its licence and the modules that use it:
+[src/README.md §4](README.md#4-libraries) — `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@a2a-js/sdk`, `@toon-format/toon`, `structured-headers`, `http-link-header`.
 
 `@toon-format/toon` is pinned exactly and meets the five requirements of ADR-019:
 MIT, maintained, zero dependencies, `require()`-able although
@@ -818,16 +1054,41 @@ clock, network or environment read at runtime — which
 `tests/arch/pinned-dependencies.test.js` asserts by reading the installed file.
 `npm audit` reports 0 vulnerabilities with it in the tree.
 
+`structured-headers` (from 1.1) meets the same five: MIT, maintained (2.1.1, October 2026),
+zero dependencies, a CommonJS build beside its ES module, and no clock, network or
+environment read at run time (`tests/knowledge/digest-field.test.js` reads the installed
+file). It writes the RFC 9651 Dictionary of an RFC 9530 digest value, which the engine had
+written as a template string; the bytes are the same (G-REF of B08-WP4).
+
 The official SDK supplies the JSON-RPC framing, the initialize handshake and
-the version negotiation; nothing of the protocol is hand-rolled. The server speaks
-MCP revision `2025-11-25`, negotiating down to `2025-03-26`, and advertises the
-extension identifier in its `initialize` result; it does not answer `server/discover`,
-the method of revision `2026-07-28` (AGSC-11-18), and moving it to that revision is
-planned for 1.1. The external revisions — `MCP_PROTOCOL_VERSION` (the one an `mcp`
-declaration carries by default, because it declares what the transport speaks),
-`MCP_SURFACE_VERSION` (`2026-07-28`, the target AGSC-11-16 names) and
-`WEBMCP_SURFACE_VERSION` (`2026-09-15`, the WebMCP report date the page tools'
-declaration carries by default) — all live in `boundary/surfaces.js`, the
+the version negotiation; nothing of the protocol is hand-rolled. *(1.0: the server spoke
+MCP revision `2025-11-25` only, through `@modelcontextprotocol/sdk` 1.32.)* From 1.1 the
+server is built on the SDK's v2 packages (`@modelcontextprotocol/server` 2.4.0, which
+replaces `@modelcontextprotocol/sdk`) in `distribution/mcp-core.js`: it speaks revision
+`2026-07-28` statelessly, with `server/discover`, `resultType`, `ttlMs` and `cacheScope`,
+and, over standard input and output, revision `2025-11-25` to a client that opens with
+`initialize`, negotiating down to `2025-03-26` as 1.0 did (AGSC-09-19). The SDK's
+`serveStdio` picks the era from the first message, and that era holds for the life of the
+process (a `server/discover` probe fixes nothing): after `initialize`, a request of
+`2026-07-28` is `-32022` naming `2025-11-25`; after a request of `2026-07-28`, `initialize`
+is `-32022` naming `2026-07-28`. Four answers of AGSC-09-19 differ from the SDK's, and the
+core's stdio gate gives them: `server/discover` and an unsupported revision name both
+revisions (after `initialize`, an unsupported revision names `2025-11-25` alone, the one
+revision the process still serves), `subscriptions/listen` is an unknown method (once the revision and the envelope
+have passed their checks), and a missing resource is `-32002` under `2025-11-25`. With `--http <port>` the same servers answer over
+Streamable HTTP (`distribution/mcp-http.js`, AGSC-09-18): the SDK's `createMcpHandler` with
+`legacy: 'reject'` serves revision `2026-07-28` alone, statelessly, one server per request,
+and `@modelcontextprotocol/node` adapts the Node request and checks `Host` and `Origin`
+against the loopback names and the `--bind` address; the transport adds only the path
+`/mcp` and `subscriptions/listen` as an unknown method, for a request the SDK's own checks
+(`classifyInboundRequest`) admit as one of `2026-07-28`; any other gets the SDK's 415,
+`-32020`, `-32022` or `-32602`. The external revisions — `MCP_PROTOCOL_VERSION`
+(`2026-07-28`, the newest revision the server speaks and the one an `mcp` declaration
+carries by default), `MCP_LEGACY_VERSION` (`2025-11-25`), `MCP_STDIO_REVISIONS`,
+`MCP_SURFACE_VERSION` (the same `2026-07-28`) and
+`WEBMCP_SURFACE_VERSION` (`2026-10-27` from 1.1, `2026-09-15` at 1.0: the WebMCP Draft
+Community Group Report date the page tools' declaration carries by default, the reference
+default AGSC-11-16 names) — all live in `boundary/surfaces.js`, the
 anti-corruption layer, never in a tool function.
 `tests/arch/surface-arrows.test.js` fails the build if any other module carries
 an external version literal.
@@ -859,7 +1120,7 @@ application layer, the only layer that orchestrates across contexts:
 
 ---
 
-## 11. The sixteen verbs, the seven tools, and what this engine claims
+## 11. The sixteen verbs, the ten tools, and what this engine claims
 
 **Summary.** Which module answers each verb and each tool, what the engine does NOT
 do and says so, and what it claims. Where this section and an earlier one differ,
@@ -898,27 +1159,28 @@ built node.
 | Verb | Rule | Module | State |
 |---|---|---|---|
 | `init` | AGSC-02-90…95, AGSC-01-37 | `application/cli/verbs/init.js` → `distribution/init.js`, `knowledge/adopt.js` | wired |
-| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired |
-| `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired |
-| `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g) | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check` | wired |
-| `ci` | AGSC-09-08, AGSC-08-26(g) | `verbs/ci.js` → `distribution/ci.js` with the lint lane injected; its verify lane adds `governance/auto-merge.js#check` | wired |
-| `export` | AGSC-01-26…29, AGSC-01-26a | `verbs/export.js` → `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`); `--zip` writes one archive beside each multi-file export root |
-| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf}.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`) and for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22; `--dry-run` on both; `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
-| `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12 | `verbs/compose.js` → `composition/{compose,architecture,harness}.js` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
+| `lint` | AGSC-09-12, AGSC-08-13…17 | `verbs/lint.js#lane` → `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js` | wired; `--suggest` (AGSC-05-35) writes `dist/suggestions.json` by `knowledge/suggest.js` and nothing under `content/`; from 1.1 the `domain` lane (`verbs/lint.js#domainLayer`, AGSC-01-41, AGSC-05-38) runs `knowledge/domain.js` over the `domain` object and the site vocabulary, for a Bundle that has a `domain` object, and over the items' domain keys (`AGSC-E418`, AGSC-02-25; `domain_links` on a node with no vocabulary file is the warning `AGSC-E207`, AGSC-03-27) for every Bundle; the links lane reads domain links with the site vocabulary (`verbs/lint.js#linkOptions`, `AGSC-E317`, AGSC-03-27), which `verbs/lint.js#siteModel` reads once per loaded Bundle for the lint, the build gate and `compose`; on a node that declares contexts the label check of `governance/lint.js` is made per context (`AGSC-E419`, AGSC-08-32); the `context map` lane (`verbs/lint.js#contextMapFindings`) checks the crosswalks of typed peers (`AGSC-E209`, AGSC-11-24), the loader reporting an absent one (`AGSC-E901`) |
+| `build` | AGSC-06-01, AGSC-04-01/02 | `verbs/build.js` → `distribution/site.js` | wired; the gate runs `verbs/lint.js#domainLayer`, `verbs/lint.js#contextMapFindings` and the `AGSC-E317` findings of the links lane, so a site vocabulary, a domain key or a domain link that `lint` refuses is never published (AGSC-05-38, AGSC-02-25, AGSC-03-27) |
+| `verify` | AGSC-04-02, AGSC-08-23, AGSC-08-26(g), AGSC-09-20 | `verbs/verify.js` → `site.verify`, `governance/ledger.js#verify`, `governance/auto-merge.js#check`, `verbs/_site-checks.js` → `knowledge/site-checks.js` | wired |
+| `ci` | AGSC-09-08, AGSC-08-26(g), AGSC-09-20 | `verbs/ci.js` → `distribution/ci.js` with the lint lane and the site checks injected (`verbs/_site-checks.js`, not run under `--level` 0 to 2, AGSC-10-19); its verify lane adds `governance/auto-merge.js#check` and the findings of the site checks | wired |
+| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17 | `verbs/export.js` → `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` | wired, **all six flags** (`--markdown`, `--okf`, `--steer`, `--jsonld`, `--jsonl`, `--to <adapter>`) and, from 1.1, `--skos` (AGSC-05-36: `dist/export/skos.ttl` by `knowledge/skos-export.js` from the build's own `graph.nq`) and `--closure` (AGSC-05-37: `dist/export/closure.nt` by `knowledge/closure.js` from the same `graph.nq`, the engine's ontology and the node's `domain.vocabulary`; never a published surface); `--zip` writes one archive beside each multi-file export root; `--manifest` (AGSC-09-17 (a)) adds `export-manifest.json` to each export root of the run, with the digests of its files, the item count and the items digest (`interchange/export-manifest.js`; the bundle hash and item IRIs come from the build, run in the verb) |
+| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `verbs/import.js` → `interchange/{import,oldsite,mapping,sources,status,clusters,cleanroom-rewrite,selection,okf,export-manifest}.js`, `interchange/adapters/skos.js` | wired for `--from old-site` (with that adapter's `--selection`, `--corrections`, `--attach-diagrams`), for `--from okf`, the foreign OKF v0.2 reader of AGSC-01-22 (from 1.1 every item of a source whose root document does not carry this Bundle's `base` is a draft; a folder holding `export-manifest.json` is checked against it, AGSC-09-17), and for `--from skos <file.ttl>`, the SKOS thesaurus import of AGSC-01-39 (`--replace`); `--dry-run` on both; from 1.1 for the six direct memory adapters `--from mem0`, `letta`, `zep`, `csv`, `basic-memory` and `claude-code` (one lane, `importMemory`, over `interchange/memory-records.js`; `--replace`, `--allow-newer`, `--source-version`, `--dry-run`; PRD-070); `--from <path or package>` loads a memory-adapter plugin (`docs/PLUGINS.md`) |
+| `compose` | AGSC-07-04…09, 07-24, 07-18, 07-12, 07-25…07-30 | `verbs/compose.js` → `composition/{compose,architecture,harness,context-map,brief,blueprint}.js`, `boundary/federation.js#peerFaults` | wired, and it WRITES the seven Harness file kinds of AGSC-07-12 into `dist/harness/<name>/` or `--out`; `--zip` writes them as one archive BESIDE that directory; from 1.1, for a node that declares contexts, `context-map.json` in `<dir>.companion/` (AGSC-07-30), after the typed peers' crosswalks pass `peerFaults` (a fault stops the run before anything is written); a node with no contexts gets no companion directory unless a brief is asked for; `--brief` or `compose.brief: true` writes the four files of the brief in `<dir>.companion/`, for an invalid composition too (no Harness, exit 1), and for no run another error stopped (AGSC-07-25); above the engine's bound on `derived` the brief keeps the first readings and gains `derived_total`; with `--from <slug>` naming a saved architecture, also the blueprint outputs in `<dir>.companion/blueprint/` (AGSC-07-29), never in the Harness directory or the `--zip` archive; `--narrate <agent>` without `--brief` is `AGSC-E003` (exit 2), with it `AGSC-E001` at exit 1, no `narration.md`, the brief and Harness still written (AGSC-07-28: this distribution ships no model adapter); `--emit <path or package>` runs a composition-emitter plugin, and a registered `--emit` target this distribution does not ship is refused with `AGSC-E203`, exit 1 (AGSC-00-20, AGSC-07-18) |
 | `propose` | AGSC-08-04, AGSC-08-05 | `verbs/propose.js` → `knowledge/adopt.js`, `diff@9.0.0` | wired |
 | `review` | AGSC-08-27 | `verbs/review.js` → the lint lane | wired, **lint-only**; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `verbs/refresh.js` → `governance/agents.js#checkProposal` | `--agent <name> --dry-run` wired; without `--dry-run` the lane needs a model adapter and a channel adapter, which this distribution does not offer (`AGSC-E001`, exit 1) |
 | `skills` | AGSC-07-19…22, AGSC-07-15 | `verbs/skills.js` → `composition/skills.js`; `distribution/site.js#skillPacks` emits the same bytes at `/skills/**` | wired — the packs into `dist/skills/`, `skills install [<target>]`, `skills import <file>`; `--zip` writes the packs and their lockfile as one archive beside `dist/skills/` |
-| `mcp` | AGSC-09-13 | `verbs/mcp.js` → `distribution/mcp-stdio.js` → `mcp-tools.js` | wired; **streaming** — see 11.4 |
+| `mcp` | AGSC-09-13, AGSC-09-18 | `verbs/mcp.js` → `distribution/mcp-core.js` → `mcp-tools.js`; with `--http <port> [--bind <address>]`, `distribution/mcp-http.js` behind `adapters/node-http-server.js#listenWith` | wired; **streaming** — see 11.4; over HTTP stdout stays empty and the address goes to stderr; a bad `--http` or `--bind` is `AGSC-E003`, exit 2 |
 | `run` | AGSC-09-94, AGSC-02-22 | `verbs/run.js` → `knowledge/runblocks.js`, the ProcessRunner port | wired — gate, parse, allow-list, `--dry-run`, comparison; it EXECUTES only against a runner that declares network isolation, which the shipped adapter does not; otherwise it refuses with `AGSC-E001`, exit 1 |
 | `trace` | AGSC-09-94, AGSC-02-14 | `verbs/trace.js` → `interchange/trace.js` | wired — a captured agent-run record to an Episode, checked against the item schema before it is written; opt-in |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `verbs/conform.js` → `application/conformance.js`, `composition/conform.js` | wired |
 
 **Tool → module, and the two transports it is served over** (AGSC-09-13, AGSC-09-16).
-The seven tools are not verbs: they are a surface, served over the stdio MCP server
+The ten tools are not verbs: they are a surface, served over the stdio MCP server
 that `agsc mcp` runs and over the page tools a built site registers with the browser.
 The two answer identically for the same input and the same published Bundle, and
-`cli-0003` compares them call by call against the EMITTED page.
+`cli-0026` (the successor of `cli-0003`) compares them call by call against the EMITTED
+page; `tests/distribution/tool-parity.test.js` does the same over the real `agsc mcp` process.
 
 | Tool | Rule | Local server (`agsc mcp`) | Page tool (a built site) | Hints (AGSC-11-18) |
 |---|---|---|---|---|
@@ -929,6 +1191,9 @@ The two answer identically for the same input and the same published Bundle, and
 | `ask` | AGSC-09-14a | `mcp-tools.js` | `page-tools.js` — search plus the cited items' own descriptions, **no model** | read-only, untrusted output |
 | `propose` | AGSC-08-04, AGSC-11-14 | `mcp-tools.js`; the caller MAY write `dist/proposal/<n>.{patch,md}` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
 | `remember` | AGSC-09-14b | `mcp-tools.js` | `page-tools.js` — the payload is returned and **nothing is written** | consequential, untrusted output |
+| `brief` | AGSC-09-13, AGSC-07-25 | `mcp-tools.js` → `tool-answers.js#toolBrief` → `composition/brief.js`, over the listed set; `AGSC-E901` when the server has no build (no instant or content version to carry); above the engine's bound on `derived` its first readings and `derived_total` | `page-tools.js` → the same functions, from `agsc-core.js`; the selection digest through Web Crypto, so the answer is a promise; the same fault, `AGSC-E901` for a page without its discovery document | read-only, untrusted output |
+| `explain` | AGSC-09-13, AGSC-05-33 | `mcp-tools.js` → `tool-answers.js#toolExplanation`, over the edges of `knowledge/links.js` of the Bundle on disk, drafts included (AGSC-09-13) | `page-tools.js` → the same function, over `pageEdges` | read-only |
+| `check` | AGSC-09-13, AGSC-03-23…03-26 | `mcp-tools.js` → `tool-answers.js#toolLinkWarnings`, over the same edges | `page-tools.js` → the same function | read-only |
 
 
 A form of a known verb that this distribution does not offer — `refresh --agent`
@@ -980,7 +1245,7 @@ compiler beside them is Knowledge's:
 | `clusters.js` | decks → Clusters with SKOS integrity: a Collection carries NO semantic relation (AGSC-05-20) and membership is authored on the item (AGSC-02-19), so it is derived here. |
 | `cleanroom-rewrite.js` | the mechanical half of AGSC-08-17. Rule-driven from `governance/cleanroom.js#REFUSED_PHRASES`, never card-driven; it removes the smallest span that carries a refused phrase — the CLAUSE where the sentence has clauses — never crosses a line break, and reports every excision verbatim. |
 | `import.js` | the PLAN: `{path, text}` pairs in code-point order. Deterministic, idempotent and total (AGSC-01-23). |
-| `knowledge/diagrams.js` | the DSL → SVG compiler (AGSC-01-07, AGSC-02-13, AGSC-02-98, AGSC-06-20). Pure, total, byte-deterministic; inside the SVG allow-list by construction; nothing in its output carries a colour, so it reads in both schemes. |
+| `knowledge/diagrams.js` | the DSL → SVG compiler (AGSC-01-07, AGSC-01-42, AGSC-02-13, AGSC-02-98, AGSC-06-20). Pure, total, byte-deterministic; the twelve statements, the refusals (each `AGSC-E412` naming its line) and the bytes are those of AGSC-01-42; `rel=KEY` on `arrow`, `line` and `text` writes the class `REL_CLASS_PREFIX + KEY` for one of the fourteen Link keys; inside the SVG allow-list by construction; nothing in its output carries a colour, so it reads in both schemes. |
 
 Two rules pull in opposite directions over the compiled picture: AGSC-01-07 says a
 compiled `.svg` MUST NOT be committed, and AGSC-02-98 admits the same picture as
@@ -988,14 +1253,44 @@ an attachment with its DSL source beside it. The import therefore writes the SOU
 only by default, and `--attach-diagrams` is the operator's choice when a Bundle must
 carry the rendered bytes.
 
+### 11.3b Interchange: the built-in memory-adapter interface (AGSC-01-26a)
+
+Every adapter under `src/interchange/adapters/` that `import --from` reads answers the same
+interface, so the import verb wires each one the same way and a new one adds a module, not a
+lane. The direct memory adapters of 1.1 (`mem0`, `letta`, `zep`, `csv`, `basic-memory`,
+`claude-code`, PRD-070) follow it exactly; `gabbe` and `cogx` already had the same shape.
+
+| member | what it is |
+|---|---|
+| `FORMAT` | the name `export --to` and `import --from` select it by (the module's file name) |
+| `CLAIMED_KEYS` | the keys it claims in each direction, listed in `src/interchange/README.md` (AGSC-01-26a) |
+| `run(bundle, options)` | `export --to`: `{files: [{path, text, sha256}], findings}`; `options` carries `instant`, `sha256`, `specVersion`, `bundleVersion`; published items only (AGSC-06-30) |
+| `isSourceFile(path)` | which files of the source folder the verb reads and hands in (`.git/` and `node_modules/` are never listed) |
+| `plan(files, options)` | `import --from`: `{findings, refused, totals, writes: [{path, text}]}`; `options` carries `operator`, `itemSchema`, `toolSpecVersion`, `origin`, `peers`, `allowNewer`, `sourceVersion` |
+
+Both functions are PURE: no file system, no clock, no network (AGSC-00-24). The verb reads the
+files through a read-only port rooted at the source folder and writes through the Bundle's own
+port, after the collision survey every lane shares (AGSC-01-23).
+
+`interchange/memory-records.js` holds what the six direct adapters share: `exportRecords` (the
+published items, the provenance lines and each item's own record — authored frontmatter,
+body, IRI, licence, terms, versions), `plan` (an own record that `own-record.js` trusts comes
+back item for item with `prov.source_version`; every other record is written as a draft with
+`prov.origin: imported`, reported once as `AGSC-E506`; a record of another specification MAJOR
+refuses the import unless `--allow-newer`), `jsonCandidates` (the JSON lane of `mem0`, `letta`
+and `zep`), `markdownNote` (the Markdown lane of `basic-memory` and `claude-code`), and the small
+helpers `lessonOf`, `restOf`, `memoryText`, `yamlLines`, `dateOf`, `firstString`, `agscIn`,
+`authoredLinks`, `filesOf`, `jsonText`. A memory-adapter PLUGIN (`docs/PLUGINS.md`) answers the
+plugin API instead: `exportFiles` and `importFiles`.
+
 ### 11.4 `mcp` is a streaming verb
 
 AGSC-09-13 forbids a non-protocol byte on stdout. The CLI shell knows it: for
 `mcp` alone, `application/cli/main.js` prints no diagnostic line and no envelope
 on stdout, writes any configuration finding to stderr (which the rule allows),
 and returns 0 when stdin reaches EOF. No stream is monkey-patched, and
-`distribution/mcp-stdio.js` requires the application layer to hand it a loaded
-Bundle rather than reading one itself.
+`distribution/mcp-core.js#serveStdio` is handed the Bundle and the two streams by the
+application layer (`verbs/mcp.js`) rather than reading or opening them itself.
 
 ### 11.5 What this engine does not do, and where it says so
 
@@ -1015,3 +1310,5 @@ Bundle rather than reading one itself.
   chain;
 * the network: no verb reaches it at 1.0; `agsc-host serve` listens on `localhost`
   by default, and `tools/validate-wellknown` fetches a URL it is given (`SECURITY.md`).
+  From 1.1 `agsc mcp --http <port>` listens on a loopback address only (AGSC-09-18) and
+  sends nothing.

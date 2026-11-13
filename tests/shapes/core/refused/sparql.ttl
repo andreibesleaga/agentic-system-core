@@ -1,0 +1,9 @@
+# sh:sparql: a SPARQL-based constraint is outside the subset.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:sparql exs:Query ;
+    sh:targetClass ex:C .

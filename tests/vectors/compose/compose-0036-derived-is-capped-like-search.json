@@ -1,0 +1,1351 @@
+{
+  "area": "compose",
+  "description": "AGSC-07-25 as amended 2026-11-10: `derived` holds at most 1,000,000 steps, counted over the `from` lists of its readings, as AGSC-09-13 caps the hits of `search`. A chain of 145 concepts, `c-<i>` requiring `c-<i-1>`, selected by its last item: the closure takes the whole chain, and each pair two or more steps apart is a reading by `requires` and one by `required-by`, 20,592 readings holding 1,015,872 steps. The brief keeps the longest first part of the readings in their order (source, key, target, by code point) within the bound, 20,221 readings holding 999,988 steps, from (c-0, required-by, c-10) to (c-97, requires, c-16), and gains `derived_total` 20592. Below the bound there is no `derived_total` (`compose-0024`). Derived from the rule; the counts follow from the chain.",
+  "expected": {
+    "cases": [
+      {
+        "derived_first": [
+          "c-0",
+          "required-by",
+          "c-10"
+        ],
+        "derived_last": [
+          "c-97",
+          "requires",
+          "c-16"
+        ],
+        "derived_length": 20221,
+        "derived_steps": 999988,
+        "derived_total": 20592,
+        "name": "chain-of-145"
+      }
+    ]
+  },
+  "id": "compose-0036",
+  "input": {
+    "cases": [
+      {
+        "items": [
+          {
+            "body": "",
+            "slug": "c-0",
+            "title": "C 0",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-0"
+            ],
+            "slug": "c-1",
+            "title": "C 1",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-1"
+            ],
+            "slug": "c-2",
+            "title": "C 2",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-2"
+            ],
+            "slug": "c-3",
+            "title": "C 3",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-3"
+            ],
+            "slug": "c-4",
+            "title": "C 4",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-4"
+            ],
+            "slug": "c-5",
+            "title": "C 5",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-5"
+            ],
+            "slug": "c-6",
+            "title": "C 6",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-6"
+            ],
+            "slug": "c-7",
+            "title": "C 7",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-7"
+            ],
+            "slug": "c-8",
+            "title": "C 8",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-8"
+            ],
+            "slug": "c-9",
+            "title": "C 9",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-9"
+            ],
+            "slug": "c-10",
+            "title": "C 10",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-10"
+            ],
+            "slug": "c-11",
+            "title": "C 11",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-11"
+            ],
+            "slug": "c-12",
+            "title": "C 12",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-12"
+            ],
+            "slug": "c-13",
+            "title": "C 13",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-13"
+            ],
+            "slug": "c-14",
+            "title": "C 14",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-14"
+            ],
+            "slug": "c-15",
+            "title": "C 15",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-15"
+            ],
+            "slug": "c-16",
+            "title": "C 16",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-16"
+            ],
+            "slug": "c-17",
+            "title": "C 17",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-17"
+            ],
+            "slug": "c-18",
+            "title": "C 18",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-18"
+            ],
+            "slug": "c-19",
+            "title": "C 19",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-19"
+            ],
+            "slug": "c-20",
+            "title": "C 20",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-20"
+            ],
+            "slug": "c-21",
+            "title": "C 21",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-21"
+            ],
+            "slug": "c-22",
+            "title": "C 22",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-22"
+            ],
+            "slug": "c-23",
+            "title": "C 23",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-23"
+            ],
+            "slug": "c-24",
+            "title": "C 24",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-24"
+            ],
+            "slug": "c-25",
+            "title": "C 25",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-25"
+            ],
+            "slug": "c-26",
+            "title": "C 26",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-26"
+            ],
+            "slug": "c-27",
+            "title": "C 27",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-27"
+            ],
+            "slug": "c-28",
+            "title": "C 28",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-28"
+            ],
+            "slug": "c-29",
+            "title": "C 29",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-29"
+            ],
+            "slug": "c-30",
+            "title": "C 30",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-30"
+            ],
+            "slug": "c-31",
+            "title": "C 31",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-31"
+            ],
+            "slug": "c-32",
+            "title": "C 32",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-32"
+            ],
+            "slug": "c-33",
+            "title": "C 33",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-33"
+            ],
+            "slug": "c-34",
+            "title": "C 34",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-34"
+            ],
+            "slug": "c-35",
+            "title": "C 35",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-35"
+            ],
+            "slug": "c-36",
+            "title": "C 36",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-36"
+            ],
+            "slug": "c-37",
+            "title": "C 37",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-37"
+            ],
+            "slug": "c-38",
+            "title": "C 38",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-38"
+            ],
+            "slug": "c-39",
+            "title": "C 39",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-39"
+            ],
+            "slug": "c-40",
+            "title": "C 40",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-40"
+            ],
+            "slug": "c-41",
+            "title": "C 41",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-41"
+            ],
+            "slug": "c-42",
+            "title": "C 42",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-42"
+            ],
+            "slug": "c-43",
+            "title": "C 43",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-43"
+            ],
+            "slug": "c-44",
+            "title": "C 44",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-44"
+            ],
+            "slug": "c-45",
+            "title": "C 45",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-45"
+            ],
+            "slug": "c-46",
+            "title": "C 46",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-46"
+            ],
+            "slug": "c-47",
+            "title": "C 47",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-47"
+            ],
+            "slug": "c-48",
+            "title": "C 48",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-48"
+            ],
+            "slug": "c-49",
+            "title": "C 49",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-49"
+            ],
+            "slug": "c-50",
+            "title": "C 50",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-50"
+            ],
+            "slug": "c-51",
+            "title": "C 51",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-51"
+            ],
+            "slug": "c-52",
+            "title": "C 52",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-52"
+            ],
+            "slug": "c-53",
+            "title": "C 53",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-53"
+            ],
+            "slug": "c-54",
+            "title": "C 54",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-54"
+            ],
+            "slug": "c-55",
+            "title": "C 55",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-55"
+            ],
+            "slug": "c-56",
+            "title": "C 56",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-56"
+            ],
+            "slug": "c-57",
+            "title": "C 57",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-57"
+            ],
+            "slug": "c-58",
+            "title": "C 58",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-58"
+            ],
+            "slug": "c-59",
+            "title": "C 59",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-59"
+            ],
+            "slug": "c-60",
+            "title": "C 60",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-60"
+            ],
+            "slug": "c-61",
+            "title": "C 61",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-61"
+            ],
+            "slug": "c-62",
+            "title": "C 62",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-62"
+            ],
+            "slug": "c-63",
+            "title": "C 63",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-63"
+            ],
+            "slug": "c-64",
+            "title": "C 64",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-64"
+            ],
+            "slug": "c-65",
+            "title": "C 65",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-65"
+            ],
+            "slug": "c-66",
+            "title": "C 66",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-66"
+            ],
+            "slug": "c-67",
+            "title": "C 67",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-67"
+            ],
+            "slug": "c-68",
+            "title": "C 68",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-68"
+            ],
+            "slug": "c-69",
+            "title": "C 69",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-69"
+            ],
+            "slug": "c-70",
+            "title": "C 70",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-70"
+            ],
+            "slug": "c-71",
+            "title": "C 71",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-71"
+            ],
+            "slug": "c-72",
+            "title": "C 72",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-72"
+            ],
+            "slug": "c-73",
+            "title": "C 73",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-73"
+            ],
+            "slug": "c-74",
+            "title": "C 74",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-74"
+            ],
+            "slug": "c-75",
+            "title": "C 75",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-75"
+            ],
+            "slug": "c-76",
+            "title": "C 76",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-76"
+            ],
+            "slug": "c-77",
+            "title": "C 77",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-77"
+            ],
+            "slug": "c-78",
+            "title": "C 78",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-78"
+            ],
+            "slug": "c-79",
+            "title": "C 79",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-79"
+            ],
+            "slug": "c-80",
+            "title": "C 80",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-80"
+            ],
+            "slug": "c-81",
+            "title": "C 81",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-81"
+            ],
+            "slug": "c-82",
+            "title": "C 82",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-82"
+            ],
+            "slug": "c-83",
+            "title": "C 83",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-83"
+            ],
+            "slug": "c-84",
+            "title": "C 84",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-84"
+            ],
+            "slug": "c-85",
+            "title": "C 85",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-85"
+            ],
+            "slug": "c-86",
+            "title": "C 86",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-86"
+            ],
+            "slug": "c-87",
+            "title": "C 87",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-87"
+            ],
+            "slug": "c-88",
+            "title": "C 88",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-88"
+            ],
+            "slug": "c-89",
+            "title": "C 89",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-89"
+            ],
+            "slug": "c-90",
+            "title": "C 90",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-90"
+            ],
+            "slug": "c-91",
+            "title": "C 91",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-91"
+            ],
+            "slug": "c-92",
+            "title": "C 92",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-92"
+            ],
+            "slug": "c-93",
+            "title": "C 93",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-93"
+            ],
+            "slug": "c-94",
+            "title": "C 94",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-94"
+            ],
+            "slug": "c-95",
+            "title": "C 95",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-95"
+            ],
+            "slug": "c-96",
+            "title": "C 96",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-96"
+            ],
+            "slug": "c-97",
+            "title": "C 97",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-97"
+            ],
+            "slug": "c-98",
+            "title": "C 98",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-98"
+            ],
+            "slug": "c-99",
+            "title": "C 99",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-99"
+            ],
+            "slug": "c-100",
+            "title": "C 100",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-100"
+            ],
+            "slug": "c-101",
+            "title": "C 101",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-101"
+            ],
+            "slug": "c-102",
+            "title": "C 102",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-102"
+            ],
+            "slug": "c-103",
+            "title": "C 103",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-103"
+            ],
+            "slug": "c-104",
+            "title": "C 104",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-104"
+            ],
+            "slug": "c-105",
+            "title": "C 105",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-105"
+            ],
+            "slug": "c-106",
+            "title": "C 106",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-106"
+            ],
+            "slug": "c-107",
+            "title": "C 107",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-107"
+            ],
+            "slug": "c-108",
+            "title": "C 108",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-108"
+            ],
+            "slug": "c-109",
+            "title": "C 109",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-109"
+            ],
+            "slug": "c-110",
+            "title": "C 110",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-110"
+            ],
+            "slug": "c-111",
+            "title": "C 111",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-111"
+            ],
+            "slug": "c-112",
+            "title": "C 112",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-112"
+            ],
+            "slug": "c-113",
+            "title": "C 113",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-113"
+            ],
+            "slug": "c-114",
+            "title": "C 114",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-114"
+            ],
+            "slug": "c-115",
+            "title": "C 115",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-115"
+            ],
+            "slug": "c-116",
+            "title": "C 116",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-116"
+            ],
+            "slug": "c-117",
+            "title": "C 117",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-117"
+            ],
+            "slug": "c-118",
+            "title": "C 118",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-118"
+            ],
+            "slug": "c-119",
+            "title": "C 119",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-119"
+            ],
+            "slug": "c-120",
+            "title": "C 120",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-120"
+            ],
+            "slug": "c-121",
+            "title": "C 121",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-121"
+            ],
+            "slug": "c-122",
+            "title": "C 122",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-122"
+            ],
+            "slug": "c-123",
+            "title": "C 123",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-123"
+            ],
+            "slug": "c-124",
+            "title": "C 124",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-124"
+            ],
+            "slug": "c-125",
+            "title": "C 125",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-125"
+            ],
+            "slug": "c-126",
+            "title": "C 126",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-126"
+            ],
+            "slug": "c-127",
+            "title": "C 127",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-127"
+            ],
+            "slug": "c-128",
+            "title": "C 128",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-128"
+            ],
+            "slug": "c-129",
+            "title": "C 129",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-129"
+            ],
+            "slug": "c-130",
+            "title": "C 130",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-130"
+            ],
+            "slug": "c-131",
+            "title": "C 131",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-131"
+            ],
+            "slug": "c-132",
+            "title": "C 132",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-132"
+            ],
+            "slug": "c-133",
+            "title": "C 133",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-133"
+            ],
+            "slug": "c-134",
+            "title": "C 134",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-134"
+            ],
+            "slug": "c-135",
+            "title": "C 135",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-135"
+            ],
+            "slug": "c-136",
+            "title": "C 136",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-136"
+            ],
+            "slug": "c-137",
+            "title": "C 137",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-137"
+            ],
+            "slug": "c-138",
+            "title": "C 138",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-138"
+            ],
+            "slug": "c-139",
+            "title": "C 139",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-139"
+            ],
+            "slug": "c-140",
+            "title": "C 140",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-140"
+            ],
+            "slug": "c-141",
+            "title": "C 141",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-141"
+            ],
+            "slug": "c-142",
+            "title": "C 142",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-142"
+            ],
+            "slug": "c-143",
+            "title": "C 143",
+            "type": "concept"
+          },
+          {
+            "body": "",
+            "requires": [
+              "c-143"
+            ],
+            "slug": "c-144",
+            "title": "C 144",
+            "type": "concept"
+          }
+        ],
+        "name": "chain-of-145",
+        "selection": [
+          "c-144"
+        ]
+      }
+    ],
+    "fixed": {
+      "base": "https://brief.example/",
+      "bundle_version": "1.4.0",
+      "instant": "2026-09-16T12:34:56Z",
+      "license_prose": "LicenseRef-AgenticSystemCore-Content-Use-1.0",
+      "spec_version": "1.0.0"
+    }
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-07-25"
+}

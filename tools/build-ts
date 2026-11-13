@@ -1,0 +1,193 @@
+#!/usr/bin/env node
+'use strict';
+// tools/build-ts — compiles the TypeScript parts of the engine (docs/ENGINEERING.md,
+// "TypeScript parts"): every module under src-ts/<context>/ to CommonJS at
+// src/<context>/<name>.js, and every benchmark runner under src-ts/bench/ to
+// bench/runners/<name>.js, with the compiler and the options of tsconfig.json, and a
+// first line that names the source and the compiler:
+//
+//   // generated from src-ts/<path>.ts by tsc <version>; do not edit
+//
+// Why the compiled files are committed: so that `npm test`, an install with
+// `npm ci --omit=dev` and the published package need no TypeScript at run or install
+// time. This tool, the pinned compiler and the fitness test
+// tests/arch/typescript-parts.test.js keep the committed files equal to the sources.
+//
+//   build-ts [--check] [--help]
+//
+// With no flag it compiles and writes each file whose bytes changed. `--check` writes
+// nothing and exits 1 when a committed file is not what the compiler writes now. Both
+// refuse a type error (with its file, line, column and code), a compiled file whose
+// source is gone, and a hand-written module of src/ where a compiled one would go.
+// The compiler runs in memory: nothing is written outside src/ and bench/runners/.
+//
+// A maintainer tool, kept in the repository only (package.json `files` does not list
+// it): it is the one tool that requires a development dependency, the compiler.
+// Exit 0 written or current, 1 refused or stale, 2 usage. Deterministic: no clock, no
+// network, files in code-unit order of their paths.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const HELP = `build-ts [--check] [--help]
+
+  Compiles src-ts/**/*.ts to CommonJS under src/ (src-ts/bench/ to bench/runners/)
+  with tsconfig.json, each file headed
+  "generated from src-ts/<path> by tsc <version>; do not edit".
+
+  --check  write nothing; exit 1 when a committed file is not what tsc writes now
+  --help   this text
+
+  Exit 0 written or current, 1 refused or stale, 2 usage.
+`;
+
+/** The first line of a compiled file; group 1 is its source, group 2 the compiler version. */
+const HEADER_LINE = /^\/\/ generated from (src-ts\/[^\s;]+\.ts) by tsc (\S+); do not edit\n/u;
+
+const toPosix = (p) => p.split(path.sep).join('/');
+
+/** tsconfig.json of `root`, parsed by the compiler itself; throws on a configuration error. */
+function readConfig(root) {
+  const ts = require('typescript');
+  const file = path.join(root, 'tsconfig.json');
+  if (!fs.existsSync(file)) throw new Error('tsconfig.json is missing');
+  const host = { ...ts.sys, onUnRecoverableConfigFileDiagnostic: (d) => { throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n')); } };
+  const parsed = ts.getParsedCommandLineOfConfigFile(file, {}, host);
+  if (parsed.errors.length > 0) throw new Error(parsed.errors.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')).join('; '));
+  return parsed;
+}
+
+/** One diagnostic as `file:line:col TSnnnn message`, the file relative to `root`. */
+function located(ts, root, d) {
+  const message = ts.flattenDiagnosticMessageText(d.messageText, ' ');
+  if (!d.file) return `TS${d.code} ${message}`;
+  const { line, character } = d.file.getLineAndCharacterOfPosition(d.start || 0);
+  return `${toPosix(path.relative(root, d.file.fileName))}:${line + 1}:${character + 1} TS${d.code} ${message}`;
+}
+
+/** The folder of the benchmark runners' sources, and the folder they compile to. */
+const BENCH_SOURCES = 'src-ts/bench/';
+const BENCH_RUNNERS = 'bench/runners/';
+
+/** src-ts/bench/<path>.ts -> bench/runners/<path>.js, any other src-ts/<path>.ts -> src/<path>.js. */
+function targetOf(source) {
+  if (source.startsWith(BENCH_SOURCES)) return `${BENCH_RUNNERS}${source.slice(BENCH_SOURCES.length, -'.ts'.length)}.js`;
+  return `src/${source.slice('src-ts/'.length, -'.ts'.length)}.js`;
+}
+
+/**
+ * Compile src-ts/ of `root` in memory.
+ *
+ * tsconfig.json says `noEmit`, so a bare `tsc` only checks; here the program emits, one
+ * source at a time, into a callback, and the target is `targetOf` the source. The root and
+ * output folders are names only, which the compiler needs because `allowJs` puts the
+ * JavaScript modules a source imports into the program (a source reaches one as
+ * `../../src/<context>/<file>.js`, the same path from src-ts/ and from src/); those are
+ * read for their types and never emitted.
+ * @returns {{errors: string[], files: {source: string, target: string, text: string}[]}}
+ *   root-relative POSIX paths; `text` carries the header line.
+ */
+function compile(root) {
+  const ts = require('typescript');
+  const config = readConfig(root);
+  const options = { ...config.options, noEmit: false, rootDir: root, outDir: path.join(root, 'build-ts-in-memory') };
+  const program = ts.createProgram({ rootNames: config.fileNames, options });
+  const errors = ts.getPreEmitDiagnostics(program).map((d) => located(ts, root, d));
+  if (errors.length > 0) return { errors, files: [] };
+  const files = [];
+  for (const fileName of [...config.fileNames].sort()) {
+    const source = toPosix(path.relative(root, fileName));
+    program.emit(program.getSourceFile(fileName), (_out, text) => {
+      files.push({ source, target: targetOf(source), text: `// generated from ${source} by tsc ${ts.version}; do not edit\n${text}` });
+    });
+  }
+  return { errors: [], files };
+}
+
+/** Every `.js` under src/ or bench/runners/ of `root` whose first line names a TypeScript source, as {target, source}. */
+function committed(root) {
+  const out = [];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.js')) {
+        const m = HEADER_LINE.exec(fs.readFileSync(full, 'utf8').split('\n', 1)[0] + '\n');
+        if (m) out.push({ target: toPosix(path.relative(root, full)), source: m[1] });
+      }
+    }
+  };
+  walk(path.join(root, 'src'));
+  walk(path.join(root, BENCH_RUNNERS));
+  return out;
+}
+
+/** The refusals and the stale files of a compile against the tree, and the files to write. */
+function compare(root, files) {
+  const refusals = [];
+  const stale = [];
+  const targets = new Set(files.map((f) => f.target));
+  for (const { target, source } of committed(root)) {
+    if (!targets.has(target)) refusals.push(`${target} was generated from ${source}, which is gone; delete it`);
+  }
+  for (const file of files) {
+    const where = path.join(root, file.target);
+    const current = fs.existsSync(where) ? fs.readFileSync(where, 'utf8') : null;
+    if (current === file.text) continue;
+    if (current !== null && !HEADER_LINE.test(current)) {
+      refusals.push(`${file.target} was not generated by tsc; give the TypeScript module another name`);
+    } else stale.push(file);
+  }
+  return { refusals, stale };
+}
+
+/**
+ * @param {string[]} argv
+ * @param {{out?:Function, err?:Function, root?:string}} [io]
+ * @returns {number}
+ */
+function run(argv, io = {}) {
+  const out = io.out || ((t) => process.stdout.write(t));
+  const err = io.err || ((t) => process.stderr.write(t));
+  const root = io.root || path.resolve(__dirname, '..');
+  let check = false;
+  for (const arg of argv) {
+    if (arg === '--help' || arg === '-h') { out(HELP); return 0; }
+    if (arg === '--check') { check = true; continue; }
+    err(`build-ts: unknown argument ${arg}\n${HELP}`);
+    return 2;
+  }
+  let compiled;
+  try { compiled = compile(root); } catch (e) {
+    err(`build-ts: ${e.message}\n`);
+    return 1;
+  }
+  if (compiled.errors.length > 0) {
+    for (const line of compiled.errors) err(`build-ts: ${line}\n`);
+    return 1;
+  }
+  const { refusals, stale } = compare(root, compiled.files);
+  for (const line of refusals) err(`build-ts: ${line}\n`);
+  if (refusals.length > 0) return 1;
+  const version = require('typescript').version;
+  const count = `${compiled.files.length} module${compiled.files.length === 1 ? '' : 's'}`;
+  if (check) {
+    for (const file of stale) err(`build-ts: ${file.target} is not what tsc writes from ${file.source}; run npm run build:ts\n`);
+    if (stale.length > 0) return 1;
+    out(`src-ts/: current (${count}, tsc ${version})\n`);
+    return 0;
+  }
+  for (const file of stale) {
+    fs.mkdirSync(path.dirname(path.join(root, file.target)), { recursive: true });
+    fs.writeFileSync(path.join(root, file.target), file.text);
+    out(`${file.target}: written\n`);
+  }
+  out(`src-ts/: ${count} compiled\n`);
+  return 0;
+}
+
+/* c8 ignore next */
+if (require.main === module) process.exit(run(process.argv.slice(2)));
+
+module.exports = { HELP, HEADER_LINE, compile, readConfig, run, targetOf };

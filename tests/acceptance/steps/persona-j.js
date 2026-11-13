@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14
+// verifies AGSC-05-24, AGSC-05-41, AGSC-04-09, AGSC-06-06, AGSC-06-07, AGSC-06-08, AGSC-06-09, AGSC-06-10, AGSC-06-14, AGSC-06-17, AGSC-09-93, AGSC-10-12, AGSC-11-08, AGSC-11-12, AGSC-11-14, AGSC-11-16
 // Steps of features/persona-j-standards.feature that run offline. The build
 // output stands in for the published site: what an implementer would fetch from
 // the node is read from `www/`, and the shipped validator is run in its
@@ -22,7 +22,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
+const N3 = require('n3');
+
 const { ROOT, built, linkset } = require('./_world.js');
+
+const shapeTool = require(path.join(ROOT, 'tools', 'gen-shapes'));
 
 const REL = 'https://w3id.org/agentic-system-core/rel#';
 const BASE = 'https://agenticsystemcore.com/';
@@ -456,6 +460,90 @@ module.exports = [
     },
   },
   {
+    pattern: 'the implementer runs "the shipped gen-shapes tool with --check"',
+    run(world) {
+      if (!world.dir) world.bundle();
+      world.state.shapes = world.tool('gen-shapes', ['--check', '--json']);
+    },
+  },
+  {
+    pattern: 'it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "gen-shapes"',
+    run(world) {
+      const { exit, stdout, stderr } = world.state.shapes;
+      assert.strictEqual(exit, 0, stdout + stderr);
+      const envelope = JSON.parse(stdout);
+      assert.strictEqual(envelope.schema, 'agsc.diagnostics.v1');
+      assert.strictEqual(envelope.verb, 'gen-shapes');
+      assert.strictEqual(envelope.status, 'pass');
+    },
+  },
+  {
+    pattern: '"schema/item-shapes.ttl" is Turtle with one warning shape for each Link key that names a kind of target, and a self-link warning',
+    run() {
+      const SH = 'http://www.w3.org/ns/shacl#';
+      const shapes = 'https://w3id.org/agentic-system-core/shapes#';
+      const store = new N3.Store(new N3.Parser().parse(fs.readFileSync(path.join(ROOT, 'schema', 'item-shapes.ttl'), 'utf8')));
+      const warning = (name) => store.getObjects(`${shapes}${name}`, `${SH}severity`, null).some((o) => o.value === `${SH}Warning`);
+      const table = shapeTool.relationRows(fs.readFileSync(path.join(ROOT, 'spec', '03-links.md'), 'utf8'));
+      const restricted = table.filter((row) => !row.targets.any || row.targets.lessonTarget);
+      assert.ok(restricted.length > 0, 'the relation table names no kind of target');
+      for (const row of restricted) assert.ok(warning(`Link-${row.key}-target`), `${row.key} has no warning shape`);
+      assert.ok(warning('SelfLinkShape'), 'no self-link warning');
+    },
+  },
+  {
+    pattern: 'the package\'s one SHACL library runs only a site\'s own shapes in one module, never at build, so the shapes of "schema/item-shapes.ttl" stay in the development lane',
+    run() {
+      const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+      const declared = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.optionalDependencies });
+      assert.deepStrictEqual(declared.filter((name) => /shacl/iu.test(name)), ['rdf-validate-shacl']);
+      const src = path.join(ROOT, 'src');
+      const requiring = (text) => fs.readdirSync(src, { recursive: true }).map((rel) => rel.split(path.sep).join('/'))
+        .filter((rel) => rel.endsWith('.js') && fs.readFileSync(path.join(src, rel), 'utf8').includes(text)).sort();
+      assert.deepStrictEqual(requiring("require('rdf-validate-shacl')"), ['knowledge/shacl-core.js']);
+      // AGSC-05-23: no module of the build requires the evaluator (tests/arch/shacl-library.test.js walks the whole graph).
+      const build = requiring('shacl-core.js\')').filter((rel) => rel.startsWith('distribution/') || rel === 'application/cli/verbs/build.js');
+      assert.deepStrictEqual(build, []);
+    },
+  },
+  {
+    pattern: /^the implementer evaluates every shared fixture of "([^"]+)" with the engine's SHACL Core evaluator$/u,
+    run(world, folder) {
+      const shacl = require(path.join(ROOT, 'src', 'knowledge', 'shacl-core.js'));
+      const turtle = require(path.join(ROOT, 'src', 'knowledge', 'turtle.js'));
+      const at = path.join(ROOT, folder);
+      const read = (...parts) => fs.readFileSync(path.join(at, ...parts), 'utf8');
+      const graph = (component, name) => shacl.evaluate(read(component, 'shapes.ttl'), turtle.parse(read(component, `${name}.ttl`)));
+      const components = fs.readdirSync(at).filter((name) => fs.existsSync(path.join(at, name, 'shapes.ttl'))).sort();
+      world.state.core = components.map((component) => ({
+        component, conforms: graph(component, 'conforms'), expected: JSON.parse(read(component, 'results.json')), violates: graph(component, 'violates'),
+      }));
+      world.state.evaluate = (text) => shacl.evaluate(text, turtle.parse('<https://example.org/a> a <https://example.org/C> .'));
+    },
+  },
+  {
+    pattern: /^each graph that conforms gives no result, and each graph that violates gives exactly the results of its "results\.json", in the order of AGSC-05-41$/u,
+    run(world) {
+      assert.strictEqual(world.state.core.length, 12, 'one folder for each of the twelve constraint components');
+      for (const c of world.state.core) {
+        assert.deepStrictEqual(c.conforms, { findings: [], results: [] }, c.component);
+        assert.deepStrictEqual(c.violates, { findings: [], results: c.expected }, c.component);
+      }
+    },
+  },
+  {
+    pattern: /^each shapes file of "([^"]+)" is the error "(AGSC-E\d{3})" and is not evaluated \(AGSC-05-41\)$/u,
+    run(world, folder, code) {
+      const files = fs.readdirSync(path.join(ROOT, folder)).filter((name) => name.endsWith('.ttl'));
+      assert.ok(files.length > 0, `no shapes file under ${folder}`);
+      for (const name of files) {
+        const { findings, results } = world.state.evaluate(fs.readFileSync(path.join(ROOT, folder, name), 'utf8'));
+        assert.ok(findings.length > 0 && findings.every((f) => f.code === code && f.severity === 'error'), `${name}: ${JSON.stringify(findings)}`);
+        assert.deepStrictEqual(results, [], name);
+      }
+    },
+  },
+  {
     pattern: 'running it against a linkset carrying an unregistered short name exits 1',
     run(world) {
       const document = linkset(world);
@@ -539,6 +627,31 @@ module.exports = [
           if (href.startsWith(BASE)) assert.ok(fs.existsSync(fileOf(world, href)), `${relation} names ${href}, which the build did not emit`);
         }
       }
+    },
+  },
+  {
+    pattern: /^the discovery document has one "…rel#surface" link whose "agsc-surface" is "webmcp", with the target "(\/[^"]*)" and the "agsc-surface-version" "(\d{4}-\d{2}-\d{2})", the WebMCP Draft Community Group Report of 27 October 2026 \(AGSC-11-16\)$/u,
+    run(world, route, version) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const webmcp = linkset(world).linkset[0][`${REL}surface`].filter((s) => s['agsc-surface'][0] === 'webmcp');
+      assert.strictEqual(webmcp.length, 1, JSON.stringify(webmcp));
+      assert.strictEqual(webmcp[0].href, new URL(route, base).href);
+      assert.deepStrictEqual(webmcp[0]['agsc-surface-version'], [version]);
+      assert.ok(fs.existsSync(path.join(world.dir, 'www', route, 'index.html')), `${route} is declared and not emitted`);
+    },
+  },
+  {
+    pattern: /^the shipped validate-wellknown passes that document at Level 1, and passes it as well with the date of an earlier report, "(\d{4}-\d{2}-\d{2})", because no rule pins one date \(AGSC-11-16\)$/u,
+    run(world, earlier) {
+      const file = path.join(world.dir, 'www', WELLKNOWN);
+      const check = () => world.tool('validate-wellknown', [file, '--level', '1', '--json']);
+      const first = check();
+      assert.strictEqual(first.exit, 0, `${first.stdout}${first.stderr}`);
+      const document = JSON.parse(fs.readFileSync(file, 'utf8'));
+      for (const s of document.linkset[0][`${REL}surface`]) if (s['agsc-surface'][0] === 'webmcp') s['agsc-surface-version'] = [earlier];
+      fs.writeFileSync(file, `${JSON.stringify(document)}\n`);
+      const second = check();
+      assert.strictEqual(second.exit, 0, `${second.stdout}${second.stderr}`);
     },
   },
 ];

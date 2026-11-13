@@ -1,14 +1,19 @@
 'use strict';
 // tests/conformance/areas/compose.js — area handler for `compose` vectors.
 // Rules: AGSC-07-03, AGSC-07-04..08, AGSC-07-05a, AGSC-07-09, AGSC-07-13a,
-// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-02-97.
+// AGSC-07-17, AGSC-07-23, AGSC-07-24, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-29, AGSC-07-30,
+// AGSC-02-97.
 
 const crypto = require('node:crypto');
 
 const { compose, verdictOf } = require('../../../src/composition/compose.js');
 const { composeFrom, selectionBlock, selectionFences } = require('../../../src/composition/architecture.js');
-const { dslRelationships, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
+const { dslRelationships, emit, harnessName, isEmitted, selectionDigestInput } = require('../../../src/composition/harness.js');
 const archive = require('../../../src/composition/archive.js');
+const { contextMapFiles } = require('../../../src/composition/context-map.js');
+const brief = require('../../../src/composition/brief.js');
+const blueprint = require('../../../src/composition/blueprint.js');
+const { isPublished } = require('../../../src/knowledge/chunks.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 
@@ -248,6 +253,201 @@ function runCompose0016(vector) {
   ]);
 }
 
+function sha256(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+/** compose-0027 — AGSC-07-12: the SHA-256 of every Harness file, for a fixed build. */
+function runCompose0027(vector) {
+  const fixed = vector.input.fixed;
+  const want = vector.expected.cases;
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const result = compose(entry.items, entry.selection);
+    const digest = sha256(selectionDigestInput(result));
+    const emission = emit(result, {
+      base: fixed.base,
+      bundleVersion: fixed.bundle_version,
+      instant: fixed.instant,
+      items: entry.items,
+      licenseProse: fixed.license_prose,
+      name: harnessName(digest),
+      selectionDigest: digest,
+      specVersion: fixed.spec_version,
+    });
+    const got = {};
+    for (const [path, text] of emission.files) got[path] = sha256(text);
+    const expected = want[i] || {};
+    list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+    list.push([`${entry.name} emitted`, emission.emitted === expected.emitted, String(emission.emitted)]);
+    list.push([`${entry.name} files`, deepEqual(expected.sha256, got), JSON.stringify(got)]);
+  });
+  list.push(['case count', want.length === vector.input.cases.length, String(want.length)]);
+  return checks(list);
+}
+
+/**
+ * compose-0032, compose-0033 — AGSC-07-30: the context map. The Harness is emitted as for
+ * compose-0027 and its seven file kinds hashed; the companion files are those
+ * `context-map.js#contextMapFiles` gives, which the CLI writes into `<harness dir>.companion/` and
+ * which, when there are none, make it create no companion directory
+ * (`tests/application/cli/compose-context-map.test.js` checks the disk).
+ */
+function runContextMap(vector) {
+  const { config, fixed, items, selection } = vector.input;
+  const expected = vector.expected;
+  const result = compose(items, selection);
+  const digest = sha256(selectionDigestInput(result));
+  const options = {
+    base: fixed.base, bundleVersion: fixed.bundle_version, instant: fixed.instant, items,
+    licenseProse: fixed.license_prose, name: harnessName(digest), selectionDigest: digest, specVersion: fixed.spec_version,
+  };
+  const hashes = {};
+  for (const [path, text] of emit(result, options).files) hashes[path] = sha256(text);
+  const companion = contextMapFiles(result, { ...options, contexts: (config.domain || {}).contexts, peers: [] });
+  const names = companion.map(([name]) => name);
+  const list = [
+    ['harness_sha256', deepEqual(expected.harness_sha256, hashes), JSON.stringify(hashes)],
+    ['companion_files', deepEqual(expected.companion_files, names), JSON.stringify(names)],
+  ];
+  if (expected.companion_directory !== undefined) {
+    list.push(['companion_directory', (companion.length > 0) === expected.companion_directory, String(companion.length > 0)]);
+  }
+  for (const [name, bytes] of Object.entries(expected.file_bytes || {})) {
+    const got = new Map(companion).get(name);
+    list.push([`file_bytes ${name}`, got === bytes, String(got)]);
+  }
+  return checks(list);
+}
+
+/**
+ * The brief of one case of compose-0024 to compose-0026 and compose-0034 (AGSC-07-25): the
+ * composition, its selection digest hashed here as the command line hashes it, and the listed
+ * items of AGSC-00-05 (no draft, no retired item; the vectors hold back nothing by the
+ * switchboard). It is written as the command line writes it, with the domain paragraph
+ * (`briefDomainFiles`), which gives the bytes of `briefFiles` when no member states a domain
+ * key; the vectors declare no context (AGSC-08-32).
+ */
+function briefCase(entry, fixed = {}) {
+  const result = compose(entry.items, entry.selection);
+  const options = {
+    base: fixed.base,
+    bundleVersion: fixed.bundle_version,
+    instant: fixed.instant,
+    items: entry.items,
+    licenseProse: fixed.license_prose,
+    listed: entry.items.filter((item) => isPublished(item, undefined)).map((item) => item.slug),
+    selectionDigest: sha256(selectionDigestInput(result)),
+    specVersion: fixed.spec_version,
+    contexts: [],
+  };
+  return { files: new Map(brief.briefDomainFiles(result, options)), record: brief.briefDomainOf(result, options), result };
+}
+
+/**
+ * compose-0024 — AGSC-07-25: the bytes of the four files of the brief, and no Harness for an
+ * invalid case; compose-0034 — the same files with the domain paragraph (it states no Harness).
+ */
+function runCompose0024(vector) {
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const expected = vector.expected.cases[i] || {};
+    const { files, result } = briefCase(entry, vector.input.fixed);
+    list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+    if (expected.harness_emitted !== undefined) {
+      list.push([`${entry.name} harness_emitted`, isEmitted(result) === expected.harness_emitted, String(isEmitted(result))]);
+    }
+    list.push([`${entry.name} file names`, deepEqual(Object.keys(expected.file_bytes), [...files.keys()]), JSON.stringify([...files.keys()])]);
+    for (const [name, bytes] of Object.entries(expected.file_bytes)) {
+      list.push([`${entry.name} ${name}`, files.get(name) === bytes, String(files.get(name))]);
+    }
+  });
+  list.push(['case count', vector.expected.cases.length === vector.input.cases.length, String(vector.expected.cases.length)]);
+  return checks(list);
+}
+
+/** compose-0035 — AGSC-07-25 as amended 2026-11-10: the flowchart lines of `brief.mmd`, after its comment lines. */
+function runBriefFlowchart(vector) {
+  return checks(vector.input.cases.map((entry, i) => {
+    const mmd = briefCase(entry, vector.input.fixed).files.get('brief.mmd');
+    const flowchart = mmd.slice(mmd.indexOf('flowchart TD'));
+    return [entry.name, flowchart === (vector.expected.cases[i] || {}).flowchart, JSON.stringify(flowchart)];
+  }));
+}
+
+/** compose-0036 — AGSC-07-25 as amended 2026-11-10: `derived` capped at 1,000,000 steps, with `derived_total`. */
+function runDerivedCap(vector) {
+  const list = [];
+  vector.input.cases.forEach((entry, i) => {
+    const want = vector.expected.cases[i] || {};
+    const { derived, derived_total: total } = briefCase(entry, vector.input.fixed).record;
+    const triple = (r) => [r.source, r.key, r.target];
+    const steps = derived.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
+    list.push([`${entry.name} derived_total`, total === want.derived_total, String(total)]);
+    list.push([`${entry.name} length`, derived.length === want.derived_length, String(derived.length)]);
+    list.push([`${entry.name} steps`, steps === want.derived_steps, String(steps)]);
+    list.push([`${entry.name} first`, deepEqual(triple(derived[0]), want.derived_first), JSON.stringify(triple(derived[0]))]);
+    list.push([`${entry.name} last`, deepEqual(triple(derived[derived.length - 1]), want.derived_last), JSON.stringify(triple(derived[derived.length - 1]))]);
+  });
+  return checks(list);
+}
+
+/** compose-0025 — AGSC-07-26: the dependency order; compose-0026 — AGSC-07-27: the gaps and the checklist. */
+function runBriefMembers(members) {
+  return (vector) => {
+    const list = [];
+    vector.input.cases.forEach((entry, i) => {
+      const expected = vector.expected.cases[i] || {};
+      const { record } = briefCase(entry, vector.input.fixed);
+      list.push([`${entry.name} name`, expected.name === entry.name, String(expected.name)]);
+      for (const member of members) {
+        list.push([`${entry.name} ${member}`, deepEqual(expected[member], plain(record[member])), JSON.stringify(record[member])]);
+      }
+    });
+    list.push(['case count', vector.expected.cases.length === vector.input.cases.length, String(vector.expected.cases.length)]);
+    return checks(list);
+  };
+}
+
+/**
+ * The blueprint outputs of one saved architecture (AGSC-07-29): the composition `compose --from`
+ * runs (AGSC-07-24), with the options of the brief (`briefCase`) and the architecture's slug.
+ */
+function blueprintOf(input) {
+  const { result } = composeFrom(input.items, input.from);
+  const options = {
+    architecture: input.from,
+    base: input.fixed.base,
+    bundleVersion: input.fixed.bundle_version,
+    instant: input.fixed.instant,
+    items: input.items,
+    licenseProse: input.fixed.license_prose,
+    listed: input.items.filter((item) => isPublished(item, undefined)).map((item) => item.slug),
+    selectionDigest: sha256(selectionDigestInput(result)),
+    specVersion: input.fixed.spec_version,
+  };
+  return new Map(blueprint.blueprintFiles(result, options));
+}
+
+/**
+ * compose-0028 — the three C4 levels; compose-0029 — the decision records; compose-0030 — the
+ * build plan (AGSC-07-29). The paths are relative to the companion directory; two runs give the
+ * same bytes ("two builds write the same bytes").
+ */
+function runBlueprint(vector) {
+  const files = blueprintOf(vector.input);
+  const again = blueprintOf(vector.input);
+  const list = [['two runs, same bytes', deepEqual([...files], [...again]), 'the second run differs']];
+  for (const [name, bytes] of Object.entries(vector.expected.file_bytes)) {
+    list.push([`file_bytes ${name}`, files.get(name) === bytes, String(files.get(name))]);
+  }
+  for (const [prefix, names] of Object.entries(vector.expected.files_under || {})) {
+    const got = [...files.keys()].filter((path) => path.startsWith(prefix)).map((path) => path.slice(prefix.length));
+    list.push([`files_under ${prefix}`, deepEqual(names, got), JSON.stringify(got)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
   'compose-0001': runVerdictVector,
   'compose-0002': runVerdictVector,
@@ -264,6 +464,18 @@ const HANDLERS = {
   'compose-0021': runVerdictVector,
   'compose-0022': runVerdictVector,
   'compose-0023': runVerdictVector,
+  'compose-0024': runCompose0024,
+  'compose-0035': runBriefFlowchart,
+  'compose-0036': runDerivedCap,
+  'compose-0025': runBriefMembers(['order']),
+  'compose-0026': runBriefMembers(['checklist', 'gaps']),
+  'compose-0027': runCompose0027,
+  'compose-0028': runBlueprint,
+  'compose-0029': runBlueprint,
+  'compose-0030': runBlueprint,
+  'compose-0032': runContextMap,
+  'compose-0033': runContextMap,
+  'compose-0034': runCompose0024,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

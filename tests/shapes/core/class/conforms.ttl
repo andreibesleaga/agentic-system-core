@@ -1,0 +1,7 @@
+# The owner is an employee, and every employee is a person.
+@prefix ex: <https://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:car ex:owner ex:ann ; a ex:Car .
+ex:ann a ex:Employee .
+ex:Employee rdfs:subClassOf ex:Person .

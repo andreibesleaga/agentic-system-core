@@ -1,5 +1,5 @@
 'use strict';
-// verifies AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-05-04, AGSC-05-04b, AGSC-06-26
+// verifies AGSC-05-35, AGSC-05-37, AGSC-01-22, AGSC-01-23, AGSC-01-26, AGSC-01-26a, AGSC-01-27, AGSC-01-39, AGSC-05-04, AGSC-05-36, AGSC-05-04b, AGSC-06-26, AGSC-09-17
 // Steps of features/persona-h-memory.feature that run offline: the lossless export
 // forms, a foreign OKF bundle, the COGX archive another memory system reads, there
 // and back, the connectors example that reshapes `chunks.jsonl` for a framework's
@@ -10,6 +10,10 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+
+const N3 = require('n3');
+
+const jcs = require('../../../src/knowledge/jcs.js');
 
 const { FIXTURE, ROOT, built, linkset, splitItem } = require('./_world.js');
 
@@ -26,6 +30,39 @@ const OKF = Object.freeze({
     'description: A second note whose file name collides with the procedure kept in the other folder.', '---', '',
     'Why keys are rotated.', ''].join('\n'),
 });
+
+/** The thesaurus an author brings from a taxonomy tool: tests/fixtures/skos-thesaurus/thesaurus.ttl. */
+const THESAURUS = path.join(ROOT, 'tests', 'fixtures', 'skos-thesaurus', 'thesaurus.ttl');
+
+/** An OKF bundle whose records declare an open licence and the status stable. */
+const LICENSED = Object.freeze({
+  'index.md': '---\nokf_version: "0.2"\nlicense: CC0-1.0\n---\n',
+  'a.md': '---\ntype: concept\nkind: explainer\ntitle: First note\nlicense: CC0-1.0\nstatus: stable\n---\n\nThe first.\n',
+  'b.md': '---\ntype: concept\nkind: explainer\ntitle: Second note\nlicense: CC0-1.0\nstatus: stable\n---\n\nThe second.\n',
+});
+
+/** The items under `content/` of a directory, `content/<plural>/<slug>.md` -> frontmatter. */
+function itemsUnder(dir) {
+  const out = new Map();
+  const root = path.join(dir, 'content');
+  for (const folder of fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()) : []) {
+    for (const name of fs.readdirSync(path.join(root, folder.name)).sort()) {
+      out.set(`${folder.name}/${name}`, splitItem(fs.readFileSync(path.join(root, folder.name, name), 'utf8')).frontmatter);
+    }
+  }
+  return out;
+}
+
+/** A copy of the Bundle's identity and nothing else, to import into (persona-g's "copy that holds no item"). */
+function emptyCopy(world) {
+  const target = world.temp('agsc-acc-copy-');
+  for (const rel of ['agsc.config.json', 'content/index.md', '.well-known/security.txt', 'LICENSE-CONTENT']) {
+    if (!world.exists(rel)) continue;
+    fs.mkdirSync(path.dirname(path.join(target, rel)), { recursive: true });
+    fs.copyFileSync(path.join(world.dir, rel), path.join(target, rel));
+  }
+  return target;
+}
 
 const envelopeOf = (result) => result.structuredContent;
 
@@ -52,8 +89,8 @@ module.exports = [
       const client = await world.mcp();
       const names = (await client.listTools()).tools.map((t) => t.name).sort();
       // AGSC-09-13: the read tools of persona-c and the write tools of persona-d are
-      // one server's seven tools.
-      assert.deepStrictEqual(names, ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+      // one server's ten tools.
+      assert.deepStrictEqual(names, ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
       world.state.client = client;
     },
   },
@@ -167,6 +204,101 @@ module.exports = [
       assert.ok(fs.readFileSync(path.join(world.dir, 'dist', 'export', 'graph.jsonld'))
         .equals(fs.readFileSync(path.join(world.dir, 'www', 'graph.jsonld'))));
       assert.deepStrictEqual(world.networkAttempts(), []);
+    },
+  },
+  {
+    pattern: 'a SKOS thesaurus "thesaurus.ttl" with a scheme, a collection and two concepts',
+    run(world) {
+      world.bundle();
+      world.write('thesaurus.ttl', fs.readFileSync(THESAURUS, 'utf8'));
+    },
+  },
+  {
+    pattern: 'every item the SKOS import wrote is a draft with the provenance "imported", keeping its SKOS IRI in "x-skos-iri"',
+    run(world) {
+      const items = itemsUnder(world.state.target);
+      assert.deepStrictEqual([...items.keys()], ['clusters/instruments.md', 'clusters/strings.md', 'concepts/cello.md', 'concepts/violin.md']);
+      for (const [rel, frontmatter] of items) {
+        assert.strictEqual(frontmatter.status, 'draft', rel);
+        assert.strictEqual(frontmatter.prov.origin, 'imported', rel);
+        assert.match(frontmatter['x-skos-iri'], /^https:\/\/example\.org\/instruments\//u, rel);
+      }
+      const violin = items.get('concepts/violin.md');
+      assert.deepStrictEqual(violin.aliases, ['Fiddle']);
+      assert.deepStrictEqual(violin.clusters, ['instruments', 'strings']);
+      assert.deepStrictEqual(violin.related, ['cello']);
+      assert.strictEqual(violin['x-skos-license'], 'https://creativecommons.org/publicdomain/zero/1.0/');
+    },
+  },
+  {
+    pattern: 'a statement the SKOS import cannot carry is reported as "AGSC-E506" naming its subject and predicate',
+    run(world) {
+      const said = world.last.stderr;
+      assert.match(said, /^warn: AGSC-E506 https:\/\/example\.org\/instruments\/violin: the statement http:\/\/www\.w3\.org\/2004\/02\/skos\/core#notation /mu, said);
+      assert.match(said, /^warn: AGSC-E506 https:\/\/example\.org\/instruments\/Instrument: the statement http:\/\/www\.w3\.org\/1999\/02\/22-rdf-syntax-ns#type /mu, said);
+    },
+  },
+  {
+    pattern: /^an OKF bundle "([a-z-]+)" whose records declare the open licence "([^"]+)" and the status "([a-z]+)"$/u,
+    run(world, folder, licence, status) {
+      world.bundle();
+      for (const [rel, text] of Object.entries(LICENSED)) {
+        world.write(`${folder}/${rel}`, text.replace(/CC0-1\.0/gu, licence).replace(/status: stable/u, `status: ${status}`));
+      }
+    },
+  },
+  {
+    pattern: 'every item the OKF import wrote is a draft, with one "AGSC-E506" warning each that names the status it replaced',
+    run(world) {
+      const items = itemsUnder(world.state.target);
+      assert.strictEqual(items.size, 2);
+      for (const [rel, frontmatter] of items) {
+        assert.strictEqual(frontmatter.status, 'draft', rel);
+        assert.strictEqual(frontmatter.license, 'CC0-1.0', `${rel} keeps the licence the source declared`);
+      }
+      const said = world.last.stderr.split('\n').filter((line) => /status: draft/u.test(line));
+      assert.strictEqual(said.length, 2, world.last.stderr);
+      for (const line of said) assert.match(line, /the status the source gave it, "stable", was not kept/u);
+    },
+  },
+  {
+    pattern: '"dist/export/okf/export-manifest.json" lists every other file of the export with its digest, the item count and the items digest',
+    run(world) {
+      const manifest = JSON.parse(world.read('dist/export/okf/export-manifest.json'));
+      const written = [];
+      const walk = (sub) => {
+        for (const entry of fs.readdirSync(path.join(world.dir, 'dist/export/okf', sub), { withFileTypes: true })) {
+          const rel = sub === '' ? entry.name : `${sub}/${entry.name}`;
+          if (entry.isDirectory()) walk(rel);
+          else if (rel !== 'export-manifest.json') written.push(rel);
+        }
+      };
+      walk('');
+      assert.deepStrictEqual(manifest.files.map((f) => f.path), written.sort());
+      for (const file of manifest.files) assert.match(file.content_digest, /^sha-256=:[A-Za-z0-9+/]{43}=:$/u, file.path);
+      assert.ok(manifest.item_count > 0);
+      assert.match(manifest.items_digest, /^[0-9a-f]{64}$/u);
+      assert.match(manifest.bundle_hash, /^[0-9a-f]{64}$/u);
+    },
+  },
+  {
+    pattern: 'one exported file is edited and the folder is imported into a copy of the Bundle that holds no item',
+    run(world) {
+      const file = `dist/export/okf/content/concepts/${fs.readdirSync(path.join(world.dir, 'dist/export/okf/content/concepts')).sort()[0]}`;
+      fs.appendFileSync(path.join(world.dir, file), '\nEdited after the export.\n');
+      world.state.edited = file.replace('dist/export/okf/', '');
+      world.state.target = emptyCopy(world);
+      world.agsc(['import', path.join(world.dir, 'dist/export/okf'), '--from', 'okf'], { cwd: world.state.target, offline: true });
+      assert.strictEqual(world.last.exit, 0, world.last.stdout + world.last.stderr);
+    },
+  },
+  {
+    pattern: 'the import warns once with "AGSC-E506" that the edited file differs from the manifest, and still writes the items',
+    run(world) {
+      const lines = world.last.stderr.split('\n').filter((line) => line.includes('export-manifest.json'));
+      assert.strictEqual(lines.length, 1, world.last.stderr);
+      assert.ok(lines[0].includes('AGSC-E506') && lines[0].includes(`${world.state.edited} differs`), lines[0]);
+      assert.ok(itemsUnder(world.state.target).size > 0, 'the items were written');
     },
   },
   {
@@ -302,6 +434,101 @@ module.exports = [
       assert.strictEqual(lines.length, pages.length);
       // Each per-item view is already one canonical JSON line; the export line is that node.
       pages.forEach((page, i) => assert.strictEqual(lines[i], world.read(`www/pages/${page}`).replace(/\n$/u, ''), page));
+    },
+  },
+  {
+    pattern: '"dist/export/skos.ttl" types the Bundle as a skos:ConceptScheme and each published concept, lesson and cluster as a skos:Concept or skos:Collection, and holds no episode, procedure or gate',
+    run(world) {
+      const SKOS = 'http://www.w3.org/2004/02/skos/core#';
+      const ASC = 'https://w3id.org/agentic-system-core/ns#';
+      const TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+      const typed = (quads) => quads.filter((q) => q.predicate.value === TYPE).map((q) => [q.subject.value, q.object.value]);
+      const graph = typed(new N3.Parser({ format: 'N-Quads' }).parse(world.read('www/graph.nq')));
+      const view = typed(new N3.Parser().parse(world.read('dist/export/skos.ttl')));
+      const skosTypeOf = { [`${ASC}Concept`]: 'Concept', [`${ASC}Lesson`]: 'Concept', [`${ASC}Cluster`]: 'Collection' };
+      const wanted = graph.filter(([, cls]) => skosTypeOf[cls]).map(([iri, cls]) => `${iri} ${SKOS}${skosTypeOf[cls]}`);
+      assert.ok(wanted.length > 0, 'the Bundle publishes no concept');
+      const bundle = graph.find(([, cls]) => cls === `${ASC}Bundle`)[0];
+      assert.deepStrictEqual(view.map(([iri, cls]) => `${iri} ${cls}`).sort(), [...wanted, `${bundle} ${SKOS}ConceptScheme`].sort());
+      const left = graph.filter(([, cls]) => [`${ASC}Episode`, `${ASC}Procedure`, `${ASC}Gate`].includes(cls)).map(([iri]) => iri);
+      for (const iri of left) assert.ok(!world.read('dist/export/skos.ttl').includes(`<${iri}>`), `${iri} is in the view`);
+    },
+  },
+  {
+    pattern: '"dist/export/skos.ttl" is Turtle that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/export/skos.ttl');
+      assert.ok(new N3.Parser().parse(first).length > 0);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/export/skos.ttl'), first);
+    },
+  },
+  {
+    pattern: 'a note "alpha" that links to the note "beta" in its body, with no Link between them',
+    run(world) {
+      world.bundle();
+      const note = (title, body) => ['---', 'type: concept', 'kind: principle', `title: ${title}`,
+        'description: A note written for the scenario that asks which notes should be linked.',
+        'tags:', '  - agents', '  - protocols', 'clusters:', '  - agent-patterns',
+        'prov:', '  origin: human', '  operator: human:tester', '---', '', body, ''].join('\n');
+      world.write('content/concepts/alpha.md', note('Alpha note', 'This builds on [the next note](beta).'));
+      world.write('content/concepts/beta.md', note('Beta note', 'A short body.'));
+      world.state.contentBefore = world.snapshot('content');
+    },
+  },
+  {
+    pattern: '"dist/suggestions.json" proposes the Link "related" from "alpha" to "beta" with the evidence "mention"',
+    run(world) {
+      const { suggestions } = JSON.parse(world.read('dist/suggestions.json'));
+      assert.deepStrictEqual(suggestions.find((s) => s.source === 'alpha' && s.target === 'beta'),
+        { evidence: [{ kind: 'mention' }], generator: 'G1', key: 'related', source: 'alpha', target: 'beta' });
+    },
+  },
+  {
+    pattern: 'the content folder is byte for byte what it was before the suggestions were asked for',
+    run(world) {
+      assert.deepStrictEqual(world.snapshot('content'), world.state.contentBefore);
+    },
+  },
+  {
+    pattern: '"dist/suggestions.json" is canonical JSON that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/suggestions.json');
+      assert.ok(first.endsWith('}\n') && !first.endsWith('\n\n'));
+      assert.strictEqual(`${jcs.canonicalize(JSON.parse(first))}\n`, first);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/suggestions.json'), first);
+    },
+  },
+  {
+    // What each rule entails is checked rule by rule in tests/knowledge/closure.test.js; this step checks what a reader of the file sees.
+    pattern: '"dist/export/closure.nt" is not empty, shares no triple with "www/graph.nq" and types a concept skos:Concept',
+    run(world) {
+      const closure = world.read('dist/export/closure.nt');
+      const asserted = new Set(world.read('www/graph.nq').split('\n'));
+      const lines = closure.split('\n').slice(0, -1);
+      assert.ok(lines.length > 0, 'the closure of the acceptance Bundle is empty');
+      for (const line of lines) assert.ok(!asserted.has(line), `${line} is already in graph.nq`);
+      assert.ok(lines.some((line) => line.includes('skos/core#Concept>')), 'no concept is typed skos:Concept');
+    },
+  },
+  {
+    pattern: '"dist/export/closure.nt" is N-Quads that a second run writes again byte for byte',
+    run(world) {
+      const first = world.read('dist/export/closure.nt');
+      assert.strictEqual(new N3.Parser({ format: 'N-Quads' }).parse(first).length, first.split('\n').length - 1);
+      const again = world.agsc(world.last.argv, { offline: true });
+      assert.strictEqual(again.exit, 0, again.stdout + again.stderr);
+      assert.strictEqual(world.read('dist/export/closure.nt'), first);
+    },
+  },
+  {
+    pattern: /^no file under "([^"]+)" has "([^"]+)" in its name$/u,
+    run(world, folder, text) {
+      const found = [...world.snapshot(folder).keys()].filter((rel) => rel.includes(text));
+      assert.deepStrictEqual(found, []);
     },
   },
   {

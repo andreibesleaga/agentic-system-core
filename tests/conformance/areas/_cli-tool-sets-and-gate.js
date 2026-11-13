@@ -50,7 +50,7 @@ function envelopeOf(frame) {
 /**
  * The routes the emitted loader (`API.load` of the page script) fetches, taken from the
  * built files in the loader's own order, synchronously: its fixed `API.ROUTES`, the
- * search shards a manifest names, the `/pages/<slug>.md` of each document the index
+ * search and chunk shards a manifest names, the `/pages/<slug>.md` of each document the index
  * lists, and the board exports when the discovery document declares them. A browser's
  * page therefore sees the listed set, which is what AGSC-09-16 asks; the asynchronous
  * loader itself is run against a fake fetch by `tests/distribution/compose-page-run.test.js`.
@@ -64,6 +64,7 @@ function loaderSources(api, files) {
   const get = (route) => { if (Object.prototype.hasOwnProperty.call(files, route)) sources[route] = files[route]; };
   api.ROUTES.forEach(get);
   api.pageShardRoutes(parseOr(sources['/search.json'], null)).forEach(get);
+  api.toolChunkShardRoutes(sources['/chunks.jsonl']).forEach(get);
   const index = api.pageIndexOf(sources);
   for (const doc of (index && index.docs) || []) get(`/pages/${doc.slug}.md`);
   if (api.pageDeclaresBoards(sources)) {

@@ -57,18 +57,18 @@ test('the overview, declared scope: the tool error and the unknown tool are repo
   const scope = rule(CH00, 'AGSC-00-20');
   const text = plain(withoutNotes(scope));
   assert.doesNotMatch(text, /the tool server on MCP revision 2026-07-28 — isError on a tool error, a protocol error for an unknown tool/u);
-  assert.match(text, /the tool server's error reporting as MCP defines it in revision 2025-11-25 and 2026-07-28 alike — isError: true on a tool error and a JSON-RPC error for an unknown tool, both of which the 1\.0 transport answers with the AGSC-09-13a envelope instead — together with the tool annotation defaults and server\/discover of revision 2026-07-28 \(AGSC-09-13, AGSC-09-13a, AGSC-11-18\)/u);
+  assert.match(text, /the tool server's error reporting as MCP defines it — isError: true on a tool error and a JSON-RPC error for an unknown tool, both of which the 1\.0 transport answers with the AGSC-09-13a envelope instead — and the tool annotation defaults and server\/discover of MCP revision 2026-07-28, which the node answers beside 2025-11-25 \(AGSC-09-13a, AGSC-09-19, AGSC-11-18\)/u);
   const notes = notesOf(scope).map(plain);
   assert.ok(notes.some((n) => /^\*\(Amended 2026-10-12 for 1\.0\.0: the 1\.1 list attributed isError and the unknown-tool error to MCP revision 2026-07-28, where revision 2025-11-25, the one 1\.0 speaks, already defines both/u.test(n)),
     'the dated note of the day names the misattribution');
 });
 
-test('the overview, declared scope: the 1.1 list names a remember call with an operator alone, and a stated nesting bound checked by lint', () => {
+test('the overview, declared scope: the 1.1 list names a remember call with an operator alone, and a bound on frontmatter nesting', () => {
   const text = plain(withoutNotes(rule(CH00, 'AGSC-00-20')));
-  const later = text.slice(text.indexOf('Also 1.1'), text.indexOf('Planned for 1.1 as capabilities'));
+  const later = text.slice(text.indexOf('(f) The Bundle, the ledger and the boundary.'), text.indexOf('Capabilities of the reference distribution in 1.1'));
   assert.ok(later.length > 0, 'the list of 1.1 items was not found');
-  assert.match(later, /a remember call that declares an operator alone under the default ai-generated origin, refused with AGSC-E003 or answered with the two AGSC-E202 of AGSC-08-01 in findings, on both transports at once \(AGSC-09-14b\)/u);
-  assert.match(later, /a stated nesting bound for the block mappings and sequences of the AGSC-02-02 subset, checked by lint so that lint, build, ci and import agree, under AGSC-E105 \(AGSC-02-02\)/u);
+  assert.match(later, /a remember call that declares an operator alone under the default ai-generated origin refused with AGSC-E003 or answered with the two AGSC-E202 of AGSC-08-01 in findings, each on both transports at once \(AGSC-09-14b\)/u);
+  assert.match(later, /a bound on frontmatter nesting \(AGSC-02-02\)/u);
 });
 
 test('the conformance chapter, the remember tool: an operator alone under the default origin gives an item that lint refuses, and the call reports no finding for it', () => {
@@ -93,7 +93,7 @@ test('the canonical-forms chapter, the build instant: an empty variable is read 
 test('the error-code registry: the subset code also names a frontmatter nested deeper than the engine can read or write back', () => {
   const row = registryRow(CH09, 'AGSC-E105');
   const text = plain(row);
-  assert.match(text, /flow mapping or complex key; a frontmatter nested deeper than the engine can read or write back, until a version states a bound/u);
+  assert.match(text, /flow mapping or complex key; a frontmatter nested deeper than the engine can read or write back; from 1\.1 the bound is 64 levels \(AGSC-02-02\)/u);
   assert.match(text, /\*\(Amended 2026-10-12 for 1\.0\.0: build, ci, lint --fix and import stopped with an internal error on such a frontmatter where lint had passed it; every verb now reports this code, the one the reader already gave the same input\)\*/u);
-  assert.match(text, /\| AGSC-02-02 \| error \|$/u, 'the owning rule and the severity are unchanged');
+  assert.match(text, /\| AGSC-02-02 \| error; a warning when a frontmatter nested deeper than 64 levels can still be read and written back \(AGSC-02-02\) \|$/u, 'the owning rule is unchanged, the severity is an error with the 1.1 warning beside it');
 });

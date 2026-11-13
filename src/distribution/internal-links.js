@@ -162,4 +162,4 @@ function danglingFindings(files, options) {
   return out;
 }
 
-module.exports = { baseDirOf, danglingFindings, internalLinks, resolveRelative, resolvesTo };
+module.exports = { danglingFindings, internalLinks, resolvesTo };

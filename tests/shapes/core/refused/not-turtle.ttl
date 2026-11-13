@@ -1,0 +1,6 @@
+# Turtle: a shapes file that does not parse is refused, not evaluated.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S a sh:NodeShape ; sh:targetClass ex:C

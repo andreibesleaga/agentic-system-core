@@ -106,6 +106,15 @@ test('arrow: an unknown endpoint, a malformed via and an empty via are refused',
   assert.match(refuse(`${two}arrow a b via=\n`)[0].message, /bad number "undefined" in via/u);
 });
 
+test('AGSC-01-42 as amended 2026-11-10: an arrow between two shapes that share a centre is refused (it compiled to a NaN path)', () => {
+  assert.match(refuse(`${OK}arrow a a\n`)[0].message, /share a centre/u);
+  const ringed = 'canvas 400 200\nregion r 20 20 200 100 "zone"\nbox a 70 50 100 40 "a" acc\n';
+  assert.match(refuse(`${ringed}arrow r a\n`)[0].message, /share a centre/u);
+  const routed = diagrams.compile(`${ringed}arrow r a via=300,150\n`, { slug: 'x' });
+  assert.deepStrictEqual(routed.findings, [], 'a waypoint gives the arrow a direction');
+  assert.ok(!routed.svg.includes('NaN'));
+});
+
 test('AGSC-04-01: two arrows that resolve to one path are refused, not overdrawn', () => {
   const source = 'canvas 400 200\nbox a 20 20 100 40 "a" acc\nbox b 260 20 100 40 "b"\n'
     + 'arrow a b\narrow b a\n';

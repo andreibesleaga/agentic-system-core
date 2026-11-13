@@ -7,10 +7,18 @@
 // The pipeline itself is `distribution/ci.js`; the four N9 lints are a LANE,
 // injected here as `options.lint`, so the pipeline can be run with a stricter
 // or a narrower lint set without changing it.
+//
+// AGSC-09-20 with AGSC-10-19: the check of the site's invariants and competency questions is
+// injected as `options.siteChecks` (`_site-checks.js`); it belongs to the full engine of Level 3,
+// so `ci --level 0`, `1` or `2` does not run it.
 
 const pipeline = require('../../../distribution/ci.js');
 const lintVerb = require('./lint.js');
 const helpers = require('./_helpers.js');
+const siteChecks = require('./_site-checks.js');
+
+/** AGSC-10-19: the check of AGSC-09-20 is a Level-3 addition; a lower claimed Level runs none. */
+const SITE_CHECKS_LEVEL = 3;
 
 function printOverrideNames(ctx) {
   for (const name of ctx.envOverrides || []) {
@@ -28,13 +36,17 @@ function run(ctx) {
 
   const bundle = helpers.bundleOf(ctx);
   let lanes = [];
-  const result = pipeline.ci(bundle, ctx.ports, helpers.buildOptions(ctx, {
+  const options = helpers.buildOptions(ctx);
+  const claimsLevel3 = options.level === undefined || options.level >= SITE_CHECKS_LEVEL;
+  const result = pipeline.ci(bundle, ctx.ports, {
+    ...options,
     lint: (loaded) => {
       const lint = lintVerb.lane(ctx, loaded);
       lanes = lint.lanes;
       return lint.findings;
     },
-  }));
+    siteChecks: (files) => (claimsLevel3 ? siteChecks.check(bundle, files) : null),
+  });
 
   for (const l of lanes) helpers.note(ctx, `lane: ${l}`);
   for (const s of result.skipped) helpers.note(ctx, `skipped: ${s}`);

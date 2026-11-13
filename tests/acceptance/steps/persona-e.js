@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-09-94
+// verifies AGSC-07-05, AGSC-07-06, AGSC-07-07, AGSC-07-12, AGSC-07-13, AGSC-07-25, AGSC-07-26, AGSC-07-27, AGSC-07-28, AGSC-07-29, AGSC-07-30, AGSC-09-94
 // Steps of features/persona-e-architect.feature. Offline: the page's own module,
 // `www/compose/agsc-core.js`, is evaluated in a fresh `node:vm` context that holds
 // the language and nothing else (no require, no process, no fetch, no document) and
@@ -9,7 +9,9 @@
 // byte with the real command line's. `run --dry-run` and `trace` run through the
 // real command line under the network trap. In a browser (`_browser.js`): the
 // architect ticks items on the served `/compose/` page, reads its panel and takes
-// its downloads.
+// its downloads. The context map (AGSC-07-30), the brief (AGSC-07-25) and the blueprint of a
+// saved architecture (AGSC-07-29) are read from the companion directory the command line writes
+// beside the Harness; the brief on the architecture's page from the build.
 
 const assert = require('node:assert');
 const crypto = require('node:crypto');
@@ -19,6 +21,7 @@ const vm = require('node:vm');
 
 const { ROOT, built, linkset, splitItem } = require('./_world.js');
 const browser = require('./_browser.js');
+const archive = require('../../../src/composition/archive.js');
 
 const SELECTION = ['a2a', 'mcp', 'supervisor'];
 
@@ -30,6 +33,18 @@ function tree(dir) {
     if (fs.statSync(at).isFile()) out.set(rel.split(path.sep).join('/'), fs.readFileSync(at, 'utf8'));
   }
   return out;
+}
+
+/** The four files of the brief (AGSC-07-25). */
+const BRIEF_FILES = Object.freeze(['BRIEF.md', 'brief.json', 'brief.mmd', 'context.md']);
+
+/** The one companion directory under `dist/harness/` and its files; records the Harness directory beside it. */
+function companionFiles(world) {
+  const harness = path.join(world.dir, 'dist', 'harness');
+  const companions = fs.readdirSync(harness).filter((name) => name.endsWith('.companion'));
+  assert.strictEqual(companions.length, 1, `companion directories: ${companions}`);
+  world.state.harnessDir = path.join(harness, companions[0].slice(0, -'.companion'.length));
+  return tree(path.join(harness, companions[0]));
 }
 
 /** The two constants `agsc-compose.js` hands the core, read from the emitted page script. */
@@ -117,7 +132,8 @@ module.exports = [
       const core = world.read('www/compose/agsc-core.js');
       const browser = require(path.join(ROOT, 'src', 'composition', 'browser.js'));
       const spec = JSON.parse(world.read('agsc.config.json')).spec_version;
-      assert.strictEqual(core, browser.bundle({ specVersion: spec }), 'the emitted module is not the bundled module set');
+      // The site emits the algebra with the brief (AGSC-07-25), which the page tool `brief` runs (AGSC-09-13).
+      assert.strictEqual(core, browser.bundle({ brief: true, specVersion: spec }), 'the emitted module is not the bundled module set');
       assert.doesNotMatch(core, /require\(|\bnode:[a-z]/u);
     },
   },
@@ -350,6 +366,221 @@ module.exports = [
       assert.strictEqual(kept.length, 1, JSON.stringify(frontmatter));
       assert.strictEqual(frontmatter[kept[0]], world.state.record.tool);
       assert.ok(!('tool' in frontmatter), 'the unknown member was kept under its own name');
+    },
+  },
+  {
+    pattern: /^the clusters "([^"]+)" and "([^"]+)" are declared contexts, and "([^"]+)" moves to "\2" by its "domain_context" \(AGSC-01-41, AGSC-08-32\)$/u,
+    run(world, first, second, moved) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      const contexts = [first, second].map((cluster) => ({ cluster, namespace: `${config.site.base}ns/${cluster}#` }));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { contexts } }, null, 2)}\n`);
+      const rel = `content/concepts/${moved}.md`;
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\ndomain_context: ${second}\n---\n`));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.domain_context, second);
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" takes the title of "([^"]+)"$/u,
+    run(world, slug, other) {
+      const rel = `content/concepts/${slug}.md`;
+      const title = splitItem(world.read(`content/concepts/${other}.md`)).frontmatter.title;
+      world.write(rel, world.read(rel).replace(/^title: .*$/mu, `title: ${title}`));
+      assert.strictEqual(splitItem(world.read(rel)).frontmatter.title, title);
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" moves to the context "([^"]+)" of "([^"]+)" \(AGSC-08-32\)$/u,
+    run(world, slug, context, other) {
+      const rel = `content/concepts/${slug}.md`;
+      world.write(rel, world.read(rel).replace(/^domain_context: .*$/mu, `domain_context: ${context}`));
+      const fm = (name) => splitItem(world.read(`content/concepts/${name}.md`)).frontmatter;
+      assert.strictEqual(fm(slug).domain_context, context);
+      assert.ok((fm(other).clusters || [])[0] === context || fm(other).domain_context === context, `${other} is not in ${context}`);
+    },
+  },
+  {
+    pattern: /^the peer "([^"]+)" is a "([^"]+)" whose crosswalk "([^"]+)" maps "([^"]+)" to "([^"]+)" \(AGSC-11-24\)$/u,
+    run(world, url, relationship, crosswalk, slug, peerIri) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, peers: [{ crosswalk, relationship, url }] }, null, 2)}\n`);
+      world.write(crosswalk, `@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<${config.site.base}concepts/${slug}/> skos:exactMatch <${peerIri}> .\n`);
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds "context-map\.json" alone, with "([^"]+)" in "([^"]+)", "([^"]+)" in "([^"]+)", the Link "([^"]+)" across them and the peer's crosswalk \(AGSC-07-30\)$/u,
+    run(world, a, contextA, b, contextB, link) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companions = fs.readdirSync(harness).filter((name) => name.endsWith('.companion'));
+      assert.strictEqual(companions.length, 1, `companion directories: ${companions}`);
+      const files = tree(path.join(harness, companions[0]));
+      assert.deepStrictEqual([...files.keys()], ['context-map.json']);
+      const map = JSON.parse(files.get('context-map.json'));
+      const membersOf = (name) => (map.contexts.find((c) => c.name === name) || { members: [] }).members;
+      assert.ok(membersOf(contextA).includes(a) && membersOf(contextB).includes(b), files.get('context-map.json'));
+      const [source, key, target] = link.split(' ');
+      assert.deepStrictEqual(map.cross_context_links, [{ key, source, source_context: contextA, target, target_context: contextB }]);
+      const config = JSON.parse(world.read('agsc.config.json'));
+      assert.deepStrictEqual(map.peers.map((p) => [p.url, p.relationship, p.crosswalk.length]),
+        config.peers.map((p) => [p.url, p.relationship, 1]));
+      world.state.harnessDir = path.join(harness, companions[0].slice(0, -'.companion'.length));
+    },
+  },
+  {
+    pattern: 'the same composition on the node without contexts writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-30)',
+    run(world) {
+      const config = JSON.parse(world.read('agsc.config.json'));
+      delete config.domain;
+      world.write('agsc.config.json', `${JSON.stringify(config, null, 2)}\n`);
+      const r = world.agsc(['compose', 'handoff', '--out', 'plain-harness'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      assert.ok(!world.exists('plain-harness.companion'), 'a node with no contexts got a companion directory');
+      assert.deepStrictEqual(tree(path.join(world.dir, 'plain-harness')), tree(world.state.harnessDir));
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds the four files of the brief, whose dependency order puts "([^"]+)" before "([^"]+)" \(AGSC-07-25, AGSC-07-26\)$/u,
+    run(world, first, second) {
+      const files = companionFiles(world);
+      assert.deepStrictEqual([...files.keys()], BRIEF_FILES);
+      const record = JSON.parse(files.get('brief.json'));
+      assert.deepStrictEqual(record.order, [first, second]);
+      assert.ok(files.get('BRIEF.md').includes(`1. \`${first}\`\n2. \`${second}\``), files.get('BRIEF.md'));
+      assert.ok(!tree(world.state.harnessDir).has('brief.json'), 'the brief is inside the Harness directory');
+      world.state.brief = record;
+    },
+  },
+  {
+    pattern: /^the brief's checklist adopts "([^"]+)" and then "([^"]+)" \(AGSC-07-27\)$/u,
+    run(world, first, second) {
+      const adopt = world.state.brief.checklist.filter((entry) => entry.kind === 'adopt').map((entry) => entry.slug);
+      assert.deepStrictEqual(adopt, [first, second]);
+    },
+  },
+  {
+    pattern: 'the same composition without "--brief" writes the same seven file kinds, byte for byte, and no companion directory (AGSC-07-25)',
+    run(world) {
+      const r = world.agsc(['compose', ...world.state.brief.selection.filter((slug) => world.state.brief.items
+        .find((item) => item.slug === slug).reason.kind === 'selected'), '--out', 'plain-harness'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      assert.ok(!world.exists('plain-harness.companion'), 'a composition without --brief got a companion directory');
+      assert.deepStrictEqual(tree(path.join(world.dir, 'plain-harness')), tree(world.state.harnessDir));
+    },
+  },
+  {
+    pattern: 'the companion directory beside the Harness holds the four files of the brief and no "narration.md" (AGSC-07-28)',
+    run(world) {
+      assert.deepStrictEqual([...companionFiles(world).keys()], BRIEF_FILES);
+    },
+  },
+  {
+    pattern: /^the Bundle holds a chain of (\d+) Concepts, "chain-\d+" requiring "chain-\d+" and so on down to "chain-0"$/u,
+    run(world, count) {
+      for (let i = 0; i < Number(count); i += 1) {
+        world.write(`content/concepts/chain-${i}.md`, ['---', 'type: concept', `title: Chain item ${i}`,
+          `description: Item ${i} of a chain of requires Links, each needing the one before it.`, 'clusters:', '  - agent-patterns',
+          'prov:', '  origin: human', '  operator: human:andreibesleaga', ...(i === 0 ? [] : ['requires:', `  - chain-${i - 1}`]),
+          '---', '', `# Chain item ${i}`, '', 'Body.', ''].join('\n'));
+      }
+    },
+  },
+  {
+    pattern: 'the brief holds the first readings of derived and derived_total counts them all (AGSC-07-25)',
+    run(world) {
+      const record = JSON.parse(companionFiles(world).get('brief.json'));
+      const steps = record.derived.reduce((n, r) => n + r.because.reduce((m, b) => m + b.from.length, 0), 0);
+      assert.ok(steps <= 1000000 && record.derived_total > record.derived.length, `${record.derived.length} of ${record.derived_total}`);
+    },
+  },
+  {
+    pattern: /^the worked blueprint "([^"]+)" of "examples\/blueprints\/" is copied into a scratch folder with a git history$/u,
+    run(world, folder) {
+      world.dir = world.temp(`agsc-acc-blueprint-${folder}-`);
+      fs.cpSync(path.join(ROOT, 'examples', 'blueprints', folder), world.dir, { recursive: true });
+      world.commitAll(folder);
+    },
+  },
+  {
+    pattern: 'the blueprint beside the Harness holds the three C4 levels, one decision record for each decision of the Bundle naming at least two considered options, and a build plan in which every step names what verifies it (AGSC-07-29)',
+    run(world) {
+      const files = companionFiles(world);
+      for (const level of ['c4-context.mmd', 'c4-containers.mmd', 'c4-components.mmd']) assert.ok(files.has(`blueprint/${level}`), level);
+      const concepts = path.join(world.dir, 'content', 'concepts');
+      const decisions = fs.readdirSync(concepts).filter((name) => /^kind: decision$/mu.test(world.read(`content/concepts/${name}`)))
+        .map((name) => name.replace(/\.md$/u, '')).sort();
+      assert.ok(decisions.length > 0, 'the blueprint declares no decision');
+      const records = [...files.keys()].filter((name) => name.startsWith('blueprint/decisions/'));
+      assert.deepStrictEqual(records.map((n) => n.replace(/^blueprint\/decisions\/\d{4}-/u, '').replace(/\.md$/u, '')).sort(), decisions);
+      for (const record of records) {
+        const options = /## Considered options\n\n([\s\S]*?)\n## Decision\n/u.exec(files.get(record));
+        assert.ok(options && (options[1].match(/^\d+\. /gmu) || []).length >= 2, `${record} names fewer than two options`);
+      }
+      const plan = files.get('blueprint/build-plan.md');
+      const steps = [...plan.matchAll(/^### Step \d+ — adopt `[^`]+`\n\n- Needs: .*\n- Verified by: (.*)$/gmu)];
+      assert.ok(steps.length > 0, 'the build plan has no step');
+      assert.strictEqual((plan.match(/^### Step \d+/gmu) || []).length, steps.length, 'a step of the build plan names nothing that verifies it');
+      for (const [, verified] of steps) assert.notStrictEqual(verified.trim(), '');
+      assert.ok(![...tree(world.state.harnessDir).keys()].some((name) => name.startsWith('blueprint/')), 'the blueprint is inside the Harness directory');
+    },
+  },
+  {
+    pattern: /^the Bundle holds the saved architecture "([^"]+)" selecting "([^"]+)" and "([^"]+)", and the node is rebuilt$/u,
+    run(world, slug, a, b) {
+      world.write(`content/concepts/${slug}.md`, ['---', 'type: concept', 'kind: architecture', `title: The ${slug}`,
+        'description: A saved architecture, the selection of a starting design kept as an item.', 'clusters:', '  - agent-patterns',
+        'prov:', '  origin: human', '  operator: human:andreibesleaga', '---', '', `# The ${slug}`, '',
+        '```yaml agsc-selection', `- ${a}`, `- ${b}`, '```', ''].join('\n'));
+      const r = built(world);
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+    },
+  },
+  {
+    pattern: /^the companion directory beside the Harness holds the brief and the blueprint: the three C4 levels and a build plan whose first step adopts "([^"]+)" \(AGSC-07-29\)$/u,
+    run(world, first) {
+      const files = companionFiles(world);
+      assert.deepStrictEqual([...files.keys()], [...BRIEF_FILES, 'blueprint/build-plan.md', 'blueprint/c4-components.mmd',
+        'blueprint/c4-containers.mmd', 'blueprint/c4-context.mmd'].sort());
+      assert.ok(files.get('blueprint/build-plan.md').includes(`### Step 1 — adopt \`${first}\``), files.get('blueprint/build-plan.md'));
+      assert.ok(![...tree(world.state.harnessDir).keys()].some((name) => name.startsWith('blueprint/')), 'the blueprint is inside the Harness directory');
+    },
+  },
+  {
+    pattern: /^the page "([^"]+)" shows the brief of the composition and links "([^"]+)" \(AGSC-07-25, AGSC-07-24\)$/u,
+    run(world, route, compose) {
+      const page = world.read(`www${route}index.html`);
+      assert.ok(page.includes('<h2 id="composition-brief">Brief of this architecture</h2>'), 'the page shows no brief');
+      assert.ok(page.includes(`<a href="${compose}">`), `the page does not link ${compose}`);
+    },
+  },
+  {
+    pattern: 'the architect opens "/compose/" to take downloads and ticks the Concept "handoff"',
+    async run(world) {
+      await composePage(world, { acceptDownloads: true });
+      await select(world, ['handoff']);
+    },
+  },
+  {
+    pattern: /^the page shows the verdict in words and the brief, whose dependency order puts "([^"]+)" before "([^"]+)" \(AGSC-07-25, AGSC-07-26\)$/u,
+    async run(world, first, second) {
+      const { page } = world.state.compose;
+      await page.waitForSelector('#brief-order:not([hidden])', { timeout: 10000 });
+      const words = await page.evaluate(() => document.getElementById('verdict-words').textContent);
+      assert.match(words, /^Items in the selection: 2\. Added by closure: 1\..* The composition is valid\.$/u);
+      assert.deepStrictEqual(await panelList(world, 'brief-order'), [`Supervisor (${first})`, `Handoff (${second})`]);
+    },
+  },
+  {
+    pattern: '"Download the brief (.zip)" gives, byte for byte, the archive of the four files "agsc compose handoff --brief" writes (AGSC-07-13)',
+    async run(world) {
+      const { page } = world.state.compose;
+      await page.waitForSelector('#brief-archive a', { timeout: 10000 });
+      assert.strictEqual(await page.evaluate(() => document.querySelector('#brief-archive a').textContent), 'Download the brief (.zip)');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#brief-archive a')]);
+      const bytes = fs.readFileSync(await download.path());
+      const r = world.agsc(['compose', 'handoff', '--brief'], { offline: true });
+      assert.strictEqual(r.exit, 0, r.stdout + r.stderr);
+      const files = companionFiles(world);
+      const instant = linkset(world).linkset[0].describedby.find((l) => l['agsc-generated-at'])['agsc-generated-at'][0];
+      assert.ok(bytes.equals(Buffer.from(archive.archiveBytes(files, { instant }).bytes)), 'the page archive differs from the archive of the CLI brief');
     },
   },
 ];

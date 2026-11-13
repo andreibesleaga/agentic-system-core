@@ -10,12 +10,13 @@
  * extension identifier), AGSC-11-19 (PROVE: AGSC-E210 for a declaration with
  * no implementation, the warning AGSC-E211 for an emitted surface with no
  * declaration), AGSC-11-21 (responder and solid are declaration-only at 1.0;
- * a responder names its protocol by the prefix of its version) and
- * AGSC-10-14 (a live board is a responder, never served at 1.0).
+ * a responder names its protocol by the prefix of its version),
+ * AGSC-10-14 (a live board is a responder, never served at 1.0) and, from 1.1,
+ * AGSC-09-19 (the two MCP revisions, the one declared value, the MCP annotations).
  * Requirements: PRD-057.
  *
  * THIS MODULE IS THE ONE PLACE THAT NAMES AN EXTERNAL PROTOCOL VERSION.
- * The wire version the stdio transport negotiates, the revision the `mcp`
+ * The MCP revisions the tool server speaks (AGSC-09-19), the revision the `mcp`
  * surface declares and the WebMCP report date live here and nowhere else:
  * a tool function must never carry a foreign version string (the
  * anti-corruption rule of docs/ARCHITECTURE-DDD.md 2).
@@ -28,27 +29,55 @@
 
 const { collapseTrailingSlashes } = require('../shared/trailing.js');
 
-/** The MCP wire revision `@modelcontextprotocol/sdk@1.32.1` speaks. */
-const MCP_PROTOCOL_VERSION = '2025-11-25';
-/** The oldest revision that transport negotiates down to. */
+/**
+ * AGSC-09-19: the newest MCP revision the tool server speaks, statelessly, on both
+ * transports. It is the one constant this distribution names as its protocol version and
+ * the one value its `mcp` surface declares (AGSC-11-16, vector `cli-0035`).
+ */
+const MCP_PROTOCOL_VERSION = '2026-07-28';
+/**
+ * AGSC-09-19: the handshake revision the stdio server still speaks to a client that opens
+ * with `initialize`, as 1.0 spoke it; the newest handshake revision of the official SDK
+ * (`@modelcontextprotocol/server`, `LATEST_PROTOCOL_VERSION`).
+ */
+const MCP_LEGACY_VERSION = '2025-11-25';
+/** AGSC-09-19 (1): the revisions the stdio server lists in `supportedVersions`, newest first. */
+const MCP_STDIO_REVISIONS = Object.freeze([MCP_PROTOCOL_VERSION, MCP_LEGACY_VERSION]);
+/** The oldest revision the handshake negotiates down to. */
 const MCP_PROTOCOL_MIN_VERSION = '2025-03-26';
 /**
- * AGSC-11-16: the MCP revision the specification targets.
- * The `mcp` surface declares the revision its transport actually speaks
- * — `MCP_PROTOCOL_VERSION` by default — and this target is no longer a pin.
+ * AGSC-11-16: the MCP revision the specification targets, which is now the revision the
+ * server speaks: `declare` echoes `mcpVersion` when a node names one and declares
+ * `MCP_PROTOCOL_VERSION` otherwise.
  */
-const MCP_SURFACE_VERSION = '2026-07-28';
+const MCP_SURFACE_VERSION = MCP_PROTOCOL_VERSION;
 /**
  * AGSC-11-16: the WebMCP Draft Community Group Report date this node targets by
  * default. The rule pins NO particular date — "any such
  * date is conforming" — because the report is a living document. This constant is
  * therefore a default, not a pin: `declare({webmcpVersion})` echoes whatever date the
  * node targets, and `bnd-0037` asserts the echo and the `YYYY-MM-DD` shape, never a
- * value.
+ * value. From 1.1 it is the report of 27 October 2026, the reference default the rule
+ * names, whose API is `document.modelContext` (`webmcp.js` registers there); the report
+ * of 2 November 2026 (read 2026-11-07) asks the same of a tool.
  */
-const WEBMCP_SURFACE_VERSION = '2026-09-15';
+const WEBMCP_SURFACE_VERSION = '2026-10-27';
 /** AGSC-11-16: the shape every `agsc-surface-version` of `webmcp` takes. */
 const WEBMCP_VERSION_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u;
+
+/**
+ * AGSC-11-16: a `YYYY-MM-DD` value that names a day of the calendar (`2026-13-45` and
+ * `2027-02-29` have the form and name none). Arithmetic only: this context reads no clock.
+ */
+function isDate(value) {
+  const text = String(value);
+  if (!WEBMCP_VERSION_RE.test(text)) return false;
+  const [year, month, day] = text.split('-').map(Number);
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return day >= 1 && day <= (days || 0);
+}
+
 /** AGSC-11-18 / MCP SEP-2133: the extension identifier this node advertises. */
 const MCP_EXTENSION_ID = 'com.agenticsystemcore/knowledge';
 /** AGSC-11-18: the ONE member of this extension's settings object. */
@@ -64,23 +93,45 @@ const REL = Object.freeze({
   surface: 'https://w3id.org/agentic-system-core/rel#surface',
 });
 
-/** AGSC-09-13: the seven tools, in code-point order. */
-const TOOL_NAMES = Object.freeze(['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+/**
+ * AGSC-09-13: the ten tools, in code-point order — the seven of 1.0 and, from 1.1,
+ * `brief`, `explain` and `check` (a client of 1.0 meets an unknown tool in a list as
+ * AGSC-00-21 says).
+ */
+const TOOL_NAMES = Object.freeze(['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read',
+  'remember', 'search']);
 
 /**
- * AGSC-11-18, the WebMCP half: `readOnlyHint` on the five read tools,
+ * AGSC-11-18, the WebMCP half: `readOnlyHint` on the eight read tools,
  * `consequentialHint` on the two write tools, `untrustedContentHint` on every
- * tool whose result carries prose (`links` returns edges, so it carries none).
+ * tool whose result carries prose — every tool except `links`, `explain` and
+ * `check`, whose results are slugs, keys, rule names and codes only (`bnd-0050`).
  */
 const WEBMCP_ANNOTATIONS = Object.freeze({
   ask: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  brief: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  check: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   compose: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
+  explain: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   links: Object.freeze({ readOnlyHint: true, untrustedContentHint: false }),
   propose: Object.freeze({ consequentialHint: true, readOnlyHint: false, untrustedContentHint: true }),
   read: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
   remember: Object.freeze({ consequentialHint: true, readOnlyHint: false, untrustedContentHint: true }),
   search: Object.freeze({ readOnlyHint: true, untrustedContentHint: true }),
 });
+
+/**
+ * AGSC-09-19 (6) with AGSC-11-18, the MCP half: every tool of `tools/list` keeps its WebMCP
+ * hints and gains `openWorldHint` false — the world of this server is its Bundle, and the
+ * protocol's default is true — and the two writing tools gain `destructiveHint` false, since
+ * they only return text. The same annotations under both revisions. Members in code-point
+ * order. The page tools keep `WEBMCP_ANNOTATIONS`, so no page byte moves.
+ */
+const MCP_ANNOTATIONS = Object.freeze(Object.fromEntries(TOOL_NAMES.map((name) => {
+  const hints = { ...WEBMCP_ANNOTATIONS[name], openWorldHint: false };
+  if (hints.readOnlyHint === false) hints.destructiveHint = false;
+  return [name, Object.freeze(Object.fromEntries(Object.keys(hints).sort().map((key) => [key, hints[key]])))];
+})));
 
 /**
  * AGSC-11-16: the built-in surfaces, their entry route, their fixed access
@@ -93,6 +144,12 @@ const BUILT_IN = Object.freeze({
   mcp: Object.freeze({ access: 'consent', emitted: null, route: '/specs/mcp/', version: MCP_PROTOCOL_VERSION }),
   webmcp: Object.freeze({ access: 'consent', emitted: '/compose/', route: '/compose/', version: WEBMCP_SURFACE_VERSION }),
 });
+
+/**
+ * AGSC-11-20 (from 1.1): the built-in surfaces a `restricted` node does not serve
+ * unauthenticated, and the class they declare instead of their fixed one.
+ */
+const GATED_ACCESS = Object.freeze({ chunks: 'credential' });
 
 /** AGSC-11-16: the closed `agsc-surface` list; anything else must be `x-<vendor>-<name>`. */
 const SURFACE_NAMES = Object.freeze(['llms-txt', 'chunks', 'mcp', 'webmcp', 'a2a-card', 'solid', 'responder']);
@@ -112,6 +169,12 @@ const PINNED_BY_SPEC = Object.freeze(['llms-txt', 'chunks', 'mcp', 'webmcp']);
 const RESPONDER_PROTOCOLS = Object.freeze(['mcp', 'a2a']);
 /** AGSC-10-13: the only board a 1.0 reader consumes. */
 const STATIC_BOARD_ROUTE = '/boards/index.json';
+/**
+ * AGSC-06-34: the well-known URI of the `a2a-card` surface, permanent in the IANA registry, and
+ * AGSC-06-42: the media type a catalogue entry names for it.
+ */
+const A2A_CARD_ROUTE = '/.well-known/agent-card.json';
+const A2A_CARD_MEDIA_TYPE = 'application/a2a-agent-card+json';
 
 function finding(code, severity, extra) {
   return Object.freeze(Object.assign({ code, message: '', severity }, extra || {}));
@@ -127,7 +190,7 @@ function absolute(base, route) {
 }
 
 /**
- * declare({ base, emitted, mcpServed, mcpVersion, surfaces, webmcpVersion }) -> link objects
+ * declare({ base, emitted, mcpServed, mcpVersion, surfaces, visibility, webmcpVersion }) -> link objects
  * AGSC-11-16. One `rel#surface` link per surface actually served, ordered by
  * `href` within the relation (AGSC-06-10). `emitted[]` names the routes the
  * writer emitted; `mcpServed` says whether the local tool server is served;
@@ -145,18 +208,20 @@ function declare(options) {
   const opts = options || {};
   const base = opts.base || '/';
   const emitted = new Set(opts.emitted || []);
-  const webmcpVersion = WEBMCP_VERSION_RE.test(String(opts.webmcpVersion || ''))
+  const webmcpVersion = isDate(opts.webmcpVersion || '')
     ? String(opts.webmcpVersion) : WEBMCP_SURFACE_VERSION;
   // AGSC-11-16: `mcp` declares the revision its transport
-  // speaks, an input echoed like the WebMCP date, defaulting to the one the
-  // pinned SDK speaks.
-  const mcpVersion = WEBMCP_VERSION_RE.test(String(opts.mcpVersion || ''))
+  // speaks, an input echoed like the WebMCP date, defaulting to the newest one the
+  // tool server speaks (AGSC-09-19: one value for a server that speaks two).
+  const mcpVersion = isDate(opts.mcpVersion || '')
     ? String(opts.mcpVersion) : MCP_PROTOCOL_VERSION;
   const links = [];
+  const restricted = opts.visibility === 'restricted';
   for (const [name, spec] of Object.entries(BUILT_IN)) {
     const served = name === 'mcp' ? Boolean(opts.mcpServed) : (spec.emitted !== null && emitted.has(spec.emitted));
     if (!served) continue;
-    const link = { 'agsc-access': [spec.access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
+    const access = restricted && GATED_ACCESS[name] !== undefined ? GATED_ACCESS[name] : spec.access;
+    const link = { 'agsc-access': [access], 'agsc-surface': [name], href: absolute(base, spec.route), rel: REL.surface };
     const version = name === 'webmcp' ? webmcpVersion : (name === 'mcp' ? mcpVersion : spec.version);
     if (version !== null) link['agsc-surface-version'] = [version];
     links.push(Object.freeze(sortMembers(link)));
@@ -325,12 +390,17 @@ function checkMcpExtensions(extensions, options) {
 
 module.exports = {
   finding,
+  A2A_CARD_MEDIA_TYPE,
+  A2A_CARD_ROUTE,
   ACCESS_CLASSES,
   BUILT_IN,
   DECLARATION_ONLY,
+  MCP_ANNOTATIONS,
   MCP_EXTENSION_ID,
+  MCP_LEGACY_VERSION,
   MCP_PROTOCOL_MIN_VERSION,
   MCP_PROTOCOL_VERSION,
+  MCP_STDIO_REVISIONS,
   MCP_SURFACE_VERSION,
   PINNED_BY_SPEC,
   REL,
@@ -342,6 +412,7 @@ module.exports = {
   WEBMCP_ANNOTATIONS,
   WEBMCP_SURFACE_VERSION,
   WEBMCP_VERSION_RE,
+  isDate,
   accepted,
   acceptedHrefs,
   acceptedSurfaces,

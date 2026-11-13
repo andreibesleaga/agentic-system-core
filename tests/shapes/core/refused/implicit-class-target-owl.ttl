@@ -1,0 +1,12 @@
+# implicit class target: a shape typed owl:Class is also a class whose instances it would target (SHACL 2.1.3.3).
+@prefix ex: <https://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+ex:C
+    a sh:NodeShape, owl:Class ;
+    sh:targetClass ex:C ;
+    sh:property [
+        sh:path ex:p ;
+        sh:minCount 1
+    ] .

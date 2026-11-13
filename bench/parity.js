@@ -18,7 +18,8 @@
  *
  * Two comparisons, each after a JSON round trip (the wire form of both
  * transports), with `util.isDeepStrictEqual`:
- *   transport  stdio == local: the MCP process answers what the module answers
+ *   transport  stdio == local: the MCP process answers what the module answers (a tool
+ *              name the server does not serve: the JSON-RPC error -32602 on stdio, from 1.1)
  *   parity     page == projected and module == projected: the rule's own
  *              comparison, because AGSC-09-16 makes "the Bundle a page
  *              serves the published projection" — on a Bundle holding a draft
@@ -72,6 +73,33 @@ function callList(spec, slugs) {
   return out;
 }
 
+/**
+ * The page-tools module called as it exports itself, over the build's routes. On a node whose
+ * listed items carry the domain layer it gets what the page script gets (AGSC-09-13, AGSC-09-16):
+ * the algebra's domain readers, a `briefOf` given the domain facts that no route carries (the
+ * listed contexts, the domain links between listed items, the withheld items;
+ * `distribution/domain-view.js#scripts`) and the domain parts on its answers
+ * (`tool-answers.js#toolDomainToolset`); on any other node, the 1.0 toolset.
+ */
+function moduleHost(bundle, model, sources, corpusOptions) {
+  const site = require(path.join(REPO, 'src', 'distribution', 'site.js'));
+  const pageTools = require(path.join(REPO, 'src', 'distribution', 'page-tools.js'));
+  const toolAnswers = require(path.join(REPO, 'src', 'distribution', 'tool-answers.js'));
+  const domainView = require(path.join(REPO, 'src', 'distribution', 'domain-view.js'));
+  const compose = require(path.join(REPO, 'src', 'composition', 'compose.js'));
+  const brief = require(path.join(REPO, 'src', 'composition', 'brief.js'));
+  const { selectionDigestInput } = require(path.join(REPO, 'src', 'composition', 'harness.js'));
+  const corpus = pageTools.pageCorpus(sources, corpusOptions);
+  const facts = domainView.scripts(site.publishedItems(bundle.items, bundle.config.releases), bundle.config, model, bundle.items);
+  if (facts === undefined) return pageTools.pageToolset(corpus, { briefOf: brief.briefOf, compose: compose.compose, selectionDigestInput });
+  const known = { contexts: facts.contexts, domainEdges: facts.edges, withheld: facts.withheld };
+  const core = {
+    briefOf: (result, options) => brief.briefDomainOf(result, { ...options, ...known }),
+    compose: compose.compose, domainOf: brief.domainOf, domainWithin: brief.domainWithin, selectionDigestInput,
+  };
+  return toolAnswers.toolDomainToolset(pageTools.pageToolset(corpus, core), corpus, core, facts.contexts, facts.withheld);
+}
+
 /** Build a Bundle in process and return the three in-process toolsets. */
 function inProcess(bundleDir, options = {}) {
   const { createFileSystem, readSchemas } = require(path.join(REPO, 'src', 'adapters', 'node-fs.js'));
@@ -80,18 +108,26 @@ function inProcess(bundleDir, options = {}) {
   const { loadBundle } = require(path.join(REPO, 'src', 'application', 'bundle.js'));
   const site = require(path.join(REPO, 'src', 'distribution', 'site.js'));
   const mcpTools = require(path.join(REPO, 'src', 'distribution', 'mcp-tools.js'));
-  const pageTools = require(path.join(REPO, 'src', 'distribution', 'page-tools.js'));
-  const compose = require(path.join(REPO, 'src', 'composition', 'compose.js'));
+  const { siteModel } = require(path.join(REPO, 'src', 'application', 'cli', 'verbs', 'lint.js'));
+
+  const { createProcessRunner } = require(path.join(REPO, 'src', 'adapters', 'node-proc.js'));
+  const { buildOptions } = require(path.join(REPO, 'src', 'application', 'cli', 'verbs', '_helpers.js'));
 
   const fs = createFileSystem(bundleDir);
   const bundle = loadBundle(fs, { schemas: validate.schemas(readSchemas(REPO)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
-  const { files } = site.build(bundle, { clock, fs }, { specVersion: options.specVersion || '1.0.0', version: options.version || '0.0.0' });
+  const { SPEC_VERSION } = require(path.join(REPO, 'src', 'shared', 'spec-version.js'));
+  // The build options of the `mcp` verb, git read included (the content version of AGSC-04-25),
+  // so a Bundle inside a repository is built as the stdio process builds it; the engine's own
+  // version, as that process states it.
+  const ports = { clock, fs, proc: createProcessRunner({ cwd: bundleDir, env: { PATH: process.env.PATH } }) };
+  const { files } = site.build(bundle, ports, buildOptions({ ports, specVersion: options.specVersion || SPEC_VERSION, version: options.version || '0.0.0' }));
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const bundleId = (bundle.config.bundle || {}).id;
 
-  const context = vm.createContext({ TextEncoder });
+  // Web Crypto, which the page tool `brief` hashes the selection with (AGSC-07-25).
+  const context = vm.createContext({ TextEncoder, crypto: globalThis.crypto });
   vm.runInContext(sources['/compose/agsc-core.js'], context, { filename: 'agsc-core.js' });
   vm.runInContext(sources['/compose/agsc-page-tools.js'], context, { filename: 'agsc-page-tools.js' });
   const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
@@ -101,13 +137,21 @@ function inProcess(bundleDir, options = {}) {
   // takes the loaded shape, so the projection is the loaded items it names.
   const publishedSlugs = new Set(site.publishedItems(bundle.items, bundle.config.releases).map((i) => i.slug));
   const published = bundle.items.filter((i) => publishedSlugs.has(i.slug));
+  // The local server is handed the route map of its build and the site vocabulary, as the `mcp`
+  // verb hands them (the discovery document and the chunk lines of AGSC-09-13 come from the
+  // routes; the domain parts of an answer and the brief's domain links from the vocabulary,
+  // AGSC-09-13, AGSC-07-25; `null` on a node without the domain layer).
+  const model = siteModel(bundle);
+  const served = { artifacts: files, domain: model };
+  const licenseProse = api.LICENSE_PROSE;
   return {
     bundle,
-    local: mcpTools.tools(bundle, {}),
-    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, {}),
+    local: mcpTools.tools(bundle, served),
+    projected: mcpTools.tools({ ...bundle, byslug: undefined, items: published }, served),
     published: published.map((i) => i.slug).sort(),
-    module: pageTools.pageToolset(pageTools.pageCorpus(sources, { bundleId }), { compose: compose.compose }),
-    page: api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), core),
+    module: moduleHost(bundle, model, sources, { bundleId, licenseProse }),
+    // `install` is the page's own entry: the domain parts on a node that has them (AGSC-09-16).
+    page: api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse }), core),
     slugs: bundle.items.map((i) => i.slug).sort(),
   };
 }
@@ -159,6 +203,19 @@ function overStdio(bundleDir, calls) {
 const wire = (value) => JSON.parse(JSON.stringify(value));
 
 /**
+ * The transport comparison of one call: the stdio answer equals the module's, except for a tool
+ * name the server does not serve, which the MCP server answers with the JSON-RPC error -32602
+ * (AGSC-09-13a as amended for 1.1.0, AGSC-09-19 (5)) where the module, like the page, which has
+ * no JSON-RPC, answers the envelope with `AGSC-E001`.
+ * @returns {boolean}
+ */
+function transportAgrees(name, stdioAnswer, localAnswer) {
+  const { TOOL_NAMES } = require(path.join(REPO, 'src', 'boundary', 'surfaces.js'));
+  if (!TOOL_NAMES.includes(name)) return Boolean(stdioAnswer && stdioAnswer.rpc_error && stdioAnswer.rpc_error.code === -32602);
+  return util.isDeepStrictEqual(wire(stdioAnswer), wire(localAnswer));
+}
+
+/**
  * AGSC-09-16: "The one input on which the two transports MUST differ is a `remember` call
  * that declares no operator: the local server refuses it with `AGSC-E003` and a page tool,
  * which has no identity to declare, returns the item with `prov.operator` absent and
@@ -193,13 +250,14 @@ async function run(bundleDir, spec, options = {}) {
   let transportEqual = 0;
   for (let i = 0; i < calls.length; i += 1) {
     const [name, args] = calls[i];
-    const reference = wire(hosts.projected.call(name, args));
+    const reference = wire(await hosts.projected.call(name, args));
     const row = perTool[name] || { calls: 0, equal: 0, required_difference: 0 };
     perTool[name] = row;
     row.calls += 1;
-    const answers = { module: wire(hosts.module.call(name, args)), page: wire(hosts.page.call(name, args)) };
+    // `brief` answers a promise on the page (its hasher is Web Crypto), a value elsewhere.
+    const answers = { module: wire(await hosts.module.call(name, args)), page: wire(await hosts.page.call(name, args)) };
     const unequal = ['page', 'module'].filter((host) => !util.isDeepStrictEqual(answers[host], reference));
-    const transportSame = util.isDeepStrictEqual(wire(stdio.answers[i]), wire(hosts.local.call(name, args)));
+    const transportSame = transportAgrees(name, stdio.answers[i], await hosts.local.call(name, args));
     if (transportSame) transportEqual += 1;
     else unequal.push('stdio');
     if (unequal.length === 0) row.equal += 1;

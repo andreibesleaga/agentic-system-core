@@ -1,0 +1,5 @@
+# Review-verifiedAt: a review time that is a plain string.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:r a asc:Review ; asc:verifiedAt "noon" .

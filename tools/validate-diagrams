@@ -95,16 +95,25 @@ function finding(code, file, line, message, severity = 'error') {
  * The fenced blocks of a Markdown file: `{ info, line, lines }`, plus the line of
  * a fence that never closed.
  */
+/**
+ * A fence line as `{fence, info}` (info '' for a bare fence), or null. The optional
+ * info string is one group, so the space before it is read once.
+ */
+function fenceLine(line) {
+  const m = /^\s*(```|~~~)(?:\s*([A-Za-z0-9_-]+))?\s*$/u.exec(line);
+  return m ? { fence: m[1], info: m[2] === undefined ? '' : m[2] } : null;
+}
+
 function fencedBlocks(text) {
   const blocks = [];
   let open = null;
   let unterminated = null;
   text.split('\n').forEach((line, index) => {
-    const fence = /^\s*(```|~~~)\s*([A-Za-z0-9_-]*)\s*$/u.exec(line);
+    const fence = fenceLine(line);
     if (!fence) { if (open) open.lines.push(line); return; }
-    if (open && fence[1] === open.fence && fence[2] === '') { blocks.push(open); open = null; return; }
+    if (open && fence.fence === open.fence && fence.info === '') { blocks.push(open); open = null; return; }
     if (open) { open.lines.push(line); return; }
-    open = { fence: fence[1], info: fence[2], line: index + 1, lines: [] };
+    open = { fence: fence.fence, info: fence.info, line: index + 1, lines: [] };
   });
   if (open) { unterminated = open.line; blocks.push(open); }
   return { blocks, unterminated };
@@ -346,4 +355,4 @@ function run(argv, io) {
 /* c8 ignore next */
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
-module.exports = { HELP, canonicalize, checkMermaid, compareCodePoint, fencedBlocks, indexRows, run };
+module.exports = { HELP, canonicalize, checkMermaid, compareCodePoint, fenceLine, fencedBlocks, indexRows, run };

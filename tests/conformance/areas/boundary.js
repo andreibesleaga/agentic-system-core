@@ -29,8 +29,11 @@ const discovery = require('../../../src/distribution/discovery.js');
 const federation = require('../../../src/boundary/federation.js');
 const visibility = require('../../../src/boundary/visibility.js');
 const surfaces = require('../../../src/boundary/surfaces.js');
+const headers = require('../../../src/distribution/headers.js');
+const hostRules = require('../../../src/distribution/hosts/rules.js');
 const { checks, deepEqual, findingsMatch, subsetOf } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
+const contextMaps = require('./_boundary-context-map.js');
 
 const DEFAULT_BASE = 'https://a.example/';
 
@@ -184,6 +187,28 @@ function runBnd0030(vector) {
         open.error === 'AGSC-E905' && open.followed === 0,
         `got ${JSON.stringify({ error: open.error, followed: open.followed })}`]);
     }
+  }
+  return checks(list);
+}
+
+/**
+ * bnd-0049 — AGSC-11-08: the library walk fetches nothing for a host the caller did
+ * not resolve (or resolved to nothing), exactly as the checker and the redirect
+ * guard already refuse it (AGSC-11-10).
+ */
+function runBnd0049(vector) {
+  const list = [];
+  const dev = vector.input.dev === true;
+  for (const kase of vector.input.cases) {
+    const resolved = Object.create(null);
+    for (const entry of kase.resolved || []) resolved[entry.host] = entry.addresses;
+    let fetched = false;
+    const fetch = () => { fetched = true; return { ok: true, peers: [] }; };
+    const result = federation.walk({ dev, fetch, resolved, start: kase.peer });
+    const error = result.skipped.length > 0 ? result.skipped[0].code : null;
+    const expected = vector.expected.cases.find((c) => c.name === kase.name) || {};
+    list.push([`${kase.name} fetched`, fetched === expected.fetched, String(fetched)]);
+    list.push([`${kase.name} error`, error === expected.error, String(error)]);
   }
   return checks(list);
 }
@@ -503,6 +528,51 @@ function runBnd0037(vector) {
   return checks(list);
 }
 
+/**
+ * bnd-0044 — AGSC-11-20 from 1.1: a restricted node declares the `chunks` surface with
+ * `agsc-access` `credential`; `llms-txt`, which it serves, keeps `none` (AGSC-11-16).
+ */
+function runBnd0044(vector) {
+  const links = plain(surfaces.declare({
+    base: baseOf(vector), emitted: vector.input.emitted, visibility: vector.input.visibility,
+  }));
+  const publicLinks = plain(surfaces.declare({ base: baseOf(vector), emitted: vector.input.emitted }));
+  return checks([
+    ['links', deepEqual(vector.expected.links, links), JSON.stringify(links)],
+    ['the discovery access page is a restricted-node input only', typeof vector.input.access === 'string',
+      'the case states the access page of the node'],
+    ['a public node keeps none on chunks', publicLinks.every((l) => l['agsc-access'][0] === 'none'),
+      JSON.stringify(publicLinks)],
+  ]);
+}
+
+/**
+ * bnd-0045 — AGSC-11-20 from 1.1: a restricted node sends no cross-origin header on any
+ * artefact but the discovery document. Judged on the boundary's header set and on the
+ * `_headers` the writer states, read back as the reference host reads it (a detach
+ * line removes what the host adds by default).
+ */
+function runBnd0045(vector) {
+  const parsed = hostRules.parseHeaders(headers.headersFile({ visibility: vector.input.visibility }));
+  const list = [['the header file parses', parsed.findings.length === 0, JSON.stringify(parsed.findings)]];
+  // AGSC-06-17: a profile for a host that adds the wildcard by default says how it is removed.
+  const detached = parsed.sets.some((set) => set.headers.some(([name, value]) => name === '!'
+    && value === 'Access-Control-Allow-Origin'));
+  list.push(['the profile detaches the default wildcard of the host', detached, 'no "! Access-Control-Allow-Origin" line']);
+  for (const path of vector.input.paths) {
+    const stated = visibility.headersFor(path, { visibility: vector.input.visibility });
+    const served = Object.fromEntries(hostRules.headersFor(parsed.sets, path));
+    for (const name of vector.expected.forbidden_headers) {
+      list.push([`${path} !${name}`, stated[name] === undefined && served[name] === undefined,
+        JSON.stringify({ served, stated })]);
+    }
+    list.push([`${path} states no header that must be present`,
+      Object.keys(vector.expected.headers).every((name) => stated[name] === undefined && served[name] === undefined),
+      JSON.stringify(vector.expected.headers)]);
+  }
+  return checks(list);
+}
+
 /** bnd-0013 — AGSC-11-19: AGSC-E210 for an unresolved declaration, AGSC-E211 for an undeclared surface. */
 function runBnd0013(vector) {
   const findings = plain(surfaces.validate({
@@ -675,6 +745,7 @@ const HANDLERS = {
   'bnd-0033': runBnd0033,
   'bnd-0034': runBnd0034,
   'bnd-0036': runBnd0036,
+  'bnd-0050': runBnd0036,
   'bnd-0037': runBnd0037,
   'bnd-0038': runBnd0038,
   'bnd-0039': runBnd0039,
@@ -682,6 +753,12 @@ const HANDLERS = {
   'bnd-0041': runAddressCase,
   'bnd-0042': runBnd0042,
   'bnd-0043': runAddressCase,
+  'bnd-0044': runBnd0044,
+  'bnd-0045': runBnd0045,
+  'bnd-0046': contextMaps.runResults,
+  'bnd-0047': contextMaps.runResults,
+  'bnd-0048': contextMaps.runRefusals,
+  'bnd-0049': runBnd0049,
 };
 
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of

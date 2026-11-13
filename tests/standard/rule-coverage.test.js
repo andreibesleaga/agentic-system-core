@@ -146,6 +146,11 @@ test('acceptance: an executed scenario counts, a pending one does not, and a sta
     assert.deepStrictEqual(byId['AGSC-01-01'].acceptance, [], 'a conditional scenario with no probe verifies nothing');
     assert.strictEqual(envelope.totals.acceptance_scenarios, 4);
     assert.strictEqual(envelope.totals.acceptance_scenarios_pending, 2);
+    // A conditional scenario with a probe runs where its need is present: counted apart, and the
+    // page says how many of the files under pending/ are each.
+    assert.strictEqual(envelope.totals.acceptance_scenarios_conditional, 1);
+    assert.match(tool.render(tool.measure(dir)).replace(/\s+/gu, ' '),
+      /4 in `features\/` \(a Scenario Outline counts once\), of which 2 are pending and 1 conditional, each with a reason in its own file under `tests\/acceptance\/pending\/`/u);
     const stale = envelope.findings.filter((f) => /names no scenario/u.test(f.message));
     assert.strictEqual(stale.length, 1);
     assert.strictEqual(stale[0].code, 'AGSC-E301');

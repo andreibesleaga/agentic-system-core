@@ -9,6 +9,8 @@ const assert = require('node:assert');
 const f = require('../../src/boundary/federation.js');
 
 const plain = (v) => JSON.parse(JSON.stringify(v));
+/** A resolution map that gives every host a globally reachable address (AGSC-11-08 passes). */
+const anyHost = new Proxy({}, { get: () => ['93.184.215.14'] });
 
 test('AGSC-11-06: the defaults apply when no federation object is configured', () => {
   assert.deepStrictEqual(plain(f.effectiveFederation({})), {
@@ -250,6 +252,21 @@ test('AGSC-11-14: a malformed contribute entry is AGSC-E209', () => {
   assert.deepStrictEqual(plain(f.checkContribute(undefined)), []);
 });
 
+test('AGSC-11-14 (1.1): repository is an https address and branch follows git check-ref-format, else AGSC-E209', () => {
+  const entry = (extra) => ({ contribute: [{ mode: 'pr', target: 'https://x.example/pr', ...extra }] });
+  for (const good of [{ repository: 'https://github.com/a/b' }, { branch: 'main' }, { branch: 'release/v1.0' },
+    { branch: 'HEAD', repository: 'https://github.com/a/b.git' }, { branch: 'feature_1-x' }]) {
+    assert.deepStrictEqual(plain(f.checkContribute(entry(good))), [], JSON.stringify(good));
+  }
+  for (const bad of [{ repository: 'http://github.com/a/b' }, { repository: 'github.com/a/b' }, { repository: '' },
+    { branch: '' }, { branch: '-x' }, { branch: '/x' }, { branch: 'a..b' }, { branch: 'a//b' }, { branch: 'a@{1}' },
+    { branch: 'a b' }, { branch: 'a\u0001b' }, { branch: 'a~b' }, { branch: 'a^b' }, { branch: 'a:b' }, { branch: 'a?b' },
+    { branch: 'a*b' }, { branch: 'a[b' }, { branch: 'a\\b' }, { branch: 'a/' }, { branch: 'a.' }, { branch: 'a.lock' },
+    { branch: 'a/b.lock' }, { branch: 7 }]) {
+    assert.strictEqual(f.checkContribute(entry(bad))[0].code, 'AGSC-E209', JSON.stringify(bad));
+  }
+});
+
 test('AGSC-11-14: propose uses the first contribute mode the client supports', () => {
   const config = {
     channels: [{ name: 'mail', publish: 'hitl' }],
@@ -411,6 +428,7 @@ test('AGSC-11-07 + AGSC-11-08: walk refuses a hostile peer URL before it is fetc
   const result = f.walk({
     fetch,
     federation: { fan_out: 50, hop_limit: 4, max_requests: 50 },
+    resolved: { 'a.example': ['93.184.215.14'] },
     start: 'https://a.example/.well-known/knowledge-linkset',
   });
   assert.deepStrictEqual(fetched, ['https://a.example/.well-known/knowledge-linkset'],
@@ -459,7 +477,7 @@ test('AGSC-11-08: a redirect to an unresolved host is refused, not followed', ()
 
 test('AGSC-11-10(e): a fetch that THROWS makes that peer unreachable, not the walk', () => {
   const start = 'https://a.example/.well-known/knowledge-linkset';
-  const result = f.walk({ start, fetch: () => { throw new Error('ECONNRESET'); } });
+  const result = f.walk({ start, resolved: anyHost, fetch: () => { throw new Error('ECONNRESET'); } });
   assert.deepStrictEqual([...result.visited], []);
   assert.deepStrictEqual(result.skipped.map((s) => s.code), ['AGSC-E907']);
   assert.strictEqual(result.skipped[0].peer, start);
@@ -470,6 +488,7 @@ test('AGSC-11-10(e): a fetch that THROWS makes that peer unreachable, not the wa
   const good = 'https://good.example/.well-known/knowledge-linkset';
   const mixed = f.walk({
     start: a,
+    resolved: anyHost,
     fetch: (key) => {
       if (key === a) return { ok: true, peers: [bad, good] };
       if (key === bad) throw new TypeError('fetch failed');
@@ -484,7 +503,7 @@ test('AGSC-11-10(e): a fetch that THROWS makes that peer unreachable, not the wa
 test('AGSC-11-10(b): a `peers` value that is not an array carries no links', () => {
   const start = 'https://a.example/.well-known/knowledge-linkset';
   for (const peers of ['https://b.example/', 42, { 0: 'https://b.example/' }, true]) {
-    const result = f.walk({ start, fetch: () => ({ ok: true, peers }) });
+    const result = f.walk({ start, resolved: anyHost, fetch: () => ({ ok: true, peers }) });
     assert.deepStrictEqual([...result.visited], [start],
       `a ${typeof peers} peers member must not be walked: ${JSON.stringify(peers)}`);
     assert.deepStrictEqual([...result.ignoredByFanOut], []);
@@ -495,8 +514,37 @@ test('AGSC-11-10(b): a `peers` value that is not an array carries no links', () 
 test('AGSC-11-10(b): a peer list far above `fan_out` is bounded, never a stack overflow', () => {
   const start = 'https://a.example/.well-known/knowledge-linkset';
   const peers = Array.from({ length: 200000 }, (_, i) => `https://p${i}.example/`);
-  const result = f.walk({ start, fetch: () => ({ ok: true, peers }), federation: { fan_out: 2, max_requests: 1 } });
+  const result = f.walk({ start, fetch: () => ({ ok: true, peers }), resolved: anyHost, federation: { fan_out: 2, max_requests: 1 } });
   assert.strictEqual(result.ignoredByFanOut.length, peers.length - 2);
   assert.strictEqual(result.partial, true);
   assert.strictEqual(result.error, 'AGSC-E906');
+});
+
+// AGSC-11-08, AGSC-11-10: a walk given no resolution map used to hand every
+// hostname, `localhost` and intranet names included, to the injected fetch.
+test('AGSC-11-08: a walk with no resolution map fetches no named host (fails closed)', () => {
+  for (const options of [{}, { resolved: null }, { resolved: {} }, { dev: true }]) {
+    let calls = 0;
+    const fetch = () => { calls += 1; return { ok: true, peers: [] }; };
+    const result = f.walk({ ...options, fetch, start: 'https://localhost/.well-known/knowledge-linkset' });
+    assert.strictEqual(calls, 0, JSON.stringify(options));
+    assert.deepStrictEqual(plain(result.skipped),
+      [{ code: 'AGSC-E905', peer: 'https://localhost/.well-known/knowledge-linkset' }], JSON.stringify(options));
+  }
+  // a peer found in a document is judged the same way
+  const seen = [];
+  const result = f.walk({
+    fetch: (key) => { seen.push(key); return { ok: true, peers: ['https://intranet.corp/x'] }; },
+    resolved: { 'a.example': ['93.184.215.14'] },
+    start: 'https://a.example/x',
+  });
+  assert.deepStrictEqual(seen, ['https://a.example/x']);
+  assert.deepStrictEqual(plain(result.skipped), [{ code: 'AGSC-E905', peer: 'https://intranet.corp/x' }]);
+});
+
+test('AGSC-11-08: an IP literal needs no resolution map', () => {
+  let calls = 0;
+  const result = f.walk({ fetch: () => { calls += 1; return { ok: true, peers: [] }; }, start: 'https://93.184.215.14/x' });
+  assert.strictEqual(calls, 1);
+  assert.deepStrictEqual([...result.skipped], []);
 });

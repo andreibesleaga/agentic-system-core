@@ -1,5 +1,5 @@
 'use strict';
-// Unit tests for the seven tools.
+// Unit tests for the ten tools.
 // AGSC-08-18, AGSC-09-13, AGSC-09-13a, AGSC-09-14a, AGSC-09-14b.
 // The Bundle is the fixture, read through the FileSystem port; no clock, no
 // network, no randomness is reachable from any tool.
@@ -62,9 +62,10 @@ test('the loader reports a malformed content/index.md with its registered code',
   assert.strictEqual(bundle.root, '');
 });
 
-test('AGSC-09-13: exactly seven tools, with their argument names', () => {
+test('AGSC-09-13: exactly ten tools, in code-point order, with their argument names', () => {
   const list = manifest().tools;
-  assert.deepStrictEqual(list.map((t) => t.name), ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+  assert.deepStrictEqual(list.map((t) => t.name),
+    ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
   for (const tool of list) {
     assert.deepStrictEqual(Object.keys(tool.inputSchema.properties), [...ARGUMENTS[tool.name]]);
     assert.deepStrictEqual(tool.inputSchema.required, REQUIRED_ARGUMENTS[tool.name]);
@@ -75,7 +76,9 @@ test('AGSC-09-13: exactly seven tools, with their argument names', () => {
 test('AGSC-08-18: every result carries source, trust, license, type and body', () => {
   const toolset = tools(fixture(), {});
   for (const name of manifest().tools.map((t) => t.name)) {
-    const result = toolset.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', title: 'T' });
+    const result = toolset.call(name, {
+      key: 'uses', question: 'x', query: 'x', selection: [], slug: 'handoff', source: 'handoff', target: 'handoff', title: 'T',
+    });
     // AGSC-09-14a (cli-0007): `ask` — and only `ask`
     // adds EXACTLY ONE top-level member, `citations[]`, to the AGSC-08-18 envelope.
     assert.deepStrictEqual(Object.keys(result),
@@ -223,8 +226,10 @@ test('AGSC-09-14b (2026-09-25): the local server refuses remember without an ope
 test('AGSC-09-14b: remember is total — a bad source is DROPPED with AGSC-E506', () => {
   const toolset = tools(fixture(), {});
   const result = toolset.call('remember', {
+    agent: 'writer',
     body: '',
     kind: 'concept',
+    model: 'm-1',
     operator: 'human:someone',
     sources: [{ id: 'a', resource: 'ftp://bad/' }, { id: 'b', resource: 'https://ok.example/x' },
       { id: 'c', resource: 'urn:agsc:channel:mail:abc' }, {}],
@@ -372,4 +377,13 @@ test('AGSC-09-13a: propose answers a frontmatter the writer cannot hold with the
   assert.strictEqual(answer.type, 'error');
   assert.strictEqual(answer.body.code, 'AGSC-E105');
   assert.match(answer.body.message, /nested deeper/u);
+});
+
+test('AGSC-09-13: every array argument of the published inputSchema says what its members are', () => {
+  // A tool validator of a model provider refuses an array schema without `items`; the slugs of
+  // a selection are strings and the entries of `sources` are objects (AGSC-02's source).
+  const arrays = manifest().tools.flatMap((tool) => Object.entries(tool.inputSchema.properties)
+    .filter(([, schema]) => schema.type === 'array').map(([name, schema]) => [tool.name, name, schema.items]));
+  assert.deepStrictEqual(arrays, [['brief', 'selection', { type: 'string' }], ['check', 'selection', { type: 'string' }],
+    ['compose', 'selection', { type: 'string' }], ['remember', 'sources', { type: 'object' }]]);
 });

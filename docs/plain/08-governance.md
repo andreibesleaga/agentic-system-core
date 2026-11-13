@@ -12,4 +12,4 @@
 
 **The agent lane, in the terms of a decision engine.** Systems that let software decide often describe each decision by three things: a typed question, an explicit threshold, and a recorded judgment. The agent lane has all three. The question is typed: an agent's `tasks` is a list chosen from a closed set (`create`, `edit`, `update`, `review`, `summarize`, `translate`, `refresh`, `plan`, `claim`, `work`), and a proposal for any other task is refused (`AGSC-E509`). The thresholds are numbers in the configuration, not judgement calls: the agent's monthly budget and the node's, the most items one proposal may create (`max_new_items`), the most tasks it may hold at once (`max_claims`). The judgment is recorded: every run leaves an episode with its cost, and a change merged under the channel's standing `auto` choice is marked `mode: "auto"` in the ledger. What the lane never does is decide for a person: a proposal is the only thing it produces.
 
-Rules: `spec/08-governance.md`, `AGSC-08-01` … `AGSC-08-30`.
+Rules: `spec/08-governance.md`, `AGSC-08-01` … `AGSC-08-32`.

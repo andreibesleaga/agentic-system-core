@@ -65,6 +65,7 @@ const { serialize, titleFor } = require('../knowledge/adopt.js');
 const { compareCodePoint, nfc } = require('../knowledge/unicode.js');
 const { neutraliseSingleLine } = require('./mapping.js');
 const { finding } = require('../knowledge/validate.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** The name this adapter answers to on `import --from <name>`. */
 const FORMAT = 'okf';
@@ -139,10 +140,35 @@ function readDocument(text) {
 }
 
 /**
+ * The warning that an item was written as a draft (AGSC-01-22): it names the item and
+ * the draft status, and says what the draft replaced and why.
+ *
+ * @param {string} path the foreign document.
+ * @param {{foreign:boolean, given:*, license:*}} facts `foreign`: the source is not this
+ *   node's own, so the draft is the rule; otherwise it is the licence that could not be
+ *   established. `given` is the status the source stated, `license` the licence it declared.
+ * @returns {object}
+ */
+function draftWarning(path, facts) {
+  const parts = [`${path}: imported as status: draft, so it is never published (AGSC-06-30) until a person`
+    + ' changes the status'];
+  if (facts.given !== undefined && facts.given !== 'draft') {
+    parts.push(`the status the source gave it, ${JSON.stringify(String(facts.given))}, was not kept`);
+  }
+  if (!facts.foreign) {
+    parts.push(facts.license === undefined
+      ? 'its licence could not be established (no license key, and none at the source root)'
+      : `its licence ${JSON.stringify(String(facts.license))} could not be established`);
+  }
+  return finding('AGSC-E506', `${parts.join('; ')} (AGSC-01-22)`, { file: path, severity: 'warn' });
+}
+
+/**
  * The AGSC frontmatter of one foreign document.
  *
  * @param {object} raw the foreign frontmatter.
- * @param {object} options `{body, operator, path, slug, stem}`.
+ * @param {object} options `{body, operator, owned, path, slug, sourceHash, sourceLicence,
+ *   sourceVersion, stem}`; `owned` is true only for a source this node owns (AGSC-01-22).
  * @returns {{frontmatter:object, findings:Array<object>}}
  */
 function mapFrontmatter(raw, options) {
@@ -200,20 +226,20 @@ function mapFrontmatter(raw, options) {
       { file: options.path, severity: 'warn' }));
   }
 
-  // AGSC-01-22: a record whose licence the importer cannot establish as
-  // permitting publication is written `status: draft`, so it is never published
-  // (AGSC-06-30). The record's own `license` decides when it declares one; else the
-  // source's (its root index.md, its root licence file).
+  // AGSC-01-22 (from 1.1): every item of a source this node does not own is written
+  // `status: draft`, whatever its licence and whatever status the source gave it, so it
+  // is never published (AGSC-06-30) until a person changes the status. A source this
+  // node owns (`options.owned`: its root document carries this Bundle's `base`) keeps
+  // the 1.0 rule: only a record whose licence the importer cannot establish as
+  // permitting publication is a draft, and the record's own `license` decides when it
+  // declares one; else the source's (its root index.md, its root licence file).
+  const given = out.status;
+  const foreign = options.owned !== true;
   const own = out.license === undefined ? null : licences.established(out.license);
   const allowed = own === null ? options.sourceLicence === true : own;
-  if (!allowed && out.status !== 'draft') {
+  if (foreign || (!allowed && given !== 'draft')) {
     out.status = 'draft';
-    findings.push(finding('AGSC-E506',
-      `${options.path}: its licence could not be established as permitting publication`
-      + `${out.license === undefined ? ' (no license key, and none at the source root)' : ` (${JSON.stringify(String(out.license))})`};`
-      + ' it was imported as status: draft and is never published until a person with the right to publish it'
-      + ' changes the status (AGSC-01-22, AGSC-06-30)',
-      { file: options.path, severity: 'warn' }));
+    findings.push(draftWarning(options.path, { foreign, given, license: out.license }));
   }
 
   if (out.prov === undefined) {
@@ -277,6 +303,21 @@ function sourceLicenceOf(files, licenceFiles) {
 }
 
 /**
+ * AGSC-01-22 (from 1.1): does this node own the source? It does when the source's root
+ * document — the shallowest `index.md`, as `sourceFacts` reads it — carries this
+ * Bundle's `base`. Anything else, including a source with no root document, is foreign.
+ *
+ * @param {Array<{path:string, text:string}>} files the foreign tree.
+ * @param {string|undefined} base `site.base` of the target Bundle.
+ * @returns {boolean}
+ */
+function sourceOwned(files, base) {
+  const declared = sourceFacts(files).base;
+  return typeof base === 'string' && base !== '' && declared !== null
+    && withoutTrailingSlashes(declared) === withoutTrailingSlashes(base);
+}
+
+/**
  * The three facts a source Bundle publishes about itself, read from its
  * bundle-root `index.md` — the only `index.md` OKF permits frontmatter in, and the
  * document `export --markdown`/`--okf` writes `spec_version` and `bundle_version`
@@ -285,10 +326,10 @@ function sourceLicenceOf(files, licenceFiles) {
  * had.
  *
  * @param {Array<{path:string, text:string}>} files the foreign tree.
- * @returns {{specVersion:string|null, bundleVersion:string|null, bundleHash:string|null}}
+ * @returns {{base:string|null, specVersion:string|null, bundleVersion:string|null, bundleHash:string|null}}
  */
 function sourceFacts(files) {
-  const none = { bundleHash: null, bundleVersion: null, specVersion: null };
+  const none = { base: null, bundleHash: null, bundleVersion: null, specVersion: null };
   const roots = (Array.isArray(files) ? files : [])
     .filter((file) => /(^|\/)index\.md$/u.test(String(file.path)))
     .sort((a, b) => String(a.path).split('/').length - String(b.path).split('/').length);
@@ -296,7 +337,9 @@ function sourceFacts(files) {
   const read = readDocument(roots[0].text);
   const fm = read.frontmatter || {};
   const pick = (key) => (fm[key] === undefined || String(fm[key]) === '' ? null : String(fm[key]));
-  return { bundleHash: pick('bundle_hash'), bundleVersion: pick('bundle_version'), specVersion: pick('spec_version') };
+  return {
+    base: pick('base'), bundleHash: pick('bundle_hash'), bundleVersion: pick('bundle_version'), specVersion: pick('spec_version'),
+  };
 }
 
 /** The MAJOR and MINOR of a SemVer-shaped version string, or `null`. */
@@ -393,6 +436,8 @@ function versionWarnings(entries, options) {
  *   onto every item as `prov.source_version` (AGSC-01-22, AGSC-08-01).
  * @param {string|null} [options.sourceHash] the source's bundle hash, written onto
  *   every item as `prov.source_hash`.
+ * @param {string} [options.base] `site.base` of the TARGET Bundle: a source whose root
+ *   document carries it is this node's own (AGSC-01-22), and keeps the 1.0 draft rule.
  * @returns {{findings:Array<object>, totals:object, writes:Array<{path:string, text:string}>}}
  */
 function plan(files, options) {
@@ -406,6 +451,7 @@ function plan(files, options) {
   const taken = new Set();
   const totals = { items: 0, unreadable_frontmatter: 0 };
   const sourceLicence = sourceLicenceOf(files, opts.licenceFiles);
+  const owned = sourceOwned(files, opts.base);
 
   for (const file of documents) {
     const path = String(file.path);
@@ -428,6 +474,7 @@ function plan(files, options) {
     const mapped = mapFrontmatter(read.frontmatter, {
       body: read.body,
       operator: opts.operator === undefined ? 'human:unknown' : opts.operator,
+      owned,
       path,
       slug,
       sourceHash: opts.sourceHash,
@@ -453,6 +500,6 @@ function plan(files, options) {
 module.exports = {
   FOREIGN_LINK_NAMES,
   FORMAT, RESERVED, TYPE_PLURAL,
-  isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, versionRefusal,
+  isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, sourceOwned, versionRefusal,
   versionWarning, versionWarnings,
 };

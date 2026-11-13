@@ -1,6 +1,7 @@
 'use strict';
 // tests/arch/page-tools-portable.test.js — the AGSC-07-13 portability contract,
-// applied to the SEVEN PAGE TOOLS of AGSC-09-16.
+// applied to the TEN PAGE TOOLS of AGSC-09-16: `distribution/page-tools.js` and the
+// answers of the tools of 1.1 it emits after its own functions, `distribution/tool-answers.js`.
 //
 // `distribution/page-tools.js` emits the SOURCE TEXT of the functions Node runs, the
 // way `composition/browser.js` does for the algebra, so there is ONE implementation
@@ -16,12 +17,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const pageTools = require('../../src/distribution/page-tools.js');
+const answers = require('../../src/distribution/tool-answers.js');
+const brief = require('../../src/composition/brief.js');
 
-const FILE = path.resolve(__dirname, '..', '..', 'src', 'distribution', 'page-tools.js');
+const DIR = path.resolve(__dirname, '..', '..', 'src', 'distribution');
+/** Each emitted module and its own portable list, in emission order. */
+const MODULES = [
+  { file: path.join(DIR, 'page-tools.js'), portable: pageTools.PORTABLE },
+  { file: path.join(DIR, 'tool-answers.js'), portable: [...answers.PORTABLE, ...answers.DOMAIN_PORTABLE] },
+];
+/** Every name the script of a node with the domain parts emits (AGSC-09-13); the others omit `DOMAIN_PORTABLE`. */
+const EMITTED = [...pageTools.PORTABLE, ...answers.PORTABLE, ...answers.DOMAIN_PORTABLE];
 
-/** Every name the module binds at MODULE SCOPE — the set a page has no binding for. */
-function moduleScopeNames() {
-  const text = fs.readFileSync(FILE, 'utf8');
+/** Every name a module binds at MODULE SCOPE — the set a page has no binding for. */
+function moduleScopeNames(file) {
+  const text = fs.readFileSync(file, 'utf8');
   const names = [];
   for (const line of text.split('\n')) {
     const single = /^(?:const|let|var) ([A-Za-z_$][A-Za-z0-9_$]*)\s*=/u.exec(line);
@@ -39,9 +49,13 @@ function moduleScopeNames() {
 
 test('every portable page-tool name is a function whose own source text is emitted', () => {
   assert.ok(Array.isArray(pageTools.PORTABLE) && pageTools.PORTABLE.length > 0);
-  const emitted = pageTools.bundle({ bundleId: 'x' });
-  for (const name of pageTools.PORTABLE) {
-    const source = String(pageTools[name] === undefined ? '' : pageTools[name]);
+  assert.ok(Array.isArray(answers.PORTABLE) && answers.PORTABLE.length > 0);
+  assert.strictEqual(new Set(EMITTED).size, EMITTED.length, 'a name is on both portable lists');
+  const emitted = pageTools.bundle({ bundleId: 'x', domain: { contexts: [] } });
+  const plain = pageTools.bundle({ bundleId: 'x' });
+  for (const name of answers.DOMAIN_PORTABLE) assert.ok(!plain.includes(`function ${name}(`), `${name} is emitted for a node without the domain parts`);
+  for (const name of EMITTED) {
+    const source = String(pageTools[name] === undefined ? (answers[name] === undefined ? '' : answers[name]) : pageTools[name]);
     // Not every portable function is exported from the module (only the ones a Node
     // caller needs are), so the check is made against the EMITTED text, which is the
     // artefact the page runs.
@@ -54,20 +68,24 @@ test('every portable page-tool name is a function whose own source text is emitt
 });
 
 test('no portable page-tool function closes over a module-scope binding', () => {
-  const emittedNames = new Set(pageTools.PORTABLE);
-  const bound = moduleScopeNames().filter((n) => !emittedNames.has(n));
-  assert.ok(bound.length > 0, 'no module-scope binding was found; the scan is broken');
-  const text = fs.readFileSync(FILE, 'utf8');
-  for (const name of pageTools.PORTABLE) {
-    const at = text.indexOf(`\nfunction ${name}(`);
-    assert.notStrictEqual(at, -1, `${name} is not a top-level function declaration`);
-    const source = text.slice(at, text.indexOf('\n}\n', at) + 3);
-    for (const binding of bound) {
-      const used = new RegExp(`(?<![A-Za-z0-9_$.'"\`])${binding.replace(/\$/gu, '\\$')}(?![A-Za-z0-9_$])`, 'u');
-      const redeclared = new RegExp(`(?:const|let|var)\\s+${binding.replace(/\$/gu, '\\$')}\\b`, 'u');
-      if (used.test(source) && !redeclared.test(source)) {
-        assert.fail(`page-tools.js#${name} reads the module-scope binding "${binding}"; `
-          + 'a page has no such binding, so the emitted script would carry `undefined` (AGSC-07-13)');
+  // A module-scope binding that names an emitted function (page-tools.js requires the
+  // answers of tool-answers.js under their own names) is defined in the page as well.
+  const emittedNames = new Set(EMITTED);
+  for (const { file, portable } of MODULES) {
+    const bound = moduleScopeNames(file).filter((n) => !emittedNames.has(n));
+    assert.ok(bound.length > 0, `no module-scope binding was found in ${path.basename(file)}; the scan is broken`);
+    const text = fs.readFileSync(file, 'utf8');
+    for (const name of portable) {
+      const at = text.indexOf(`\nfunction ${name}(`);
+      assert.notStrictEqual(at, -1, `${name} is not a top-level function declaration of ${path.basename(file)}`);
+      const source = text.slice(at, text.indexOf('\n}\n', at) + 3);
+      for (const binding of bound) {
+        const used = new RegExp(`(?<![A-Za-z0-9_$.'"\`])${binding.replace(/\$/gu, '\\$')}(?![A-Za-z0-9_$])`, 'u');
+        const redeclared = new RegExp(`(?:const|let|var)\\s+${binding.replace(/\$/gu, '\\$')}\\b`, 'u');
+        if (used.test(source) && !redeclared.test(source)) {
+          assert.fail(`${path.basename(file)}#${name} reads the module-scope binding "${binding}"; `
+            + 'a page has no such binding, so the emitted script would carry `undefined` (AGSC-07-13)');
+        }
       }
     }
   }
@@ -85,6 +103,22 @@ test('the emitted script evaluates in a context that holds only the language', (
   // With no `document` the bootstrap stands down and installs nothing at all.
   assert.strictEqual(vm.runInContext('typeof globalThis.AGSC_TOOLS', context), 'undefined');
   assert.strictEqual(api.ready, null);
+});
+
+test('the emitted script with the domain parts evaluates in a context that holds only the language', () => {
+  // AGSC-09-13: the wrapper over the toolset runs in the page; `install` hands it the algebra.
+  const context = vm.createContext({ TextEncoder });
+  vm.runInContext(pageTools.bundle({ bundleId: 'x', domain: { contexts: ['c'] }, specVersion: '1.0.0' }), context,
+    { filename: 'agsc-page-tools.js' });
+  const api = vm.runInContext('globalThis.AGSC_PAGE_TOOLS', context);
+  assert.deepStrictEqual([...api.DOMAIN_CONTEXTS], ['c']);
+  const corpus = { base: 'https://x.example/', bySlug: { a: { body: 'A.\n', frontmatter: { clusters: ['c'], domain_role: 'entity', title: 'A' }, slug: 'a', type: 'concept' },
+    c: { body: '', frontmatter: { title: 'C', type: 'cluster' }, slug: 'c', type: 'cluster' } }, index: null, items: [] };
+  // The algebra's two readers; `a` is not withheld, so its context is named (AGSC-09-16).
+  const core = { domainOf: (item, contexts) => ({ context: contexts[0], role: item.frontmatter.domain_role }), domainWithin: brief.domainWithin };
+  const answer = api.install(corpus, core).call('read', { slug: 'a' });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(answer.body.domain)), { context: 'c', role: 'entity' });
+  assert.deepStrictEqual(Object.keys(answer.body), ['body', 'chunks', 'domain', 'frontmatter', 'iri', 'slug']);
 });
 
 test('the emitted script reaches no third-party origin and evaluates no text', () => {

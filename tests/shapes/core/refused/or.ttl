@@ -1,0 +1,9 @@
+# sh:or: a logical constraint component is outside the subset.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:or ( exs:A exs:B ) ;
+    sh:targetClass ex:C .

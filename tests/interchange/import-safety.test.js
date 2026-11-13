@@ -278,3 +278,18 @@ test('the neutraliser is the identity on every conforming value, so no byte move
   assert.match(plan.writes[0].text, /^title: A Clean Title$/mu);
   assert.deepStrictEqual(plan.findings.filter((f) => /single/u.test(f.message)), []);
 });
+
+test('AGSC-01-22: a source that is not a folder is AGSC-E901 for skills and board, and holds no file for a memory tool', () => {
+  const target = workspace();
+  const file = path.join(foreign({ 'notes.txt': 'not a folder\n' }), 'notes.txt');
+  for (const verbFlags of [{ from: 'skills' }, { from: 'board', format: 'jira' }]) {
+    const result = importVerb.run(ctxFor(target, { argv: [file], verbFlags }));
+    assert.strictEqual(result.status, 'fail', verbFlags.from);
+    assert.deepStrictEqual(codes(result), ['AGSC-E901'], verbFlags.from);
+    assert.match(result.findings[0].message, /is not a directory this import can read/u);
+  }
+  const memory = importVerb.run(ctxFor(target, { argv: [file], verbFlags: { from: 'mem0' } }));
+  assert.strictEqual(memory.status, 'fail');
+  assert.deepStrictEqual(codes(memory), ['AGSC-E901']);
+  assert.match(memory.findings[0].message, /holds no file the mem0 adapter reads/u);
+});

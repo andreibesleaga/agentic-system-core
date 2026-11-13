@@ -12,8 +12,12 @@
 
 **Channels.** Messages from a mailbox or a chat can become proposals, under guards: a sender list, a rate, a cap on open proposals, injection checks.
 
+**Diagrams.** A `.diagram` file in a small fixed language compiles to the same SVG on every machine; from 1.1 an arrow, line or text may name the Link key it stands for (`rel=KEY`).
+
+**From 1.1, the configuration may add a domain layer** (`domain`): the node's own classes and relations, rules its items must keep and questions its graph must answer, and its bounded contexts. A node without it builds as before. `site.query_page` switches the query page off.
+
 **Paths.** A relative path never contains `..`, `.` segments, a leading slash, a backslash or a NUL, and always resolves inside the Bundle.
 
 **Agent lanes.** The configuration may declare agents: a name, a kind (model or program), the forge identity and the accountable person, the model, what it may do, which item types it may touch, the channel its proposals go through, a schedule, a monthly budget, how many items one proposal may create (default twenty) and how many tasks it may hold at once (default one). Disabled unless switched on. The whole node has one cap on model spend of every kind, ten dollars a month unless changed, and the agents' budgets may not add up to more. Anything host-specific or secret — the cap, an agent's switch or budget, the model key — can be set in a `.env` file in the Bundle root that is never committed; `init` lists the recognised names in `.env.example`.
 
-Rules: `spec/01-bundle.md`, `AGSC-01-01` … `AGSC-01-38`.
+Rules: `spec/01-bundle.md`, `AGSC-01-01` … `AGSC-01-42`.

@@ -244,7 +244,6 @@ module.exports = {
   ORIGINS,
   TASK_STATES,
   TERMINAL_TASK_STATES,
-  WORKING,
   checkClaims,
   checkGate,
   checkTrailers,

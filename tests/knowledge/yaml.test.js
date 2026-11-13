@@ -132,3 +132,30 @@ test('a mapping with many DISTINCT keys parses and stays within the AGSC-01-16 c
   // and one repeat anywhere in that mapping is still found
   rejects(`${source}\nk0: again\n`, 'AGSC-E106', n + 2);
 });
+
+// AGSC-02-02 (1.1): the nesting of block mappings and block sequences is bounded at 64 levels, the
+// frontmatter mapping being level 1. `parseWithDepth` reports the depth; the bound is a warning
+// in the item parser (tests/knowledge/frontmatter.test.js), never a refusal by the YAML reader.
+const nested = (levels) => {
+  const lines = ['top:'];
+  for (let i = 1; i < levels - 1; i += 1) lines.push(`${'  '.repeat(i)}a:`);
+  lines.push(`${'  '.repeat(levels - 1)}leaf: x`);
+  return lines.join('\n');
+};
+
+test('AGSC-02-02: the depth counts block mappings and block sequences, the frontmatter mapping as level 1', () => {
+  assert.strictEqual(yaml.parseWithDepth('a: b').depth, 1);
+  assert.strictEqual(yaml.parseWithDepth('a:\n  b: c').depth, 2);
+  assert.strictEqual(yaml.parseWithDepth('a:\n  - b\n  - c: d').depth, 3);
+  // A flow sequence of scalars is a value, not a level.
+  assert.strictEqual(yaml.parseWithDepth('a: [b, c]').depth, 1);
+  assert.strictEqual(yaml.parseWithDepth('').depth, 0);
+  assert.strictEqual(yaml.parseWithDepth(nested(64)).depth, 64);
+  assert.strictEqual(yaml.parseWithDepth(nested(65)).depth, 65);
+  assert.strictEqual(yaml.NESTING_BOUND, 64);
+});
+
+test('AGSC-02-02: a deep document still parses to the same value as parse()', () => {
+  const text = nested(70);
+  assert.deepStrictEqual(yaml.parseWithDepth(text).value, yaml.parse(text));
+});

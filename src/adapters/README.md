@@ -14,7 +14,7 @@
 | `node-clock.js` | Clock over `SOURCE_DATE_EPOCH` |
 | `node-proc.js` | ProcessRunner over `child_process`, no shell, stderr captured |
 | `node-network-refusing.js` | a Network that refuses every call |
-| `node-http-server.js` | the read-only HTTP server of `agsc-host serve`; what it answers is the `local` profile's decision |
+| `node-http-server.js` | the read-only HTTP server of `agsc-host serve` (`listen`; what it answers is the `local` profile's decision), and the socket of `agsc mcp --http` (`listenWith`; what it answers is the MCP transport's) |
 
 Every module names, in its header comment, the rules it implements. The function
 signatures and the reasons behind the design are in [the per-module

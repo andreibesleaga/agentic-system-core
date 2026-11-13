@@ -10,8 +10,10 @@
  * returns a function's source text, so nothing is transcribed, nothing is
  * transpiled, and there is no bundler and no build step.
  *
- * That is why `composition/compose.js` and `composition/harness.js` declare their
- * algebra as self-contained top-level functions whose constants are functions:
+ * That is why `composition/compose.js`, `composition/harness.js`,
+ * `composition/brief.js` and `composition/blueprint.js` declare their algebra as
+ * self-contained top-level functions
+ * whose constants are functions:
  * a function that closed over a module-scope `const` would be emitted with a free
  * variable that is undefined in the page. `tests/arch/composition-portable.test.js`
  * enforces the contract; `tests/composition/browser.test.js` runs the emitted
@@ -30,6 +32,8 @@
 const compose = require('./compose.js');
 const harness = require('./harness.js');
 const archive = require('./archive.js');
+const brief = require('./brief.js');
+const blueprint = require('./blueprint.js');
 
 /**
  * Destructured deliberately. A page-support function may reference only names the
@@ -218,9 +222,61 @@ const SUPPORT = Object.freeze({
  * (AGSC-07-13). The archive is emitted AFTER the Harness algebra because it packages
  * that algebra's result, and it reads `compareCodePoint`, which `compose.PORTABLE`
  * has already declared above it.
+ *
+ * The brief of AGSC-07-25 (`composition/brief.js`) and the blueprint outputs of AGSC-07-29
+ * (`composition/blueprint.js`, which reads the brief's parts) join them only when
+ * `options.brief` is `true`. A build publishes `/compose/agsc-core.js` with them from 1.1,
+ * because the page tool `brief` answers with the brief (AGSC-09-13, AGSC-09-16) and the
+ * `/compose/` page shows it and offers both for download (`distribution/site.js`); the bundle
+ * without them is the 1.0 set, for a caller that needs the algebra alone.
+ *
+ * The domain paragraph of the brief (`brief.js#DOMAIN_PORTABLE`, AGSC-07-25) joins them only
+ * when `options.domain` is given too, which a build does for a node whose listed items state a
+ * key of AGSC-02-25 (`distribution/domain-view.js#scripts`); every other node's bundle keeps
+ * its bytes.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.brief] carry the functions of the brief and the blueprint too.
+ * @param {{contexts: Array<string>, edges?: Array<object>, withheld?: Array<string>}} [options.domain]
+ *   carry the domain paragraph as well.
  */
-function exportedNames() {
-  return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE, ...PAGE_SUPPORT];
+function exportedNames(options) {
+  const withBrief = Boolean(options && options.brief === true);
+  const withDomain = withBrief && Boolean(options.domain);
+  return [...compose.PORTABLE, ...harness.PORTABLE, ...archive.PORTABLE,
+    ...(withBrief ? [...brief.PORTABLE, ...blueprint.PORTABLE] : []),
+    ...(withDomain ? brief.DOMAIN_PORTABLE : []), ...PAGE_SUPPORT];
+}
+
+/**
+ * The entries of `globalThis.AGSC_CORE`. With the domain paragraph, `briefOf` and `briefFiles`
+ * are `briefDomainOf` and `briefDomainFiles` given `DOMAIN` (`domainFacts`), so the `/compose/`
+ * controller and the page tool `brief`, which call those two names, write the brief
+ * `agsc compose --brief` writes (AGSC-07-13) without a change of their own.
+ */
+function exportMap(options) {
+  const withDomain = options.brief === true && Boolean(options.domain);
+  const bound = (name) => `function (result, options) { return ${name}(result, Object.assign({}, options, DOMAIN)); }`;
+  return exportedNames(options).map((name) => {
+    if (withDomain && name === 'briefOf') return `    briefOf: ${bound('briefDomainOf')}`;
+    if (withDomain && name === 'briefFiles') return `    briefFiles: ${bound('briefDomainFiles')}`;
+    return `    ${name}: ${name}`;
+  }).join(',\n');
+}
+
+/**
+ * The facts of the domain paragraph that no published route carries, written once into the
+ * script as `DOMAIN`: the listed clusters `domain.contexts` declares (AGSC-08-32), the domain
+ * links between listed items (AGSC-03-27), which the build read against the site vocabulary
+ * (`distribution/domain-view.js#scripts`) because a page cannot read it, and the listed items
+ * whose context is an item that is not listed (`brief.js#domainWithheld`), which the page, holding
+ * the listed items alone, cannot tell.
+ */
+function domainFacts(domain) {
+  const contexts = Array.isArray(domain.contexts) ? domain.contexts : [];
+  const domainEdges = Array.isArray(domain.edges) ? domain.edges : [];
+  const withheld = Array.isArray(domain.withheld) ? domain.withheld : [];
+  return `  var DOMAIN = ${JSON.stringify({ contexts, domainEdges, withheld })};`;
 }
 
 /**
@@ -228,6 +284,11 @@ function exportedNames() {
  *
  * @param {object} [options]
  * @param {string} [options.specVersion] recorded in the banner comment only.
+ * @param {boolean} [options.brief] carry the functions of the brief (AGSC-07-25) and of the
+ *   blueprint outputs (AGSC-07-29) too.
+ * @param {{contexts: Array<string>, edges?: Array<object>, withheld?: Array<string>}} [options.domain]
+ *   with `brief`, the domain paragraph of the brief and its facts (`domainFacts`; AGSC-07-25,
+ *   AGSC-08-32, AGSC-03-27).
  * @returns {string} a classic script, LF-terminated, ending in exactly one LF.
  */
 function bundle(options) {
@@ -242,9 +303,16 @@ function bundle(options) {
   for (const name of compose.PORTABLE) parts.push(String(compose[name]));
   for (const name of harness.PORTABLE) parts.push(String(harness[name]));
   for (const name of archive.PORTABLE) parts.push(String(archive[name]));
+  if (opts.brief === true) {
+    for (const name of brief.PORTABLE) parts.push(String(brief[name]));
+    for (const name of blueprint.PORTABLE) parts.push(String(blueprint[name]));
+    if (opts.domain) {
+      for (const name of brief.DOMAIN_PORTABLE) parts.push(String(brief[name]));
+      parts.push(domainFacts(opts.domain));
+    }
+  }
   for (const name of PAGE_SUPPORT) parts.push(String(SUPPORT[name]));
-  const map = exportedNames().map((name) => `    ${name}: ${name}`).join(',\n');
-  parts.push('  globalThis.AGSC_CORE = {', `${map}`, '  };', '}());');
+  parts.push('  globalThis.AGSC_CORE = {', exportMap(opts), '  };', '}());');
   return `${parts.join('\n')}\n`;
 }
 

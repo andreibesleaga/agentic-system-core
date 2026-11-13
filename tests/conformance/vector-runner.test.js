@@ -78,7 +78,7 @@ test('conformance vectors', async (t) => {
     .map((r) => `${r.id} (${r.rule}) ${r.detail}`);
 
   for (const result of results) {
-    await t.test(`${result.id} ${result.rule}`, { skip: result.status === 'skip' }, () => {
+    await t.test(`${result.id} ${result.rule}`, { skip: result.status === 'skip' ? result.detail : false }, () => {
       assert.strictEqual(result.status, 'pass', result.detail);
     });
   }

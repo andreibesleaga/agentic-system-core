@@ -1,0 +1,5 @@
+# Lesson-severity: a lesson whose severity is outside the closed list.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:l a asc:Lesson ; asc:severity "fatal" .

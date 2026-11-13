@@ -25,7 +25,7 @@ flowchart LR
   B --> L
   subgraph NODE["A node: static files on any host"]
     WK["/.well-known/knowledge-linkset<br/>(discovery, digests)"]
-    H["HTML pages<br/>+ seven page tools"]
+    H["HTML pages<br/>+ ten page tools"]
     G["graph.nq / .ttl / .jsonld<br/>ontology, context"]
     T["llms.txt, chunks.jsonl,<br/>search.json, skills, boards"]
   end
@@ -45,5 +45,5 @@ flowchart LR
 
 Trace: AGSC-00-02 (no server), AGSC-06-01 (the route set), AGSC-06-07 and AGSC-06-08
 (discovery and digests), AGSC-06-25 (`describedby`), AGSC-09-13 and AGSC-09-16 (the
-seven tools on two transports), AGSC-08-08 (a person ratifies), AGSC-11-06 and
+ten tools on two transports), AGSC-08-08 (a person ratifies), AGSC-11-06 and
 AGSC-11-13 (federation walked by the client).

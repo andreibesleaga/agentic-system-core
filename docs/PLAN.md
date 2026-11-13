@@ -135,8 +135,8 @@ graph TB
     CB["composition core (identical modules, no node: imports)"]
     WM["WebMCP page tools (should S8)"]
   end
-  subgraph MCP["Container: agsc mcp (local stdio server)"]
-    T["7 tools: search read links compose propose ask remember"]
+  subgraph MCP["Container: agsc mcp — stdio, or Streamable HTTP on loopback (1.1)"]
+    T["10 tools: search read links compose propose ask remember brief explain check"]
   end
   subgraph CI["Container: GitHub Actions"]
     CIY["engine ci.yml · release.yml"]
@@ -164,9 +164,21 @@ graph TB
 |---|---|---|---|---|
 | knowledge | `yaml.js` `frontmatter.js` `markdown.js` | YAML failsafe subset; `{fm, body}`; CommonMark subset AST | 2, 9 | lint build |
 | knowledge | `schema.js` `validate.js` | JSON Schema 2020-12 mini-validator over `schema/*.json` | 3 | lint build |
-| knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles | 4 | lint build compose |
+| knowledge | `slug.js` `links.js` | slug grammar; fourteen Links (nine core + five Mode-2), inverses, orphans, cycles; and, from 1.1, the domain links of a site vocabulary (AGSC-03-27) | 4 | lint build compose |
 | knowledge | `skos.js` `jsonld.js` `turtle.js` `nquads.js` `rdfxml.js` `jcs.js` | nested `skos:Collection`; four RDF views; JCS | 6, 7 | build export |
+| knowledge | `skos-export.js` | the SKOS view of `graph.nq` (1.1): scheme, top concepts, `skos:Concept` and `skos:Collection` types | — | export |
+| knowledge | `suggest.js` | the Link suggestions of `lint --suggest` (1.1): five generators, evidence for each, written only to `dist/suggestions.json` | — | lint |
+| knowledge | `closure.js` | the OWL 2 RL consequences of the graph (1.1): the rules as data, run by the `n3` `Reasoner`; written only to `dist/export/closure.nt` | — | export |
+| knowledge | `domain.js` | the site vocabulary of the domain layer (1.1): the rules (a) to (g) of AGSC-05-38, the model the graph writer reads, the faults of the `domain` object | — | lint build export |
+| knowledge | `contexts.js` | bounded contexts (1.1): the contexts `domain.contexts` declares, the context of an item (AGSC-08-32), the address of a plain or typed peer (AGSC-11-24) | — | lint build compose |
+| knowledge | `warrants.js` | the warrant of a term (1.1): a source plus one of the three kinds of warrant of ANSI/NISO Z39.19, read once for the graph and the display | — | build |
+| knowledge | `shacl-core.js` | the SHACL Core subset of a site's invariants (1.1): the subset check (`AGSC-E420`) and the run of the pinned `rdf-validate-shacl`, results in the order of AGSC-05-41; never at build | — | verify ci |
+| knowledge | `competency.js` | a site's competency questions (1.1): the questions file, the SPARQL subset (`AGSC-E420`), the run by the pinned `oxigraph` after the pinned Traqula parser; never at build | — | verify ci |
+| knowledge | `site-checks.js` | the check of AGSC-09-20 (1.1): one data graph, `graph.nq` with its closure; the site's shapes and questions over it; `AGSC-E421`, `AGSC-E422` | — | verify ci |
 | knowledge | `diagrams.js` | ported DSL→SVG compiler | 5 | build import |
+| knowledge | `link-graph.js` | the typed Links between published items, cluster members, display titles; read by the `mermaid` export and the graph view | — | build export |
+| knowledge | `chunks-index.js` | the tabular chunk index `chunks-index.toon` (1.1, AGSC-06-37): one row per chunk line, written by the pinned TOON encoder; served by the build as `/chunks-index.toon` and written by the `llm-context` adapter | — | build export |
+| knowledge | `digest-field.js` | the RFC 9530 digest value `sha-256=:<base64>:` (1.1), an RFC 9651 Dictionary written by the pinned `structured-headers`; the one writer of the discovery digests, the chunk-set commitment, a chunk's `content_digest` and the export manifest | — | build export |
 | governance | `lint.js` | L1/L2 findings with file+line | 3–4 | lint ci |
 | governance | `injection.js` `secrets.js` `pii.js` `cleanroom.js` | the four N9/clean-room lints (§8, §12) | — | lint ci review |
 | governance | `prov.js` | `prov` required; commit/reviewer **derived** from `AGSC_GIT_LOG` + `verified[]` | 11 | build lint |
@@ -175,36 +187,57 @@ graph TB
 | governance | `ledger.js` | hash chain; offline re-verify | 12 | build ci verify |
 | composition | `closure.js` | closure, hiding, mutex, warnings, explained paths (spec/07 order) | — | compose |
 | composition | `emit-jsonld.js` `emit-agents.js` `emit-structurizr.js` `emit-mermaid.js` `emit-arc42.js` `emit-madr.js` | six of the seven Harness files | — | compose |
+| composition | `skill-format.js` | the Agent Skills check (1.1, AGSC-07-22) of every `SKILL.md` before it is written: a published pack (`skills.js`) and a Harness skill file (checked by the `compose` verb); bounds E204, missing `license` E202, `metadata` E201, `allowed-tools` E407, other keys E207; no byte changes | — | build skills compose |
+| composition | `context-map.js` | the context map of a composition (1.1): `context-map.json` in the companion directory beside the Harness, only for a node that declares contexts (AGSC-07-30); never a Harness byte | — | compose |
+| composition | `brief.js` | the brief of a composition (1.1): `brief.json`, `BRIEF.md`, `context.md`, `brief.mmd` in the companion directory beside the Harness, for `compose --brief` or `compose.brief`, valid composition or not; dependency order, gaps, checklist (AGSC-07-25…07-27); never a Harness byte; the same source runs in the page | — | compose |
+| composition | `blueprint.js` | the blueprint outputs of a saved architecture (1.1): the three C4 levels as Mermaid, one MADR record per `decided-by` target of a member, a build plan in dependency order, in `blueprint/` beside the Harness for `compose --from <slug> --brief` (AGSC-07-29); never a Harness byte; the same source runs in the page | — | compose |
 | distribution | `html.js` `templates/*.html` | Markdown→HTML; layout/item/cluster/list/now/compose/404 | 9 | build |
+| distribution | `architecture-brief.js` | the brief on a saved architecture's item page (1.1, AGSC-07-25): summary, dependency order, gaps, checklist and the `/compose/?from=<slug>` link | — | build |
+| distribution | `graph-view.js` | the graph view (1.1, AGSC-06-38): an item's figure and relations table with backlinks and meanings; a cluster's map of members and links; edges from `knowledge/link-graph.js`, figures compiled by `diagrams.js` | — | build |
+| distribution | `domain-view.js` | the domain layer on item pages (1.1, AGSC-06-38): the item's domain type, role, context and warrant under the relations table, with labels from the site vocabulary, and two domain columns; which page scripts carry the domain parts of the brief and the tools | — | build |
+| distribution | `clusters-page.js` `explorer/*.js` | `/clusters/` beyond its list (1.1, AGSC-06-38): the overview of how the clusters connect with a relation filter that needs no script, the legend of the fourteen keys, and the explorer of the published graph (picture, list, find box, detail panel, tooltip; keyboard alone), shipped as the source text of its portable functions with no dependency | — | build |
+| distribution | `query-page.js` `query-examples.js` `query/*.js` `vendor/oxigraph-0.5.13/` | `/query/` (1.1, AGSC-06-39): a SPARQL 1.1 editor over the node's own `graph.nq`, run in the visitor's browser by a vendored engine (Oxigraph 0.5.13, WebAssembly, hash-pinned) in a worker; table, picture (the explorer's layout), CSV and JSON downloads, a share link in the fragment, the ten questions as examples filled in from the node and the node's competency questions, the vocabulary explorer with the node's site vocabulary; switched off by `site.query_page: false` | — | build |
 | distribution | `search.js` | inverted index `search.json` | 8 | build |
 | distribution | `discovery.js` | linkset with `digest`/`agsc-*` target attributes, `llms.txt`, sitemap, robots, tdmrep, `_headers`, `_redirects` | 10 | build |
+| distribution | `well-known.js` `a2a-card.js` `ai-catalog.js` | the well-known files in order (1.1): the A2A agent card for a node with a responder (AGSC-06-34; `a2a-card.js` compiled from `src-ts/`, on the official A2A SDK), the discovery document with its derived surfaces, and the opt-in catalogue files `ard.json` and `ai-catalog.json` with the digests of the other two (AGSC-06-42) | — | build |
+| distribution | `front-page.js` `headers.js` | the home page's Dataset block with licence, creator, downloads and the PROV-O terms (1.1, AGSC-06-41), and the FAIR Signposting links in the `Link` header of `/` (1.1, AGSC-06-40) | — | build |
 | distribution | `now.js` | `/now/` + `now.md` from stored state only | 11 | build refresh |
 | distribution | `site.js` | route set → `www/` | 1, 9 | build |
 | distribution | `ci.js` `verify.js` | pipeline; double build + byte diff | 13 | ci verify |
 | distribution | `init.js` (adopt mode) | bare `.md` → minimal frontmatter + relocation to `content/concepts/` (AGSC-02-90…93) | — | init |
-| distribution | `init.js` `mcp.js` `refresh.js` | scaffold; stdio JSON-RPC 7 tools (+ask, +remember); staleness + link checks | — | init mcp refresh |
-| interchange | `import.js` `okf.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in | — | import |
-| interchange | `export.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md | — | export |
+| distribution | `init.js` `refresh.js` | scaffold; staleness + link checks | — | init refresh |
+| distribution | `mcp-core.js` `mcp-http.js` `mcp-tools.js` `mcp-resources.js` `tool-answers.js` | the tool server: 7 tools at 1.0 (+ask, +remember), 10 from 1.1 (+brief, +explain, +check); from 1.1 on the official MCP SDK, both revisions (AGSC-09-19); standard input and output, and Streamable HTTP on a loopback address through `adapters/node-http-server.js#listenWith` (AGSC-09-18); `mcp-core.js` and `mcp-http.js` compiled from `src-ts/` | — | mcp |
+| interchange | `import.js` `okf.js` `adapters/skos.js` | `--from old-site` (153 cards, 110 Clusters, diagrams); OKF/Markdown in; a SKOS thesaurus in (every foreign item a draft) | — | import |
+| interchange | `export-bundle.js` `export-manifest.js` `steer.js` | Markdown/OKF/JSON-LD/JSONL out; `--steer` AGENTS.md/CLAUDE.md; `--manifest` digests checked by `import` | — | export |
 | interchange | `skills.js` | `SKILL.md` out/in (7th Harness file), 3 trees, sha256 lockfile | — | skills |
-| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
+| boundary | `federation.js` | peers and federation: the `rel#peer` links, peer provenance, results kept untrusted (AGSC-11-10 to AGSC-11-13); from 1.1 typed peers and the crosswalk reader of a context map (AGSC-11-24) | — | build lint compose |
+| *(none — see below)* | `tools/validate-{schemas,spec,ontology,vectors,wellknown,features,diagrams}.js`, `tools/gen-spec-html.js`, `tools/gen-ns.js`, `tools/gen-dc-profile`, `tools/gen-shapes` | standalone stdlib validators + generators (PRD-054, AGSC-09-90…92) | — | (CI) |
+
+*(Reconciliation note, 8 Nov 2026: the tools in the row above carry no `.js` extension. The real paths are `tools/validate-schemas`, `tools/validate-spec`, `tools/validate-ontology`, `tools/validate-vectors`, `tools/validate-wellknown`, `tools/validate-features`, `tools/validate-diagrams`, `tools/gen-spec-html` and `tools/gen-ns`, each run as `node tools/<name>`.)*
 
 `tools/` is outside the five bounded contexts by design: it imports nothing from `src/`, which is what makes it independent (PRD-054, AGSC-09-90) — so the "one context ↔ one `src/` dir ↔ one spec section ↔ one vector area" rule of §5.3 does not apply to it, and its `--json` output is the `agsc.diagnostics.v1` envelope with `verb` = the tool name.
 
 **The nine command contracts, as shipped** *(The row above is the plan, this is the state. The files carry no `.js` extension and are run as `node tools/<name>`; each takes `--json`, `--quiet` and `--help`, exits 0 pass / 1 fail / 2 usage, and emits only codes the §9.4 registry holds. `tools/README.md` lists the same tools.)*
 
+*(Note, 10 Nov 2026, 1.1: the table below has eleven command contracts, seven validators and four generators, since 1.1 adds `tools/gen-dc-profile` and `tools/gen-shapes` (the 1.1.0 amendment of AGSC-09-90); "nine" above is the 1.0 count.)*
+
 | Tool | What it checks | Rules | Status |
 |---|---|---|---|
 | `tools/validate-spec` | rule-id uniqueness and resolution, the MUST/SHOULD grammar, trace brackets and their PRD/NFR ids, error-code closure against §9.4, version literals in `spec/`, `docs/` and `tests/vectors/**` | AGSC-09-90, AGSC-09-91 | ships; pass |
 | `tools/validate-schemas` | 2020-12 meta-validation and strict compilation, the AGSC-02-24 keyword subset and bounds, the AGSC-01-10 slug grammar, the six item types | AGSC-09-90, AGSC-02-24 | ships; pass |
-| `tools/validate-ontology` | Turtle well-formedness, the OWL 2 RL-safe set, blank-node freedom, the persistent namespace, `owl:versionIRI`, SKOS S19/S20/S32/S37 | AGSC-09-90, AGSC-05-22 | ships; pass |
+| `tools/validate-ontology` | Turtle well-formedness, the OWL 2 RL-safe set, blank-node freedom, the persistent namespace, `owl:versionIRI`, SKOS S19/S20/S32/S37; from 1.1, any other `.ttl` is read as a site vocabulary and checked against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`) | AGSC-09-90, AGSC-05-22, AGSC-05-38 | ships; pass |
 | `tools/validate-vectors` | vector format, rule resolution, JCS order, encoding, empty declared areas as an informational count | AGSC-09-90, AGSC-09-04…06 | ships; pass |
 | `tools/validate-wellknown` | RFC 9264 shape, profile transport, relation names, digests, the `agsc-*` attributes per Level, `--peer` | AGSC-09-93, AGSC-10-12 | ships; pass at `--level 2` |
 | `tools/validate-features` | Gherkin parse, `@PRD` closure against `docs/PRD.md`, agreement with the coverage table of `features/README.md` | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/validate-diagrams` | the Mermaid lexical contract, a trace id per file, staleness against `spec/` and `docs/PRD.md`, the index table | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-spec-html` | renders `spec/` into `/specs/` deterministically with an anchor on every rule; `--check` compares a published tree | AGSC-09-90, PRD-054 | ships; pass |
 | `tools/gen-ns` | derives `/ns/context.jsonld`, `/ns/agsc.rdf` and the `/ns/` index from the ontology, round-trips the RDF/XML; `--check` audits a built `/ns/` | AGSC-09-90, AGSC-06-32 | ships; pass |
+| `tools/gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the AGSC-05-26 table, from `schema/item.schema.json`; `--check` fails when the file is stale (1.1) | AGSC-09-90, AGSC-05-26 | ships; pass |
+| `tools/gen-shapes` | writes `schema/item-shapes.ttl`, the SHACL shapes of the graph, from `schema/item.schema.json`, the relation table and the SKOS integrity rules; `--check` fails when the file is stale; the shapes run in a development lane ([SHACL-SHAPES.md](SHACL-SHAPES.md)) (1.1) | AGSC-09-90, AGSC-05-24 | ships; pass |
 
 Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/agsc.js` is the only place adapters are wired.
+
+Reconciliation (1.1): the application layer (`src/application/`) wires the adapters; `bin/agsc.js` builds the four ports.
 
 ### 5.2 Ports and v1 adapters
 
@@ -217,8 +250,8 @@ Ports live in `src/ports/*.js` (interfaces) with `src/adapters/node-*.js`; `bin/
 | `ContentStore` | the Bundle | local git working tree | GitHub API, Obsidian, Solid (v2) |
 | `Renderer` | items → HTML | built-in templates | *(internal module boundary rather than a port; "theme packs" serve no v1.0 requirement)* |
 | `GraphExport` | items → RDF | JSON-LD/Turtle/N-Quads (RDF/XML = should S1) | SPARQL dump, Wikibase |
-| `ToolTransport` | tools to agents | local stdio MCP, 7 tools | remote MCP Worker (v2) |
-| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools, degrading to plain JS | — |
+| `ToolTransport` | tools to agents | local stdio MCP, 7 tools (10 from 1.1, PRD-080) | remote MCP Worker (v2) |
+| `PageTools` | tools in the page | WebMCP `document.modelContext` (should S8), same 7 tools (10 from 1.1, PRD-080), degrading to plain JS | — |
 | `Reviewer` | Proposal verdict | **lint-only** (no LLM on a gating lane, C6) | the OPTIONAL non-gating LLM review lane of AGSC-08-27 — v1.0, off by default, provider-capped |
 | `Host` | where `www/` lands | Cloudflare Pages | GitHub/GitLab Pages, Netlify (v1.x) |
 | `Forge` | PR/CI shim | GitHub (`templates/github/*.yml`, ≤20 lines) | GitLab/Forgejo (v1.x) |
@@ -422,7 +455,7 @@ workspace "AgenticSystemCore" "Distributed Ontological Agentic Memory engine —
 
     reader -> site "Reads pages and machine surfaces" "HTTPS"
     reader -> github "Opens a Proposal (fork-and-edit)" "HTTPS"
-    agent -> mcpserver "Calls seven tools" "stdio JSON-RPC"
+    agent -> mcpserver "Calls ten tools" "stdio JSON-RPC"
     agent -> site "Fetches linkset, graph, llms.txt, skills" "HTTPS"
     agent -> browser "Uses page tools" "WebMCP"
     owner -> github "All git writes, merges, tags" "git/HTTPS"
@@ -471,7 +504,7 @@ Sixteen performance recommendations and eight benchmark hypotheses (with baselin
 *ADR numbering continues from ADR-011.*
 
 **ADR-012 Plugins are declared surfaces.** Every agent surface is declared in the discovery document under the four-rule contract declare · pin · inherit · prove (AGSC-11-16…19). *Consequence:* the Boundary context is an anti-corruption layer; an external draft moving changes a version string, never the core. *Confirmation:* `bnd-0037`, `bnd-0013`, `bnd-0021`.
-**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`. *(As shipped at 1.0: the local server speaks MCP revision 2025-11-25 and advertises the extension identifier in its `initialize` result; see the addendum "The tree as shipped at 1.0" below.)*
+**ADR-013 Two reference plugins: local MCP and WebMCP.** Same seven tools; MCP 2026-07-28 with the SEP-2133 extension id via `server/discover`; WebMCP Draft CG Report 2026-09-15 with the three hints. A2A only as the optional card beside a responder (AGSC-06-34). *Confirmation:* `cli-0003`, `bnd-0037`. *(As shipped at 1.0: the local server speaks MCP revision 2025-11-25 and advertises the extension identifier in its `initialize` result; see the addendum "The tree as shipped at 1.0" below.)* *(1.1, 2026-11-11: ten tools on both transports; both revisions over standard input and output, 2026-07-28 over `--http` on loopback; confirmed by `cli-0026` and `cli-0032` to `cli-0035`, `cli-0003` being withdrawn; PRD-080, PRD-081.)*
 **ADR-014 The agent federates; nodes never call nodes.** Nine static, client-side parts (spec/11 §11.3); citation, never a cross-Bundle Link. *Consequence:* the `Federation` port of §5.2 has a v1 adapter — the walk in `validate-wellknown --peer` and the site client — while `Identity` and `PersonalStore` stay v2. *Confirmation:* `bnd-0003`, `bnd-0004`, `bnd-0006`…`0011`, `bnd-0030`, `bnd-0019`, `disc-0005`.
 **ADR-015 Visibility and dynamic hooks specified now, built later.** `visibility` public/restricted with the discovery document always readable; `solid` and a non-MCP `responder` declaration-only, a remote MCP `responder` served (AGSC-11-21). *Confirmation:* `bnd-0002`, `bnd-0016`.
 **ADR-016 Ports wired verdict-neutrally in Step 5.** `produces`/`consumes` on items, matched by exact name after the four verdict steps, warnings only. *Confirmation:* `compose-0011`, `compose-0012`, `graph-0017`.
@@ -564,9 +597,16 @@ under other names: closure, hiding, mutual exclusion, warnings and port wiring a
 `gate.js`); proposals and review are the verbs `src/application/cli/verbs/propose.js` and
 `review.js`, and `verify`, `refresh` and `export` are verbs in the same folder (no
 `proposal.js`, `review.js`, `verify.js`, `refresh.js` or `export.js` in a bounded context);
-the tool server is `src/distribution/mcp-stdio.js` with `mcp-tools.js` and
-`mcp-resources.js` (no `mcp.js`); pages are rendered by `src/distribution/html.js` with no
-template files (no `templates/*.html`). There is no `src/interchange/channels.js` and no
+the tool server is `src/distribution/mcp-tools.js` with
+`mcp-resources.js` (no `mcp.js`), and from 1.1 `tool-answers.js`, the portable answers both
+transports share, and `mcp-core.js` (compiled from `src-ts/distribution/mcp-core.ts`), the
+server on the official MCP SDK that both MCP transports build, and `mcp-http.js` (compiled from
+`src-ts/distribution/mcp-http.ts`), the Streamable HTTP transport of `mcp --http`, and
+`a2a-card.js` (compiled from `src-ts/distribution/a2a-card.ts`), the A2A agent card; pages are rendered by `src/distribution/html.js` with no
+template files (no `templates/*.html`), and from 1.1 their title and Open Graph properties come from
+`src/distribution/page-head.js`. The direct memory adapters of 1.1 are six modules under
+`src/interchange/adapters/` over one shared `src/interchange/memory-records.js`, and the three
+worked blueprints of 1.1 are Bundles under `examples/blueprints/`. There is no `src/interchange/channels.js` and no
 `channels/stub/`: at 1.0 the channel is a plugin kind and a set of configuration keys, and no
 channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 adapter is
 `src/adapters/node-network-refusing.js`, which refuses every call with `AGSC-E905`; there is no
@@ -574,7 +614,11 @@ channel adapter ships (`docs/PRD.md`, note to PRD-056). The network port's 1.0 a
 `docs/runbooks/secrets.md` is not part of this repository; the commit and reviewer of `prov` are derived from the git-log file of AGSC-08-20a,
 not from an environment variable `AGSC_GIT_LOG`; and the checkers are the extensionless programs
 `tools/validate-*`, `tools/gen-spec-html` and `tools/gen-ns`, not `.js` files. `src/README.md`
-holds the module map of the tree as it is.
+holds the module map of the tree as it is. From 1.1 a module may have a TypeScript source under
+`src-ts/<context>/`, compiled into the same path of `src/` and committed there
+(`docs/ENGINEERING.md` §8); the module map lists the compiled file. A benchmark runner has its
+source under `src-ts/bench/` and compiles to `bench/runners/` (`kit.js`, `install.js`), outside
+every context (ENGINEERING §8).
 
 **The browser bundle (§5, §6, §13).** The composition core the browser runs is served as
 `/compose/agsc-core.js`, beside `agsc-page-tools.js`, `agsc-compose.js` and `webmcp.js`; there
@@ -585,7 +629,10 @@ included (the addendum "`refresh` at 1.0" above). Two shipped programs touch a n
 on the user's explicit command: `agsc-host serve` listens on `localhost:8080` by default and
 serves a build directory read-only, and `tools/validate-wellknown <https URL>` fetches the
 document it is given and its targets under the fetch rules of AGSC-11-07 to AGSC-11-10.
-`SECURITY.md` names both.
+`SECURITY.md` names both. *(1.1: `agsc mcp --http <port>` listens too, on a loopback address
+only, and reaches no network (AGSC-09-18); `SECURITY.md` names it. Outside the engine, the
+maintainer measurement `bench/measure.js --layer install` runs `npm install` of the packed
+tarball against the npm registry; `--all --offline` leaves it out.)*
 
 **Workflows and the secrets document (§7).** The engine repository has two workflows, `test.yml` (every
 push and pull request) and `release.yml` (a version tag); there is no engine `ci.yml`, and the
@@ -601,12 +648,13 @@ addendum above); read its "Accepted" in the table of §9 as "superseded".
 and refused with `AGSC-E004` (AGSC-05-06, AGSC-01-18); R2's "emitted when `build.rdfxml` is
 true" no longer holds. The optional LLM review lane is specified at 1.0 (AGSC-08-27) and no
 model client ships with this engine. The benchmark kit is the program `tools/bench` with
-`bench/measure.js`, not a verb (`agsc bench` is an unknown verb); the declared scope makes the
+`bench/measure.js` and, from 1.1, the runners `bench/runners/kit.js` and
+`bench/runners/install.js`, not a verb (`agsc bench` is an unknown verb); the declared scope makes the
 benchmark kit normative at 1.1 (AGSC-00-20), and there is no "v1.0.1 gate".
 
 **Restore-from-zero (§11 T6, T10; PRD-045).** The per-release archive deposit is the Zenodo
-record of each final release (1.0.0 and later); release candidates get none and are kept by
-their tags. A git mirror and a weekly attested snapshot are not in place at 1.0.0
+record of the software, one version per GitHub release (concept DOI 10.5281/zenodo.23233817);
+the specification archive and the paper are 10.5281/zenodo.23052709 (the note to PRD-045). A git mirror and a weekly attested snapshot are not in place at 1.0.0
 and are planned for later, with no version fixed; read "attested weekly snapshot" in T6 and
 "mirrors + attested snapshot" in T10 as planned, and the rebuild from a clone (`verify`, the
 double build of `ci`) as the known-good path at 1.0.
@@ -637,7 +685,8 @@ which every pull request must pass. The golden-thread half is `node tools/requir
 **The licence row (§10, NFR-10).** There is no REUSE or SPDX lint at 1.0, and "REUSE green" is
 not claimed: the licences are stated by `LICENSE`, `LICENSE-CONTENT`, `NOTICE`, the `license`
 field of `package.json` and the SPDX header of every browser script, and a REUSE layout is a
-1.1 item (the PRD's note to PRD-047 and NFR-10).
+1.1 item (the PRD's note to PRD-047 and NFR-10). *(Amended for 1.1.0: the layout is adopted —
+`REUSE.toml` and `LICENSES/`; `reuse lint` is compliant with REUSE 3.3, docs/ENGINEERING.md §7.)* *(Note of 2026-11-11: the vendored query engine of `/query/` is the one browser script with no SPDX header; `docs/COMPLIANCE-CROSSWALK.md`.)*
 
 **R7 and T7 (§11, §12).** "Index-based state machines not regexes" and "a seeded fuzz lane on
 tags" do not describe the tree: the engine reads its formats through maintained libraries
@@ -661,7 +710,13 @@ says.
 **ADR-013.** "MCP 2026-07-28 … via `server/discover`" reads as the record's own closing
 parenthesis says: the local tool server speaks MCP revision 2025-11-25 and its `initialize`
 handshake, and it does not serve `server/discover`. The tool server on revision 2026-07-28,
-with `server/discover`, is planned for 1.1 (AGSC-00-20).
+with `server/discover`, is planned for 1.1 (AGSC-00-20). *(1.1: done — the server speaks
+2026-07-28 with `server/discover` and, over standard input and output, still 2025-11-25 to a
+client that opens with `initialize` (AGSC-09-19); it is built on the official MCP SDK in
+`src-ts/distribution/mcp-core.ts`.)* *(1.1: the WebMCP date the discovery document declares
+by default moves from 2026-09-15 to 2026-10-27, the Draft Community Group Report AGSC-11-16
+names as the reference default; any `YYYY-MM-DD` stays conforming, and the page tools'
+registration through `document.modelContext` is unchanged.)*
 
 **ADR-004.** "The nine core keys carry composition semantics" reads: five of the nine core keys —
 uses, requires, excludes, contradicts and supersedes — change a composition, and related,
@@ -688,6 +743,8 @@ shipped at 1.0"), and the git mirror and a weekly attested snapshot of a node th
 "The tree as shipped at 1.0" calls "planned for later, with no version fixed". The other
 capabilities of the reference distribution planned for 1.1 are listed in AGSC-00-20 and in the
 PRD's "Notes at 1.0.0". Each adds behaviour, which `1.0.0` does not.
+
+*(Reconciliation, 2026-11-11, for 1.1.0: AGSC-00-20 as amended for 1.1.0 is the list. The direct memory adapters ship in 1.1 (AGSC-01-26a); every other item this section and the two notes below call "planned for 1.1" (language variants, `build.rdfxml`, `build.feed`, the reserved names `weights`, `routing` and `executable`, the channel adapters, the runtime emitters, the unchanged Cursor rule) is planned for a later MINOR and is not part of 1.1.)*
 
 **Further items planned for 1.1 (note of 2026-10-12).** AGSC-00-20 also names six items
 decided for 1.1 while `1.0.0` was prepared: the AI-assistance statement of AGSC-06-15

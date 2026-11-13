@@ -4,7 +4,7 @@
 implementation in their own language. You need two directories: `spec/` and
 `tests/vectors/`. You do not need to read the reference engine, and this guide never
 asks you to. It tells you what to read first, where the bytes are pinned and why,
-how to run the vector set and the nine validators against your own output, what this
+how to run the vector set and the seven validators against your own output, what this
 specification deliberately leaves to you, and how to state which Level you reached.
 
 The specification is the truth. Where this guide and a rule differ, the rule wins.
@@ -105,12 +105,14 @@ typed here, because a later version adds cases.
 
 **Cases that belong to a higher Level.** Some cases sit in an area a lower Level runs but
 test what only a higher Level does — a writer's refusal, an agent lane, a Level-2 digest,
-the four lints, the `init` and `ci` verbs. AGSC-10-15 lists each with the Level it
-belongs to: `bundle-0001`, `bundle-0006`, `bundle-0007`, `bundle-0009`, `bundle-0010`, `disc-0005`
-and `disc-0019` belong to Level 1; `bundle-0008`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`,
-`disc-0018`, `disc-0020`, `disc-0021` and `lint-0026` to Level 2; `bundle-0003`, `bundle-0004`, `bundle-0005`,
-`lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `adopt-0007`,
-`adopt-0008` and `adopt-0009` to Level 3. A claim at a lower Level neither runs them nor fails for them.
+the lints, the `init` and `ci` verbs. The table of AGSC-10-15 lists each with the Level it
+belongs to and what it exercises; a claim at a lower Level neither runs them nor fails for
+them. The withdrawn `bundle-0008`, `disc-0019` and `disc-0027` keep their rows and count
+in no claim.
+
+* **Level 1:** `bundle-0001`, `bundle-0006`, `bundle-0007`, `bundle-0009`, `bundle-0010`, `bundle-0012`, `bundle-0013`, `bundle-0014`, `bundle-0015`, `bundle-0016`, `bundle-0017`, `bundle-0020`, `bundle-0021`, `fm-0021`, `fm-0022`, `fm-0023`, `fm-0024`, `fm-0025`, `fm-0026`, `fm-0027`, `disc-0005`, `disc-0019` and `disc-0023`.
+* **Level 2:** `bundle-0008`, `bundle-0011`, `disc-0009`, `disc-0012`, `disc-0015`, `disc-0016`, `disc-0017`, `disc-0018`, `disc-0020`, `disc-0021`, `disc-0026`, `disc-0027`, `disc-0028`, `disc-0029`, `disc-0030`, `disc-0031`, `disc-0032`, `disc-0033`, `disc-0035`, `disc-0036`, `disc-0037`, `disc-0038` and `lint-0026`.
+* **Level 3:** `bundle-0003`, `bundle-0004`, `bundle-0005`, `bundle-0018`, `bundle-0019`, `lint-0001`, `lint-0002`, `lint-0003`, `lint-0028`, `lint-0029`, `lint-0032`, `lint-0033`, `lint-0046`, `lint-0047`, `lint-0048`, `lint-0049`, `lint-0050`, `lint-0057`, `lint-0058`, `lint-0059`, `lint-0063`, `lint-0065`, `adopt-0007`, `adopt-0008`, `adopt-0009`, `imp-0006`, `imp-0007`, `imp-0008`, `bnd-0046`, `bnd-0047`, `bnd-0048` and `bnd-0050`.
 
 **What the claim states.** The implementation and its version, the Level, the full
 `spec_version`, the areas and how many cases ran and passed (every failed one by id), the
@@ -130,7 +132,7 @@ Read these in this order. Each one assumes the ones before it.
    across versions: what to ignore and preserve (AGSC-00-21), what must survive a
    round trip (AGSC-00-22), what you may not emit for a version you do not claim
    (AGSC-00-23), the closed list of eight plugin kinds (AGSC-00-24) and the names
-   reserved to 1.1 (AGSC-00-25). Read §0.6 before you write a reader: it is the
+   reserved to a later MINOR (AGSC-00-25). Read §0.6 before you write a reader: it is the
    difference between refusing a document you could have read and running with half
    of it silently dropped. Twenty-five minutes.
 2. **`tests/vectors/README.md`** — the vector file format. Read it before you read
@@ -268,7 +270,8 @@ bytes for the same Bundle, so each is named here with the rule that fixes it.
    local name is also an `asc:` term name or is shared by two external properties.
    The file is a constant of the specification and a node's copy must equal it byte
    for byte. A Level ≥ 2 writer serves the versioned copy at
-   `/ns/<ontology-version>/context.jsonld` as well, byte-identical. Vector
+   `/ns/<context-version>/context.jsonld` as well (the context version is `1.0.0` at every
+   1.x, not the ontology version), byte-identical. Vector
    `graph-0019`.
 6. **`/assets/<path>` is a route.** AGSC-06-01: every file under
    `content/assets/` that a PUBLISHED item's body references is emitted at that path
@@ -351,6 +354,9 @@ still takes `kind: release` from that same tag (AGSC-08-20a).
 | `/chunks.jsonl` | the `bundle_version` member of the shard manifest, where sharding produced one (AGSC-06-31) |
 | `/skills/index.json` | the `bundle_version` member of the index object (AGSC-07-19) |
 | a Harness | the `bundle_version` member of `harness.jsonld` (AGSC-07-12); the seven file kinds stay seven |
+| `export --skos` | **nowhere**: the SKOS view is read from the graph of the same build and states no version (AGSC-05-36) |
+| `export --closure` | **nowhere**: the closure is derived data and carries no version of its own (AGSC-05-37) |
+| `lint --suggest` | the `bundle_version` member of `dist/suggestions.json`, a local file that is never a route (AGSC-05-35) |
 | `export --markdown` / `--okf` | the `bundle_version` key of `content/index.md`, beside `spec_version` (AGSC-01-26) — the one derived key of an otherwise byte-preserving export |
 | `export --jsonld` / `--jsonl` | **nowhere**: both are byte-identical to the graph of the same build and may not invent a member the graph does not carry (AGSC-01-27) |
 | `/changelog/` | a versions list, one row per git-log element carrying a `tag`, oldest first: the tag, that element's `committed_at` date and its `sha`. It comes from the git-log file and **not** from `ledger.jsonl`, because a 1.0 ledger entry carries `kind: release` and the commit reference but not the tag's name (AGSC-08-21) |
@@ -416,7 +422,7 @@ consumer queries the dumps it downloaded (AGSC-11-13, section 5b). Loading a nod
 mechanical mapping: each item becomes a vertex whose literal values (label,
 definition, dates, `kind`) become vertex properties, and each Link becomes one edge
 labelled with its key. At 1.0 a Link carries no property of its own — weighted Links
-are reserved to 1.1 (AGSC-00-20, AGSC-00-25) — so the edges need none, and nothing is
+are reserved to a later MINOR (AGSC-00-20, AGSC-00-25) — so the edges need none, and nothing is
 lost either way.
 
 ## 4c. What composition costs (Level 3)
@@ -440,7 +446,7 @@ why the rule pins it, and why a depth-first walk is not conforming.
 
 ## 5. Checking your own output
 
-Nine command contracts check the normative artefacts and the output of any node
+Eleven command contracts check the normative artefacts and the output of any node
 (AGSC-09-90). You may run this distribution's implementations of them, or write your
 own with the same names, the same flags, the same envelope and the same codes; a
 conformance claim names which it ran.
@@ -449,13 +455,15 @@ conformance claim names which it ran.
 |---|---|---|
 | `validate-spec` | the specification's own consistency — duplicate and unresolved rule ids, code closure, trace brackets, version literals, the key words in their BCP 14 forms and all listed, every normative sentence inside a rule, the one dated-note form | AGSC-09-91 |
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 and the closed keyword subset | AGSC-02-24 |
-| `validate-ontology` | `ontology/agsc.ttl` — OWL 2 RL-safe, blank-node-free, the SKOS integrity conditions | AGSC-05-22 |
+| `validate-ontology` | `ontology/agsc.ttl` — OWL 2 RL-safe, blank-node-free, the SKOS integrity conditions; from 1.1, any other `.ttl` as a site vocabulary, against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`) | AGSC-05-22, AGSC-05-38 |
 | `validate-vectors` | the vector files' own format | AGSC-09-90 |
 | `validate-wellknown` | **your node's discovery document**, at a Level; `--peer` runs the mutual check of AGSC-10-12 over two local files, with no network | AGSC-09-93 |
 | `validate-features` | the scenario pack and its requirement tags | PRD-054 |
 | `validate-diagrams` | the diagram pack and its staleness | PRD-054 |
 | `gen-spec-html` | renders `spec/` to HTML; `--check <dir>` compares a published tree byte for byte | AGSC-09-90 |
 | `gen-ns` | derives `/ns/` from the ontology; `--check <dir>` audits a built one | AGSC-06-32 |
+| `gen-dc-profile` | writes `schema/dctap.csv`, the Dublin Core Tabular Application Profile of the property table; `--check` says whether it is current | AGSC-05-26 |
+| `gen-shapes` | writes `schema/item-shapes.ttl`, the SHACL shapes of the graph, from the item schema, the relation table and the SKOS rules; `--check` says whether it is current | AGSC-05-24 |
 
 Each answers `--json` with the AGSC-09-11 envelope, `verb` set to its own name, and
 exits 0 pass / 1 fail / 2 usage. So the check you actually run against your own
@@ -485,7 +493,14 @@ it used (AGSC-09-90). Neither is a certification.
 
 *(AGSC-11-13.)* A node's query surface is its published dumps, and a
 consumer federates on its own side: download the dumps, load them together, query.
-No node fetches another, and no node answers queries. In `graph.nq` every triple sits
+No node fetches another, and no node answers queries. From 1.1 a writer that serves `/graph.nq` also emits
+`/query/` unless `site.query_page` is `false` (AGSC-06-39): a page that runs a visitor's
+query over that one node's graph in the browser, so the node still answers nothing. Its
+obligations are the ones `build-0030` asserts: the page is listed in the sitemap and linked
+from every page, stays within the page budget (the engine files are page assets outside it),
+requests nothing outside the origin, stores nothing, and carries one policy with the
+directives of AGSC-06-17, `'wasm-unsafe-eval'` admitted on that route only. `build-0029`
+checks the whole route set of AGSC-06-01, conditional routes included. In `graph.nq` every triple sits
 in a named graph whose name is the node's Bundle IRI, so loading two nodes' files into
 one dataset keeps them apart. This SPARQL 1.1 query counts the Concepts of every node
 loaded, with the node it came from:
@@ -515,10 +530,14 @@ graph name (AGSC-11-11).
 The specification is deliberately silent about these, and your choices here cannot
 make you non-conforming.
 
-* **The diagram compiler.** AGSC-01-07 and AGSC-02-13 describe a diagram DSL and its
-  compiled SVG; no rule pins the SVG bytes. A compiled `.svg` must not be committed
-  (AGSC-01-07), and an image attached to a concept of `kind: pattern` must be SVG
-  (AGSC-02-98; any other image type there is `AGSC-E412`). How you draw it is yours.
+* **The diagram compiler, in part.** From 1.1, a writer that compiles
+  `content/diagrams/<slug>.diagram` must accept exactly the language of AGSC-01-42 and
+  produce exactly its bytes (cases `bundle-0018` and `bundle-0019`, both Level 3, so a
+  claim below Level 3 runs neither). What stays yours is the measure of text width with
+  which a writer MAY refuse a `text` or `note` too wide for the canvas; AGSC-01-42 does
+  not pin it. A compiled `.svg` must not be committed (AGSC-01-07), and an image attached
+  to a concept of `kind: pattern` must be SVG (AGSC-02-98; any other image type there is
+  `AGSC-E412`).
 * **Three of the four forge enforcement files.** AGSC-08-12 pins the bytes of
   `status-checks.json` and of nothing else. `pre-commit`, `CODEOWNERS` and
   `ruleset.json` are house style; two conforming engines will differ, and no vector
@@ -544,9 +563,10 @@ make you non-conforming.
 Adapters are the one place where you must document rather than choose silently:
 AGSC-01-26a requires a memory adapter to be "listed with its claimed key set in the
 distribution's implementer documentation". This distribution's adapters are
-`llm-context` and `mermaid` (export), `okf` and `old-site` (import), and `cogx`, `gabbe`,
-`skills` and `board` (both ways), and `src/interchange/README.md` lists what each one
-claims.
+`llm-context` and `mermaid` (export), `okf`, `old-site` and `skos` (import), and `cogx`, `gabbe`,
+`skills` and `board` (both ways), and, from 1.1, the direct memory adapters `mem0`, `letta`,
+`zep`, `csv`, `basic-memory` and `claude-code` (both ways); `src/interchange/README.md` lists
+what each one claims.
 
 **Where you may extend, and where you may not.** `spec/00-overview.md` §0.6,
 AGSC-00-24, closes the extension points at **eight kinds** — memory adapter, channel
@@ -639,11 +659,11 @@ and agents learn that it exists and where to ask for access, and nothing more
   `agsc-access` as `AGSC-E202` and one with any value other than `credential` as
   `AGSC-E210`, and, at Levels 0 and 1, a missing `agsc-generated-at` or
   `agsc-spec-version` as `AGSC-E202`.
-- **Known gap at 1.0.0.** The reference engine still writes the content version, which
+- **Known gap at 1.0.0, closed in 1.1.** The 1.0.0 reference engine wrote the content version, which
   carries the commit count and a commit hash, into `/llms.txt` (the line
   `bundle_version:`) and into the NOW page (`content version …`) of a restricted node,
-  and `/llms.txt` is part of the unauthenticated view; leaving it out on a restricted
-  node is planned for 1.1.
+  and `/llms.txt` is part of the unauthenticated view. From 1.1 the engine leaves the
+  content version out of both on a restricted node (AGSC-11-20).
 
 ---
 

@@ -1,0 +1,33 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-35 with AGSC-05-20: generators G1, G2 and G3 suggest `related`, which AGSC-05-20 keeps away from a cluster, so a pair of which either item is a cluster gets no suggestion. `cl-a` links inline to the cluster `agent-patterns` (G1), names its title Agent patterns as a phrase (G3) and cites the same two sources as it (G2): nothing toward the cluster. The cluster's own body names the title Rate limiter of `cl-b` (G3): nothing from the cluster. The near miss: `cl-a` also names Rate limiter, and that pair of two notes is one G3 suggestion, the whole file.",
+  "expected": {
+    "file_bytes": {
+      "dist/suggestions.json": "{\"bundle_version\":\"0.0.0+19700101T000000Z\",\"suggestions\":[{\"evidence\":[{\"kind\":\"phrase\",\"phrase\":\"Rate limiter\"}],\"generator\":\"G3\",\"key\":\"related\",\"source\":\"cl-a\",\"target\":\"cl-b\"}]}\n"
+    },
+    "lint": {
+      "exit": 0,
+      "findings": []
+    },
+    "written_only_under": "dist"
+  },
+  "id": "lint-0065",
+  "input": {
+    "add_files": {
+      "content/clusters/agent-patterns.md": "---\ntype: cluster\ntitle: Agent patterns\ndescription: Recurring shapes for arranging agents and the work that passes between them, gathered in one place.\ndate: \"2026-01-01\"\nprov:\n  origin: human\n  operator: human:andreibesleaga\norder: 1\nsources:\n  - resource: https://e.example/1\n  - resource: https://e.example/2\nfamily: patterns\n---\n\n# Agent patterns\n\nThe patterns in this cluster describe how agents are arranged and how work moves\nbetween them. The rate limiter is one of them.\n",
+      "content/concepts/cl-a.md": "---\ntype: concept\ntitle: Cluster note a\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nsources:\n  - resource: https://e.example/1\n  - resource: https://e.example/2\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nThe agent patterns of this node are [one group](../clusters/agent-patterns). The rate limiter protects a service.\n",
+      "content/concepts/cl-b.md": "---\ntype: concept\ntitle: Rate limiter\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n"
+    },
+    "argv": [
+      "lint",
+      "--suggest"
+    ],
+    "bundle": "fixtures/minimal",
+    "git_history": false
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-05-35"
+}

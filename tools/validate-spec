@@ -170,7 +170,7 @@ function ruleBlocks(text, file) {
  * parenthetical note that a later release candidate appended after it.
  */
 function traceBracket(line) {
-  const stripped = line.replace(/(\s*\*\([^()]*(?:\([^()]*\)[^()]*)*\)\*)+\s*$/u, '');
+  const stripped = line.replace(/((?<!\s)\s*\*\([^()]*(?:\([^()]*\)[^()]*)*\)\*)+\s*$/u, '');
   const match = /\[([^[\]]+)\]\s*$/u.exec(stripped);
   return match ? match[1] : null;
 }

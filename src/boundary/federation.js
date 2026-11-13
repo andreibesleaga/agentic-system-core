@@ -12,8 +12,13 @@
  * never a cross-node Link; AGSC-E311, AGSC-E312, the reserved `peer-ref`),
  * AGSC-11-13 (federated query is client-side; a build fetches nothing),
  * AGSC-11-14 (contribution from anyone), AGSC-11-15 (federated boards keyed by
- * IRI), AGSC-11-23 (tombstones), plus AGSC-10-12 (the mutual check) and
- * AGSC-06-35 (related-system links).
+ * IRI), AGSC-11-23 (tombstones), plus AGSC-10-12 (the mutual check),
+ * AGSC-06-35 (related-system links) and AGSC-11-24 (context maps between
+ * nodes: a typed peer's relationship and its crosswalk of SKOS mapping
+ * statements, read as Turtle by the pinned `n3` through
+ * `knowledge/turtle.js#parse`, checked before any fetch and applied by the
+ * client to the results it derived from that peer; a build reads no peer and
+ * applies no crosswalk).
  * Requirements: PRD-057.
  *
  * NO NETWORK. Every fetch is an INJECTED function: the walk, the redirect
@@ -31,9 +36,13 @@
 
 const net = require('node:net');
 const { domainToASCII } = require('node:url');
+const bounded = require('../knowledge/contexts.js');
 const nquads = require('../knowledge/nquads.js');
+const turtle = require('../knowledge/turtle.js');
+const { compareCodePoint } = require('../knowledge/unicode.js');
+const { LINK_KEYS } = require('../knowledge/relations.js'); // AGSC-03-01: the fourteen Link keys
 const { REL, finding } = require('./surfaces.js');
-const { collapseTrailingSlashes } = require('../shared/trailing.js');
+const { collapseTrailingSlashes, withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one discovery suffix, held as a single constant. */
 const WELLKNOWN_SUFFIX = '.well-known/knowledge-linkset';
@@ -53,9 +62,6 @@ const CONTRIBUTE_MODES = Object.freeze(['pr', 'channel', 'form']);
 const RELATED_RELATIONS = Object.freeze(['describedby', 'alternate', 'related',
   'service-desc', 'service-doc', 'service-meta', 'collection', 'item', 'cite-as']); // cite-as: RFC 8574
 
-/** AGSC-03-01: the fourteen Link keys. */
-const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
-  'derived-from', 'contradicts', 'supersedes', 'implements', 'verifies', 'covers', 'blocked-by', 'decided-by']);
 /** AGSC-11-12: RESERVED for a future MINOR; at 1.x an unknown link key, preserved. */
 const RESERVED_LINK_KEYS = Object.freeze(['peer-ref']);
 
@@ -128,10 +134,9 @@ function peerBase(peerUrl) {
   return url.endsWith(WELLKNOWN_SUFFIX) ? url.slice(0, url.length - WELLKNOWN_SUFFIX.length) : url;
 }
 
-/** AGSC-11-06 + AGSC-06-10: one `rel#peer` link per declared peer, document order. */
+/** AGSC-11-06 + AGSC-06-10: one `rel#peer` link per declared peer, document order; a typed peer by its `url` (AGSC-11-24). */
 function peerLinks(config) {
-  const peers = (config && config.peers) || [];
-  return Object.freeze(peers.map((href) => Object.freeze({ href, rel: REL.peer })));
+  return Object.freeze(bounded.peerUrls(config && config.peers).map((href) => Object.freeze({ href, rel: REL.peer })));
 }
 
 /** Is this an IP literal inside the loopback prefixes AGSC-11-07 names? */
@@ -189,14 +194,15 @@ function checkAddresses(addresses, options) {
 }
 
 /**
- * resolvedFor(options, host) -> string[] | null
- * The addresses a caller has resolved for `host`, or `null` when the caller
- * supplied no resolution map at all. An IP literal resolves to itself.
+ * resolvedFor(options, host) -> string[]
+ * The addresses a caller has resolved for `host`; an IP literal resolves to
+ * itself. A host the caller did not resolve, or supplied no map for, has no
+ * classified address, and `checkAddresses` refuses the empty list.
  */
 function resolvedFor(options, host) {
   const opts = options || {};
   if (net.isIP(host) !== 0) return [host];
-  if (!opts.resolved || typeof opts.resolved !== 'object') return null;
+  if (!opts.resolved || typeof opts.resolved !== 'object') return [];
   return opts.resolved[host] || [];
 }
 
@@ -212,8 +218,7 @@ function peerFault(value, options) {
   if (!/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(raw)) return null;
   const schemeFault = checkScheme(raw, options);
   if (schemeFault !== null) return schemeFault;
-  const resolved = resolvedFor(options, hostOf(raw));
-  return resolved === null ? null : checkAddresses(resolved, options);
+  return checkAddresses(resolvedFor(options, hostOf(raw)), options);
 }
 
 /**
@@ -242,8 +247,7 @@ function followRedirects(peer, redirects, options) {
     // The guard runs whether or not `opts.resolved` is an object, so the transport
     // rules have no fail-open branch; vector `bnd-0030` carries a resolution for
     // every hop.
-    const resolved = resolvedFor(opts, hostOf(hop));
-    const addressFault = checkAddresses(resolved === null ? [] : resolved, opts);
+    const addressFault = checkAddresses(resolvedFor(opts, hostOf(hop)), opts);
     if (addressFault !== null) { error = addressFault; break; }
     followed += 1;
     final = String(hop);
@@ -425,7 +429,7 @@ function serializeQuads(quads) {
 function peerCitations(items, options) {
   const opts = options || {};
   const base = opts.base || '/';
-  const rawBases = ((opts.peers || []).map(peerBase));
+  const rawBases = bounded.peerUrls(opts.peers || []).map(peerBase);
   const bases = rawBases.map((b) => ({ normalised: normaliseReference(b).url, raw: b }))
     .filter((b) => b.normalised !== null);
   const findings = [];
@@ -492,6 +496,25 @@ function linkKeyBoundary(items) {
 }
 
 /**
+ * AGSC-11-14 (1.1): a branch name is malformed when it is empty, begins with `-` or `/`,
+ * contains `..`, `//`, `@{`, a space, a control character or one of `~ ^ : ? * [ \`, or
+ * ends in `/`, `.` or `.lock` — the rules of `git check-ref-format`.
+ */
+const MALFORMED_BRANCH = /^$|^[-/]|\.\.|\/\/|@\{|[\u0000-\u0020\u007f~^:?*[\\]|[/.]$|\.lock$/u;
+
+/** The reason a `contribute[]` entry's `repository` or `branch` is malformed, or null. */
+function sourceFault(entry) {
+  if (entry.repository !== undefined
+      && (typeof entry.repository !== 'string' || !/^https:\/\/[^\u0000-\u0020]+$/u.test(entry.repository))) {
+    return 'repository must be an absolute https: URL';
+  }
+  if (entry.branch !== undefined && (typeof entry.branch !== 'string' || MALFORMED_BRANCH.test(entry.branch))) {
+    return 'branch is not a valid git ref name';
+  }
+  return null;
+}
+
+/**
  * checkContribute(config) -> Finding[]
  * AGSC-11-14: a malformed `contribute[]` entry is AGSC-E209, and a `channel`
  * target MUST be backed by a `channels[]` entry whose `publish` is `hitl` —
@@ -509,6 +532,8 @@ function checkContribute(config) {
       continue;
     }
     if (typeof entry.target !== 'string' || entry.target === '') { bad('missing target'); continue; }
+    const fault = sourceFault(entry);
+    if (fault !== null) { bad(fault); continue; }
     if ((entry.mode === 'pr' || entry.mode === 'form') && !/^https:\/\//u.test(entry.target)) {
       bad('a pr or form target must be an https: URL');
       continue;
@@ -699,18 +724,172 @@ function peerResults(options) {
   });
 }
 
+// ------------------------------------------------- AGSC-11-24: context maps between nodes
+
+/** AGSC-11-24: the three relationships a typed peer may declare (Evans 2003, the context-map patterns). */
+const RELATIONSHIPS = Object.freeze(['shared-kernel', 'conformist', 'translation-layer']);
+/** AGSC-11-24: the four mapping predicates of a crosswalk (SKOS Reference, section 10), by local name. */
+const CROSSWALK_MATCHES = Object.freeze(['exactMatch', 'closeMatch', 'broadMatch', 'narrowMatch']);
+const SKOS_NS = 'http://www.w3.org/2004/02/skos/core#';
+/** AGSC-11-24: the item types a crosswalk statement may have as subject (AGSC-05-01: the SKOS concepts). */
+const CROSSWALK_SUBJECT_TYPES = Object.freeze(['concept', 'lesson']);
+
+/**
+ * Why a subject under a context namespace is refused, or `null`. Such a subject is a term that is
+ * a `skos:Concept`; the namespace itself names no term, and a class or property the site
+ * vocabulary types (AGSC-05-38 (c) admits no other `rdf:type`) is no `skos:Concept`. Any other
+ * term is accepted: the node's own files cannot say more about it.
+ */
+function contextSubjectFault(subject, namespace, terms) {
+  if (subject === namespace) return `the subject <${subject}> is the namespace of a context, not a term in it`;
+  return terms.has(subject) ? `the subject <${subject}> is a class or property of the site vocabulary, and a crosswalk would make it a skos:Concept (AGSC-05-26a)` : null;
+}
+
+/** Why an item of the node may not be a crosswalk subject, or `null` for a concept or a lesson. */
+function itemSubjectFault(subject, type) {
+  return CROSSWALK_SUBJECT_TYPES.includes(type) ? null
+    : `the subject <${subject}> is ${type === 'episode' ? 'an' : 'a'} ${type}, and a crosswalk would make it a skos:Concept (AGSC-05-26a)`;
+}
+
+/**
+ * Why a crosswalk statement is refused, or `null`. `base` is the node's own address; `namespaces`
+ * those of its declared contexts; `terms` the IRIs the site vocabulary types; `itemTypes` the item
+ * IRIs of the node with their types, or `null` when the caller has no items to judge by (a client
+ * that holds only the crosswalk). An item's address is judged by its item type first, so a
+ * context namespace that covers item addresses never admits a cluster, a procedure or a gate.
+ */
+function statementFault(quad, { base, namespaces, terms, itemTypes }) {
+  const predicate = quad.predicate.value;
+  if (!predicate.startsWith(SKOS_NS) || !CROSSWALK_MATCHES.includes(predicate.slice(SKOS_NS.length))) {
+    return `the predicate <${predicate}> is none of skos:exactMatch, skos:closeMatch, skos:broadMatch and skos:narrowMatch`;
+  }
+  if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') return 'its subject and its object are not both IRIs';
+  const subject = quad.subject.value;
+  if (base !== '' && quad.object.value.startsWith(base)) return `the object <${quad.object.value}> is an IRI of this node, not of the peer`;
+  const type = itemTypes === null ? undefined : itemTypes.get(subject);
+  if (type !== undefined) return itemSubjectFault(subject, type);
+  const namespace = namespaces.find((candidate) => subject.startsWith(candidate));
+  if (namespace !== undefined) return contextSubjectFault(subject, namespace, terms);
+  if (base === '' || !subject.startsWith(base)) return `the subject <${subject}> is no IRI of this node`;
+  return itemTypes === null ? null : `the subject <${subject}> names no item of this node`;
+}
+
+/**
+ * AGSC-11-24: the statements of a crosswalk file, read with the pinned `n3` (`turtle.js#parse`),
+ * each `{local, match, peer}` in code-point order of `local`, `match` and `peer`, each once. A text
+ * that is not Turtle, or a statement of another shape, is `AGSC-E209` on the file; a refused
+ * statement is left out of `statements`.
+ *
+ * @param {string} text the crosswalk file's text
+ * @param {{file?: string, base?: string, contexts?: Array<{cluster: string, namespace: string}>,
+ *   items?: Array<{slug: string, type: string}>, terms?: Iterable<string>}} [options] the file the
+ *   findings name, the node's `site.base`, its `domain.contexts`, its items (absent: a subject under
+ *   the base is accepted) and the IRIs its site vocabulary types (absent: none)
+ * @returns {{statements: ReadonlyArray<{local: string, match: string, peer: string}>, findings: ReadonlyArray<object>}}
+ */
+function readCrosswalk(text, options = {}) {
+  const at = { file: options.file === undefined ? '' : options.file };
+  const fault = (why) => finding('AGSC-E209', 'error', { ...at, message: `the crosswalk ${at.file} holds a statement of another shape: ${why} (AGSC-11-24)` });
+  let quads;
+  try {
+    quads = turtle.parse(text);
+  } catch (e) {
+    return Object.freeze({ findings: Object.freeze([fault(`it is not Turtle (${e.message})`)]), statements: Object.freeze([]) });
+  }
+  const base = typeof options.base === 'string' && options.base !== '' ? `${withoutTrailingSlashes(options.base)}/` : '';
+  const scope = {
+    base,
+    itemTypes: Array.isArray(options.items) ? new Map(options.items.map((item) => [nquads.itemIri(item, { base }), item.type])) : null,
+    namespaces: bounded.declared({ domain: { contexts: options.contexts } }).map((entry) => entry.namespace),
+    terms: new Set(options.terms || []),
+  };
+  const findings = [];
+  const seen = new Map();
+  for (const quad of quads) {
+    const why = statementFault(quad, scope);
+    if (why !== null) { findings.push(fault(why)); continue; }
+    const statement = { local: quad.subject.value, match: quad.predicate.value.slice(SKOS_NS.length), peer: quad.object.value };
+    seen.set(`${statement.local}\u0000${statement.match}\u0000${statement.peer}`, Object.freeze(statement));
+  }
+  const statements = [...seen.values()].sort((a, b) => compareCodePoint(a.local, b.local)
+    || compareCodePoint(a.match, b.match) || compareCodePoint(a.peer, b.peer));
+  return Object.freeze({ findings: Object.freeze(findings), statements: Object.freeze(statements) });
+}
+
+/**
+ * AGSC-11-24: the faults of one `peers[]` entry that a client finds before it fetches the peer —
+ * a relationship outside the three (`AGSC-E203`), no crosswalk for a translation layer
+ * (`AGSC-E202`), a crosswalk file that is absent (`AGSC-E901`) and the faults of its statements
+ * (`readCrosswalk`) — and the statements it can apply. A plain entry has neither.
+ *
+ * @param {string|object} entry the `peers[]` entry
+ * @param {{read: (path: string) => (string|null), where?: string, base?: string, contexts?: Array<object>,
+ *   items?: Array<object>, terms?: Iterable<string>}} options `read` gives a file of the Bundle or `null` when it is absent;
+ *   `where` names the entry in a message; the rest as `readCrosswalk`
+ * @returns {{statements: ReadonlyArray<object>, findings: ReadonlyArray<object>}}
+ */
+function peerFaults(entry, options) {
+  const none = Object.freeze([]);
+  if (entry === null || typeof entry !== 'object') return Object.freeze({ findings: none, statements: none });
+  const where = options.where === undefined ? 'the peer' : options.where;
+  const refuse = (code, why) => Object.freeze({ findings: Object.freeze([finding(code, 'error', { file: 'agsc.config.json', message: why })]), statements: none });
+  if (!RELATIONSHIPS.includes(entry.relationship)) {
+    return refuse('AGSC-E203', `${where}.relationship ${JSON.stringify(entry.relationship)} is none of ${RELATIONSHIPS.join(', ')} (AGSC-11-24)`);
+  }
+  if (typeof entry.crosswalk !== 'string') {
+    return entry.relationship === 'translation-layer'
+      ? refuse('AGSC-E202', `${where} is a translation-layer peer with no crosswalk; the crosswalk is how this node translates the peer's model (AGSC-11-24)`)
+      : Object.freeze({ findings: none, statements: none });
+  }
+  const text = options.read(entry.crosswalk);
+  if (typeof text !== 'string') return refuse('AGSC-E901', `${where}.crosswalk names ${entry.crosswalk}, which is not there (AGSC-11-24)`);
+  return readCrosswalk(text, { base: options.base, contexts: options.contexts, file: entry.crosswalk, items: options.items, terms: options.terms });
+}
+
+/**
+ * AGSC-11-24 (with AGSC-11-11): the results a federating client derived from one typed peer, each
+ * with the peer's `relationship` and, when its `iri` is the object of crosswalk statements, the
+ * member `crosswalk`: one `{match, local}` per statement, in code-point order of `local`. Every
+ * result is `untrusted` and keeps its `origin` (the peer's base when it carried none); nothing is
+ * merged and no Link is made. Pure: the client fetched the results; this only marks them.
+ *
+ * @param {{peer: {url: string, relationship: string}, results: Array<object>, statements: Array<object>}} options
+ * @returns {ReadonlyArray<object>}
+ */
+function contextMapResults({ peer, results, statements }) {
+  const byPeerIri = new Map();
+  for (const statement of statements || []) {
+    if (!byPeerIri.has(statement.peer)) byPeerIri.set(statement.peer, []);
+    byPeerIri.get(statement.peer).push({ local: statement.local, match: statement.match });
+  }
+  const origin = peerBase(bounded.peerUrl(peer));
+  return Object.freeze((results || []).map((result) => {
+    const named = [...(byPeerIri.get(result.iri) || [])].sort((a, b) => compareCodePoint(a.local, b.local) || compareCodePoint(a.match, b.match));
+    return Object.freeze({
+      ...result,
+      ...(named.length === 0 ? {} : { crosswalk: Object.freeze(named.map(Object.freeze)) }),
+      origin: typeof result.origin === 'string' ? result.origin : origin,
+      relationship: peer.relationship,
+      trust: 'untrusted',
+    });
+  }));
+}
+
 module.exports = {
   plural,
   CONTRIBUTE_MODES,
+  CROSSWALK_MATCHES,
   FEDERATION_PARAMS,
   LINK_KEYS,
   RELATED_RELATIONS,
+  RELATIONSHIPS,
   WELLKNOWN_SUFFIX,
   checkAddresses,
   checkContribute,
   checkRelated,
   checkScheme,
   clientUnion,
+  contextMapResults,
   contributeLinks,
   effectiveFederation,
   followRedirects,
@@ -722,8 +901,10 @@ module.exports = {
   normaliseReference,
   peerBase,
   peerCitations,
+  peerFaults,
   peerLinks,
   peerResults,
+  readCrosswalk,
   relatedLinks,
   serializeQuads,
   walk,

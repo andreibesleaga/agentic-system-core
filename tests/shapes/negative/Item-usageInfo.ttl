@@ -1,0 +1,6 @@
+# Item-usageInfo: usage information that is a number.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:a a asc:Concept ; schema:usageInfo 7 .

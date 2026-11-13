@@ -96,3 +96,11 @@ test('the schema pattern and the helper agree on the forbidden set', () => {
       `schema and helper disagree at U+${cp.toString(16).padStart(4, '0')}`);
   }
 });
+
+test('foldCase is NFC then case folding, so labels that differ only in form or case compare equal (AGSC-05-21, AGSC-05-35)', () => {
+  assert.strictEqual(u.foldCase('Rate LIMITER'), 'rate limiter');
+  assert.strictEqual(u.foldCase('Café'), u.foldCase('CAFÉ'));
+  assert.strictEqual(u.foldCase(u.foldCase('Straße')), u.foldCase('Straße'));
+  // Full folding, not Unicode simple folding (which leaves ß alone): the 1.0 behaviour of AGSC-E416, kept.
+  assert.strictEqual(u.foldCase('Straße'), u.foldCase('STRASSE'));
+});

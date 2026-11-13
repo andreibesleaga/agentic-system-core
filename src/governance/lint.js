@@ -23,6 +23,7 @@
 //   AGSC-E415       `export`-tagged fence ignored (warn) AGSC-02-22
 //   AGSC-E109       unsupported Markdown construct (warn) AGSC-02-20 (markdown.js)
 //   AGSC-E416       overlapping labels (warn)           AGSC-05-21
+//   AGSC-E419       equal titles inside one context (warn) AGSC-08-32
 //   AGSC-E202       `agent`/`model` missing under an `ai-*` origin AGSC-08-01 (validate.js)
 //   AGSC-E205       a compiled .svg under content/diagrams/ AGSC-01-07
 //   AGSC-E607       combining sequence over the bound   AGSC-04-23
@@ -36,18 +37,22 @@
 
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
 
-const { checkCombining, COMBINING_BOUND } = require('../knowledge/unicode.js');
+const { checkCombining, COMBINING_BOUND, foldCase } = require('../knowledge/unicode.js');
 const { aiProvenance, sortFindings } = require('../knowledge/validate.js');
 const { finding } = require('./finding.js');
+const contexts = require('../knowledge/contexts.js');
 const links = require('../knowledge/links.js');
 const markdown = require('../knowledge/markdown.js');
+const nquads = require('../knowledge/nquads.js');
 const { isPublished } = require('../knowledge/chunks.js');
 const { compareCodePoint } = require('../knowledge/unicode.js');
+const { withArticle } = require('../shared/article.js');
 
 const injection = require('./injection.js');
 const secrets = require('./secrets.js');
 const pii = require('./pii.js');
 const cleanroom = require('./cleanroom.js');
+const prov = require('./prov.js');
 
 /** AGSC-01-34: `attachments{max_bytes}` default 1 MiB, maximum 10 MiB. */
 const ATTACHMENT_MAX_BYTES_DEFAULT = 1048576;
@@ -410,7 +415,7 @@ function checkSections(item) {
   return wanted
     .filter((heading) => !present.has(heading))
     .map((heading) => finding('AGSC-E406',
-      `a ${key.replace(':', ' of kind ')} body has no "## ${heading}" section (AGSC-02-21)`,
+      `${withArticle(key.replace(':', ' of kind '))} body has no "## ${heading}" section (AGSC-02-21)`,
       { file: v.path, slug: v.slug, severity: 'warn' }));
 }
 
@@ -435,30 +440,108 @@ function checkConstructs(item) {
     { file: v.path, line: links.fileLine(v.lineOffset, c.line), severity: 'warn', slug: v.slug }));
 }
 
+/** AGSC-05-21: a label after NFC and case folding, the form two labels are compared in. */
+const foldLabel = foldCase;
+
+/** The distinct folded labels of an item: its `title` and its `aliases`. */
+function labelsOf(fm) {
+  const aliases = Array.isArray(fm.aliases) ? fm.aliases.filter((a) => typeof a === 'string') : [];
+  return [...new Set([fm.title, ...aliases].map(foldLabel))];
+}
+
+/** An item's folded title, and its folded aliases other than that title. */
+function labelParts(fm) {
+  const title = foldLabel(fm.title);
+  return { aliases: labelsOf(fm).filter((label) => label !== title), title };
+}
+
+/** The earliest of the holders found, or `undefined`. */
+function earliest(holders) {
+  return holders.filter((holder) => holder !== undefined).sort((a, b) => a.order - b.order)[0];
+}
+
 /**
- * AGSC-05-21: two published items of one `type` whose `title` values are equal after
- * NFC and case folding are the warning AGSC-E416, reported on the later one (by
- * path) and naming the earlier.
+ * AGSC-05-21: two published items of one `type` where a `title` or an alias of one equals
+ * a `title` or an alias of the other, after NFC and case folding, are the warning AGSC-E416.
+ * Taking the items in path order, each item that shares a label with an earlier one carries
+ * one finding, naming the earliest such item. An item's own title equal to its own alias is
+ * not an overlap.
+ *
+ * AGSC-08-32: on a node that declares contexts the items of one context form one group, the
+ * items with no context another, and items of two groups are never compared, so that one term
+ * may mean two things in two contexts. Inside a context two equal titles are AGSC-E419 whatever
+ * the types, because a term has one meaning there, and that pair is not also AGSC-E416; every
+ * other comparison is made inside the group as before. A node with no contexts has one group.
  */
 function checkOverlappingLabels(items, config = {}) {
   const findings = [];
-  const seen = new Map();
+  const contextOf = contexts.contextOf(contexts.declared(config));
+  const holders = { alias: new Map(), contextTitle: new Map(), title: new Map() };
   const releases = config.releases;
   const views = items.map((item) => links.view(item))
     .filter((v) => v.fm && typeof v.fm.title === 'string' && isPublished(v.fm, releases))
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
-  for (const v of views) {
-    const key = `${v.fm.type}\u0000${String(v.fm.title).normalize('NFC').toUpperCase().toLowerCase()}`;
-    const earlier = seen.get(key);
-    if (earlier === undefined) {
-      seen.set(key, v);
-      continue;
+  for (const [order, v] of views.entries()) {
+    const context = contextOf(v.fm);
+    const { aliases, title } = labelParts(v.fm);
+    const key = (label) => `${context === null ? '' : context}\u0000${v.fm.type}\u0000${label}`;
+    const contextTitle = `${context}\u0000${title}`;
+    const sameTitle = context === null ? undefined : holders.contextTitle.get(contextTitle);
+    if (sameTitle !== undefined) {
+      findings.push(finding('AGSC-E419',
+        `the title of ${v.fm.type} "${v.slug}" equals the title of "${sameTitle.slug}" inside the context ${context} `
+        + 'after NFC and case folding; a term has one meaning inside its context (AGSC-08-32)',
+        { file: v.path, severity: 'warn', slug: v.slug }));
     }
-    findings.push(finding('AGSC-E416',
-      `the title "${v.fm.title}" of ${v.fm.type} "${v.slug}" overlaps the title of "${earlier.slug}" after NFC and case folding (AGSC-05-21)`,
-      { file: v.path, severity: 'warn', slug: v.slug }));
+    const overlap = earliest([
+      ...aliases.flatMap((label) => [holders.title.get(key(label)), holders.alias.get(key(label))]),
+      holders.alias.get(key(title)),
+      context === null ? holders.title.get(key(title)) : undefined,
+    ]);
+    if (overlap !== undefined) {
+      findings.push(finding('AGSC-E416',
+        `a title or alias of ${v.fm.type} "${v.slug}" overlaps one of "${overlap.slug}" after NFC and case folding (AGSC-05-21)`,
+        { file: v.path, severity: 'warn', slug: v.slug }));
+    }
+    const holder = { order, slug: v.slug };
+    if (!holders.title.has(key(title))) holders.title.set(key(title), holder);
+    for (const label of aliases) if (!holders.alias.has(key(label))) holders.alias.set(key(label), holder);
+    if (context !== null && !holders.contextTitle.has(contextTitle)) holders.contextTitle.set(contextTitle, holder);
   }
   return findings;
+}
+
+/** AGSC-08-31: the `kind`s of concept that must be grounded in sources. */
+const GROUNDED_KINDS = Object.freeze(new Set(['pattern', 'taxonomy', 'explainer', 'principle']));
+
+/** The distinct `sources[].resource` strings of an item. */
+function resourcesOf(fm) {
+  const list = Array.isArray(fm.sources) ? fm.sources : [];
+  return new Set(list.map((s) => s && s.resource).filter((r) => typeof r === 'string'));
+}
+
+/**
+ * AGSC-08-31: with `lint.min_sources` N greater than 0, each published concept of kind
+ * `pattern`, `taxonomy`, `explainer` or `principle` that has fewer than N counted sources is
+ * the warning AGSC-E417. A counted source is a distinct `sources[].resource` that is not the
+ * IRI of another `ai-generated` item of the Bundle: a text a model wrote cannot ground another.
+ * With N equal to 0, or no `lint.min_sources`, nothing is checked. Item files only: no clock,
+ * no network.
+ */
+function checkMinimumSources(items, config = {}) {
+  const minimum = Number((config.lint || {}).min_sources) || 0;
+  if (minimum <= 0) return [];
+  const base = (config.site || {}).base;
+  const views = items.map((item) => links.view(item));
+  const aiIris = new Set(views.filter((v) => v.fm.prov && v.fm.prov.origin === 'ai-generated')
+    .map((v) => nquads.itemIri({ slug: v.slug, type: v.type }, { base })));
+  return views
+    .filter((v) => v.type === 'concept' && GROUNDED_KINDS.has(v.fm.kind) && isPublished(v.fm, config.releases))
+    .filter((v) => [...resourcesOf(v.fm)].filter((resource) => !aiIris.has(resource)).length < minimum)
+    .map((v) => finding('AGSC-E417',
+      `${v.fm.kind} "${v.slug}" has fewer than ${minimum} counted sources; a source that is the IRI of an ai-generated item does not count (AGSC-08-31)`,
+      { file: v.path, severity: 'warn', slug: v.slug }))
+    .sort((a, b) => compareCodePoint(a.file, b.file));
 }
 
 /**
@@ -507,6 +590,60 @@ function checkEnforce(items) {
       out.push(finding('AGSC-E707',
         `enforce[] value "${value}" cannot be compiled by this distribution (AGSC-08-12)`,
         { file: v.path, slug: v.slug }));
+    }
+  }
+  return out;
+}
+
+/**
+ * AGSC-02-18: a `gate`'s `checks[]` MUST equal the set its `level` implies. A 1.0
+ * engine did not look, so a Bundle whose gate disagrees was valid, and from 1.1 the
+ * disagreement is reported as a warning (AGSC-00-14). An unknown `level` is the
+ * schema's to refuse, and is not repeated here.
+ *
+ * @param {Array<object>} items the loaded items.
+ * @returns {Array<object>} Findings, all warnings.
+ */
+function checkGates(items) {
+  const out = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const v = links.view(item);
+    if (v.type !== 'gate') continue;
+    for (const f of prov.checkGate(item).findings) {
+      if (f.key === 'checks') out.push({ ...f, severity: 'warn' });
+    }
+  }
+  return out;
+}
+
+/** The slugs a Link or `clusters[]` value names; an anchor (`slug#id`) is not part of the slug. */
+const slugsOf = (value) => asArray(value).filter((s) => typeof s === 'string').map((s) => s.split('#')[0]);
+
+/**
+ * The two board faults the 1.0 lint passed over, as warnings (AGSC-00-14): a cycle in
+ * `blocked-by` (AGSC-03-07 treats a cycle in `requires` the same way) and a
+ * `clusters[]` entry that names no cluster (AGSC-02-19, AGSC-03-10).
+ *
+ * @param {Array<object>} items the loaded items.
+ * @returns {Array<object>} Findings, all warnings.
+ */
+function checkBoards(items) {
+  const views = (Array.isArray(items) ? items : []).map((item) => links.view(item));
+  const out = [];
+  const slugs = new Set(views.map((v) => v.slug));
+  const adjacency = new Map(views.map((v) => [v.slug, slugsOf(v.fm['blocked-by'])]));
+  const cycle = links.findCycle(adjacency, slugs);
+  if (cycle !== null) {
+    const first = views.find((v) => v.slug === cycle[0]);
+    out.push(finding('AGSC-E302', `cycle in "blocked-by": ${cycle.join(' -> ')} (AGSC-03-07)`,
+      { file: first.path, severity: 'warn', slug: first.slug }));
+  }
+  const clusters = new Set(views.filter((v) => v.type === 'cluster').map((v) => v.slug));
+  for (const v of views) {
+    for (const name of slugsOf(v.fm.clusters)) {
+      if (clusters.has(name)) continue;
+      out.push(finding('AGSC-E301', `clusters[] entry "${name}" names no cluster of this Bundle (AGSC-02-19)`,
+        { file: v.path, key: 'clusters', severity: 'warn', slug: v.slug }));
     }
   }
   return out;
@@ -585,9 +722,12 @@ function lint(bundle = {}, options = {}) {
 
   findings.push(...checkAttachments(items, { ...options, config }).findings);
   findings.push(...checkOverlappingLabels(items, config));
+  findings.push(...checkMinimumSources(items, config));
   findings.push(...checkCompiledSvg([...(options.diagramPaths || []), ...(options.trackedPaths || bundle.trackedPaths || [])]));
   findings.push(...checkPorts(items).findings);
   findings.push(...checkEnforce(items));
+  findings.push(...checkGates(items));
+  findings.push(...checkBoards(items));
   findings.push(...secrets.checkTracked(options.trackedPaths || bundle.trackedPaths));
   findings.push(...cleanroom.check({ paths: options.paths || [], emitters: options.emitters || [] }));
 
@@ -618,9 +758,12 @@ module.exports = {
   checkCompiledSvg,
   checkConstructs,
   checkFences,
+  checkMinimumSources,
   checkOverlappingLabels,
   checkPaths,
+  checkBoards,
   checkEnforce,
+  checkGates,
   checkPorts,
   checkSections,
   checkSvg,

@@ -48,7 +48,7 @@ test('a well-formed plugin registers, and is then selectable by name', () => {
   assert.strictEqual(result.registered, true);
   assert.deepStrictEqual(registry.names(), ['validate-example']);
   assert.strictEqual(registry.get('validate-example').name, 'validate-example');
-  assert.strictEqual(registry.contract.selector, 'one of the nine of AGSC-09-90');
+  assert.strictEqual(registry.contract.selector, 'one of the eleven of AGSC-09-90');
 });
 
 test('a mismatch is AGSC-E004 and never a crash', () => {
@@ -96,6 +96,19 @@ test('the contract is additive within 1.x, and says so in both directions', () =
   assert.strictEqual(plugins.compatible(undefined, '1.0.0'), false);
   assert.strictEqual(plugins.compatible('1.0.0', undefined), false);
   assert.deepStrictEqual(plugins.majorMinor('x'), null);
+});
+
+test('PLUGIN_API_VERSION is the version docs/PLUGINS.md states, and the host admits against it by default', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'PLUGINS.md'), 'utf8');
+  const stated = /version \*\*(\d+\.\d+\.\d+)\*\* of the plugin API/u.exec(doc);
+  assert.ok(stated !== null, 'docs/PLUGINS.md no longer states the version of the plugin API');
+  assert.strictEqual(plugins.PLUGIN_API_VERSION, stated[1]);
+  // With no pluginApiVersion given, the host's own version is the one a plugin is held to.
+  assert.deepStrictEqual(plugins.admit(good({ plugin_api_version: plugins.PLUGIN_API_VERSION }), { specVersion: SPEC }), []);
+  const [major, minor] = plugins.PLUGIN_API_VERSION.split('.').map(Number);
+  assert.strictEqual(plugins.admit(good({ plugin_api_version: `${major}.${minor + 1}.0` }), { specVersion: SPEC })[0].code, 'AGSC-E004');
 });
 
 test('two plugins of one kind may not share a name', () => {

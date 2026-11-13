@@ -1,5 +1,9 @@
 'use strict';
-// Conformance area `import` — AGSC-01-23.
+// Conformance area `import` — AGSC-01-22, AGSC-01-23, AGSC-01-39, AGSC-03-19.
+//
+// `imp-0005`, `imp-0009` and `imp-0010` pin the draft rule of AGSC-01-22 (every item of a
+// source this node does not own arrives as a draft); `imp-0006` to `imp-0008` pin the SKOS
+// import of AGSC-01-39 against `interchange/adapters/skos.js`.
 //
 // `imp-0001` states what an import does when a planned path is already
 // taken. The three cases are the three outcomes the rule names, and they are run
@@ -7,10 +11,15 @@
 // `#collisionFindings`) over an in-memory FileSystem port — no temporary
 // directory, no clock, no network.
 
+const path = require('node:path');
+
 const slugs = require('../../../src/knowledge/slug.js');
 const verb = require('../../../src/application/cli/verbs/import.js');
 const okf = require('../../../src/interchange/okf.js');
-const { checks, findingsMatch } = require('./_assert.js');
+const skos = require('../../../src/interchange/adapters/skos.js');
+const { readSchemas } = require('../../../src/adapters/node-fs.js');
+const { compareCodePoint } = require('../../../src/knowledge/unicode.js');
+const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 
 /** The Bundle's FileSystem port, over a plain map of path → text. */
@@ -107,7 +116,7 @@ function collisionCase(vector) {
 }
 
 /**
- * imp-0002 (AGSC-01-22) — the one LIMIT and the one RECORD of import tolerance:
+ * imp-0009 (AGSC-01-22) — the one LIMIT and the one RECORD of import tolerance:
  * another MAJOR is refused unless `--allow-newer`, a newer MINOR of the tool's MAJOR
  * is imported with the warning `AGSC-E506`.
  *
@@ -117,6 +126,8 @@ function collisionCase(vector) {
  * the three declarations, and one Markdown document per item. That keeps the case
  * against the real reader — `interchange/okf.js#sourceFacts`, `#versionRefusal`,
  * `#versionWarning` and `#plan` — rather than against a restatement of the rule.
+ *
+ * Every item written is a draft (AGSC-01-22 from 1.1), whatever status the source gave it.
  *
  * The exit codes are AGSC-09-08's: the refusal carries `AGSC-E004`, which
  * `application/cli/main.js` maps to exit 2 wherever it is raised, and a plan that
@@ -179,6 +190,7 @@ function sourceRecordCase(vector, ctx) {
     }
 
     list.push(...provChecks(input.name, want, planned.writes));
+    list.push(...statusChecks(input.name, want, planned.writes));
   }
   return checks(list);
 }
@@ -215,11 +227,19 @@ function provChecks(name, want, writes) {
   return list;
 }
 
+/** The `status` every planned write must carry (`imp-0009`: always `draft`). */
+function statusChecks(name, want, writes) {
+  if (want.status === undefined) return [];
+  return writes.map((write) => [`${name} status`,
+    (String(write.text).split('---')[1] || '').includes(`status: ${want.status}\n`), write.text]);
+}
+
 /**
- * imp-0004 (AGSC-03-19, AGSC-03-20) — foreign link names are mapped on import, never added to the
- * vocabulary, through the OKF reader's own `mapFrontmatter`. The input declares an
- * established licence, so the licence record of AGSC-01-22 is not in play and the
- * case is isolated by its input alone.
+ * imp-0005 and imp-0010 (AGSC-01-22, AGSC-03-19, AGSC-03-20) — one foreign document through the
+ * OKF reader's own `mapFrontmatter`, which is given no sign that the source is this node's
+ * own, so it is foreign: its record arrives as a draft whatever licence it declares
+ * (`imp-0005`), and foreign link names are mapped on import, never added to the vocabulary
+ * (`imp-0010`). The licence is established in both, so the case is isolated by its input alone.
  */
 function foreignLinkCase(vector) {
   const input = vector.input;
@@ -241,11 +261,73 @@ function foreignLinkCase(vector) {
   return checks(list);
 }
 
+/** The items of a plan as the vectors state them: slug, parsed frontmatter, body text. */
+function itemsOfPlan(writes) {
+  return writes.map((write) => {
+    const read = okf.readDocument(write.text);
+    return { body: read.body, frontmatter: { ...read.frontmatter }, slug: write.path.replace(/^content\/[^/]+\/|\.md$/gu, '') };
+  }).sort((a, b) => compareCodePoint(a.slug, b.slug));
+}
+
+/** The SKOS plan of a vector's Turtle input, with the options the vector states. */
+function skosPlan(input) {
+  return skos.plan({ turtle: input.turtle }, {
+    i18nDefault: input.i18n_default,
+    itemSchema: readSchemas(path.resolve(__dirname, '..', '..', '..')).item,
+    operator: input.operator,
+  });
+}
+
+/**
+ * imp-0006 and imp-0007 (AGSC-01-39) — the mapping and the drops of the SKOS import:
+ * the items as parsed frontmatter and body in slug order, and the warnings. A warning of
+ * a dropped statement names its subject and predicate, so those members are compared.
+ */
+function skosMappingCase(vector) {
+  const planned = skosPlan(vector.input);
+  const items = itemsOfPlan(planned.writes);
+  const want = vector.expected;
+  const list = [
+    ['items', deepEqual(items, want.items), JSON.stringify(items)],
+    ['no error', planned.findings.every((f) => f.severity === 'warn'), JSON.stringify(planned.findings)],
+    ['one warning for each expected one', planned.findings.length === want.findings.length,
+      `${planned.findings.length} warnings, ${want.findings.length} expected`],
+  ];
+  const matched = findingsMatch(want.findings, planned.findings);
+  list.push(['findings', matched.ok, matched.detail]);
+  return checks(list);
+}
+
+/**
+ * imp-0008 (AGSC-01-39 with AGSC-01-23) — the file is imported `runs` times into one
+ * in-memory Bundle. The first run writes every item; a later run finds every planned path
+ * holding exactly the bytes it would write, so it writes nothing and reports no collision.
+ * `second_run_findings` is what the apply step reports of that run (`collisionFindings`).
+ */
+function skosIdempotenceCase(vector) {
+  const files = {};
+  const planned = skosPlan(vector.input);
+  const first = verb.apply(memoryFs(files), planned.writes);
+  const second = verb.apply(memoryFs(files), skosPlan(vector.input).writes);
+  const slugOf = (p) => p.replace(/^content\/[^/]+\/|\.md$/gu, '');
+  const want = vector.expected;
+  return checks([
+    ['first run writes', deepEqual(first.written.map(slugOf).sort(), want.first_run_writes), JSON.stringify(first.written)],
+    ['second run changes nothing', deepEqual([...second.written, ...second.replaced].map(slugOf), want.second_run_changed),
+      JSON.stringify(second)],
+    ['second run reports nothing', deepEqual(verb.collisionFindings(second), want.second_run_findings),
+      JSON.stringify(verb.collisionFindings(second))],
+    ['the vector runs the import twice', vector.input.runs === 2, String(vector.input.runs)],
+  ]);
+}
+
 // The handler is guarded (`_expected-reads.js`): a pass that left a member of
 // `expected` unread is a fail.
 module.exports.run = guarded((vector, ctx) => {
-  if (vector.id === 'imp-0004') return foreignLinkCase(vector);
+  if (['imp-0005', 'imp-0010'].includes(vector.id)) return foreignLinkCase(vector);
   if (vector.id === 'imp-0001') return collisionCase(vector);
-  if (vector.id === 'imp-0002') return sourceRecordCase(vector, ctx);
+  if (vector.id === 'imp-0009') return sourceRecordCase(vector, ctx);
+  if (['imp-0006', 'imp-0007'].includes(vector.id)) return skosMappingCase(vector);
+  if (vector.id === 'imp-0008') return skosIdempotenceCase(vector);
   return { status: 'fail', detail: `${vector.id}: no handler in area import` };
 });

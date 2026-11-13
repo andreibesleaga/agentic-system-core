@@ -465,6 +465,16 @@ test('a foreign kit: skills, lessons, decisions and episodes, mapped without inv
   assert.ok(result.findings.some((f) => /pass --source-version/u.test(f.message)));
 });
 
+test('AGSC-01-22 (1.1): every record of a foreign kit is written as a draft and reported once as AGSC-E506', () => {
+  const into = emptyBundle();
+  const result = imported(into, writeTree(temp('agsc-gabbe-kit-'), KIT));
+  const back = [...tree(path.join(into, 'content')).entries()];
+  assert.ok(back.length > 0);
+  for (const [file, text] of back) assert.match(text, /^status: draft$/mu, `${file} is from a source this node does not own`);
+  const drafted = result.findings.filter((f) => f.code === 'AGSC-E506' && /imported as status: draft/u.test(f.message));
+  assert.deepStrictEqual([drafted.length, drafted.every((f) => f.severity === 'warn')], [back.length, true]);
+});
+
 test('--source-version is recorded on every foreign item, and a malformed one is refused', () => {
   const kit = writeTree(temp('agsc-gabbe-kit-'), KIT);
   const into = emptyBundle();
@@ -482,6 +492,11 @@ test('a foreign kit round trip: kit → node → kit → node gives the same ite
   const kit = writeTree(temp('agsc-gabbe-kit-'), KIT);
   const first = emptyBundle();
   imported(first, kit);
+  // A foreign record arrives as a draft (AGSC-01-22) and a draft is never exported
+  // (AGSC-06-30): a person publishes the items first, by removing the draft status.
+  for (const [at, text] of tree(path.join(first, 'content'))) {
+    nodeFs.writeFileSync(path.join(first, 'content', at), text.replace(/^status: draft\n/mu, ''));
+  }
   const out = exported(first);
   assert.ok(out.has('agents/skills/agsc/tdd-cycle.skill.md'));
   const skill = yaml.parse(frontmatter.split(out.get('agents/skills/agsc/tdd-cycle.skill.md')).yamlText);

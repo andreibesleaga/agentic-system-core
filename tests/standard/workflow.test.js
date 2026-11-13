@@ -352,11 +352,14 @@ test('a browser job runs the browser lane on Ubuntu with pinned, checksummed dow
   const fetched = [...script.matchAll(/curl [^\n]*"(https:\/\/[^"]+)"/gu)].map((m) => m[1]);
   const playwright = fetched.find((u) => /\/playwright-core\/-\/playwright-core-\d+\.\d+\.\d+\.tgz$/u.test(u));
   const shell = fetched.find((u) => /\/chrome-for-testing-public\/\d+\.\d+\.\d+\.\d+\/linux64\/chrome-headless-shell-linux64\.zip$/u.test(u));
+  // axe-core: the accessibility checks of the explorer's browser test (AGSC-06-20).
+  const axe = fetched.find((u) => /\/axe-core\/-\/axe-core-\d+\.\d+\.\d+\.tgz$/u.test(u));
   assert.ok(playwright, 'playwright-core is fetched by exact version from the registry');
   assert.ok(shell, 'chrome-headless-shell is fetched by exact version from Chrome for Testing');
+  assert.ok(axe, 'axe-core is fetched by exact version from the registry');
   const sums = [...script.matchAll(/echo "([0-9a-f]{64}) {2}[^"]+" \| sha256sum -c -/gu)];
-  assert.strictEqual(sums.length, 2, 'each download is checked against a recorded SHA-256 before use');
-  assert.ok(!/npm (i|install)\b[^\n]*playwright/u.test(script), 'playwright-core is never resolved by npm at run time');
+  assert.strictEqual(sums.length, 3, 'each download is checked against a recorded SHA-256 before use');
+  assert.ok(!/npm (i|install)\b[^\n]*(playwright|axe-core)/u.test(script), 'playwright-core and axe-core are never resolved by npm at run time');
   assert.ok(!/npx playwright install/u.test(script), 'no browser is fetched by an unpinned installer');
   // The lane's switches, on every step that runs a test.
   const testing = job.steps.filter((s) => /node --test/u.test(s.run || ''));

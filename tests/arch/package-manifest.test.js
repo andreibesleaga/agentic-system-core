@@ -31,7 +31,7 @@ function ships(entry) {
 test('AGSC-09-90: the nine checkers ship, and so do the inputs they name', () => {
   for (const tool of ['validate-spec', 'validate-schemas', 'validate-ontology',
     'validate-vectors', 'validate-wellknown', 'validate-features', 'validate-diagrams',
-    'gen-spec-html', 'gen-ns']) {
+    'gen-spec-html', 'gen-ns', 'gen-dc-profile', 'gen-shapes']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'tools', tool)), `tools/${tool} is missing`);
     assert.ok(ships(`tools/${tool}`), `package.json files[] does not ship tools/${tool}`);
   }
@@ -43,24 +43,27 @@ test('AGSC-09-90: the nine checkers ship, and so do the inputs they name', () =>
   }
 });
 
-test('only the nine checkers, the counter and the benchmark tool ship from tools/', () => {
+test('only the nine checkers, the two generators of 1.1, the counter and the benchmark tool ship from tools/', () => {
   // The maintainer tools (rule coverage, hygiene, release, glossary, publish set)
   // read the test suite, the allow-list or the repository's own tree: run from an
   // installed package each one fails or misleads, so none of them is in `files[]`.
-  // The eleven that ship each run on inputs the tarball carries.
+  // The thirteen that ship each run on inputs the tarball carries.
   const shipped = ['validate-spec', 'validate-schemas', 'validate-ontology',
     'validate-vectors', 'validate-wellknown', 'validate-features', 'validate-diagrams',
-    'gen-spec-html', 'gen-ns', 'count-artifacts', 'bench'].map((t) => `tools/${t}`);
+    'gen-spec-html', 'gen-ns', 'gen-dc-profile', 'gen-shapes', 'count-artifacts', 'bench'].map((t) => `tools/${t}`);
   const listed = (manifest.files || []).filter((f) => f === 'tools/' || f.startsWith('tools/'));
   assert.deepStrictEqual(listed.sort(), shipped.sort());
   for (const tool of fs.readdirSync(path.join(ROOT, 'tools'))) {
     assert.strictEqual(ships(`tools/${tool}`), shipped.includes(`tools/${tool}`),
       `tools/${tool} ${shipped.includes(`tools/${tool}`) ? 'must' : 'must not'} ship`);
   }
-  // The benchmark tool reads its committed query set; the measurement runners and
-  // their corpus are the maintainer's and stay in the repository.
+  // The benchmark tool reads its committed query sets and the results-row contract, and
+  // its dry run calls the kit's runner; the measurement scripts, their corpus and the
+  // install layer's runner, which only bench/measure.js calls, are the maintainer's and
+  // stay in the repository.
   assert.ok(ships('bench/queries/'));
-  assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js'));
+  assert.ok(ships('bench/runners/kit.js'));
+  assert.ok(!ships('bench/corpus/') && !ships('bench/measure.js') && !ships('bench/runners/install.js'));
 });
 
 test('AGSC-00-01 + AGSC-08-06: the texts a consumer has to be able to read ship', () => {
@@ -96,12 +99,10 @@ test('the version is one SemVer string, and the CLI reports that one', () => {
   // The engine version and the SPECIFICATION version are two different numbers
   // (AGSC-09-90). The maintainer publishes them equal, and they are still read
   // from two different places.
-  const main = fs.readFileSync(path.join(ROOT, 'src', 'application', 'cli', 'main.js'), 'utf8');
-  const declared = /const SPEC_VERSION = '([^']+)';/u.exec(main);
-  assert.ok(declared, 'src/application/cli/main.js must declare SPEC_VERSION');
+  const { SPEC_VERSION } = require(path.join(ROOT, 'src', 'shared', 'spec-version.js'));
   const spec = fs.readFileSync(path.join(ROOT, 'spec', '00-overview.md'), 'utf8');
-  assert.ok(spec.includes(declared[1]),
-    `the engine states spec version ${declared[1]} and spec/00-overview.md does not declare it`);
+  assert.ok(spec.includes(`\`spec_version: "${SPEC_VERSION}"\``),
+    `the engine states spec version ${SPEC_VERSION} and spec/00-overview.md does not declare it`);
 });
 
 test('the main entry reports the package version and exports the command line', () => {

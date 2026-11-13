@@ -1,7 +1,11 @@
 'use strict';
 // verifies AGSC-05-06
 // Steps of features/persona-n-researcher.feature: a researcher who measures a node
-// with the shipped benchmark kit, offline, gets the same numbers twice, checks that
+// with the shipped benchmark kit, offline, gets the same numbers twice, checks the kit of the
+// agent-side study against a build before any scored run, runs every self-contained
+// measurement layer with one command into a scratch record (bench/measure.js --all, with
+// stand-in layers: the real ones take minutes), holds the numbers of a
+// results page to the measurement record (tools/lint-claims --record), checks that
 // the three graph dumps of a build hold one graph, and cites exactly what was
 // measured — the release (CITATION.cff), the node and its content version (the
 // graph dumps and the provenance header of llms.txt) and the conformance report.
@@ -19,6 +23,10 @@ const { ROOT } = require('./_world.js');
 
 const GENERATOR = path.join(ROOT, 'bench', 'gen-bundle.js');
 const BENCH = path.join(ROOT, 'tools', 'bench');
+const AGENT_STUDY = path.join(ROOT, 'bench', 'queries', 'agent-study');
+const KIT = path.join(ROOT, 'bench', 'runners', 'kit.js');
+const LINT_CLAIMS = path.join(ROOT, 'tools', 'lint-claims');
+const RECORD = path.join(ROOT, 'docs', 'measurements.json');
 const BENCH_SURFACES = ['chunks', 'llms', 'search'];
 
 /** One RDF term as a comparable string; literals keep their datatype or language. */
@@ -118,6 +126,148 @@ module.exports = [
           }
         }
       }
+    },
+  },
+  {
+    pattern: 'a copy of the shipped agent-study set whose gold index "bench/runners/kit.js gold-index" writes from the build, with its example question labelled by the build\'s first chunk',
+    run(world) {
+      const set = world.temp('agsc-acc-agent-study-');
+      fs.cpSync(AGENT_STUDY, set, { recursive: true });
+      const host = new URL(JSON.parse(world.read('agsc.config.json')).site.base).host;
+      const r = spawnSync(process.execPath, [KIT, 'gold-index', `${host}=www`], { cwd: world.dir, encoding: 'utf8', env: world.offlineEnv() });
+      assert.strictEqual(r.status, 0, r.stderr);
+      fs.writeFileSync(path.join(set, 'gold-index.tsv'), r.stdout);
+      const first = r.stdout.split('\n')[1].split('\t')[1];
+      fs.writeFileSync(path.join(set, 'qrels', 'test.tsv'), `query-id\tcorpus-id\tscore\nq-example\t${first}\t1\n`);
+      world.state.querySet = set;
+      world.state.goldRows = r.stdout.split('\n').filter(Boolean).length - 1;
+    },
+  },
+  {
+    pattern: 'the researcher dry-runs "tools/bench" over the built node with that set, twice, under the network trap',
+    run(world) {
+      world.state.reports = [1, 2].map(() => {
+        const r = spawnSync(process.execPath, [BENCH, '--node', 'www', '--set', world.state.querySet, '--dry-run', '--json'],
+          { cwd: world.dir, encoding: 'utf8', env: world.offlineEnv() });
+        world.state.exits = [...(world.state.exits || []), r.status];
+        return r.stdout;
+      });
+    },
+  },
+  {
+    pattern: /^both dry runs exit 0 and the results-row contract accepts its (\d+) examples?$/u,
+    run(world, examples) {
+      assert.deepStrictEqual(world.state.exits, [0, 0]);
+      for (const text of world.state.reports) {
+        const report = JSON.parse(text);
+        assert.strictEqual(report.status, 'dry-run');
+        assert.strictEqual(report.counts.error, 0);
+        assert.strictEqual(report.kit.contract.examples, Number(examples));
+      }
+    },
+  },
+  {
+    pattern: 'both find every row of the gold index among the chunks of the build',
+    run(world) {
+      const rows = world.state.goldRows;
+      assert.ok(rows > 3, `${rows} gold rows`);
+      for (const text of world.state.reports) {
+        assert.deepStrictEqual(JSON.parse(text).kit.gold_index, { checked: rows, digest_changed: 0, fixture_ids: 0, found: rows, rows });
+      }
+    },
+  },
+  {
+    pattern: 'a scratch directory outside the repository',
+    run(world) {
+      world.state.scratch = world.temp('agsc-acc-measure-');
+      world.state.recordBefore = fs.readFileSync(RECORD);
+    },
+  },
+  {
+    pattern: 'the researcher runs "bench/measure.js --all --offline" into it, each layer measured by a stand-in',
+    run(world) {
+      const measure = require(path.join(ROOT, 'bench', 'measure.js'));
+      const measured = [];
+      let printed = '';
+      const before = process.env.SOURCE_DATE_EPOCH;
+      process.env.SOURCE_DATE_EPOCH = '1767225600';
+      try {
+        world.state.measureExit = measure.run(['--all', '--offline', '--scratch', world.state.scratch], {
+          err: (s) => { printed += s; },
+          measure: (layer) => { measured.push(layer); return { stand_in: layer }; },
+          out: (s) => { printed += s; },
+        });
+      } finally {
+        if (before === undefined) delete process.env.SOURCE_DATE_EPOCH;
+        else process.env.SOURCE_DATE_EPOCH = before;
+      }
+      world.state.measuredLayers = measured;
+      world.state.measurePrinted = printed;
+    },
+  },
+  {
+    pattern: 'the command exits 0 having measured conformance, determinism, security, perf and package, in that order, and said that it left out install',
+    run(world) {
+      assert.strictEqual(world.state.measureExit, 0, world.state.measurePrinted);
+      assert.deepStrictEqual(world.state.measuredLayers, ['conformance', 'determinism', 'security', 'perf', 'package']);
+      assert.match(world.state.measurePrinted, /--offline: install left out/u);
+    },
+  },
+  {
+    pattern: 'the scratch directory\'s "measurements.json" holds exactly those layers in the layout of "docs/measurements.json"',
+    run(world) {
+      const record = JSON.parse(fs.readFileSync(path.join(world.state.scratch, 'measurements.json'), 'utf8'));
+      const committed = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
+      assert.deepStrictEqual(Object.keys(record).sort(), Object.keys(committed).sort());
+      assert.deepStrictEqual(Object.keys(record.layers), world.state.measuredLayers);
+      assert.deepStrictEqual(record.measured, world.state.measuredLayers);
+      assert.strictEqual(record.schema, committed.schema);
+    },
+  },
+  {
+    pattern: '"docs/measurements.json" is unchanged',
+    run(world) {
+      assert.ok(fs.readFileSync(RECORD).equals(world.state.recordBefore), 'docs/measurements.json changed');
+    },
+  },
+  {
+    pattern: /^a results page whose measured region quotes the package count of the install layer of "(docs\/measurements\.json)"$/u,
+    run(world, record) {
+      world.state.record = path.join(ROOT, record);
+      const packages = JSON.parse(fs.readFileSync(world.state.record, 'utf8')).layers.install.packages;
+      world.state.page = path.join(world.temp('agsc-acc-claims-'), 'RESULTS.md');
+      world.state.measured = [`An install of the package holds ${packages} packages.`];
+      fs.writeFileSync(world.state.page, `<!-- measured:start -->\n${world.state.measured.join('\n')}\n<!-- measured:end -->\n`);
+    },
+  },
+  {
+    pattern: /^the measured region of the page also says that an install holds ([\d,]+) packages$/u,
+    run(world, count) {
+      world.state.measured.push(`An install holds ${count} packages.`);
+      fs.writeFileSync(world.state.page, `<!-- measured:start -->\n${world.state.measured.join('\n')}\n<!-- measured:end -->\n`);
+    },
+  },
+  {
+    pattern: 'the researcher runs "tools/lint-claims" over the page with that record',
+    run(world) {
+      const r = spawnSync(process.execPath, [LINT_CLAIMS, '--json', '--record', world.state.record, world.state.page],
+        { encoding: 'utf8', env: world.offlineEnv() });
+      world.state.claims = { code: r.status, report: JSON.parse(r.stdout) };
+    },
+  },
+  {
+    pattern: 'the claims check passes',
+    run(world) {
+      assert.strictEqual(world.state.claims.code, 0, JSON.stringify(world.state.claims.report.findings));
+    },
+  },
+  {
+    pattern: /^the claims check fails on "([\d,]+)", the one number the record does not hold$/u,
+    run(world, written) {
+      assert.strictEqual(world.state.claims.code, 1);
+      const findings = world.state.claims.report.findings;
+      assert.deepStrictEqual(findings.map((f) => [f.code, f.line]), [['AGSC-E202', 3]]);
+      assert.ok(findings[0].message.startsWith(`${written} is in no layer of the record`), findings[0].message);
     },
   },
   {

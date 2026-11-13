@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "ticking an item, reading the brief on the page and taking its archive needs a browser; the brief's bytes on the page are also compared with the command line's in tests/distribution/compose-page-run.test.js.",
+  "scenario": "The architect reads the brief of a selection on \"/compose/\" and downloads it"
+}

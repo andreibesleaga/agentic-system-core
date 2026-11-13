@@ -1,7 +1,7 @@
 # Demos — every mode and every persona, run from an empty folder
 
 **Summary.** This page is a set of small, complete demonstrations: one for each of
-the six modes of using a Bundle, and one for what each of the sixteen personas of
+the six modes of using a Bundle, one pass over the parts version 1.1 added, and one for what each of the sixteen personas of
 the scenarios does first. Each demo starts from an empty folder with nothing but the
 `agentic-system-core` package, takes under five minutes, gives the exact commands,
 quotes the lines a real run printed, and names the one thing it proves. The agent
@@ -130,12 +130,12 @@ www/graph.jsonld
 ```
 
 To look at it in a browser, `agsc-host serve` serves `www/` read-only on
-`http://127.0.0.1:8080/` (the page for a note is `/concepts/brewing/`, its Markdown
+`http://localhost:8080/` (the page for a note is `/concepts/brewing/`, its Markdown
 view `/pages/brewing.md`); the search box reads `www/search.json` in the browser and
 asks no server. That step is shown, not run by the test:
 
 ```bash
-agsc-host serve            # serving …/www at http://127.0.0.1:8080/ — read-only; stop with Ctrl-C
+agsc-host serve            # serving …/www at http://localhost:8080/ — read-only; stop with Ctrl-C
 ```
 
 Now the contributor's loop. Commit the wiki, edit a page, normalise it, and ask for a
@@ -197,9 +197,9 @@ provenance block.
 ## An agent on the same wiki — the tool server and the page tools
 
 **Personas:** the agent reader (C), the agent proposer (D), the agent using a node as
-memory (H). **What it proves:** an assistant gets seven tools over a Bundle, with
+memory (H). **What it proves:** an assistant gets ten tools over a Bundle, with
 nothing leaving the machine; every answer is marked untrusted and carries its
-licence; `propose` and `remember` hand back text and write nothing; the same seven
+licence; `propose` and `remember` hand back text and write nothing; the same ten
 tools on a published page give the same answers.
 
 The demo uses node `a` of the memory fixture. Two small scripts stand in for an
@@ -211,7 +211,7 @@ installed beyond Node.
 
 Build the node and list the tools over the wire. The three request lines are the
 whole handshake; the server answers with its name, the protocol revision and the
-seven tools:
+ten tools:
 
 ```bash demo
 cp -r "$ENGINE/examples/demos/mode-1-memory/a" wiki && cd wiki && agsc build > /dev/null 2>&1
@@ -224,7 +224,7 @@ printf '%s\n' \
 
 ```text expect
 server: agentic-system-core protocol 2025-11-25
-tools: ask compose links propose read remember search
+tools: ask brief check compose explain links propose read remember search
 ```
 
 `search`, then `read`, then `links` — the reading path of an agent, each answer an
@@ -297,7 +297,7 @@ mcp-call exit 1
 content unchanged
 ```
 
-The published node carries the same seven tools on every item page and on
+The published node carries the same ten tools on every item page and on
 `/compose/`, for a browser assistant that supports in-page tools. Calling `ask` the
 way the page does gives the same bytes the tool server gave:
 
@@ -312,6 +312,23 @@ the page tools and the tool server gave the same answer
 compose/agsc-core.js
 compose/agsc-page-tools.js
 compose/webmcp.js
+```
+
+`brief` gives the content of `brief.json` for a selection without writing anything, and
+the page computes it itself, with the page's own Web Crypto for the selection digest
+(AGSC-09-13, AGSC-09-16):
+
+```bash demo
+node "$ENGINE/examples/demos/agents/mcp-call.js" brief '{"selection":["supervisor"]}' > brief.json
+node "$ENGINE/examples/demos/agents/page-tools.js" www brief '{"selection":["supervisor"]}' > page-brief.json
+cmp brief.json page-brief.json && echo "the page tools and the tool server gave the same brief"
+grep -E '"(source|type)"' page-brief.json
+```
+
+```text expect
+the page tools and the tool server gave the same brief
+  "source": "brief",
+  "type": "brief"
 ```
 
 In a real browser the page registers the tools through `document.modelContext`
@@ -363,21 +380,23 @@ node "$ENGINE/tools/validate-wellknown" a/www/.well-known/knowledge-linkset --le
 ```
 
 ```text expect
-validate-wellknown pass (level 2): 22 input file(s) read, 0 error(s), 0 warning(s)
+validate-wellknown pass (level 2): 26 input file(s) read, 0 error(s), 0 warning(s)
 a/www/.well-known/knowledge-linkset:1:1 error AGSC-E907 resolved, not mutual: no rel#peer names https://c.example/.well-known/knowledge-linkset (AGSC-10-12)
-validate-wellknown fail (level 2): 22 input file(s) read, 1 error(s), 0 warning(s)
+validate-wellknown fail (level 2): 26 input file(s) read, 1 error(s), 0 warning(s)
 checker exit 1
 ```
 
 What an agent reads first: the discovery document of `a`. Every link to one of the
 node's artefacts — the graph files, `llms.txt`, NOW, the ledger, the skills index —
-carries a SHA-256 digest; the peer and surface links carry none; the peer link leads
-to `b`; the surfaces say what access each needs. The agent then reads `b`'s
+carries a SHA-256 digest; the peer link carries none, and of the surface links only the
+`chunks` one does (from 1.1, beside the number of chunk lines and a commitment to their
+ids, AGSC-06-44); the peer link leads to `b`; the surfaces say what access each needs. The agent then reads `b`'s
 `llms.txt` — no node ever fetched on its behalf:
 
 ```bash demo
 node -e 'const l = JSON.parse(require("node:fs").readFileSync("a/www/.well-known/knowledge-linkset", "utf8")).linkset[0]; console.log("anchor", l.anchor); for (const [rel, list] of Object.entries(l)) if (Array.isArray(list)) for (const one of list) console.log(rel.replace("https://w3id.org/agentic-system-core/rel#", "rel#"), one.href, one.digest ? "(digest)" : "");'
-head -4 b/www/llms.txt
+head -1 b/www/llms.txt
+grep -m1 '^bundle:' b/www/llms.txt
 ```
 
 ```text expect
@@ -389,7 +408,7 @@ rel#ledger https://a.example/ledger.jsonl (digest)
 rel#now https://a.example/now.md (digest)
 rel#peer https://b.example/.well-known/knowledge-linkset
 rel#skills https://a.example/skills/index.json (digest)
-rel#surface https://a.example/chunks.jsonl
+rel#surface https://a.example/chunks.jsonl (digest)
 # b demo
 bundle: https://b.example/
 ```
@@ -411,7 +430,9 @@ The memory leaves and comes back without loss. The compact context file states t
 same content version as the published `llms.txt`; the exported graph is the published
 graph byte for byte; the Markdown and OKF exports carry the terms beside the prose;
 and importing the OKF export into a fresh Bundle twice writes three items once and
-then reports them unchanged:
+then reports them unchanged. The fresh Bundle is another node, so the three arrive as
+drafts (AGSC-01-22 from 1.1); an export read back by the node that wrote it keeps its
+statuses:
 
 ```bash demo
 (cd b && agsc export --to llm-context && agsc export --markdown && agsc export --okf && agsc export --jsonld)
@@ -471,8 +492,8 @@ sees a task's state and dependency, a gate's level and checks, and a decision's
 typed links without opening the graph.
 
 The fixture is the two-concept Bundle plus a `login` board: a decision, a
-specification that implements it, two tasks (one working, blocked by the other), a
-procedure, and a gate with three checks.
+specification it settled (`decided-by`), two tasks (one working, blocked by the other), a
+procedure, and a gate at Level 2 with the five checks that level implies.
 
 `ci` writes the gate record and the forge files. `status-checks.json` keeps the gate's
 own check names; the ruleset requires only `agsc ci`, the job the shipped action
@@ -483,13 +504,13 @@ because no job reports them:
 cp -r "$ENGINE/examples/demos/mode-2-project" . && cd mode-2-project
 agsc ci
 cat dist/forge/status-checks.json
-node -e 'console.log("ruleset requires", JSON.stringify(require("./dist/forge/ruleset.json").rules.required_status_checks))'
+node -e 'console.log("ruleset rules", JSON.stringify(require("./dist/forge/ruleset.json").rules.map((r) => r.type)))'
 ```
 
 ```text expect
 ci: pass (0 error, 1 warn)
-["links","review","schema"]
-ruleset requires ["agsc ci"]
+["determinism","links","provenance","review","schema"]
+ruleset rules ["pull_request","required_status_checks"]
 ```
 
 The steering files for coding agents come from the current state and the items, and
@@ -507,26 +528,26 @@ AGENTS.md and CLAUDE.md are the same bytes
 # project demo — steering for coding agents
 ```
 
-Build, and read the pages as a person would. The task page states its state and its
-dependency, the gate page its level and checks, the decision page its typed link; the
-board export lists the tasks and whether the board is done:
+Build, and read the pages as a person would. The task page states its state and, in its
+relations table, its dependency; the gate page its level and checks; the decision page its
+typed link; the board export lists the tasks and whether the board is done:
 
 ```bash demo
 agsc build > /dev/null 2>&1
 grep -o '<dt>Task state</dt><dd><code>[A-Z_]*</code></dd>' www/concepts/task-login-tests/index.html
-grep -o '<code>blocked-by</code>: <a href="[^"]*">' www/concepts/task-login-tests/index.html
+grep -o '<td>blocked-by</td><td>outgoing</td><td><a href="[^"]*">' www/concepts/task-login-tests/index.html
 grep -o '<dt>Level</dt><dd><code>L2</code></dd>' www/gates/merge-gate/index.html
 grep -o '<dt>Checks</dt><dd>.*</dd>' www/gates/merge-gate/index.html
-grep -o '<code>contradicts</code>: <a href="[^"]*">' www/concepts/decide-the-login/index.html
+grep -o '<td>contradicts</td><td>outgoing</td><td><a href="[^"]*">' www/concepts/decide-the-login/index.html
 node -e 'const b = JSON.parse(require("node:fs").readFileSync("www/boards/login.json", "utf8")); console.log("done:", b.done); for (const t of b.tasks) console.log(t.slug, t.state);'
 ```
 
 ```text expect
 <dt>Task state</dt><dd><code>TASK_STATE_WORKING</code></dd>
-<code>blocked-by</code>: <a href="/concepts/task-login-form/">
+<td>blocked-by</td><td>outgoing</td><td><a href="/concepts/task-login-form/">
 <dt>Level</dt><dd><code>L2</code></dd>
-<dt>Checks</dt><dd><code>schema</code>, <code>links</code>, <code>review</code></dd>
-<code>contradicts</code>: <a href="/concepts/supervisor/">
+<dt>Checks</dt><dd><code>schema</code>, <code>links</code>, <code>provenance</code>, <code>determinism</code>, <code>review</code></dd>
+<td>contradicts</td><td>outgoing</td><td><a href="/concepts/supervisor/">
 done: false
 task-login-form TASK_STATE_SUBMITTED
 task-login-tests TASK_STATE_WORKING
@@ -600,7 +621,8 @@ served hash equals the lock: true
 
 Bring skills back as procedures. A pack this format emitted splits into its
 procedures, filed in the pack's cluster; a foreign skill in the Agent Skills layout
-comes in as a procedure in the cluster you name, and the next `skills` run packs it:
+comes in as a procedure in the cluster you name, as a draft like every foreign import; the `sed` line is you
+publishing it, and the next `skills` run packs it:
 
 ```bash demo
 cd .. && cp -r "$ENGINE/examples/demos/mode-1-memory/a" other && cd other
@@ -608,6 +630,7 @@ mkdir -p incoming && cp ../mode-3-skills/www/skills/login/SKILL.md incoming/SKIL
 agsc skills import incoming/SKILL.md
 sed -n '1,5p' content/procedures/run-the-tests.md
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster agent-patterns
+sed -i.bak 's/^status: draft$/status: stable/' content/procedures/plain-notes.md && rm content/procedures/plain-notes.md.bak
 agsc skills > /dev/null 2>&1 && grep '^- item:' dist/skills/agent-patterns/SKILL.md
 ```
 
@@ -892,6 +915,121 @@ Mode 2 wrote.
 
 ---
 
+## Version 1.1 — the new parts, in one pass
+
+Version 1.1 adds a domain layer, a brief and blueprints, a query page, a chunk index,
+suggestions, a SKOS export, an agent card, the tool server over HTTP and a benchmark kit.
+One folder shows most of them at once: [examples/demos/domain-layer/](../examples/demos/domain-layer/README.md),
+the two concepts of the other demos with a vocabulary, one bounded context, one rule and one
+question. Each part has its own tested walk-through (links after each step); this is the short
+pass. It needs the 1.1 engine: a 1.0 release has none of these verbs and flags.
+
+```bash demo
+cp -r "$ENGINE/examples/demos/domain-layer" . && cd domain-layer
+git init -q -b main && git add -A && git commit -q -m "domain layer"
+agsc verify
+```
+
+```text expect
+verify: pass (0 error, 0 warn)
+```
+
+**The domain layer.** `verify` ran the node's rule (every coordinator controls a handover)
+and its question (which coordinator controls which handover?). The folder's README breaks
+the rule on purpose and shows the two refusals; [guides/mode-1.md](guides/mode-1.md) explains
+each file.
+
+**The brief.** `compose --brief` writes four files beside the Harness, and with a domain
+layer the brief names each member's type, role and context, and a context map is written
+too. `compose --from <slug> --brief` also writes a blueprint of a saved architecture: the
+three blueprints under [examples/blueprints/](../examples/blueprints/README.md) show it, and
+[guides/mode-4.md](guides/mode-4.md) explains it.
+
+```bash demo
+agsc compose handoff supervisor --brief > /dev/null 2>&1
+ls "$(ls -d dist/harness/*.companion)"
+grep -A3 '^## Domain' "$(ls -d dist/harness/*.companion)/BRIEF.md"
+```
+
+```text expect
+BRIEF.md
+brief.json
+brief.mmd
+context-map.json
+context.md
+## Domain
+- `handoff`: type Handover; role entity; context agent-patterns
+- `supervisor`: type Coordinator; role aggregate-root; context agent-patterns
+```
+
+**Suggestions, a SKOS export, the chunk index and the query page.** `lint --suggest` writes
+the Links it would propose to `dist/suggestions.json` and changes no note (these two notes are
+linked already, so its list is empty), `export --skos` writes the node as SKOS, and `build`
+writes `chunks-index.toon` and the `/query/` page. The query page runs in a browser; its ten
+example questions are in [guides/mode-0.md](guides/mode-0.md).
+
+```bash demo
+agsc lint --suggest | tail -1
+grep -o '"suggestions":\[\]' dist/suggestions.json
+agsc export --skos | tail -1
+agsc build > /dev/null 2>&1
+ls www/chunks-index.toon www/query/index.html
+```
+
+```text expect
+lint: pass (0 error, 0 warn)
+"suggestions":[]
+export: pass (0 error, 0 warn)
+www/chunks-index.toon
+www/query/index.html
+```
+
+**The agent card.** A node that declares an A2A `responder` and an `a2a-card` surface
+publishes `/.well-known/agent-card.json`, written by the official A2A SDK. Here the
+configuration gains the two declarations and the build writes the card:
+
+```bash demo
+node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("agsc.config.json")); c.surfaces = [{ access: "consent", binding: "HTTP+JSON", surface: "responder", target: "https://domain-layer.example/a2a", version: "a2a:1.0" }, { access: "none", surface: "a2a-card", target: "https://domain-layer.example/.well-known/agent-card.json", version: "1.0" }]; fs.writeFileSync("agsc.config.json", JSON.stringify(c, null, 2) + "\n")'
+agsc build | tail -1
+grep -o '"supportedInterfaces":\[[^]]*\]' www/.well-known/agent-card.json
+```
+
+```text expect
+build: pass (0 error, 0 warn)
+"supportedInterfaces":[{"protocolBinding":"HTTP+JSON","protocolVersion":"1.0","url":"https://domain-layer.example/a2a"}]
+```
+
+**The tool server over HTTP.** `agsc mcp --http` serves the ten tools over Streamable HTTP on
+a loopback address only; an address that is not loopback is refused before anything starts
+(opening a socket is shown in the agent demo's blueprint,
+[examples/blueprints/tool-server/](../examples/blueprints/tool-server/README.md)).
+
+```bash demo
+agsc mcp --http 0 --bind 10.0.0.1 || echo "mcp exit $?"
+```
+
+```text expect
+{"code":"AGSC-E003","severity":"error","message":"mcp: --bind \"10.0.0.1\" is not a loopback address: one in 127.0.0.0/8, or ::1 (AGSC-09-18)"}
+mcp exit 2
+```
+
+**The benchmark kit.** One layer of it runs offline: the determinism layer builds the
+repository's node twice, under another time zone and locale too, and compares every byte.
+The method and the other layers are in [BENCHMARKS.md](BENCHMARKS.md). This step needs a clone
+of the repository: point `ENGINE` at it (the npm package ships the retrieval tool `tools/bench`,
+not `bench/measure.js`).
+
+```bash demo
+node "$ENGINE/bench/measure.js" --layer determinism --scratch "$PWD/../bench" > /dev/null
+node -e 'const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log("determinism:", m.double_build.compared, "files compared,", m.double_build.different.length, "different")' "$PWD/../bench/measure-determinism.json"
+```
+
+```text expect
+determinism: 61 files compared, 0 different
+```
+
+---
+
 ## The sixteen personas, by demo
 
 | Persona | First thing they do | Demo | The one thing it proves |
@@ -899,7 +1037,7 @@ Mode 2 wrote.
 | 0 — drop-in user | `agsc init` on a folder of notes | Mode 0 | `init`, a security contact, one commit, `ci` and `build` take bare notes to a full local site |
 | A — human reader | opens the built pages, `llms.txt`, the search index | Mode 0 | the site is static, readable without JavaScript, with every item's Markdown view |
 | B — human contributor | edits a page, `lint --fix`, `propose` | Mode 0 | the patch carries the edit and a person runs the git commands |
-| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | seven tools, every answer untrusted and licensed, nothing leaves the machine |
+| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | ten tools, every answer untrusted and licensed, nothing leaves the machine |
 | D — agent proposer | `propose`, `remember` | An agent on the same wiki; Mode 5 | the tools hand back text and write nothing |
 | E — architect | `compose … --zip` | Mode 4 | a selection becomes seven file kinds, the same verdict from the tool server |
 | F — integrator | `skills install` | Mode 3 | packs are content only, lock-verified, idempotent, and come back as procedures |
@@ -910,13 +1048,15 @@ Mode 2 wrote.
 | K — self-driving team | a lane claims a task through the tools | Mode 5 | claims are proposals; the commit decides the holder; refusals are the same everywhere |
 | L — port implementer | `validate-wellknown --level 0` on a hand-written node | Mode 1 | the checker judges the files, not the engine that wrote them |
 | M — security reviewer | `ci` before the security contact exists; `verify --ledger` | Mode 0 | a node without a security contact does not pass, and the ledger re-derives from the history |
-| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (no demo on this page) | every figure names the command that produced it, and a second run gives the same bytes |
+| N — researcher | `bench/measure.js --layer determinism`, offline, with a fixed build instant | the benchmark kit, `bench/README.md` (the 1.1 demo on this page runs its determinism layer) | every figure names the command that produced it, and a second run gives the same bytes |
 | O — restricted publisher | `"visibility": "restricted"` with an `access` link; `validate-wellknown --level 2` | the Level-2 check of `docs/guides/publish.md`; `docs/IMPLEMENTERS-GUIDE.md` §7b (no demo on this page) | the discovery document says the node exists and where to ask for access, and the shipped checker judges it |
 
 ---
 
 ## What needs something you may not have
 
+- **A clone of the repository** (the benchmark kit's determinism layer of the 1.1 demo):
+  `bench/measure.js` is not in the npm package; point `ENGINE` at a clone for that step.
 - **A browser with an assistant** (the in-page tools, the `/compose/` download): the
   page-tools demo above runs the page's own scripts without a browser; the real
   browser lane is `AGSC_BROWSER=1 CHROME_EXE=<chromium> node --test tests/e2e/modes/browser.test.js`
@@ -952,7 +1092,7 @@ line quotes in full.
 
 *Specification rules behind these demos, for looking up: AGSC-02-90…95 (adoption),
 AGSC-03-11 (link resolution), AGSC-08-04 and AGSC-08-27 (proposals and the lint-only
-review), AGSC-09-13 and AGSC-09-16 (the seven tools, on the tool server and on the
+review), AGSC-09-13 and AGSC-09-16 (the ten tools, on the tool server and on the
 page), AGSC-10-02 and AGSC-10-12 (the checker at Level 0, the mutual peer check),
 AGSC-08-09 and AGSC-08-12 (gates into forge files), AGSC-07-19…22 (skill packs),
 AGSC-07-12 and AGSC-07-13 (the Harness, byte-identical from page and command line),

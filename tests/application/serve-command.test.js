@@ -259,7 +259,7 @@ test('serve: listens on loopback, reports its address, and a port in use is a fi
   const servers = [];
   const result = await run(['serve', '--port', '0', '--json'], root, { onListening: (s) => servers.push(s) });
   assert.strictEqual(result.code, 0, result.stdout + result.stderr);
-  assert.match(result.json.url, /^http:\/\/(127\.0\.0\.1|\[::1\]):\d+\/$/u);
+  assert.match(result.json.url, /^http:\/\/localhost:\d+\/$/u, 'the default bind is reported as the name localhost (AGSC-01-18)');
   const port = servers[0].address().port;
   const status = await new Promise((resolve) => http.get(`${result.json.url}`, (res) => { res.resume(); resolve(res.statusCode); }));
   assert.strictEqual(status, 200);

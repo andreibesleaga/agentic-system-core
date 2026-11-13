@@ -1,25 +1,44 @@
 'use strict';
-// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22
+// verifies AGSC-01-12, AGSC-01-22, AGSC-01-23, AGSC-02-11, AGSC-04-02, AGSC-06-04, AGSC-06-11, AGSC-08-10, AGSC-08-20, AGSC-08-22, AGSC-08-23, AGSC-08-24, AGSC-09-08, AGSC-11-22, AGSC-05-38, AGSC-01-41, AGSC-02-25, AGSC-03-27, AGSC-05-40, AGSC-06-32, AGSC-05-41, AGSC-09-20, AGSC-06-38, AGSC-07-25, AGSC-09-13
 // Steps of features/persona-i-maintainer.feature that run offline: the derived,
 // verifiable ledger over a scratch git history with fixed dates; the stale items
 // the NOW page lists; the permissions and steps of the shipped release workflow,
 // read from the file; the import of the old site; a retired item that keeps its
 // slug and page while its successor takes the old address, and the refusal of a
-// second item under the retired slug; and, where the real-Bundle lane
+// second item under the retired slug; a site vocabulary published with the graph and
+// one refused by lint, by the build and by the shipped ontology checker (AGSC-05-38); a
+// note's domain type, role and domain links, and their refusal (AGSC-02-25, AGSC-03-27);
+// a term's warrant in the graph, and the JSON-LD round trip of a graph that carries it
+// (AGSC-05-40, AGSC-06-32); the note's domain parts on its page, in the page tool's answer run
+// from the published scripts and in its brief, its domain link in the brief's relations
+// (AGSC-06-38, AGSC-09-13, AGSC-07-25); the site's
+// own invariants and competency questions, checked by
+// `verify` and `ci` and never by `lint` (AGSC-05-41, AGSC-09-20); the TypeScript parts,
+// compiled into the shipped tree and needed by no install and no run (AGSC-09-09 for the
+// line the compiled proof module gives);
+// and, where the real-Bundle lane
 // is switched on, a restore from a bare clone of the patterns node. The steps of
 // the scenario that waits on a gap (a channel whose publish choice is auto) are
 // written here too.
 
 const assert = require('node:assert');
+const { spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const { canonicalize } = require('json-canonicalize');
 const YAML = require('yaml');
 
+const N3 = require('n3');
+
 const { INSTANT, ROOT, linkset, splitItem } = require('./_world.js');
 const { patternsNode } = require('./_real-bundles.js');
+const { INVERSE_OF_TYPE, NAMESPACE, VALID, withExtra } = require('../../knowledge/_domain-fixtures.js');
+
+/** tools/build-ts, loaded in process: its compile and its header line (docs/ENGINEERING.md §8). */
+const BUILD_TS = path.join(ROOT, 'tools', 'build-ts');
 
 const LEDGER_REL = 'https://w3id.org/agentic-system-core/rel#ledger';
 const GENESIS = '0'.repeat(64);
@@ -27,6 +46,8 @@ const OLD_SITE = path.join(ROOT, 'tests', 'fixtures', 'old-site-10');
 const SELECTION = path.join(OLD_SITE, 'selection.tsv');
 /** The rows of the selection that must not become items: deferred, excluded, unknown. */
 const NOT_IMPORTED = Object.freeze(['excluded-one', 'ghost', 'not-chosen', 'unterminated']);
+/** The expand and re-compact child of the graph area (`jsonld@9`, offline loader). */
+const ROUND_TRIP = path.join(ROOT, 'tests', 'conformance', 'areas', '_jsonld-roundtrip.js');
 
 /** Every file of a directory, path -> bytes (base64), in code-point order. */
 function tree(dir) {
@@ -49,6 +70,14 @@ function publishingJobs(workflow) {
 
 function lines(text) {
   return text.split('\n').filter((l) => l !== '');
+}
+
+/** A fresh Bundle whose configuration names the site vocabulary `text`, written at `rel` (AGSC-01-41). */
+function withVocabulary(world, rel, text) {
+  world.bundle();
+  world.write(rel, text);
+  const config = JSON.parse(world.read('agsc.config.json'));
+  world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { vocabulary: rel } }, null, 2)}\n`);
 }
 
 /** Two commits of the fixture on `main`, built once by `build` and once by `ci`. */
@@ -495,6 +524,227 @@ module.exports = [
       world.write(rel, world.read('content/lessons/record-why-a-handoff-happened.md')
         .replace('title: Record why a handoff happened', 'title: Tool-use retries need a budget'));
       assert.strictEqual(splitItem(world.read(rel)).frontmatter.title, 'Tool-use retries need a budget');
+    },
+  },
+  {
+    pattern: /^a site vocabulary "([^"]+)" whose class "(Engine|Widget)" is a subclass of (the item class "asc:Concept"|no item class), named by "domain\.vocabulary" \(AGSC-01-41\)$/u,
+    run(world, rel, name) {
+      // The vocabulary of vector lint-0052; "Widget" adds a class under none of the six item classes.
+      withVocabulary(world, rel, name === 'Engine' ? VALID : withExtra('dom:Widget a owl:Class ; rdfs:label "Widget" .'));
+    },
+  },
+  {
+    pattern: /^a site vocabulary "([^"]+)" whose property "typeOf" is declared the inverse of rdf:type, named by "domain\.vocabulary" \(AGSC-01-41\)$/u,
+    run(world, rel) {
+      // The vocabulary of vector lint-0052 with a property whose owl:inverseOf is rdf:type (AGSC-05-38 (f)).
+      withVocabulary(world, rel, withExtra(INVERSE_OF_TYPE));
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds every triple of "([^"]+)" in the Bundle's named graph, and "([^"]+)" holds the same triples as "\1" \(AGSC-05-38\)$/u,
+    run(world, nquadsRel, vocabularyRel, turtleRel) {
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const graph = `<${JSON.parse(world.read('agsc.config.json')).site.base}>`;
+      const term = (t) => (t.termType === 'NamedNode' ? `<${t.value}>`
+        : `${JSON.stringify(t.value)}${t.language ? `@${t.language}` : `^^<${t.datatype.value}>`}`);
+      const vocabulary = new N3.Parser().parse(world.read(vocabularyRel));
+      for (const q of vocabulary) {
+        const line = `${term(q.subject)} ${term(q.predicate)} ${term(q.object)} ${graph} .`;
+        assert.ok(lines.has(line), `${line} is not in ${nquadsRel}`);
+      }
+      const asTriples = (quads) => quads.map((q) => `${term(q.subject)} ${term(q.predicate)} ${term(q.object)}`).sort();
+      assert.deepStrictEqual(asTriples(new N3.Parser().parse(world.read(turtleRel))),
+        asTriples(new N3.Parser({ format: 'N-Quads' }).parse(world.read(nquadsRel))));
+    },
+  },
+  {
+    pattern: /^no per-item view under "([^"]+)" names a term of "([^"]+)" \(AGSC-05-38\)$/u,
+    run(world, folder, vocabularyRel) {
+      const terms = new Set(new N3.Parser().parse(world.read(vocabularyRel)).map((q) => q.subject.value));
+      const pages = [...world.snapshot(folder).keys()].filter((rel) => rel.endsWith('.jsonld'));
+      assert.ok(pages.length > 0, `no per-item view under ${folder}`);
+      for (const rel of pages) {
+        const ids = JSON.parse(world.read(`${folder}/${rel}`))['@graph'].map((node) => node['@id']);
+        assert.deepStrictEqual(ids.filter((id) => terms.has(id)), [], rel);
+      }
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" states the domain type "([^"]+)", the role "([^"]+)" and the domain link "([^"]+)" to "([^"]+)" \(AGSC-02-25, AGSC-03-27\)$/u,
+    run(world, rel, type, role, member, target) {
+      const keys = `domain_type: ${type}\ndomain_role: ${role}\ndomain_links:\n  ${member}:\n    - ${target}\n`;
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\n${keys}---\n`));
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds the domain link "([^"]+)" from "([^"]+)" to "([^"]+)" and the inverse "([^"]+)" the vocabulary declares back \(AGSC-03-27\)$/u,
+    run(world, nquadsRel, member, from, to, inverse) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const edge = (s, p, o) => `<${base}concepts/${s}/> <${NAMESPACE}${p}> <${base}concepts/${o}/> <${base}> .`;
+      assert.ok(lines.has(edge(from, member, to)), `the domain link is not in ${nquadsRel}`);
+      assert.ok(lines.has(edge(to, inverse, from)), `the computed inverse is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^the page "([^"]+)" lists under its relations table the domain type "([^"]+)", the role "([^"]+)" and the warrant "([^"]+)" \(AGSC-06-38\)$/u,
+    run(world, rel, type, role, warrant) {
+      const page = world.read(rel);
+      const list = /<dl class="meta domain">([\s\S]*?)<\/dl>/u.exec(page);
+      assert.ok(list !== null && page.indexOf('<table class="relations">') < list.index, `${rel} has no domain list under its relations table`);
+      const entries = [...list[1].matchAll(/<dt>(.*?)<\/dt><dd>(.*?)<\/dd>/gu)].map((m) => [m[1], m[2].replace(/<[^>]*>/gu, '')]);
+      assert.deepStrictEqual(entries, [['Domain type', type], ['Domain role', role], ['Warrant', warrant]]);
+    },
+  },
+  {
+    pattern: /^the page tool "read" of "([^"]+)", run from the published scripts, carries the domain type "([^"]+)", the role "([^"]+)" and that warrant \(AGSC-09-13\)$/u,
+    run(world, slug, type, role) {
+      // The two scripts the site serves, evaluated over its own routes in a context with no network.
+      const sources = {};
+      for (const [route, base64] of world.snapshot('www')) sources[`/${route}`] = Buffer.from(base64, 'base64').toString('utf8');
+      const context = vm.createContext({ TextEncoder });
+      for (const name of ['agsc-core.js', 'agsc-page-tools.js']) vm.runInContext(sources[`/compose/${name}`], context, { filename: name });
+      const api = context.AGSC_PAGE_TOOLS;
+      const toolset = api.install(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), context.AGSC_CORE);
+      const answer = JSON.parse(JSON.stringify(toolset.call('read', { slug })));
+      const { warrant } = splitItem(world.read(`content/concepts/${slug}.md`)).frontmatter;
+      assert.deepStrictEqual(answer.body.domain, { role, type, warrant });
+    },
+  },
+  {
+    pattern: /^the brief's "BRIEF\.md" has, after "## Members", the line "([^"]+)" under "## Domain" \(AGSC-07-25\)$/u,
+    run(world, line) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companion = fs.readdirSync(harness).find((name) => name.endsWith('.companion'));
+      const md = fs.readFileSync(path.join(harness, companion, 'BRIEF.md'), 'utf8');
+      const at = md.indexOf('\n## Domain\n\n');
+      assert.ok(md.indexOf('\n## Members\n') < at && at > 0, 'BRIEF.md has no "## Domain" section after "## Members"');
+      assert.ok(md.slice(at).split('\n\n')[1].split('\n').includes(line), md);
+    },
+  },
+  {
+    pattern: /^the brief's "BRIEF\.md" lists under "## Relations" the domain link "([^"]+)" and its inverse "([^"]+)" \(AGSC-07-25, AGSC-03-27\)$/u,
+    run(world, authored, inverse) {
+      const harness = path.join(world.dir, 'dist', 'harness');
+      const companion = fs.readdirSync(harness).find((name) => name.endsWith('.companion'));
+      const md = fs.readFileSync(path.join(harness, companion, 'BRIEF.md'), 'utf8');
+      const relations = md.slice(md.indexOf('\n## Relations\n\n')).split('\n\n')[1].split('\n');
+      assert.ok(relations.includes(authored) && relations.includes(inverse), md);
+    },
+  },
+  {
+    pattern: /^the shapes file "([^"]+)" asks every engine for a "([^"]+)" link, and the questions file "([^"]+)" expects no engine, both named under "domain" \(AGSC-01-41, AGSC-05-41\)$/u,
+    run(world, shapesRel, property, questionsRel) {
+      world.write(shapesRel, ['@prefix dom: <https://minimal.example/ns/domain#> .', '@prefix sh: <http://www.w3.org/ns/shacl#> .',
+        '', '<https://minimal.example/ns/domain-shapes#EngineShape>', '    a sh:NodeShape ;', '    sh:targetClass dom:Engine ;',
+        `    sh:property [ sh:path dom:${property} ; sh:minCount 1 ; sh:message "Every engine controls something." ] .`, ''].join('\n'));
+      world.write(questionsRel, `${JSON.stringify([{ expected: { rows: [] }, id: 'engines',
+        query: 'SELECT ?x WHERE { ?x a <https://minimal.example/ns/domain#Engine> }', question: 'Which items are engines?' }], null, 2)}\n`);
+      const config = JSON.parse(world.read('agsc.config.json'));
+      world.write('agsc.config.json', `${JSON.stringify({ ...config, domain: { ...config.domain, questions: questionsRel, shapes: shapesRel } }, null, 2)}\n`);
+    },
+  },
+  {
+    pattern: /^the error "(AGSC-E421)" names the item "([^"]+)" and the error "(AGSC-E422)" names the question "([^"]+)" \(AGSC-09-20\)$/u,
+    run(world, invariantCode, item, questionCode, question) {
+      const errors = world.json().findings.filter((f) => f.severity === 'error').map((f) => [f.code, f.slug]);
+      assert.deepStrictEqual(errors.filter(([code]) => [invariantCode, questionCode].includes(code)),
+        [[invariantCode, item], [questionCode, question]], world.last.stdout);
+    },
+  },
+  {
+    pattern: /^"([^"]+)" fails its "([^"]+)" check with "(AGSC-E\d{3})" and "(AGSC-E\d{3})" \(AGSC-08-10, AGSC-09-20\)$/u,
+    run(world, rel, name, first, second) {
+      const gate = JSON.parse(world.read(rel));
+      assert.strictEqual(gate.status, 'fail');
+      const check = gate.checks.find((c) => c.name === name);
+      assert.strictEqual(check.status, 'fail');
+      assert.deepStrictEqual(check.findings.map((f) => f.code), [first, second]);
+    },
+  },
+  {
+    pattern: /^the item "([^"]+)" states a "([^"]+)" warrant grounded in "([^"]+)" \(AGSC-02-25, AGSC-05-40\)$/u,
+    run(world, rel, type, source) {
+      world.write(rel, world.read(rel).replace(/\n---\n/u, `\nwarrant:\n  source: ${source}\n  type: ${type}\n---\n`));
+      assert.deepStrictEqual(splitItem(world.read(rel)).frontmatter.warrant, { source, type });
+    },
+  },
+  {
+    pattern: /^"([^"]+)" holds the source "([^"]+)" and the warrant "([^"]+)" on "([^"]+)", both as xsd:string \(AGSC-05-40\)$/u,
+    run(world, nquadsRel, source, type, slug) {
+      const base = JSON.parse(world.read('agsc.config.json')).site.base;
+      const lines = new Set(world.read(nquadsRel).split('\n'));
+      const on = (property, value) => `<${base}concepts/${slug}/> <${property}> ${JSON.stringify(value)}`
+        + `^^<http://www.w3.org/2001/XMLSchema#string> <${base}> .`;
+      assert.ok(lines.has(on('http://purl.org/dc/terms/source', source)), `the warrant's source is not in ${nquadsRel}`);
+      assert.ok(lines.has(on('https://w3id.org/agentic-system-core/ns#warrant', type)), `the kind of warrant is not in ${nquadsRel}`);
+    },
+  },
+  {
+    pattern: /^"([^"]+)", expanded with "([^"]+)" and compacted again, is the same document \(AGSC-06-32\)$/u,
+    run(world, documentRel, contextRel) {
+      const doc = JSON.parse(world.read(documentRel));
+      const input = JSON.stringify({ doc, context: JSON.parse(world.read(contextRel)), contextUrl: doc['@context'] });
+      const r = spawnSync(process.execPath, [ROUND_TRIP], { input, encoding: 'utf8' });
+      assert.strictEqual(r.status, 0, r.stderr);
+      assert.strictEqual(canonicalize(JSON.parse(r.stdout)), canonicalize(doc));
+    },
+  },
+  {
+    pattern: /^the shipped validate-ontology reports "(AGSC-E\d{3})" on "([^"]+)" \(AGSC-05-38\)$/u,
+    run(world, code, rel) {
+      const r = world.tool('validate-ontology', ['--json', path.join(world.dir, rel)]);
+      assert.strictEqual(r.exit, 1, `${r.stdout}${r.stderr}`);
+      const { findings } = JSON.parse(r.stdout);
+      assert.ok(findings.length > 0 && findings.every((f) => f.code === code && f.file === rel), r.stdout);
+    },
+  },
+  {
+    pattern: /^the maintainer checks the TypeScript parts with "node tools\/build-ts --check"$/u,
+    run(world) {
+      world.tool('build-ts', ['--check']);
+    },
+  },
+  {
+    pattern: /^every module under "src-ts\/" has its compiled file under "src\/", headed with its source and the compiler version, byte for byte what tsc writes now$/u,
+    run() {
+      const { compile, HEADER_LINE } = require(BUILD_TS);
+      const { errors, files } = compile(ROOT);
+      assert.deepStrictEqual(errors, []);
+      assert.ok(files.length > 0, 'src-ts/ holds at least the proof module');
+      const version = require('typescript').version;
+      for (const { source, target, text } of files) {
+        const committed = fs.readFileSync(path.join(ROOT, target), 'utf8');
+        assert.strictEqual(committed, text, `${target} is not what tsc writes from ${source}`);
+        assert.deepStrictEqual(HEADER_LINE.exec(committed).slice(1, 3), [source, version]);
+      }
+    },
+  },
+  {
+    pattern: 'TypeScript and its type packages are development dependencies only, and no module the package ships requires them',
+    run() {
+      const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+      for (const name of ['typescript', '@types/node', 'typescript-eslint']) {
+        assert.ok(pkg.devDependencies[name] && !pkg.dependencies[name], name);
+      }
+      assert.ok(!pkg.files.includes('src-ts/'), 'the sources do not ship; their compiled files do, under src/');
+      const shipped = ['src', 'bin'].flatMap((dir) => fs.readdirSync(path.join(ROOT, dir), { recursive: true })
+        .filter((rel) => /\.js$/u.test(rel) && !rel.split(path.sep).includes('vendor')).map((rel) => path.join(ROOT, dir, rel)));
+      for (const file of shipped) {
+        assert.ok(!/\brequire\(\s*['"](typescript|@types\/|typescript-eslint)/u.test(fs.readFileSync(file, 'utf8')), file);
+      }
+    },
+  },
+  {
+    pattern: /^the compiled "src\/shared\/version-line\.js" gives the line "agsc --version" prints \(AGSC-09-09\)$/u,
+    run(world) {
+      const { versionLine } = require(path.join(ROOT, 'src', 'shared', 'version-line.js'));
+      const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+      for (const [flags, form] of [[['--version'], 'text'], [['--version', '--json'], 'json']]) {
+        const r = world.agsc(flags);
+        assert.strictEqual(r.exit, 0, r.stderr);
+        assert.strictEqual(r.stdout, versionLine(version, form));
+      }
     },
   },
 ];

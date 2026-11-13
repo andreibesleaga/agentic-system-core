@@ -29,18 +29,25 @@ explains the whole of that, in order, and ends with the setup for five assistant
 
 ## 2. What the assistant can do
 
-Seven tools, and no more (specification rule AGSC-09-13 — the rule ids are here only so
-you can look them up; you never need them to use this):
+Ten tools, and no more (specification rule AGSC-09-13 — the rule ids are here only so
+you can look them up; you never need them to use this). They are listed to the assistant
+in alphabetical order:
 
 | Tool | What it does |
 |---|---|
-| `search` | finds items in this memory that match some words |
-| `read` | returns one item: its frontmatter and its text |
+| `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`); for an item with a domain type, role, context or warrant, a hit also has a member `domain` with those parts |
+| `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version `bundle_version`, the item it cites, the section, the licence and the terms; AGSC-09-13 lists every member), so the assistant can cite a passage and check it before using it; for an item with a domain type, role, context or warrant, also a member `domain` with those parts |
 | `links` | returns the typed links authored on one item |
 | `compose` | takes a selection of items and reports whether they fit together |
 | `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |
 | `propose` | returns the prepared text of a change to one existing item |
 | `remember` | turns something you told it into a new, well-formed item — as text |
+| `brief` | explains a selection: why each item is in it, the order to adopt them, what is missing, what to do next — the content of `brief.json` of `agsc compose --brief`, without writing a file, with `domain` on the entries of such items and their domain links among the relations |
+| `explain` | says whether one typed link holds between two items and why: written by the author, or the steps that make it hold (an inverse, a chain) |
+| `check` | lists the link warnings about a selection of items, or about every item when no selection is given: an item that links to itself, two links that cannot both hold, a target of the wrong kind, a superseded item still `stable` |
+
+`brief`, `explain` and `check` read the items the node publishes (no draft, no retired
+item), as the page tools do; the other tools read the whole folder, drafts included.
 
 Beside the tools it offers:
 
@@ -250,6 +257,24 @@ args = ["-y", "agsc-cli", "mcp"]
 Here too a working directory is part of the documented configuration, so
 `cwd = "/path/to/your-bundle"` in that table serves a Bundle you did not start in.
 
+### Over HTTP on your own machine (from 1.1)
+
+An assistant or agent that reaches tool servers by URL rather than by starting a command
+can use the same server over Streamable HTTP, the HTTP transport of MCP revision 2026-07-28:
+
+```bash
+agsc mcp --http 8765            # or --http 0 to let the system choose a free port
+```
+
+The server prints the address it listens on to standard error, for example
+`http://127.0.0.1:8765/mcp`; give that URL to the client. It is the same server: the same ten
+tools, the same answers, and it writes nothing. It listens on the loopback address only —
+`127.0.0.1`, or with `--bind` another address in `127.0.0.0/8` or `::1` — so no other machine
+can reach it, and it refuses (HTTP 403) a request sent by a web page of another site, and one
+that names a host other than the loopback names and the bound address. It speaks revision
+2026-07-28 only; a client that opens with the `initialize` handshake of 2025-11-25 is refused
+and should use the command form above. Stop it with Ctrl-C.
+
 ## 6. Checking that it works
 
 From inside the Bundle, run the server by hand and send it one line. It answers with one
@@ -259,6 +284,57 @@ line of protocol and then waits:
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"check","version":"0"}}}' \
   | agsc mcp
 ```
+
+That is the handshake of revision 2025-11-25, which most assistants still send. A client of
+revision 2026-07-28 sends no handshake; it puts its revision in each request, and can ask
+the server which revisions it speaks:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+  | agsc mcp
+```
+
+The answer lists `"supportedVersions":["2026-07-28","2025-11-25"]`.
+
+The HTTP form, started with `agsc mcp --http 8765` in another terminal, answers the same
+request sent with the headers that revision asks for, and lists `"supportedVersions":["2026-07-28"]`:
+
+```bash
+curl -s http://127.0.0.1:8765/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' -H 'Mcp-Method: server/discover' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
+
+Every request over HTTP carries the headers `MCP-Protocol-Version` and `Mcp-Method`, and a
+`tools/call`, `resources/read` or `prompts/get` also carries `Mcp-Name`, the tool, resource or
+prompt it names (AGSC-09-18 (4)). A request without one is refused with HTTP 400 and the error
+`-32020`. A tool call sent by hand therefore looks like this:
+
+```bash
+curl -s http://127.0.0.1:8765/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' -H 'Mcp-Method: tools/call' -H 'Mcp-Name: search' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"handoff"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
+
+Over standard input and output, the first request decides the revision for the life of the
+process: after `initialize`, a request of 2026-07-28, or of any other revision, is refused with
+the error `-32022` naming 2025-11-25, and after a request of 2026-07-28, `initialize` is refused naming 2026-07-28 (a
+`server/discover` probe decides nothing). A client that wants the other revision starts the
+server again.
+
+A tool call over standard input and output carries the same `_meta` as the HTTP one, and needs
+no headers:
+
+```bash
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"handoff"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+  | agsc mcp
+```
+
+A line that is not a JSON-RPC request, such as a line of plain text or a request with `_meta`
+outside `params`, gets no answer and nothing on standard error; the official SDK the server is
+built on behaves the same. If a hand-written line gets no answer, check that it is valid JSON.
 
 If you see a JSON line naming `agentic-system-core`, the server works and any remaining
 problem is in your assistant's configuration. Two things to check first: the working
@@ -272,7 +348,7 @@ macOS and `%APPDATA%\Claude\logs` on Windows.
 
 ## 7. The same tools without any installation
 
-A published node registers the **same seven tools in the browser**, on its `/compose/`
+A published node registers the **same ten tools in the browser**, on its `/compose/`
 page and on every item page, wherever the browser exposes them. Nothing is installed and
 no server runs: the page reads the node's own published files. There too, `propose` and
 `remember` only ever hand back text — a web page holds no repository identity and cannot
@@ -280,8 +356,8 @@ write on your behalf.
 
 ---
 
-*Specification rules behind this page: AGSC-09-13 and AGSC-09-13a (the seven tools, the
-error shape, no stray output), AGSC-09-14a and AGSC-09-14b (`ask`, `remember`, the
+*Specification rules behind this page: AGSC-09-13 and AGSC-09-13a (the ten tools, the
+bound on `search` and `ask`, the citation records of `read`, the error shape, no stray output), AGSC-09-14a and AGSC-09-14b (`ask`, `remember`, the
 resources and the prompt), AGSC-09-16 (the same tools in a browser), AGSC-08-04 and
 AGSC-08-18 (human-gated writes, untrusted results), AGSC-11-18 (the security floor a
 surface inherits). The normative text is in `spec/`; where this page and a rule disagree,

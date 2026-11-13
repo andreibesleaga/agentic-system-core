@@ -1,0 +1,4 @@
+# The title has six characters.
+@prefix ex: <https://example.org/> .
+
+ex:term a ex:Term ; ex:title "abcdef" .

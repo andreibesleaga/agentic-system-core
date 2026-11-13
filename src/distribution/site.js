@@ -3,9 +3,10 @@
 // Implements AGSC-06-01 (the route set), AGSC-06-02/04 (the machine views and the
 // generated `_headers`, `_redirects` and `/404.html`), AGSC-06-16/21 (the index and
 // its shards), AGSC-06-19 (`sitemap.xml`), AGSC-06-18 (the three licence dialects),
-// AGSC-06-26…31 (the chunk export), AGSC-08-20 (the ledger written ONLY into the
-// build output), AGSC-10-13 (the boards) and AGSC-04-01/02/04/07/09 (determinism:
-// LF, NFC, JCS, `SOURCE_DATE_EPOCH`, byte-identical rebuilds).
+// AGSC-06-26…31 (the chunk export), AGSC-06-37 (the tabular chunk index), AGSC-08-20
+// (the ledger written ONLY into the build output), AGSC-10-13 (the boards) and
+// AGSC-04-01/02/04/07/09 (determinism: LF, NFC, JCS, `SOURCE_DATE_EPOCH`, byte-identical
+// rebuilds).
 //
 // Distribution READS the other contexts' results and ADDS NOTHING to the content.
 // Everything that reaches a file does so through the injected FileSystem port, and
@@ -24,6 +25,7 @@ const { canonicalize } = require('../knowledge/jcs.js');
 const { nfc, compareCodePoint, singleLine } = require('../knowledge/unicode.js');
 const { finding, unencodable } = require('../knowledge/validate.js');
 const chunks = require('../knowledge/chunks.js');
+const chunksIndex = require('../knowledge/chunks-index.js');
 const contentVersion = require('../knowledge/content-version.js');
 const adopt = require('../knowledge/adopt.js');
 const linksModule = require('../knowledge/links.js');
@@ -43,12 +45,16 @@ const headers = require('./headers.js');
 const now = require('./now.js');
 const html = require('./html.js');
 const { frontPage, peerSites } = require('./front-page.js');
+const { iconOf, ogImageOf } = require('./page-head.js');
+const wellKnown = require('./well-known.js');
 const theme = require('./theme.js');
 const composePage = require('./compose-page.js');
+const queryPage = require('./query-page.js');
 const searchPage = require('./search-page.js');
+const clustersPage = require('./clusters-page.js');
+const siteViews = require('./site-views.js');
 const webmcp = require('./webmcp.js');
 const pageTools = require('./page-tools.js');
-const surfaces = require('../boundary/surfaces.js');
 const federation = require('../boundary/federation.js');
 const browserBundle = require('../composition/browser.js');
 const skills = require('../composition/skills.js');
@@ -78,7 +84,7 @@ const DEFAULT_GRAPH = Object.freeze({
  *
  * @param {Array<object>} items the flattened, published items.
  * @param {string} bundleIri the Bundle IRI (with its trailing `/`).
- * @param {Array<string>|undefined} peers `peers[]` of the configuration.
+ * @param {Array<string|object>|undefined} peers `peers[]` of the configuration (a typed peer is read by its `url`, AGSC-11-24).
  * @param {Array<object>} findings the build's findings, appended to.
  * @returns {Array<{source:string, see_also:string, peer:string}>}
  */
@@ -165,45 +171,6 @@ function pageItemsOf(items, releases) {
 }
 
 /**
- * AGSC-11-16 / AGSC-11-19: the surfaces this build DECLARES, derived from what the
- * writer actually emits, through the Boundary context's `declare()` and through no
- * second list.
- *
- * `boundary/surfaces.js` is the module that knows every built-in surface, its route,
- * its access class and its version. A declaration assembled by hand from a few
- * emitted files plus `config.surfaces[]` could EMIT a surface (the page-tool surface
- * at `/compose/`, for instance) and never DECLARE it, which is exactly the condition
- * AGSC-11-19 tells the validator to warn about (AGSC-E211). One path, so a surface
- * cannot be served and forgotten.
- *
- * `webmcpVersion` is an OPTION, not a configuration key: `config.schema.json` closes
- * `surfaces[]` against the built-in surfaces, so a node states the WebMCP Draft
- * Community Group Report date it targets in code. The default is
- * `surfaces.WEBMCP_SURFACE_VERSION`; AGSC-11-16 conforms any
- * `YYYY-MM-DD` date and pins none.
- *
- * @param {{base:string, config:object, emitted:Array<string>, mcpServed?:boolean,
- *   webmcpVersion?:string}} options
- * @returns {Array<object>} `{surface, target, version, access}`, discovery's shape.
- */
-function declaredSurfaces(options) {
-  const config = options.config || {};
-  const declared = surfaces.declare({
-    base: `${withoutTrailingSlashes(String(options.base))}/`,
-    emitted: options.emitted || [],
-    mcpServed: options.mcpServed === true,
-    surfaces: Array.isArray(config.surfaces) ? config.surfaces : [],
-    webmcpVersion: options.webmcpVersion,
-  });
-  return declared.map((link) => {
-    const entry = { surface: link['agsc-surface'][0], target: link.href };
-    if (link['agsc-surface-version'] !== undefined) [entry.version] = link['agsc-surface-version'];
-    if (link['agsc-access'] !== undefined) [entry.access] = link['agsc-access'];
-    return entry;
-  });
-}
-
-/**
  * AGSC-11-14: the forge address at which a visitor edits ONE
  * item's source file.
  *
@@ -225,10 +192,13 @@ function declaredSurfaces(options) {
  */
 function contributeEditUrl(config, path) {
   const entries = Array.isArray(config && config.contribute) ? config.contribute : [];
-  const entry = entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
+  // From 1.1 an entry may name the source repository and branch itself; they are read as
+  // given, from an entry of any mode, and the `pr` target is no longer taken for the repository.
+  const named = entries.find((c) => c && typeof c.repository === 'string' && /^https:\/\//u.test(c.repository));
+  const entry = named || entries.find((c) => c && c.mode === 'pr' && typeof c.target === 'string'
     && /^https:\/\//u.test(c.target));
   if (entry === undefined) return null;
-  const repository = withoutTrailingSlashes(String(entry.target))
+  const repository = withoutTrailingSlashes(String(named ? entry.repository : entry.target))
     .replace(/\.git$/u, '')
     .replace(/\/(?:compare|pulls|pull\/new|issues\/new)$/u, '');
   const host = repository.replace(/^https:\/\//u, '').split('/')[0].toLowerCase();
@@ -238,18 +208,21 @@ function contributeEditUrl(config, path) {
   // forge this engine states the edit-view spelling of.
   const segment = Object.prototype.hasOwnProperty.call(FORGE_EDIT_SEGMENT, host)
     ? FORGE_EDIT_SEGMENT[host] : undefined;
-  if (segment === undefined) return entry.target;
-  return `${repository}${segment}${path.split('/').map(encodeURIComponent).join('/')}`;
+  if (segment === undefined) return named ? repository : entry.target;
+  const ref = typeof entry.branch === 'string' && named ? entry.branch : 'HEAD';
+  const encode = (value) => value.split('/').map(encodeURIComponent).join('/');
+  return `${repository}${segment}${encode(ref)}/${encode(path)}`;
 }
 
 /**
- * The edit-view spelling of the forges whose shape this engine states. A host absent
- * from this map is never guessed at: the contribution target is linked instead.
+ * The edit-view spelling of the forges whose shape this engine states: the part before the
+ * branch (or `HEAD`, which names the default branch without this engine knowing its name).
+ * A host absent from this map is never guessed at: the contribution target is linked instead.
  */
 const FORGE_EDIT_SEGMENT = Object.freeze({
-  'codeberg.org': '/_edit/HEAD/',
-  'github.com': '/edit/HEAD/',
-  'gitlab.com': '/-/edit/HEAD/',
+  'codeberg.org': '/_edit/',
+  'github.com': '/edit/',
+  'gitlab.com': '/-/edit/',
 });
 
 /** AGSC-05-01: `<site.base>/<type-plural>/<slug>/`. */
@@ -522,12 +495,13 @@ function securityFields(text) {
  * published verbatim and in the authored order. What is derived, and only when the
  * authored file does not state it: `Expires` (364 days after the build instant, so
  * it is inside §2.5.5's year and can never go stale between two builds), `Canonical`
- * (§2.5.2) and `Policy` (§2.5.7, only when `/legal/` is emitted — a `Policy` naming
- * a 404 is worse than no `Policy` at all).
+ * (§2.5.2) and `Policy` (§2.5.7): the disclosure page that `site.security_policy` declares
+ * (AGSC-06-36, from 1.1) or, where none is declared, `/legal/` — the last only when it is
+ * emitted, because a `Policy` naming a 404 is worse than no `Policy` at all.
  *
  * @param {string} base the site base (AGSC-01-19).
  * @param {string} instant the build instant (AGSC-04-10).
- * @param {object} [options] `{authored, legal}`.
+ * @param {object} [options] `{authored, legal, policy}`; `policy` is `site.security_policy`.
  * @returns {{text:(string|null), findings:Array<object>}} `text` is `null` when
  *   nothing valid can be emitted; every reason is a finding.
  */
@@ -643,7 +617,9 @@ function securityTxt(base, instant, options = {}) {
   if (!stated.has('canonical')) {
     lines.push(`Canonical: ${singleLine(discovery.href(base, '/.well-known/security.txt'))}`);
   }
-  if (!stated.has('policy') && legal) {
+  if (!stated.has('policy') && typeof options.policy === 'string' && options.policy !== '') {
+    lines.push(`Policy: ${singleLine(options.policy)}`);
+  } else if (!stated.has('policy') && legal) {
     lines.push(`Policy: ${singleLine(discovery.href(base, '/legal/'))}`);
   }
   return { findings, text: `${lines.join('\n')}\n` };
@@ -768,6 +744,7 @@ function publicationFindings(bundle, ports, options = {}) {
   const security = securityTxt(base, instant, {
     authored: options.securityTxt === undefined ? readSecurityTxt(ports) : options.securityTxt,
     legal: hasLegal,
+    policy: (config.site || {}).security_policy,
     publishing: options.publishing === true,
   });
   const findings = [...security.findings];
@@ -973,7 +950,7 @@ function readDiagramSource(ports, slug) {
  * ≤60 s build per 500 items … Exceeding a budget that no sharding rule relieves MUST
  * fail the build." (Three budgets.)
  *
- * All three byte/scale budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
+ * The byte budgets are MEASURED here. The rule says a breach MUST FAIL the build, and
  * `spec/09-conformance.md` §9.4 registers NO code for a budget breach — so the
  * measurement is reported under `AGSC-E904`, the size-cap code, whose registry row
  * names AGSC-01-16 and AGSC-01-34 and not this rule. That is a compromise and it is
@@ -985,11 +962,10 @@ function readDiagramSource(ports, slug) {
  * spells `1 MiB` explicitly where it means the binary prefix — so the two rules
  * distinguish them deliberately.
  *
- * The three BYTE budgets are measured here, where the bytes are. The fourth is a
- * DURATION, and a duration is a wall-clock measure: measuring it inside `build`
- * would make a finding depend on how busy the machine is, which is exactly the
- * flaky test this project forbids and would break `verify`'s byte comparison. It is
- * therefore `timeBudget()`, which the CLI calls with the elapsed time it measured.
+ * The third budget of the rule, 60 s per 500 items, is a DURATION. From 1.1 it is
+ * advisory (AGSC-06-21, AGSC-04-03): a build never measures time, because a finding
+ * that depends on how busy the machine is would break `verify`'s byte comparison, so
+ * nothing here measures it and no build is refused for being slow.
  *
  * @param {Map<string,string>} files the emitted map.
  * @param {number} publishedCount the published item count.
@@ -1011,13 +987,6 @@ const BUDGET_HTML_BYTES = 100000;
  * on its own.
  */
 const BUDGET_INDEX_DOC_BYTES = 1000000;
-const BUDGET_MS_PER_500_ITEMS = 60000;
-/**
- * How many members a cluster page lists. AGSC-06-21 paginates an INDEX route above 500 entries
- * and says an item page "is never paginated"; a cluster page is an item page under the same 100 KB
- * budget (1,000 members in full measured 158 KB), so the list stops at the rule's bound.
- */
-const CLUSTER_MEMBERS_SHOWN = search.ITEMS_PER_SHARD;
 
 /** AGSC-06-21: the routes the index budget measures, one document at a time. */
 const INDEX_DOCUMENT_ROUTE = /^\/search(?:-[0-9]+)?\.json$/u;
@@ -1047,24 +1016,6 @@ function budgets(files) {
     }
   }
   return out;
-}
-
-/**
- * AGSC-06-21's fourth budget: "≤60 s build per 500 items". The allowance scales with
- * the Bundle, so the budget is per-scale and a 5,000-item Bundle conforms.
- *
- * @param {number} elapsedMs the wall-clock duration the CALLER measured.
- * @param {number} publishedCount
- * @returns {Array<object>} Findings.
- */
-function timeBudget(elapsedMs, publishedCount) {
-  if (elapsedMs == null || !Number.isFinite(Number(elapsedMs))) return [];
-  const allowed = Math.max(1, Math.ceil(Number(publishedCount) / 500)) * BUDGET_MS_PER_500_ITEMS;
-  if (Number(elapsedMs) <= allowed) return [];
-  return [finding('AGSC-E904',
-    `the build took ${Math.round(Number(elapsedMs))} ms for ${publishedCount} published items; `
-    + `AGSC-06-21 budgets ${allowed} ms (60 s per 500 items)`,
-    { file: 'agsc.config.json' })];
 }
 
 /**
@@ -1101,8 +1052,9 @@ const UNPRODUCED_ROUTES = Object.freeze([
     + ' `/changelog/` is not in this list: AGSC-04-25 pins its versions list, which'
     + ' the build derives from the git-log file whenever it has one'],
   ['/feed.xml',
-    'reserved to 1.1 (AGSC-00-20): no 1.0 rule pins a feed\'s bytes, so the route cannot be'
-    + ' derived, and `build.feed` is a RESERVED configuration name a 1.0 tool rejects with'
+    'reserved to a later MINOR (AGSC-00-20 as amended for 1.1.0): no 1.0 or 1.1'
+    + ' rule pins a feed\'s bytes, so the route cannot be derived, and `build.feed` is a RESERVED'
+    + ' configuration name a 1.0 or 1.1 tool rejects with'
     + ' AGSC-E004 (AGSC-06-01) — it is not a switch an operator may set'],
   ['/graph/fragments/**',
     'OPTIONAL at 1.x; `knowledge/nquads.js#shard` produces them and no rule requires the route (AGSC-06-33)'],
@@ -1156,28 +1108,13 @@ function skillPacks(bundle, options, config) {
  * @param {Array<object>} [options.bundleVersionFindings] the findings of that
  *   derivation when the caller did it — an `AGSC-E506` for an unusable git tag.
  * @param {string} [options.contentTree] the git tree hash of `content/`.
+ * @param {{url:string, alt?:string}} [options.ogImage] the image every page with an address
+ *   of its own announces as `og:image` (The Open Graph protocol): an `https://` address, or a site
+ *   path (`/assets/card.png`) resolved against `site.base`. A build option, not a key of
+ *   `agsc.config.json`: the configuration schema closes `site`, so the command line never
+ *   sets it, and without it no page carries `og:image`. Anything else is refused (`Error`).
  * @returns {{files:Map<string,string>, findings:Array<object>, skipped:Array<string>}}
  */
-/**
- * AGSC-03-01: an item's authored Links as `{key, targets:[{href, title}]}`, in the declared key
- * order, published targets only (AGSC-06-30). The items are indexed by slug once (first wins).
- * @returns {{publishedBySlug: Map<string, object>, typedLinksOf: function(object): Array<object>}}
- */
-function typedLinksResolver(items) {
-  const publishedBySlug = new Map();
-  for (const i of items) if (!publishedBySlug.has(i.slug)) publishedBySlug.set(i.slug, i);
-  const typedLinksOf = (item) => linksModule.LINK_KEYS
-    .filter((key) => Array.isArray(item[key]) && item[key].length > 0)
-    .map((key) => ({
-      key,
-      targets: item[key].map((value) => String(value).split('#')[0])
-        .map((slug) => publishedBySlug.get(slug))
-        .filter((target) => target !== undefined)
-        .map((target) => ({ href: routeOf(target), title: target.title == null ? target.slug : String(target.title) })),
-    }));
-  return { publishedBySlug, typedLinksOf };
-}
-
 /**
  * AGSC-01-14 (as amended): the strings of the configuration, the Bundle
  * root and the items that no JSON artefact can carry (a lone surrogate written as an
@@ -1243,6 +1180,7 @@ function buildSite(bundle, ports, options, findings) {
   const config = bundle.config || {};
   const site = config.site || {};
   const base = withoutTrailingSlashes(String(site.base || ''));
+  const ogImage = ogImageOf(options.ogImage, base);
   const level = options.level == null ? 2 : Number(options.level);
   // AGSC-10-02 / AGSC-10-04: a Level-0 publisher emits the four Level-0 artefacts
   // and nothing this specification asks only of a writer.
@@ -1281,7 +1219,9 @@ function buildSite(bundle, ports, options, findings) {
     clusters: items.filter((i) => i.type === 'cluster').map((c) => ({ slug: c.slug, title: c.title })),
     items,
   };
-  const llmsOptions = { bundleVersion, generatedAt: instant, specVersion, terms: chunks.termsFor(licenseProse) };
+  const llmsOptions = {
+    bundleVersion, generatedAt: instant, specVersion, terms: chunks.termsFor(licenseProse), visibility: config.visibility,
+  };
   put('/llms.txt', llms.llmsTxt(llmsBundle, llmsOptions));
   put('/llms-full.txt', llms.llmsFullTxt(llmsBundle, llmsOptions));
 
@@ -1290,7 +1230,15 @@ function buildSite(bundle, ports, options, findings) {
   // own, and AGSC-06-30's published set is the status one `publishedItems` applied.
   for (const file of search.files(items).files) put(file.path, jsonBytes(file.value));
 
-  // ------------------------------------------------------------ chunks (AGSC-06-26…31)
+  // AGSC-06-18: whether the build writes `/legal/`, from the Bundle's own `LICENSE-CONTENT` (the
+  // licence dialects below); decided here because the chunks carry the licence URL it gives.
+  const licenseContent = options.licenseContent === undefined
+    ? readLicenseContent(ports)
+    : options.licenseContent;
+  const renderer = options.render === undefined ? markdown.render : options.render;
+  const hasLegal = full && typeof renderer === 'function' && licenseContent !== null;
+
+  // ------------------------------------------------------------ chunks (AGSC-06-26…31, AGSC-06-37)
   // "A Level ≥ 2 writer MUST emit /chunks.jsonl" — a Level-0 publisher emits none.
   const publishedSlugs = new Set(items.map((i) => String(i.slug)));
   const chunkRecords = !full ? [] : chunks.records(items.map((i) => withoutExcludedLinks(i, publishedSlugs)), {
@@ -1299,12 +1247,18 @@ function buildSite(bundle, ports, options, findings) {
     license: licenseProse,
     attachmentBytes: options.attachmentBytes,
     releases: config.releases,
+    // AGSC-06-44 / AGSC-06-29: the licence URL on every chunk, and the optional RFC 9530 member.
+    licenseUrl: chunks.licenseUrl(config, { legal: hasLegal }),
+    contentDigest: (config.chunks || {}).content_digest === true,
   }).records;
   if (full) {
     // AGSC-06-31: the shard manifest carries the content version.
     const chunkFiles = chunks.files(chunkRecords, canonicalize,
       { bundleVersion, generatedAt: instant });
     for (const file of chunkFiles.files) put(file.path, file.text);
+    // AGSC-06-37: the tabular index, which this writer chooses to emit wherever the rule lets it.
+    if (items.length <= chunks.ITEMS_PER_SHARD) put('/chunks-index.toon', chunksIndex.chunksIndexToon(chunkRecords));
+    else skipped.push('/chunks-index.toon (the published set holds more than 500 items, so /chunks.jsonl is sharded and the index has no shard; AGSC-06-37)');
   }
   // AGSC-06-28: each chunk that begins with a heading is an in-page anchor on it.
   const anchorsBySlug = html.chunkAnchors(chunkRecords);
@@ -1333,8 +1287,8 @@ function buildSite(bundle, ports, options, findings) {
   // ------------------------------------------------------------ ledger (AGSC-08-20)
   let ledgerHead = null;
   if (full && options.gitLog !== undefined && options.contentTree !== undefined) {
-    const derived = ledgerModule.derive(options.gitLog, options.contentTree, options.version,
-      { epoch: ports.clock.now() });
+    const derived = ledgerModule.derive(options.gitLog, options.contentTree,
+      { actors: (config.ledger || {}).actors, epoch: ports.clock.now() });
     put('/ledger.jsonl', derived.ledger);
     ledgerHead = derived.head;
   } else {
@@ -1379,7 +1333,11 @@ function buildSite(bundle, ports, options, findings) {
   // omitted; a reference to any other host stays a plain `dcterms:source` literal.
   const citations = peerCitationsOf(pageItems, `${base}/`, config.peers, findings);
   const graph = options.graph === undefined ? DEFAULT_GRAPH : options.graph;
+  // AGSC-05-38/05-39: the site vocabulary of a node that uses the domain layer, else null.
+  const siteVocabulary = siteViews.siteVocabularyOf(bundle, config);
+  const graphDomain = siteViews.graphDomainOf(config, siteVocabulary);
   const graphBase = {
+    ...(graphDomain === null ? {} : { domain: graphDomain }),
     citations,
     mentions,
     base: `${base}/`,
@@ -1388,7 +1346,8 @@ function buildSite(bundle, ports, options, findings) {
       id: (config.bundle || {}).id,
       license_prose: licenseProse,
       terms: chunks.termsFor(licenseProse),
-      spec_version: specVersion,
+      // AGSC-05-26: the graph states the version the Bundle declares, not the engine's.
+      spec_version: config.spec_version,
     },
     attachmentBytes: options.attachmentBytes,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
@@ -1410,11 +1369,13 @@ function buildSite(bundle, ports, options, findings) {
   // "is a constant of this specification, resolvable by every reader at every
   // Level". No `@context` below Level 2 would make a conforming processor silently
   // discard every compacted member.
+  // The URL and the versioned route name the CONTEXT version, a constant (AGSC-05-09);
+  // `ontologyVersion` only says that the vocabulary the context is built from was supplied.
   const ontologyVersion = options.ontologyVersion;
   let contextUrl;
   if (contextObject !== null) {
     if (full) contextUrl = discovery.href(base, '/ns/context.jsonld');
-    else if (ontologyVersion) contextUrl = jsonldView.persistentContextUrl(ontologyVersion);
+    else if (ontologyVersion) contextUrl = jsonldView.persistentContextUrl();
   }
   const graphView = {
     ...graphBase,
@@ -1437,9 +1398,9 @@ function buildSite(bundle, ports, options, findings) {
       // only `/ns/` routes a content node emits: the vocabulary documents
       // (`/ns/agsc.ttl`, `/ns/agsc.rdf`, the `/ns/` index) belong to the namespace
       // document site (AGSC-06-06), which is what the w3id negotiation resolves to.
-      if (ontologyVersion) put(`/ns/${ontologyVersion}/context.jsonld`, jsonBytes(contextObject));
+      if (ontologyVersion) put(`/ns/${jsonldView.CONTEXT_VERSION}/context.jsonld`, jsonBytes(contextObject));
       else {
-        skipped.push('/ns/<ontology-version>/context.jsonld (no ontology version was supplied,'
+        skipped.push('/ns/<context-version>/context.jsonld (no ontology version was supplied,'
           + ' so the versioned copy AGSC-05-09 requires cannot be named; AGSC-06-01)');
       }
     }
@@ -1457,7 +1418,8 @@ function buildSite(bundle, ports, options, findings) {
   const fingerprint = files.has('/graph.nq')
     ? createHash('sha256').update(files.get('/graph.nq'), 'utf8').digest('hex')
     : '';
-  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion });
+  // AGSC-06-22: the line names the version the Bundle declares (AGSC-00-17).
+  const nowMd = now.nowMarkdown(nowState, { bundleVersion, fingerprint, specVersion: config.spec_version, visibility: config.visibility });
   if (full) put('/now.md', nowMd);
 
   if (!full && graph !== null && typeof graph.jsonld === 'function' && contextUrl === undefined) {
@@ -1482,7 +1444,9 @@ function buildSite(bundle, ports, options, findings) {
     }
     if (graph !== null && typeof graph.jsonld === 'function') {
       const whole = graph.jsonld(pageItems, graphView);
-      for (const item of pageItems) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], graphView))));
+      // AGSC-05-38: the site vocabulary's own triples are in no per-item view.
+      const pageView = { ...graphView, siteVocabulary: false };
+      for (const item of pageItems) put(`/pages/${item.slug}.jsonld`, jsonBytes(jsonldView.restrictTo(whole, graph.jsonld([item], pageView))));
     } else {
       skipped.push('/pages/<slug>.jsonld (the RDF views were switched off; AGSC-06-02)');
     }
@@ -1494,11 +1458,6 @@ function buildSite(bundle, ports, options, findings) {
   // without it is incomplete". A Bundle that ships no such file gets no `/legal/`
   // route AND no link to one, in any of the three dialects, so that no build ever
   // emits a dangling internal link.
-  const licenseContent = options.licenseContent === undefined
-    ? readLicenseContent(ports)
-    : options.licenseContent;
-  const renderer = options.render === undefined ? markdown.render : options.render;
-  const hasLegal = full && typeof renderer === 'function' && licenseContent !== null;
   if (full && licenseContent === null) {
     skipped.push('/legal/ (no LICENSE-CONTENT file in the Bundle root; AGSC-01-26, AGSC-06-18 —'
       + ' the Content Use Terms link is omitted from every page and from both text dialects'
@@ -1538,33 +1497,18 @@ function buildSite(bundle, ports, options, findings) {
     put('/.well-known/security.txt', security.text);
   }
 
-  // ------------------------------------------------------------ discovery document
-  const digests = {};
-  for (const [route, text] of files) digests[route] = discovery.digestOf(text);
-  const wellknown = discovery.linkset(config, {
-    level,
-    ledgerHead,
-    bundleVersion,
-    digests,
-    counts: discovery.countsOf(items),
-    generatedAt: instant,
-    specVersion,
-    // AGSC-06-08 / AGSC-04-15: the bundle hash is the SHA-256 of `graph.nq`.
-    bundleHash: files.has('/graph.nq') ? digests['/graph.nq'] : undefined,
-    // AGSC-11-16: the declaration is DERIVED from what the writer actually emits;
-    // only the declaration-only surfaces come from configuration.
-    // `/legal/` is written further down, from the same `hasLegal` decision.
-    routes: [...files.keys(), ...(hasLegal ? ['/legal/index.html'] : [])],
-    surfaces: declaredSurfaces({
-      base,
-      config,
-      emitted: [...files.keys(), ...(full && typeof renderer === 'function' ? ['/compose/'] : [])],
-    }),
+  // ------------------------------------------- the well-known files (AGSC-06-07, AGSC-06-34, AGSC-06-42)
+  // The A2A card, the discovery document and the opt-in catalogue files, in that order: each later
+  // one points at the bytes of the one before (well-known.js). `/legal/` is written further down,
+  // from the same `hasLegal` decision.
+  const known = wellKnown.files({
+    bundleVersion, config, description: indexFrontmatter.description, emitted: files, generatedAt: instant,
+    items, ledgerHead, legal: hasLegal, level, packs: packs.index.packs, pages: full && typeof renderer === 'function', specVersion,
+    chunkSet: chunks.commitment(chunkRecords),
   });
-  // A build given no git-log file publishes no ledger (AGSC-06-01) and says so in
-  // `skipped`; its own check does not fault what it could not derive.
-  findings.push(...discovery.check(wellknown, { level, requireLedger: ledgerHead !== null }));
-  put(discovery.WELLKNOWN_PATH, jsonBytes(wellknown));
+  findings.push(...known.findings);
+  skipped.push(...known.skipped);
+  for (const [route, text] of known.files) put(route, text);
 
   // ------------------------------------------------------- assets (AGSC-06-01)
   // "`/assets/<path>` for every file under `content/assets/` that a PUBLISHED item's
@@ -1594,8 +1538,7 @@ function buildSite(bundle, ports, options, findings) {
   }
 
   // ------------------------------------------------------------ headers
-  // (`/sitemap.xml` is put LAST, below, once every HTML route exists: AGSC-06-19.)
-  put('/_headers', headers.headersFile(config));
+  // (`_headers` and `/sitemap.xml` are put last, below, once every page exists: AGSC-06-19, AGSC-06-39.)
   put('/_redirects', headers.redirectsFile(
     pageItems.flatMap((i) => (Array.isArray(i.aliases) ? i.aliases : [])
       .filter((a) => String(a).startsWith('/'))
@@ -1604,6 +1547,9 @@ function buildSite(bundle, ports, options, findings) {
 
   // ------------------------------------------------------------ HTML pages (C)
   const render = renderer;
+  // AGSC-06-39: `/query/` on a node that serves `/graph.nq`, unless `site.query_page` is false.
+  const query = queryPage.decision({ graphServed: files.has('/graph.nq'), input: options.queryPage, pages: full && typeof render === 'function', site });
+  if (query.skipped !== null) skipped.push(query.skipped);
   if (full && typeof render === 'function') {
     const disclaimer = readDisclaimer(ports);
     const pageOptions = {
@@ -1630,24 +1576,23 @@ function buildSite(bundle, ports, options, findings) {
         ...[...new Set(items.map((i) => TYPE_PLURAL[i.type] || TYPE_PLURAL.concept))].sort(compareCodePoint)
           .map((plural) => [`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1)]),
         ...(packs.index.packs.length > 0 ? [['/skills/', 'Skills']] : []),
-        ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search']],
+        ['/now/', 'Now'], ['/compose/', 'Compose'], ['/search/', 'Search'], ...(query.on ? [[queryPage.ROUTE, 'Query']] : [])],
       siteTitle: site.title == null ? indexFrontmatter.title : site.title,
       siteBase: base, // `<link rel="canonical">` on every page with a route of its own
+      icon: iconOf(files), // the node's icon: the published assets are written above
+      ogImage, // `og:image` only when the build is given one
       render,
       year: String(instant).slice(0, 4),
     };
     const entryOf = (i) => ({ href: routeOf(i), title: i.title == null ? i.slug : i.title, description: i.description });
-    const { publishedBySlug, typedLinksOf } = typedLinksResolver(pageItems);
-    const membersOf = (cluster) => items
-      .filter((i) => i.type !== 'cluster' && Array.isArray(i.clusters) && i.clusters.map(String).includes(cluster.slug))
-      .map(entryOf);
-    const clusterMembers = (all) => ({ members: all.slice(0, CLUSTER_MEMBERS_SHOWN), membersTotal: all.length });
+    // AGSC-06-01, AGSC-06-38, AGSC-07-25: the tags, members, relations and brief of the item pages (site-views.js).
+    const { itemParts, membersOf, scripts: domainScripts, tags, views } = siteViews.itemViews({ bundle, config, entryOf, instant, items, pageItems, routeOf, siteVocabulary });
     // only a PUBLISHED item has a route (AGSC-06-30), so only a published
     // item is a rewriting target; a body link to a draft keeps its authored spelling
     // and is reported by the dangling-link guard.
     const publishedByPath = new Map(pageItems.map((i) => [pathOf(i), i]));
     /** One index route, paginated per AGSC-06-21 above 500 entries. */
-    const putIndex = (route, title, description, entries, render = html.indexPage) => {
+    const putIndex = (route, title, description, entries, render = html.indexPage, empty = undefined) => {
       for (const page of paginate(route, entries)) {
         const jsonld = schemaOrg({
           '@context': SCHEMA_ORG, '@type': 'Dataset',
@@ -1655,7 +1600,7 @@ function buildSite(bundle, ports, options, findings) {
           name: title == null ? '' : title,
           url: discovery.href(base, page.route),
         });
-        put(`${page.route}index.html`, render({ description, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
+        put(`${page.route}index.html`, render({ description, empty, entries: page.entries, title }, { ...pageOptions, jsonld, route: page.route }));
       }
     };
 
@@ -1678,6 +1623,8 @@ function buildSite(bundle, ports, options, findings) {
       if (diagramSource !== null) {
         findings.push(...html.diagramFigure(item, diagramSource).findings);
       }
+      const parts = itemParts(item);
+      findings.push(...parts.findings);
       // AGSC-06-01: every attachment the item names is a route of its own.
       putAttachments(ports, item, { findings, put, refused: refusedAttachments, report: options.publication !== false });
       // the body's references are rendered as the ROUTES this build emits,
@@ -1695,38 +1642,31 @@ function buildSite(bundle, ports, options, findings) {
         pageToolScripts: composePage.PAGE_TOOL_SCRIPTS,
         // AGSC-11-14: the plain "Propose an edit" anchor.
         editUrl: contributeEditUrl(config, pathOf(item)),
-        // A cluster page lists the published items that name it, in the published order, up to the bound above.
-        ...(item.type === 'cluster' ? clusterMembers(membersOf(item)) : {}),
-        // The metadata list's Cluster row: each named cluster, linked when published.
-        clusters: (Array.isArray(item.clusters) ? item.clusters : []).map((slug) => {
-          const cluster = publishedBySlug.get(String(slug));
-          return cluster === undefined || cluster.type !== 'cluster' ? { title: String(slug) } : { href: routeOf(cluster), title: cluster.title == null ? cluster.slug : cluster.title };
-        }),
+        ...parts.options,
         ...(diagramSource === null ? {} : { diagramSource }),
-        // AGSC-03-01: the typed Links the item authors, published targets only.
-        links: typedLinksOf(item),
       }));
     }
     // AGSC-06-01: `/` is the Bundle's own index route.
     // The front page introduces the node and points at its index pages; the full
     // lists live on those pages, so the front page stays short.
-    put('/index.html', frontPage({ base, bundle, indexFrontmatter, items, pageOptions, render, schemaOrg, site, textBytes }));
+    // AGSC-06-41: the Dataset block names the machine files written so far (all of them by now).
+    const home = frontPage({ bundle, hasLegal, indexFrontmatter, instant, items, pageOptions, render, schemaOrg, served: files, site, textBytes });
+    findings.push(...home.findings);
+    put('/index.html', home.html);
     // AGSC-06-02: an EMPTY type folder is omitted from navigation (the header above
     // lists only the plurals that have items) but its index route still resolves, so
     // every one of the six type plurals gets its index page, empty or not.
+    // AGSC-06-38: `/clusters/` adds the overview, the legend and the explorer, and loads their two files (clusters-page.js).
+    const clusters = clustersPage.view({ contextObject, graphEmitted: files.has('/graph.jsonld'), items, specVersion, views });
+    findings.push(...clusters.findings);
+    for (const [route, text] of clusters.assets) put(route, textBytes(text));
     for (const plural of Object.values(TYPE_PLURAL).slice().sort(compareCodePoint)) {
       putIndex(`/${plural}/`, plural.charAt(0).toUpperCase() + plural.slice(1), `Every published ${plural.slice(0, -1)} of this node.`,
         items.filter((i) => (TYPE_PLURAL[i.type] || TYPE_PLURAL.concept) === plural)
-          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))));
+          .map((i) => (i.type === 'cluster' ? { ...entryOf(i), count: membersOf(i).length } : entryOf(i))), plural === 'clusters' ? clusters.render : undefined,
+          siteViews.emptyFolder(plural));
     }
-    // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used.
-    const tags = new Map();
-    for (const item of items) {
-      for (const tag of Array.isArray(item.tags) ? item.tags : []) {
-        if (!tags.has(String(tag))) tags.set(String(tag), []);
-        tags.get(String(tag)).push(entryOf(item));
-      }
-    }
+    // AGSC-06-01: `/tags/<tag>/`, one index route per tag actually used (`tags` above).
     for (const tag of [...tags.keys()].sort(compareCodePoint)) {
       putIndex(`/tags/${tag}/`, tag, `Every item tagged "${tag}".`, tags.get(tag));
     }
@@ -1796,12 +1736,14 @@ function buildSite(bundle, ports, options, findings) {
     // three scripts are same-origin assets of this one route, because AGSC-06-17's
     // `script-src 'self'` admits no inline script.
     put('/compose/index.html', html.composePage({ assets: composePage.ASSETS }, { ...pageOptions, route: '/compose/' }));
-    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ specVersion })));
-    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({
-      bundleId: (config.bundle || {}).id, specVersion,
-    })));
+    // AGSC-09-13: the page tool `brief` runs the brief (AGSC-07-25) and states the prose licence; both scripts carry the domain parts only on a node whose listed items state a domain key or a domain link.
+    put('/compose/agsc-core.js', textBytes(browserBundle.bundle({ brief: true, domain: domainScripts, specVersion })));
+    put('/compose/agsc-page-tools.js', textBytes(pageTools.bundle({ bundleId: (config.bundle || {}).id, domain: domainScripts, licenseProse, specVersion })));
     put('/compose/agsc-compose.js', textBytes(composePage.controller({ licenseProse, specVersion })));
     put('/compose/webmcp.js', textBytes(webmcp.script()));
+    // AGSC-06-39: the query page, its scripts and stylesheet, and the engine's files byte for byte (query-page.js).
+    const queryFiles = query.on ? queryPage.files(siteViews.queryPageFacts(options, { base, bundle, instant, pageItems, siteVocabulary, specVersion }), pageOptions) : [];
+    for (const [route, bytes] of queryFiles) put(route, typeof bytes === 'string' ? textBytes(bytes) : bytes);
 
     // AGSC-10-13 + Q18: the HUMAN board page beside the JSON export.
     // Columns are the nine task states of AGSC-02-99, in their declared order, so
@@ -1839,6 +1781,9 @@ function buildSite(bundle, ports, options, findings) {
 
   // ------------------------------------------------------------ AGSC-06-01 routes with no producer
   if (full) for (const [route, why] of UNPRODUCED_ROUTES) skipped.push(`${route} (${why})`);
+
+  // ------------------------------------------------------------ `_headers` (AGSC-06-17), from what was PUT (`/query/*`: AGSC-06-39)
+  put('/_headers', headers.headersFile(config, [...files.keys()]));
 
   // ------------------------------------------------------------ sitemap (AGSC-06-19)
   // "every published route" — defined as every route this build emits as
@@ -1929,10 +1874,9 @@ function verify(bundle, ports, options = {}) {
 module.exports = {
   build, write, verify, routeOf, sitemap, publishedRoutes, withoutExcludedLinks, robots, tdmrep, securityTxt,
   publishedItems, pageItemsOf, jsonBytes, paginate, readAttachment, readDiagramSource,
-  declaredSurfaces, contributeEditUrl, pageMarkdown, skillPacks, FORGE_EDIT_SEGMENT,
-  budgets, timeBudget, internalLinks, resolvesTo, readLicenseContent,
+  declaredSurfaces: wellKnown.declaredSurfaces, contributeEditUrl, skillPacks,
+  budgets, internalLinks, resolvesTo, readLicenseContent,
   readDisclaimer, readSecurityTxt, readPrivacyNotice, operatorLine, publicationFindings,
-  bodyHrefResolver,
-  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, BUDGET_MS_PER_500_ITEMS, CLUSTER_MEMBERS_SHOWN,
+  BUDGET_HTML_BYTES, BUDGET_INDEX_DOC_BYTES, CLUSTER_MEMBERS_SHOWN: siteViews.CLUSTER_MEMBERS_SHOWN,
   DEFAULT_OUT, EXCLUDED_STATUS, UNPRODUCED_ROUTES,
 };

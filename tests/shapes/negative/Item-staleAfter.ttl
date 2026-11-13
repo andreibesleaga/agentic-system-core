@@ -1,0 +1,5 @@
+# Item-staleAfter: stale_after as a plain string, not an instant.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; asc:staleAfter "tomorrow" .

@@ -14,6 +14,8 @@ const federation = require('../../src/boundary/federation.js');
 
 const A = 'https://a.example/';
 const B = 'https://b.example/';
+/** A resolution map that gives every host a globally reachable address (AGSC-11-08 passes). */
+const anyHost = new Proxy({}, { get: () => ['93.184.215.14'] });
 const doc = (base, peer) => discovery.linkset({ peers: [peer], site: { base } }, { level: 0 });
 
 test('anchorOnOrigin: same origin true, another origin false, no URL not judged', () => {
@@ -43,7 +45,7 @@ test('AGSC-11-10: the walk skips a peer whose reported anchor is on another orig
   const fetch = (key) => (key === a
     ? { anchor: A, ok: true, peers: [b], url: a }
     : { anchor: A, ok: true, peers: [], url: b }); // B answers with A's anchor
-  const result = federation.walk({ fetch, start: a });
+  const result = federation.walk({ fetch, resolved: anyHost, start: a });
   assert.deepEqual([...result.visited], [a]);
   assert.deepEqual(result.skipped.map((s) => ({ code: s.code, peer: s.peer })), [{ code: 'AGSC-E907', peer: b }]);
 });
@@ -51,5 +53,14 @@ test('AGSC-11-10: the walk skips a peer whose reported anchor is on another orig
 test('AGSC-11-10: a redirect is judged by the URL finally read, not the key asked for', () => {
   const a = discovery.wellknownUrl(A);
   const fetch = () => ({ anchor: B, ok: true, peers: [], url: discovery.wellknownUrl(B) });
-  assert.deepEqual([...federation.walk({ fetch, start: a }).visited], [a]);
+  assert.deepEqual([...federation.walk({ fetch, resolved: anyHost, start: a }).visited], [a]);
+});
+
+test('AGSC-11-10: a retrieval address that is no URL is not judged, and an anchor that is no URL is another origin', () => {
+  const a = discovery.wellknownUrl(A);
+  const notJudged = federation.walk({ fetch: () => ({ anchor: A, ok: true, peers: [], url: 'not a url' }), resolved: anyHost, start: a });
+  assert.deepEqual([...notJudged.visited], [a]);
+  const wrongAnchor = federation.walk({ fetch: () => ({ anchor: 'not a url', ok: true, peers: [] }), resolved: anyHost, start: a });
+  assert.deepEqual([...wrongAnchor.visited], []);
+  assert.deepEqual(wrongAnchor.skipped.map((s) => s.code), ['AGSC-E907']);
 });

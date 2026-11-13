@@ -726,7 +726,14 @@ function markdownHeading(line, meter) {
   return null;
 }
 
-/** Card lines of a Markdown list (`- [ ]` / `* [x]`), their indented continuation lines, and the heading above. */
+/**
+ * The state a checkbox mark names on its own, beside `[x]` (done) and `[ ]` (the lane
+ * decides): `[/]` is in progress and `[-]` is cancelled, the marks of GABBE's task
+ * lists and of the Obsidian Tasks and Kanban conventions.
+ */
+const MARK_STATE = Object.freeze({ '/': 'In Progress', '-': 'Canceled' });
+
+/** Card lines of a Markdown list (`- [ ]` / `* [x]` / `- [/]` / `- [-]`), their indented continuation lines, and the heading above. */
 function markdownCards(text, { kanban }) {
   const lines = String(text).replace(/\r\n?/gu, '\n').split('\n');
   const cards = [];
@@ -748,10 +755,14 @@ function markdownCards(text, { kanban }) {
     }
     if (/^\*\*\*\s*$/u.test(line) && kanban) { archived = true; return; }
     if (/^\*\*Complete\*\*\s*$/u.test(line)) { completeLane = true; return; }
-    const card = /^[-*+]\s+\[([ xX])\]\s?(.*)$/u.exec(line);
+    // The Obsidian Kanban board keeps its 1.0 reading: a box there is a space, x or X only.
+    const card = (kanban ? /^[-*+]\s+\[([ xX])\]\s?(.*)$/u : /^[-*+]\s+\[([ xX/-])\]\s?(.*)$/u).exec(line);
     if (card !== null) {
       const [first, ...more] = card[2].split(/<br\s*\/?>/u);
-      current = { archived, body: [...more], checked: card[1] !== ' ', completeLane, lane, line: i + 1, text: first };
+      current = {
+        archived, body: [...more], checked: card[1] === 'x' || card[1] === 'X', completeLane, lane,
+        line: i + 1, mark: MARK_STATE[card[1]] || null, text: first,
+      };
       cards.push(current);
       return;
     }
@@ -783,7 +794,7 @@ function markdownRows(text, path, kanban) {
       labels: tokens.labels,
       line: card.line,
       record,
-      state: card.lane,
+      state: card.mark || card.lane,
       title: tokens.title,
     });
   });

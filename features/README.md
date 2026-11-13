@@ -1,7 +1,7 @@
 # features/ — Gherkin persona scenarios (the end-to-end acceptance source)
 
 Sixteen `.feature` files, one per persona walkthrough of the `docs/PRD.md` §1 persona table
-§3 (a)–(j), plus the drop-in user (0), the live board (k), the port implementer (l), the security reviewer (m), the researcher (n) and the restricted publisher (o). Each file is `Feature:` + 3–14 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
+§3 (a)–(j), plus the drop-in user (0), the live board (k), the port implementer (l), the security reviewer (m), the researcher (n) and the restricted publisher (o). Each file is `Feature:` + 3–20 `Scenario:`/`Scenario Outline:` in strict Given/When/Then,
 tagged `@persona-x`, `@mode-n`, one actor tag (`@human` or `@agent`) and one or more `@PRD-xxx`, and,
 where it covers a row of `features/MATRIX.md`, `@matrix-<row>` (see "Tags" below). Content is drawn
 only from the frozen walkthrough steps and `docs/PRD.md` acceptance criteria — nothing invented.
@@ -29,20 +29,20 @@ Scope note: PRD §4 non-goals, as the PRD's notes read them — `agent-card.json
 | File | Persona | Mode | Scenarios | PRD ids covered |
 |---|---|---|---|---|
 | `persona-0-dropin.feature` | P0 drop-in user | 0 | 9 | PRD-053 |
-| `persona-a-reader.feature` | P1 human reader | 0 | 4 | PRD-002, 011, 013, 014, 015, 025 |
-| `persona-b-contributor.feature` | P2 human contributor | 0 | 6 | PRD-039, 040, 041, 042, 050 |
-| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 14 | PRD-019, 023, 024, 025, 036, 051, 056, 061 |
+| `persona-a-reader.feature` | P1 human reader | 0 | 10 | PRD-002, 011, 013, 014, 015, 025, 069, 077, 078, NFR-06, NFR-08 |
+| `persona-b-contributor.feature` | P2 human contributor | 0 | 7 | PRD-013, 039, 040, 041, 042, 050 |
+| `persona-c-agent-mcp.feature` | P3 agent reader | 1 (read); 4 (compose over MCP) | 20 | PRD-019, 023, 024, 025, 036, 051, 056, 061, 080, 081 |
 | `persona-d-agent-proposer.feature` | P4 agent proposer | 1 (write) | 5 | PRD-039, 040, 042, 043 |
-| `persona-e-architect.feature` | P5 architect/combiner | 4 | 6 | PRD-001, 036, 037, 038 |
+| `persona-e-architect.feature` | P5 architect/combiner | 4 | 14 | PRD-001, 036, 037, 038, 071, 076, 082 |
 | `persona-f-integrator.feature` | P6 integrator | 3 | 7 | PRD-032, 033, 034, 035 |
 | `persona-g-team.feature` | P7 project team | 2, 5 | 7 | PRD-026, 028, 029, 030, 031, 064 |
-| `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 8 | PRD-026, 027, 061 (reads via persona-c: PRD-022) |
-| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 10 | PRD-005, 017, 018, 021, 044, 045, 048, 049, 056 |
-| `persona-j-standards.feature` | P11 standards implementer | 1 | 12 | PRD-024, 025, 050, 054, 055, 057, 058 |
+| `persona-h-memory.feature` | P8 agent-as-memory | 1 (import/export) | 16 | PRD-021, 026, 027, 061, 070, 075, 079, 083 |
+| `persona-i-maintainer.feature` | P9 owner-as-operator | 0 | 20 | PRD-003, 005, 017, 018, 021, 044, 045, 048, 049, 056, 076, 084, NFR-01 |
+| `persona-j-standards.feature` | P11 standards implementer | 1 | 15 | PRD-022, 024, 025, 050, 054, 055, 057, 058 |
 | `persona-k-live-board.feature` | P12 self-driving team | 5 | 12 | PRD-063, 064, 065 |
 | `persona-l-port-implementer.feature` | P10 port implementer | 1 | 3 | PRD-010, 054, 055, NFR-02 |
 | `persona-m-security-reviewer.feature` | P13 security reviewer | 0, 1 | 12 | PRD-005, 023, 047, 050, 053, 062, 065, NFR-07 |
-| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 3 | PRD-010, 022, 047, 060, NFR-04, 05 |
+| `persona-n-researcher.feature` | P14 researcher | 0, 1 | 7 | PRD-010, 020, 022, 024, 047, 060, 066, 067, 068, 072, NFR-04, 05 |
 | `persona-o-restricted.feature` | P15 restricted publisher | 1 | 5 | PRD-024, 057 |
 
 **P10 port implementer**: one scenario writes a Level-0 node without the engine and

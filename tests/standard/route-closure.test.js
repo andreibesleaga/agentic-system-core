@@ -63,8 +63,13 @@ function routeOf(file) {
 const TEMPLATES = templates();
 /** `/boards/**` and the other conditional names of the third paragraph. */
 const CONDITIONAL = [...CONDITIONS.matchAll(/`(\/[^`]*)`/gu)].map((m) => m[1]);
-/** The page assets the second paragraph names as parts of a page, not routes — and the `/search/` page's own script, its one same-origin asset. */
-const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/search\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u];
+/**
+ * The page assets the second paragraph names as parts of a page, not routes — the `/search/`
+ * page's own script, its one same-origin asset, and the files under `/query/` other than its
+ * page (the page script, the query engine and its licence text, AGSC-06-39).
+ */
+const PAGE_ASSETS = [/^\/compose\/[a-z-]+\.js$/u, /^\/search\/[a-z-]+\.js$/u, /^\/assets\/site\.css$/u, /^\/assets\/theme\.js$/u,
+  /^\/query\/(?!$)[^]+$/u];
 
 test('the rule text yields the route list this test reads (a vacuous parse would prove nothing)', () => {
   assert.ok(NAMESPACE_SITE.includes('/ns/agsc.ttl'), 'the namespace-site sentence was not found');
@@ -74,14 +79,32 @@ test('the rule text yields the route list this test reads (a vacuous parse would
   }
   assert.ok(CONDITIONAL.includes('/boards/**') && CONDITIONAL.includes('/legal/'));
   assert.match(SECOND, /are emitted as part of the page that names them/u);
+  assert.match(SECOND, /The files under `\/query\/` other than its index page \(AGSC-06-39\)[^.]* are page assets of that page/u);
 });
 
+/**
+ * The `.js` and `.css` files some emitted page loads by a `<script src>` or a stylesheet
+ * `<link>`: the second paragraph's "same-origin script assets a page of this set loads
+ * … are emitted as part of the page that names them" (case build-0029,
+ * `other_files_are_page_assets`). `/clusters/` loads the explorer's two (AGSC-06-38).
+ */
+function loadedByAPage(out, files) {
+  const loaded = new Set();
+  for (const file of files.filter((f) => f.endsWith('.html'))) {
+    const text = fs.readFileSync(path.join(out, file), 'utf8');
+    for (const m of text.matchAll(/<script src="([^"]+)"|<link rel="stylesheet" href="([^"]+)"/gu)) loaded.add(m[1] || m[2]);
+  }
+  return loaded;
+}
+
 test('every file the build emits is a route of AGSC-06-01 or a page asset it names', () => {
-  const { files } = richBuild();
+  const { files, out } = richBuild();
   const all = [...TEMPLATES, ...CONDITIONAL].map(pattern);
+  const loaded = loadedByAPage(out, files);
   const stray = files.map(routeOf).filter((route) => !all.some((re) => re.test(route))
-    && !PAGE_ASSETS.some((re) => re.test(route)));
+    && !PAGE_ASSETS.some((re) => re.test(route)) && !(/\.(?:js|css)$/u.test(route) && loaded.has(route)));
   assert.deepStrictEqual(stray, [], `emitted outside the route set: ${stray.join(', ')}`);
+  assert.ok(loaded.has('/clusters/agsc-explorer.js') && loaded.has('/clusters/agsc-explorer.css'), 'the page-asset scan found nothing');
 });
 
 test('every route of AGSC-06-01 is emitted, or is conditional and the build says why not', () => {
@@ -110,4 +133,21 @@ test('/graph.rdf and /feed.xml are not emitted at 1.x', () => {
   const { files } = richBuild();
   assert.ok(!files.includes('graph.rdf'));
   assert.ok(!files.includes('feed.xml'));
+});
+
+test('the note on /feed.xml says the route is reserved to a later MINOR, as AGSC-00-20 amended for 1.1.0 says', () => {
+  const site = require('../../src/distribution/site.js');
+  const [, note] = site.UNPRODUCED_ROUTES.find(([route]) => route === '/feed.xml');
+  assert.match(note, /^reserved to a later MINOR \(AGSC-00-20 as amended for 1\.1\.0\)/u);
+  assert.match(note, /a 1\.0 or 1\.1 tool rejects/u);
+  assert.doesNotMatch(note, /reserved to 1\.1/u);
+  // A later MINOR names no version number: what comes after 1.1 is neither dated nor numbered in
+  // what the engine prints or documents.
+  assert.doesNotMatch(note, /1\.2/u);
+  // The engine's own reference and the comments that state the same reservation.
+  for (const rel of ['src/REFERENCE.md', 'src/application/config/load.js', 'src/knowledge/validate.js']) {
+    const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    assert.doesNotMatch(text, /reserved to 1\.1/u, rel);
+    assert.doesNotMatch(text, /planned for 1\.2/u, rel);
+  }
 });

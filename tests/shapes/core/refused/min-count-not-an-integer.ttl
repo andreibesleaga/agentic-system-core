@@ -1,0 +1,12 @@
+# sh:minCount: the value is not an integer.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount "one" ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

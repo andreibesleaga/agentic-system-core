@@ -102,8 +102,8 @@ warn: AGSC-E305 "hydration" has no inbound Link and no clusters[] entry (AGSC-03
 
 Use your own address in `Contact:` (`mailto:` or `https:`). `agsc ci` checks every
 note, builds the site twice and compares the bytes, and verifies the result. A
-**warning** does not stop anything: here, notes without a one-line description, and
-notes no other note points at with a *typed* link (a link in the text is fine for
+**warning** does not stop anything: here, notes without a one-line description, and notes
+no other note points at with a *typed* link (a link in the text is fine for
 readers but does not count; typed links are explained in the
 [data model](https://agenticsystemcore.com/docs/data-model/)). An **error** stops the
 build and names the file and line.
@@ -118,7 +118,7 @@ ls www www/.well-known
 ```
 
 ```text expect
-wrote: 47 files under www/
+wrote: 59 files under www/
 build: pass (0 error, 4 warn)
 index.html
 llms.txt
@@ -136,7 +136,7 @@ agsc-host serve
 ```
 
 ```text
-serving …/my-notes/www at http://127.0.0.1:8080/ — read-only; stop with Ctrl-C
+serving …/my-notes/www at http://localhost:8080/ — read-only; stop with Ctrl-C
 ```
 
 To run the checkers against this address, see the publishing guide §6 — `localhost`, not
@@ -145,6 +145,64 @@ To run the checkers against this address, see the publishing guide §6 — `loca
 Each note has a page under `/concepts/<name>/` and a Markdown copy under
 `/pages/<name>.md`; `/.well-known/knowledge-linkset` is the discovery document an agent
 reads first.
+
+A note that has typed links gets a **Relations** section on its page: a small drawing
+of the notes it links to and the notes that link to it, and a table with one row per
+link that gives the relation, its direction, the other note and what the relation
+means. The incoming rows are the note's backlinks. A cluster page also draws its
+members and the links among them. Drafts, retired notes and notes held back from a
+release never appear in either. No new file is written for this; the drawing is part
+of the page. Each arrow in a note's drawing has the class of its relation, such as
+`agsc-rel-requires`, so your own stylesheet can pick out one relation; the class adds
+no colour, and the cluster drawings do not carry it. In a diagram you write under
+`content/diagrams/`, `rel=requires` on an `arrow`, `line` or `text` line adds the same
+class. The three notes above have no typed link yet, so their pages have no Relations
+section; step 6 adds one.
+
+The `/clusters/` page lists the clusters, then shows how they connect: a drawing and a
+table count the links from the notes of one cluster to the notes of another. Radio
+buttons above the table show one relation at a time, without JavaScript. A legend
+below names the fourteen relations and what each means. Last comes an explorer: a
+picture of every published note and link, with a list beside it. With the keyboard,
+Tab reaches the list, the arrow keys move through it, Enter selects a note and shows
+its relations, and Escape clears. The explorer needs JavaScript and reads only
+`/graph.jsonld` of the same site; without JavaScript it does not appear, and the rest
+of the page is unchanged.
+
+The `/query/` page lets you ask the graph a question in SPARQL, the query language of
+RDF. Write a query and select Run (or press Ctrl+Enter): it runs in your browser,
+against `/graph.nq` of the same site, and no server takes part. The answer comes as a
+table; a `CONSTRUCT` or `DESCRIBE` query, or any query with three columns, is drawn as
+a picture too. Two links give the result as CSV and as JSON. The page answers
+`SELECT`, `ASK`, `CONSTRUCT` and `DESCRIBE`, and refuses a query that would change the
+graph or call another server. "Link to this query" gives an address that holds the
+query after its `#`: whoever opens it finds the query in the editor, and it runs only
+when they select Run. Below the editor, the ten questions every graph must answer come
+with their queries, ready to put in the editor. Each query is filled in with an item of
+your site, one the question has something to say about where there is one, and the
+sentence under it names the item and says when the answer is empty; change the item to
+ask about another. On this guide's three notes, which have no typed links yet, every
+example answers empty; the query already in the editor lists your notes. A
+table lists the classes and the fourteen relations with what each means. A site that
+declares its own questions and vocabulary (the `domain` object of `agsc.config.json`)
+has them listed after these. The page stores nothing, not even your last
+query. It needs JavaScript; the engine it runs, Oxigraph, is about 4.4 MB and loads
+only on this page. To leave the page out, set `"query_page": false` under `site` in
+`agsc.config.json`; the build then writes no `/query/` and no link to it.
+
+Search engines and data catalogues find the same files from the home page alone. The
+JSON-LD block of `index.html` describes the site as a dataset: its licence, who made it
+and one download for each graph file, the chunks and the discovery document. The
+`Link` header the host sends with `/` (written into `_headers`) names the same files
+and the address to cite. To give the dataset a creator and a licence that names a
+version, add them to `agsc.config.json`, for example
+`"bundle": { "creator": { "name": "Josiah Carberry", "orcid": "0000-0002-1825-0097" }, "license_prose": "CC-BY-4.0", "license_url": "https://creativecommons.org/licenses/by/4.0/" }`
+beside the keys `bundle` already has. `license_url` names a version of the licence that
+`license_prose` names: without `license_prose` the node's licence is the Content Use Terms,
+and each chunk would then name those terms beside a CC BY address. A description of `content/index.md` shorter than
+50 characters gets a warning (`AGSC-E202`): dataset search ignores one that short. The
+one `init` wrote is long enough; write your own on the `description:` line of that file
+to say what the node holds.
 
 ## 4. Change a note — as a proposal
 
@@ -209,7 +267,7 @@ another licence in `bundle.license_prose`); and the history checked:
 
 ```bash demo
 cp "$ENGINE/LICENSE-CONTENT" .
-node -e 'const f = "agsc.config.json", fs = require("node:fs"), c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = "https://notes.example.org/"; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n");'
+node -e 'const fs = require("node:fs"), base = "https://notes.example.org/", f = "agsc.config.json", c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = base; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n"); const i = "content/index.md"; fs.writeFileSync(i, fs.readFileSync(i, "utf8").replace(/^base: .*$/m, "base: " + base));'
 git add -A && git commit -q -m 'ready to publish'
 agsc ci
 agsc build
@@ -218,15 +276,70 @@ agsc verify --ledger
 
 ```text expect
 ci: pass (0 error, 6 warn)
-wrote: 48 files under www/
+wrote: 60 files under www/
 verify: pass (0 error, 0 warn)
 ```
 
-The `node -e` line only sets `site.base`; editing the file by hand does the same. The new
+The `node -e` line sets `site.base` and the `base` of the root document `content/index.md`,
+which must agree (AGSC-01-04; from 1.1 `lint` warns when they differ); editing the two by
+hand does the same. The new
 warning asks for a `PRIVACY.md` beside `LICENSE-CONTENT`, which `/legal/` then shows.
 Upload `www/` to any host that serves files over HTTPS; `agsc-host list` names the
 profiles the engine can write host settings for, and the [publishing guide](publish.md)
 takes the node from here to a live address and checks it there.
+The site `agsc build` writes is a Level 2 node, the Level a published node claims (spec/10);
+the publishing guide checks it at its address with `validate-wellknown --level 2`.
+
+## 6. Link two notes, and draw one
+
+A typed link is a line in a note's header. Say that the starter needs the hydration
+note, then build:
+
+```bash demo
+node -e 'const fs = require("node:fs"), f = "content/concepts/sourdough.md"; fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace("kind: explainer\n", "kind: explainer\nrequires:\n  - hydration\n"));'
+agsc build
+grep -o '<td>requires</td><td>outgoing</td>' www/concepts/sourdough/index.html
+grep -o '<td>requires</td><td>incoming</td>' www/concepts/hydration/index.html
+```
+
+```text expect
+<td>requires</td><td>outgoing</td>
+<td>requires</td><td>incoming</td>
+```
+
+The sourdough page now has a Relations section with one outgoing `requires` row, and
+the hydration page shows the same link as a backlink. `requires` is one of the fourteen
+relations of the [data model](https://agenticsystemcore.com/docs/data-model/); the
+legend on `/clusters/` names them all.
+
+A note can also carry a drawing of your own. Write it as a short text file under
+`content/diagrams/`, named after the note, and name it in the note's header with a text
+alternative; the build turns it into an SVG on the note's page. Each line is one shape,
+and exactly one shape carries `acc`, the highlighted one:
+
+```bash demo
+mkdir -p content/diagrams
+cat > content/diagrams/sourdough.diagram <<'DIAGRAM'
+label "The starter needs the right hydration"
+box starter 40 100 140 50 "starter" acc
+box water 280 100 140 50 "hydration"
+arrow starter water rel=requires
+DIAGRAM
+node -e 'const fs = require("node:fs"), f = "content/concepts/sourdough.md"; fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace("kind: explainer\n", "kind: explainer\ndiagram:\n  file: sourdough.svg\n  alt: The starter, which requires the right hydration.\n"));'
+agsc build
+grep -c 'class="agsc-rel-requires"' www/concepts/sourdough/index.html
+```
+
+```text expect
+2
+```
+
+Two arrows carry the class now: the one in the Relations drawing and the one in yours.
+The whole language (twelve kinds of line, their options and what each draws) is rule
+AGSC-01-42 of the
+[specification](../../spec/01-bundle.md). When the build
+refuses a line of a diagram, it says `AGSC-E412` with the file and the line; the
+[troubleshooting](troubleshooting.md) page lists the usual causes.
 
 ## When it says no
 

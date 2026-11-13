@@ -202,7 +202,7 @@ test('every emitted text is UTF-8 NFC, LF-terminated, one trailing LF, no BOM; e
   let jsons = 0;
   for (const rel of files) {
     const bytes = fs.readFileSync(path.join(out, rel));
-    if (/\.(svg|png|jpg|webp)$/u.test(rel)) continue;
+    if (/\.(svg|png|jpg|webp|wasm)$/u.test(rel)) continue;
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     texts += 1;
     assert.ok(!text.startsWith('﻿'), `${rel} starts with a BOM`);
@@ -248,8 +248,13 @@ test('the Internet-Draft and spec/06 agree on the well-known file (extractor, wi
   assert.deepStrictEqual(shortInDraft.slice().sort(), [...names.short, ...names.related].sort());
   const table = [...relations.matchAll(/^\| `([a-z]+)` \|/gmu)].map((m) => m[1]);
   assert.deepStrictEqual(table, names.extensions, 'the closed set of extension relations differs');
+  // The posted revision -01 predates 1.1, whose three attributes (AGSC-06-44) a client of
+  // -01 already ignores (Section 6.3 of the draft). They are listed here until the next
+  // revision of the draft names them; the test fails once it does, so the list is emptied.
+  const NEXT_REVISION = ['agsc-chunk-count', 'agsc-chunk-set', 'agsc-ledger-length'];
   const facts = [...section('bundle-fact-attributes').matchAll(/^`(agsc-[a-z-]+)`:/gmu)].map((m) => m[1]);
-  assert.deepStrictEqual(facts.slice().sort(), names.attributes.slice().sort(), 'the bundle-fact attributes differ');
+  for (const name of NEXT_REVISION) assert.ok(!facts.includes(name), `the draft now names ${name}: remove it from NEXT_REVISION`);
+  assert.deepStrictEqual([...facts, ...NEXT_REVISION].sort(), names.attributes.slice().sort(), 'the bundle-fact attributes differ');
   const declarations = [...section('declaration-attributes').matchAll(/`(agsc-[a-z-]+)`/gu)].map((m) => m[1]);
   assert.ok(declarations.length >= 5);
   for (const attribute of new Set(declarations)) assert.ok(SPEC.includes(`\`${attribute}\``), `${attribute} is in the draft and in no rule`);

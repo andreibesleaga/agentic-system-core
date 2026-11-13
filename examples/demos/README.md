@@ -18,7 +18,19 @@ and every command there is run by `tests/docs/demos.test.js`.
 | [mode-3-skills/](mode-3-skills/README.md) | a cluster with a procedure, and a foreign skill in the Agent Skills layout | Mode 3 — evolving skills |
 | [mode-4-compose/](mode-4-compose/README.md) | two runnable procedures, a run record, and a configuration that enables `run` for `echo` | Mode 4 — runnable knowledge |
 | [mode-5-board/](mode-5-board/README.md) | a board of two tasks and one agent lane with its channel | Mode 5 — the live board |
+| [domain-layer/](domain-layer/README.md) | a vocabulary, one bounded context, one rule and one question over the two concepts | the domain layer of Mode 1 |
 | [agents/](agents/README.md) | `mcp-call.js` (one tool call over the tool server) and `page-tools.js` (one tool call the way a page makes it) | every agent step |
 
 Copy a folder somewhere and run the demo's commands inside the copy; nothing here is
 meant to be run in place.
+
+**One warning, kept on purpose.** The `.well-known/security.txt` of `mode-2-project/`,
+`mode-3-skills/`, `mode-4-compose/` and `mode-5-board/` says `Expires: 2027-06-01T00:00:00Z`.
+At the build instant of the demos, `SOURCE_DATE_EPOCH=1789380000` (14 September 2026, as
+[docs/DEMOS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/DEMOS.md)
+sets it), that date is less than a year away and `agsc build` passes with no warning. Built at
+an earlier instant, such as `SOURCE_DATE_EPOCH=1767225600` (1 January 2026), the instant the
+engine's own checks use, it is more than a year away, and the build passes with one warning,
+`AGSC-E204`, because RFC 9116 section 2.5.5 recommends an `Expires` less than a year into the
+future. The date stays as it is, so that the bytes of these examples do not change. A node of
+your own sets an `Expires` less than a year after its build.

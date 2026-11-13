@@ -1,0 +1,1 @@
+{"_id": "q-example", "text": "Which file lists every published artefact of a node together with a digest for each one?", "metadata": {"node": "agenticsystemcore.com", "split": "dev", "answerable": true, "author": "Andrei N. Besleaga", "paraphrased_by": "none", "written": "2026-10-26", "note": "an example row; delete before any run"}}

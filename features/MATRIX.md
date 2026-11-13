@@ -77,8 +77,8 @@ that row; a G cell of a surface by a `gap` file of a feature the surface names.
 | MCP resources and the prompt | B | persona-c | |
 | Page tools (7) | B + C | persona-c, offline and in a browser | |
 | Discovery Levels 0–3 | B for every Level | persona-l (Level 0, the Level-3 claim), persona-j (Level 1, Level 2) | |
-| Exports and adapters | B | persona-h (export --jsonl, an outline over --zip, mermaid and llm-context, cogx), persona-f (skills), persona-g (gabbe, board) | |
-| Imports | B | persona-h (okf, cogx), persona-f (skills repositories), persona-g (board, gabbe), persona-i (old-site) | |
+| Exports and adapters | B | persona-h (export --jsonl and --skos, an outline over --zip, mermaid and llm-context, cogx), persona-f (skills), persona-g (gabbe, board) | |
+| Imports | B | persona-h (okf, cogx, skos, the export manifest), persona-f (skills repositories), persona-g (board, gabbe), persona-i (old-site) | |
 | Live boards, claims, lanes, budget, .env | B | persona-k | |
 | Six modes | B | persona-0 (mode 0), persona-h (mode 1), persona-g (mode 2), persona-f (mode 3), persona-e (mode 4), persona-k (mode 5) | |
 | Restricted visibility | B | persona-o | |

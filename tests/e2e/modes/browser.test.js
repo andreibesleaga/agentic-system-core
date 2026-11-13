@@ -77,12 +77,14 @@ test('in Chromium: the /compose/ archive equals the CLI archive, and the page to
       document.modelContext = { clearContext() {}, provideContext() {}, registerTool(t) { window.__tools[t.name] = t; }, unregisterTool() {} };
     });
     await itemPage.goto(`${node.origin}/concepts/task-login-form/`, { waitUntil: 'networkidle' });
-    await itemPage.waitForFunction(() => Object.keys(window.__tools).length === 7);
+    await itemPage.waitForFunction(() => Object.keys(window.__tools).length === 10);
     const calls = [
       ['search', { query: 'login form' }], ['read', { slug: 'task-login-tests' }], ['links', { slug: 'handoff' }],
       ['ask', { question: 'who tests the login form' }], ['compose', { selection: SELECTION }],
       ['propose', { at: '2026-09-14', slug: 'task-login-tests', task_state: 'TASK_STATE_WORKING' }],
       ['remember', { body: 'Limit attempts per address.', cluster: 'login', kind: 'task', operator: 'human:operator', title: 'Add rate limiting' }],
+      // AGSC-09-13: the tools of 1.1, answering over the listed set on both transports.
+      ['brief', { selection: SELECTION }], ['explain', { key: 'requires', source: SELECTION[0], target: SELECTION[0] }], ['check', {}],
     ];
     for (const [name, args] of calls) {
       const fromPage = await itemPage.evaluate(async ([n, a]) => {

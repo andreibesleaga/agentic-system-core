@@ -1,0 +1,5 @@
+# One owner is a robot and one is a literal: neither is a person.
+@prefix ex: <https://example.org/> .
+
+ex:car ex:owner ex:bob , "Bob" ; a ex:Car .
+ex:bob a ex:Robot .

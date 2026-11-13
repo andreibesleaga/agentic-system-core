@@ -15,6 +15,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ROOT, splitItem } = require('./_world.js');
+const skillFormat = require('../../../src/composition/skill-format.js');
 
 const TERMS = 'LicenseRef-AgenticSystemCore-Content-Use-1.0';
 const BASE = 'https://agenticsystemcore.com/';
@@ -111,6 +112,17 @@ module.exports = [
       const { description } = splitItem(world.state.skill).frontmatter;
       assert.ok([...description].length <= 1024);
       assert.strictEqual(description, splitItem(world.read('content/clusters/protocols.md')).frontmatter.description);
+    },
+  },
+  {
+    pattern: 'it passes the Agent Skills check of AGSC-07-22 with no finding, as every installed pack does',
+    run(world) {
+      const installed = fs.readdirSync(path.join(world.dir, '.claude', 'skills')).sort();
+      assert.ok(installed.includes('protocols'), JSON.stringify(installed));
+      for (const name of installed) {
+        const rel = `.claude/skills/${name}/SKILL.md`;
+        assert.deepStrictEqual(skillFormat.check(world.read(rel), { directory: name, file: rel }), [], rel);
+      }
     },
   },
   {
@@ -278,12 +290,36 @@ module.exports = [
     },
   },
   {
-    pattern: /^the "([a-z0-9-]+)" pack lists the imported skill "([a-z0-9-]+)"$/u,
-    run(world, pack, slug) {
+    pattern: /^the imported skill "([a-z0-9-]+)" is a draft, although its licence is open$/u,
+    run(world, slug) {
+      const { frontmatter } = splitItem(world.read(`content/procedures/${slug}.md`));
+      assert.strictEqual(frontmatter.status, 'draft');
+      assert.match(frontmatter['x-skills-license'], /^Apache-2\.0 /u, 'the licence the source stated is kept');
+    },
+  },
+  {
+    pattern: /^the team publishes the imported skill "([a-z0-9-]+)" by setting its status to "([a-z]+)"$/u,
+    run(world, slug, status) {
+      const rel = `content/procedures/${slug}.md`;
+      world.write(rel, world.read(rel).replace(/^status: draft$/mu, `status: ${status}`));
+    },
+  },
+  {
+    pattern: /^the "([a-z0-9-]+)" pack (lists|does not list) the imported skill "([a-z0-9-]+)"$/u,
+    run(world, pack, verb, slug) {
       const { body } = splitItem(world.read(`dist/skills/${pack}/SKILL.md`));
-      assert.ok(body.includes(`- item: ${BASE}procedures/${slug}/\n- type: procedure\n`), `${slug} is not in the ${pack} pack`);
+      assert.strictEqual(body.includes(`- item: ${BASE}procedures/${slug}/\n- type: procedure\n`), verb === 'lists',
+        `${slug} ${verb === 'lists' ? 'is not' : 'is'} in the ${pack} pack`);
       const index = JSON.parse(world.read('dist/skills/index.json'));
       assert.ok(index.packs.some((p) => p.name === pack), `${pack} is not in the lockfile`);
+    },
+  },
+  {
+    pattern: /^the "([a-z0-9-]+)" pack carries a notice with the licence and the source file of the imported skill "([a-z0-9-]+)"$/u,
+    run(world, pack, slug) {
+      const { body } = splitItem(world.read(`dist/skills/${pack}/SKILL.md`));
+      const notice = new RegExp(`\\n## Notices\\n[^]*\\n- [^\\n]*<${BASE}procedures/${slug}/>: Apache-2\\.0 \\(LICENSE\\); source skills/${slug}/SKILL\\.md`, 'u');
+      assert.match(body, notice, body);
     },
   },
 ];

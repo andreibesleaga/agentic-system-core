@@ -1,0 +1,13 @@
+# sh:severity: only sh:Violation, sh:Warning and sh:Info are in the subset.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:severity ex:Urgent ;
+        sh:path ex:title
+    ] ;
+    sh:targetClass ex:C .

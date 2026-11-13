@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "uuid": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "name": "Billing service",
+      "summary": "The service that issues invoices; Alice owns its deploys.",
+      "labels": ["Entity", "Service"],
+      "createdAt": "2026-08-03T15:00:05Z",
+      "episodeUuids": ["5e0f6d2a-0c2b-4b8e-9f1d-3a4b5c6d7e8f"],
+      "episodeUuidsTruncated": false
+    },
+    {
+      "uuid": "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9",
+      "summary": "A node with no name",
+      "episodeUuids": [],
+      "episodeUuidsTruncated": false
+    }
+  ]
+}

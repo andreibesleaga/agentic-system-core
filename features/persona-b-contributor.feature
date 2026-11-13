@@ -34,6 +34,18 @@ Feature: Human contributor fixes a page and passes a hard review gate
     Then the PR body contains the marker "<!-- agsc:proposal v1 -->"
     And the PR body states rationale, affected slugs and "prov.origin"
 
+  @PRD-013 @human @matrix-H4
+  Scenario: Contributor marks a diagram arrow with its relation, and the build names each line the grammar refuses
+    Given the item "content/concepts/a2a.md" names the diagram "content/diagrams/a2a.diagram", whose arrow is marked "rel=requires"
+    When the contributor runs "agsc build"
+    Then the command exits 0
+    And the arrow of that diagram on "/concepts/a2a/" carries the class "agsc-rel-requires" and no colour of its own (AGSC-01-42)
+    Given the contributor writes "acc" with "thick" on line 3 of the diagram and a "via" waypoint of three numbers on line 4
+    When the contributor runs "agsc build --json"
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E412"
+    And the refusals name "content/diagrams/a2a.diagram" at line 3 for "acc" with "thick" and at line 4 for the "via" of three numbers
+
   @PRD-041 @PRD-042 @agent @matrix-A13
   Scenario: CI runs a lint-only review, no LLM call
     Given the contributor's change adds a concept with no description

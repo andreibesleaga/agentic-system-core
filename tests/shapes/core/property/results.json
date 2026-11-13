@@ -1,0 +1,11 @@
+[
+  {
+    "component": "MinCountConstraintComponent",
+    "focus": "https://example.org/y",
+    "message": null,
+    "path": "https://example.org/name",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#PaperShape > https://example.org/author > https://example.org/name",
+    "value": null
+  }
+]

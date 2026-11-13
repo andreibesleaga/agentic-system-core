@@ -3,7 +3,7 @@
 //
 // AGSC-09-16 asks for ONE tool contract over two transports. This file proves the
 // browser half against the reference Bundle: the page corpus assembled from the
-// PUBLISHED routes answers every one of the seven tools exactly as the local server
+// PUBLISHED routes answers every one of the ten tools exactly as the local server
 // answers it, the readers the page needs (the failsafe frontmatter reader, the
 // typed-scalar table, the Link-edge algebra) agree with the Knowledge context's own
 // implementations, and the writer declares and links what the rules require.
@@ -14,6 +14,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const vm = require('node:vm');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 
 const { createFileSystem, readSchemas } = require('../../src/adapters/node-fs.js');
 const { createClock } = require('../../src/adapters/node-clock.js');
@@ -34,6 +35,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'minimal');
 /** 2026-01-01T00:00:00Z — the fixed instant of `tests/fixtures/minimal/README.md`. */
 const EPOCH = '1767225600';
+/** The host's hasher handed to the page tools, so `brief` answers a value (the page's Web Crypto: tool-parity.test.js). */
+const sha256Hex = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
 function built() {
   const fs = createFileSystem(FIXTURE);
@@ -53,7 +56,7 @@ function pageToolset(files, config) {
   const core = vm.runInContext('globalThis.AGSC_CORE', context);
   assert.strictEqual(api.BUNDLE_ID, (config.bundle || {}).id,
     'the emitted script carries a different bundle id from the Bundle it was built from');
-  return api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID }), core);
+  return api.pageToolset(api.pageCorpus(sources, { bundleId: api.BUNDLE_ID, licenseProse: api.LICENSE_PROSE }), core, sha256Hex);
 }
 
 /**
@@ -65,8 +68,10 @@ function moduleToolset(files, config) {
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const compose = require('../../src/composition/compose.js');
-  const corpus = pageTools.pageCorpus(sources, { bundleId: (config.bundle || {}).id });
-  return pageTools.pageToolset(corpus, { compose: compose.compose });
+  const { briefOf } = require('../../src/composition/brief.js');
+  const { selectionDigestInput } = require('../../src/composition/harness.js');
+  const corpus = pageTools.pageCorpus(sources, { bundleId: (config.bundle || {}).id, licenseProse: (config.bundle || {}).license_prose });
+  return pageTools.pageToolset(corpus, { briefOf, compose: compose.compose, selectionDigestInput }, sha256Hex);
 }
 
 // --------------------------------------------------------------- the readers
@@ -153,13 +158,13 @@ test('AGSC-03-13: the page anchors are the heading anchors of the Knowledge rend
   assert.deepStrictEqual(pageTools.pageAnchors(body), markdown.anchors(body).anchors);
 });
 
-// ------------------------------------------------------- the seven page tools
+// ------------------------------------------------------- the ten page tools
 
 test('AGSC-09-16: the page tools answer exactly what the local server answers', () => {
   const { bundle, files } = built();
   const page = pageToolset(files, bundle.config);
   const here = moduleToolset(files, bundle.config);
-  const local = mcpTools.tools(bundle, {});
+  const local = mcpTools.tools(bundle, { artifacts: files });
   const calls = [
     ['search', { query: 'supervisor' }],
     ['search', { query: 'nothing at all here' }],
@@ -175,21 +180,39 @@ test('AGSC-09-16: the page tools answer exactly what the local server answers', 
     ['links', { iri: 'https://minimal.example/concepts/handoff/' }],
     ['nosuchtool', {}],
     ['read', {}],
+    // AGSC-09-13, the three tools of 1.1 and their faults.
+    ['brief', { selection: ['supervisor', 'handoff'] }],
+    ['brief', { selection: [] }],
+    ['brief', { selection: 'supervisor' }],
+    ['check', {}],
+    ['check', { selection: ['handoff', 'handoff'] }],
+    ['check', { selection: ['no-such-item'] }],
+    ['check', { selection: 'handoff' }],
+    ['explain', { key: 'mentions', source: 'handoff', target: 'supervisor' }],
+    ['explain', { key: 'uses', source: 'handoff', target: 'no-such-item' }],
+    ['explain', { key: 'uses', source: 'handoff' }],
   ];
   for (const item of bundle.items) {
     calls.push(['read', { slug: item.slug }], ['links', { slug: item.slug }], ['propose', { slug: item.slug }]);
+    for (const other of bundle.items) {
+      for (const key of ['uses', 'used-by', 'related', 'broader', 'narrower']) {
+        calls.push(['explain', { key, source: item.slug, target: other.slug }]);
+      }
+    }
   }
+  // AGSC-09-16: "the same members, in the same order", so the serialized strings are
+  // compared; a deep comparison would let a reordered member pass.
   for (const [name, args] of calls) {
-    const expected = JSON.parse(JSON.stringify(local.call(name, args)));
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(page.call(name, args))), expected,
+    const expected = JSON.stringify(local.call(name, args));
+    assert.strictEqual(JSON.stringify(page.call(name, args)), expected,
       `${name}(${JSON.stringify(args)}) differs between the EMITTED page script and the local server`);
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(here.call(name, args))), expected,
+    assert.strictEqual(JSON.stringify(here.call(name, args)), expected,
       `${name}(${JSON.stringify(args)}) differs between the module and the local server`);
   }
   assert.ok(calls.length >= 20, `only ${calls.length} calls were compared`);
 });
 
-test('AGSC-09-13: the page implements exactly the seven tools Boundary names', () => {
+test('AGSC-09-13: the page implements exactly the ten tools Boundary names', () => {
   const { bundle, files } = built();
   for (const page of [pageToolset(files, bundle.config), moduleToolset(files, bundle.config)]) {
     for (const name of surfaces.TOOL_NAMES) {
@@ -207,9 +230,11 @@ test('AGSC-09-13: the page implements exactly the seven tools Boundary names', (
 test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool writes', () => {
   const { bundle, files } = built();
   const page = moduleToolset(files, bundle.config);
+  const args = {
+    body: 'b', key: 'uses', kind: 'concept', question: 'x', query: 'x', selection: [], slug: 'handoff', source: 'handoff', target: 'handoff', title: 'T',
+  };
   for (const name of surfaces.TOOL_NAMES) {
-    assert.strictEqual(page.call(name, { question: 'x', query: 'x', selection: [], slug: 'handoff', body: 'b', kind: 'concept', title: 'T' }).trust,
-      'untrusted', `${name} did not mark its answer untrusted`);
+    assert.strictEqual(page.call(name, args).trust, 'untrusted', `${name} did not mark its answer untrusted`);
   }
   // AGSC-08-04 / AGSC-11-14: `propose` and `remember` hand back a payload and stop.
   const proposal = page.call('propose', { slug: 'handoff' });
@@ -218,16 +243,18 @@ test('AGSC-08-18 / AGSC-11-18: every page answer is untrusted and no page tool w
   const remembered = page.call('remember', { body: 'x', kind: 'lesson', title: 'A Lesson Learned Here' });
   assert.strictEqual(remembered.type, 'proposal');
   assert.match(remembered.body.path, /^content\/lessons\//u);
-  // AGSC-09-14b (2026-09-25): the page has no identity to declare, so a call with no
+  // AGSC-09-14b: the page has no identity to declare, so a call with no
   // operator comes back with `prov.operator` absent and the warning that says so;
   // with one declared, no such warning.
   assert.strictEqual(remembered.body.frontmatter.prov.operator, undefined);
-  assert.deepStrictEqual(remembered.body.findings.map((f) => f.code), ['AGSC-E506']);
-  assert.deepStrictEqual(page.call('remember', { body: 'x', kind: 'lesson', operator: 'human:tester', title: 'A Lesson Learned Here' })
-    .body.findings, []);
+  // From 1.1 the item's missing `prov.agent` and `prov.model` are reported too (AGSC-09-14b).
+  assert.deepStrictEqual(remembered.body.findings.map((f) => f.code), ['AGSC-E506', 'AGSC-E202', 'AGSC-E202']);
+  assert.deepStrictEqual(page.call('remember', {
+    agent: 'writer', body: 'x', kind: 'lesson', model: 'm-1', operator: 'human:tester', title: 'A Lesson Learned Here',
+  }).body.findings, []);
   // the same default on this transport (AGSC-09-16 mirrors AGSC-09-14b).
   assert.strictEqual(remembered.body.frontmatter.severity, 'info');
-  // and none on an episode, whose schema branch has no such key (AGSC-09-14b, 2026-09-24).
+  // and none on an episode, whose schema branch has no such key (AGSC-09-14b).
   const rememberedEpisode = page.call('remember', { actor: 'process:x', at: '2026-01-01T00:00:00Z', body: 'x', kind: 'episode', title: 'An Episode Here' });
   assert.strictEqual(rememberedEpisode.body.frontmatter.severity, undefined);
   // AGSC-02-09: an actor outside the grammar would make the item non-conforming.
@@ -336,6 +363,24 @@ test('AGSC-11-14: the edit link is derived from contribute[] and from nothing el
   assert.strictEqual(site.contributeEditUrl(
     { contribute: [{ channel: 'mail', mode: 'channel', target: 'mailto:a@b.example' }] },
     'content/concepts/x.md'), null);
+});
+
+test('AGSC-11-14 (1.1): repository and branch name the source, and the edit link no longer infers them from target', () => {
+  const at = (entry, path_) => site.contributeEditUrl({ contribute: [entry] }, path_);
+  const file = 'content/concepts/x.md';
+  // The repository is read as given, from an entry of any mode; the branch defaults to HEAD.
+  assert.strictEqual(at({ mode: 'form', repository: 'https://github.com/a/b', target: 'https://forms.example/a' }, file),
+    'https://github.com/a/b/edit/HEAD/content/concepts/x.md');
+  assert.strictEqual(at({ branch: 'next-1.1', mode: 'pr', repository: 'https://github.com/a/b.git', target: 'https://github.com/other/node/compare' }, file),
+    'https://github.com/a/b/edit/next-1.1/content/concepts/x.md');
+  // A branch with a slash keeps it; each segment is percent-encoded.
+  assert.strictEqual(at({ branch: 'release/v 1', mode: 'pr', repository: 'https://gitlab.com/a/b', target: 'https://gitlab.com/a/b' }, file),
+    'https://gitlab.com/a/b/-/edit/release/v%201/content/concepts/x.md');
+  // A forge this engine cannot state the edit view of: the repository itself is the link.
+  assert.strictEqual(at({ mode: 'pr', repository: 'https://forge.example/a/b', target: 'https://forge.example/a/b/pulls' }, file),
+    'https://forge.example/a/b');
+  // Without them the 1.0 behaviour is unchanged.
+  assert.strictEqual(at({ mode: 'pr', target: 'https://github.com/a/b' }, file), 'https://github.com/a/b/edit/HEAD/content/concepts/x.md');
 });
 
 test('AGSC-11-14: the item page carries a plain "Propose an edit" anchor, and no form', () => {

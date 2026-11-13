@@ -92,3 +92,44 @@ test('pageEdges does not resolve a Link target to an inherited member (AGSC-03-1
     assert.equal(typeof edge.target === 'string' || edge.target === undefined, true);
   }
 });
+
+// ------------------------------------------------------------- the front-matter copy
+// FR-101 (1.1): a front-matter key named `__proto__` is a key like any other
+// (`knowledge/validate.js#setOwn`). `Object.assign` and `copy[key] = value` set the
+// prototype of the copy instead, so a map under that key made its members look like the
+// item's own — a `requires` that the author never wrote. Both transports copy the front
+// matter into the item the composition algebra reads, and both must keep the key a key.
+
+const { tools } = require('../../src/distribution/mcp-tools.js');
+const algebra = require('../../src/composition/compose.js');
+
+/** The plain verdict, out of whichever realm made it. */
+const verdictOf = (answer) => JSON.parse(JSON.stringify(answer.body));
+
+test('compose: an own __proto__ front-matter key is data on the local server', () => {
+  const plain = { title: 'Alpha', type: 'concept' };
+  const hostile = { ...plain };
+  Object.defineProperty(hostile, '__proto__', {
+    configurable: true, enumerable: true, value: { requires: ['beta'] }, writable: true,
+  });
+  const serve = (frontmatter) => tools({
+    config: {}, items: [{ body: '', frontmatter, slug: 'alpha', type: 'concept' }],
+  }, {}).call('compose', { selection: ['alpha'] });
+  assert.deepEqual(verdictOf(serve(hostile)), verdictOf(serve(plain)));
+});
+
+test('compose: an own __proto__ front-matter key is data on the page', () => {
+  const sources = (extra) => ({
+    '/pages/alpha.md': `---\ntype: concept\ntitle: Alpha\nkind: explainer\n${extra}---\n\nBody.\n`,
+    '/search.json': JSON.stringify({ docs: [{ slug: 'alpha', title: 'Alpha' }], terms: {} }),
+  });
+  const serve = (extra) => pageTools.pageToolset(
+    pageTools.pageCorpus(sources(extra), { bundleId: 'b', base: 'https://example.test/' }),
+    { compose: algebra.compose },
+  ).call('compose', { selection: ['alpha'] });
+  assert.deepEqual(verdictOf(serve('__proto__:\n  requires:\n    - beta\n')), verdictOf(serve('')));
+  // And the reader keeps the key, as knowledge/yaml.js does.
+  const read = pageTools.pageParseFrontmatter('title: A\n__proto__:\n  requires: x\n');
+  assert.equal(Object.getPrototypeOf(read), Object.prototype);
+  assert.deepEqual(Object.keys(read), ['title', '__proto__']);
+});

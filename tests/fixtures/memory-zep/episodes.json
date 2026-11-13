@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "uuid": "5e0f6d2a-0c2b-4b8e-9f1d-3a4b5c6d7e8f",
+      "content": "Alice moved the billing service to the new queue on 3 August",
+      "createdAt": "2026-08-03T15:00:00Z",
+      "source": "text",
+      "sourceDescription": "team chat",
+      "processed": true
+    }
+  ],
+  "nextCursor": "",
+  "totalSize": 1
+}

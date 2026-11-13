@@ -546,10 +546,26 @@ function envelopeOf(findings, declared, version) {
   };
 }
 
+/**
+ * The persona ids a feature file declares with an "As P<n>" line. The indent is
+ * horizontal space only: a blank line before the line would otherwise be read again
+ * from every line start above it.
+ */
+function personasDeclared(raw) {
+  return [...raw.matchAll(/^[^\S\n\r\u2028\u2029]*As (P\d{1,2})\b/gmu)].map((m) => m[1]);
+}
+
+/**
+ * The first version number in the text, or 'unknown'. The number cannot start inside a
+ * run of digits (`(?<!\d)`): a start there would read the same run again to the end.
+ */
+function versionIn(text) {
+  return (text.match(/(?<!\d)\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+}
+
 function specVersion(root) {
   try {
-    return (fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8')
-      .match(/\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?/u) || ['unknown'])[0];
+    return versionIn(fs.readFileSync(path.join(root, 'spec', '00-overview.md'), 'utf8'));
   } catch { return 'unknown'; }
 }
 
@@ -635,7 +651,7 @@ function run(argv, io) {
           matrix ? 'error' : 'warn'));
       }
     }
-    for (const m of raw.matchAll(/^\s*As (P\d{1,2})\b/gmu)) declared.add(m[1]);
+    for (const id of personasDeclared(raw)) declared.add(id);
     for (const id of readmePersonasTable.get(name) || []) declared.add(id);
 
     const ids = new Set();
@@ -706,5 +722,6 @@ function run(argv, io) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  HELP, canonicalize, cliVerbs, compareCodePoint, parseFeature, parseTarget, readMatrix, readmeCoverage, readmePersonas, run,
+  HELP, canonicalize, cliVerbs, compareCodePoint, parseFeature, parseTarget, personasDeclared, readMatrix, readmeCoverage,
+  readmePersonas, run, versionIn,
 };

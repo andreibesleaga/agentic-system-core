@@ -35,7 +35,7 @@ printf '# Sourdough starter\n\nFlour and water, fed once a day.\n' > sourdough.m
 agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 cp "$ENGINE/LICENSE-CONTENT" .
-node -e 'const f = "agsc.config.json", fs = require("node:fs"), c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = "https://notes.example.org/"; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n");'
+node -e 'const fs = require("node:fs"), base = "https://notes.example.org/", f = "agsc.config.json", c = JSON.parse(fs.readFileSync(f, "utf8")); c.site.base = base; fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n"); const i = "content/index.md"; fs.writeFileSync(i, fs.readFileSync(i, "utf8").replace(/^base: .*$/m, "base: " + base));'
 git init -q -b main && git add -A && git commit -q -m 'ready to publish'
 agsc ci
 agsc build
@@ -50,10 +50,10 @@ build: pass (0 error, 2 warn)
 link of the discovery document is written for that address, and a checker that fetches
 the document from another address refuses it (see [When it says no](#when-it-says-no)).
 
-Run `agsc ci` before every publish, not `agsc build` alone. At 1.0.0 `build` passes a
-typed link whose target does not exist and leaves that link out of the graph, while
-`lint` and `ci` refuse it with `AGSC-E301`; `build` refuses only a broken link in the
-text of a note (`AGSC-E310`).
+Run `agsc ci` before every publish, not `agsc build` alone. A typed link whose target
+does not exist is left out of the graph: `lint` and `ci` refuse it with `AGSC-E301`, and
+from 1.1 `build` reports it as a warning with the same code, where at 1.0.0 it said
+nothing; `build` refuses only a broken link in the text of a note (`AGSC-E310`).
 
 ## 2. Check the build as a reader will
 
@@ -66,12 +66,79 @@ node "$ENGINE/tools/validate-wellknown" www/.well-known/knowledge-linkset --leve
 ```
 
 ```text expect
-validate-wellknown pass (level 2): 11 input file(s) read, 0 error(s), 0 warning(s)
+validate-wellknown pass (level 2): 13 input file(s) read, 0 error(s), 0 warning(s)
 ```
 
 Level 2 is the level a published node claims: every link carries its digest, the graph
 link carries the node's facts, and the ledger is linked. If the checker fails here, it
 will fail on the live address too; fix the build first.
+
+### What a page and `robots.txt` tell an agent
+
+An agent that lands on one page can find the rest of the node from that page's `<head>`.
+From 1.1 every page names the discovery document and `/llms.txt`, both with the relation
+`describedby` and told apart by their type, and an item page also names its Markdown copy
+with the relation `alternate` and the type `text/markdown`. These are the two page-level
+relations of llms.txt v2 (llmstxt.org, modified 10 August 2026), AGSC-06-46:
+
+```bash demo
+grep -o '<link rel="[a-z]*" href="[^"]*" type="[^"]*">' www/concepts/sourdough/index.html
+```
+
+```text expect
+<link rel="describedby" href="/.well-known/knowledge-linkset" type="application/linkset+json">
+<link rel="describedby" href="/llms.txt" type="text/plain">
+<link rel="alternate" href="/pages/sourdough.md" type="text/markdown">
+```
+
+From 1.1 a page also tells a person, or a site that shows a preview of a shared link, what
+it is. Its `<title>` is the page's name followed by the node's name (`Sourdough — <site
+title>`; the home page carries the node's name alone), and every page with an address of its
+own carries the Open Graph properties `og:type`, `og:url`, `og:title`, `og:site_name` and,
+when the page has a description, `og:description`. Two things are yours to add:
+
+- **An icon.** Put `favicon.svg` (or `favicon.png`) in `content/assets/` and show it as an
+  image in the body of a published item (the image's address is `../assets/favicon.svg` from
+  an item file). Only a file a published body references is published (AGSC-06-01), and
+  every page then links it as its icon.
+- **A preview image.** `og:image` is written only when the build is given one, through the
+  `ogImage` option of the engine's build function (`src/REFERENCE.md`, section 9); the
+  configuration file has no key for it, so `agsc build` writes none.
+
+`robots.txt` invites every crawler with `Allow: /`, keeps out the training crawlers that
+`site.tdm_crawlers` names (one group each, before this one) and repeats the same use
+policy in a `Content-Signal` line of every group. The line follows the Content Signals
+Policy (contentsignals.org): search yes, use as input to an answer yes, training no. It is
+an extra record that a crawler may read or ignore (RFC 9309 §2.2.4), not one of the three
+licence dialects of AGSC-06-18. The last group of the file:
+
+```bash demo
+sed -n '/^User-agent: \*$/,$p' www/robots.txt
+```
+
+```text expect
+User-agent: *
+# Content Signals Policy: the same policy as /.well-known/tdmrep.json and /legal/
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Sitemap: https://notes.example.org/sitemap.xml
+```
+
+A node whose prose carries another licence (`bundle.license_prose`) writes
+`Content-Signal: search=yes, ai-input=yes` and no training groups.
+
+The IETF AI Preferences working group is drafting a similar field, `Content-Usage`, for
+`robots.txt` and HTTP. It is still a draft (`draft-ietf-aipref-vocab-08` and
+`draft-ietf-aipref-attach-05`, read 7 November 2026, both "work in progress"), and the
+engine does not write it at 1.x (AGSC-06-18). For comparison only, the draft's form of the
+training reservation is:
+
+```text
+Content-Usage: train-ai=n
+```
+
+Do not add it by hand to the built `robots.txt` or `_headers`: the next build writes both
+files again, and at 1.x no file of a node may state the field (AGSC-06-18).
 
 ## 3. Choose a host
 
@@ -155,14 +222,17 @@ Run the same checker on the live address. Given a URL, it fetches the discovery 
 and every file it lists from the host, compares each digest with the bytes served, and
 checks the response headers as well.
 
-**On your own machine first.** `agsc-host serve` prints `http://127.0.0.1:8080/`, but both
-checkers compare the discovery document's anchor with the origin they fetched it from, and
+**On your own machine first.** `agsc-host serve` prints `http://localhost:8080/` (before 1.1 it
+printed `http://127.0.0.1:8080/`), and both checkers compare the discovery document's anchor with the origin they fetched it from, and
 the configuration admits `http://localhost(:port)/` as the one non-HTTPS `site.base`. To
 check a node served locally at Level 2, set `site.base` to `http://localhost:8080/`,
 rebuild, serve, and run each checker on
 `http://localhost:8080/.well-known/knowledge-linkset --level 2 --dev` (the Python checker
 also needs `--allow-network`); use `localhost`, not `127.0.0.1`, in both places. `--dev`
-admits plain `http` to a loopback address and nothing else (AGSC-09-93).
+admits plain `http` to a loopback address and nothing else (AGSC-09-93). The Node checker
+accepts `--allow-network` too, and says so once when a URL is given without it (from 2.0 the
+flag is required); `--max-requests <n>` (1 to 2000, default 500) stops a run that would
+fetch more files than that, with `AGSC-E906`.
 
 On the live address:
 

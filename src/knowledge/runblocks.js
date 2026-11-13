@@ -30,6 +30,7 @@
 const { finding } = require('./validate.js');
 const { withoutTrailingFeeds } = require('../shared/trailing.js');
 const { hasLineTerminator } = require('../shared/key-value-line.js');
+const { withArticle } = require('../shared/article.js');
 
 /** The two executable info strings (AGSC-02-22's spelling, and the only one). */
 const RUN_INFO = Object.freeze(['run']);
@@ -152,7 +153,7 @@ function steps(item, options = {}) {
   const file = String(item.path == null ? '' : item.path);
   if (String(item.type) !== 'procedure') {
     findings.push(finding('AGSC-E205',
-      `${item.slug} is a ${item.type}; AGSC-02-22 permits the run and expect info strings on`
+      `${item.slug} is ${withArticle(item.type)}; AGSC-02-22 permits the run and expect info strings on`
       + ' procedure items only', { file, severity: 'error' }));
     return { findings, steps: [] };
   }

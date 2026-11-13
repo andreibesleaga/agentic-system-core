@@ -25,9 +25,10 @@ function table() {
   return out;
 }
 
-test('AGSC-09-13: the table names the seven tools with exactly the tool server\'s arguments', () => {
+test('AGSC-09-13: the table names the ten tools with exactly the tool server\'s arguments', () => {
   const rows = table();
-  assert.deepEqual([...rows.keys()].sort(), ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+  assert.deepEqual([...rows.keys()].sort(), ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read',
+    'remember', 'search']);
   for (const [name, row] of rows) {
     assert.deepEqual(row.args.map((a) => a.name).sort(), [...tools.ARGUMENTS[name]].sort(), name);
     assert.deepEqual(row.args.filter((a) => a.required).map((a) => a.name).sort(), [...tools.REQUIRED_ARGUMENTS[name]].sort(), `${name} required`);
@@ -40,7 +41,10 @@ test('AGSC-09-13: each tool returns the type the table gives', () => {
   const host = inProcess(path.join(ROOT, 'tests', 'fixtures', 'minimal'), {});
   const calls = {
     ask: { question: 'what is a handoff' },
+    brief: { selection: ['supervisor'] },
+    check: {},
     compose: { selection: ['supervisor'] },
+    explain: { key: 'uses', source: 'supervisor', target: 'handoff' },
     links: { slug: 'handoff' },
     propose: { slug: 'handoff' },
     read: { slug: 'handoff' },

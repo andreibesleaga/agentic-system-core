@@ -5,7 +5,9 @@
 // attributes), AGSC-06-08a (the Level-0 form), AGSC-06-09/10 (the relation names
 // and the ordering), AGSC-06-11 (`agsc-ledger-head`), AGSC-06-35 (related-system
 // links), AGSC-10-12 (the mutual peer check), AGSC-11-16 (`rel#surface`),
-// AGSC-11-20 (`agsc-visibility` and `rel#access`) and AGSC-11-23 (`agsc-tombstone`).
+// AGSC-11-20 (`agsc-visibility` and `rel#access`) and AGSC-11-23 (`agsc-tombstone`); from
+// 1.1, AGSC-06-44 (the `digest`, `agsc-chunk-count` and `agsc-chunk-set` of the chunks surface
+// link and `agsc-ledger-length` on the ledger link, none of them on a `restricted` node).
 //
 // AGSC-06-07 makes the well-known suffix a SINGLE point of substitution: it is the
 // constant `WELLKNOWN_SUFFIX` below, and the path, the `_redirects` alias and the
@@ -14,11 +16,13 @@
 // Pure function of its input; `site.js` writes the bytes. Vectors disc-0004,
 // disc-0005, disc-0016.
 
-const { createHash } = require('node:crypto');
 const federation = require('../boundary/federation.js');
+const { peerUrls } = require('../knowledge/contexts.js');
 const surfaces = require('../boundary/surfaces.js');
+const { sha256Field } = require('../knowledge/digest-field.js');
 const { compareCodePoint, compareUtf16 } = require('../knowledge/unicode.js');
 const { finding } = require('../knowledge/validate.js');
+const { SPEC_VERSION } = require('../shared/spec-version.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** AGSC-06-07: the one substitutable constant. */
@@ -90,10 +94,11 @@ const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title
  * reader ignores (AGSC-00-21, AGSC-09-93).
  */
 const KNOWN_ATTRIBUTES = Object.freeze([
-  'agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-contribute-mode', 'agsc-counts',
-  'agsc-generated-at', 'agsc-ledger-head', 'agsc-spec-version', 'agsc-surface', 'agsc-surface-version',
-  'agsc-tombstone', 'agsc-visibility', 'digest', 'profile',
-]);
+  'agsc-access', 'agsc-bundle-hash', 'agsc-bundle-version', 'agsc-chunk-count', 'agsc-chunk-set',
+  'agsc-contribute-mode', 'agsc-counts', 'agsc-generated-at', 'agsc-ledger-head', 'agsc-ledger-length',
+  'agsc-spec-version', 'agsc-surface', 'agsc-surface-version', 'agsc-tombstone', 'agsc-visibility', 'digest',
+  'profile',
+]); // `agsc-chunk-count`, `agsc-chunk-set`, `agsc-ledger-length`: from 1.1 (AGSC-06-44)
 
 /**
  * AGSC-11-20: the targets a `restricted` node serves unauthenticated — its
@@ -104,11 +109,6 @@ const KNOWN_ATTRIBUTES = Object.freeze([
  */
 const OPEN_WHEN_RESTRICTED = Object.freeze(['/graph.jsonld', '/llms.txt']);
 
-/**
- * The MAJOR.MINOR of the specification this reader implements (AGSC-00-15); a caller
- * that knows its full version passes it as `options.specVersion`.
- */
-const OWN_SPEC_VERSION = '1.0';
 
 /** The `{major, minor}` of a version string, or `null` when it names none. */
 function majorMinor(version) {
@@ -146,13 +146,13 @@ const BUILTIN_SURFACE_ACCESS = Object.freeze({
 });
 
 /**
- * RFC 9530 + RFC 9651 §4.1: `sha-256=:<base64>:`, one string in an array.
+ * RFC 9530 + RFC 9651 §4.1: `sha-256=:<base64>:`, one string in an array — written by the one
+ * Structured Fields writer, `knowledge/digest-field.js`.
  * @param {string|Buffer} bytes the canonical bytes of the target.
  * @returns {string}
  */
 function digestOf(bytes) {
-  const buffer = Buffer.isBuffer(bytes) ? bytes : Buffer.from(String(bytes), 'utf8');
-  return `sha-256=:${createHash('sha256').update(buffer).digest('base64')}:`;
+  return sha256Field(bytes);
 }
 
 /**
@@ -219,6 +219,9 @@ function byHref(list) {
  *   emits". Omitting it means "every Level-≥2 route" (the reference emission).
  * @param {string} [options.tombstone] an AGSC-04-10 instant (AGSC-11-23).
  * @param {string} [options.successor] a successor node's discovery document.
+ * @param {{count:string, set:string}} [options.chunkSet] the count and the set commitment of the
+ *   chunk lines (`knowledge/chunks.js#commitment`, AGSC-06-44).
+ * @param {number} [options.ledgerLength] the number of entries of the derived ledger (AGSC-06-44).
  * @returns {object} the link set, ready for JCS.
  */
 function linkset(config, options = {}) {
@@ -294,19 +297,30 @@ function linkset(config, options = {}) {
   if (full && !gated && options.ledgerHead != null) {
     put(`${REL}ledger`, [link(href(base, '/ledger.jsonl'), 'application/jsonl', {
       digest: digest('/ledger.jsonl'), 'agsc-ledger-head': options.ledgerHead,
+      // AGSC-06-44: a MAY beside the head, which this writer states.
+      'agsc-ledger-length': options.ledgerLength == null ? undefined : String(options.ledgerLength),
     })]);
   }
 
-  // AGSC-10-12: each peer is named by its canonical well-known URL.
-  const peers = Array.isArray(config && config.peers) ? config.peers : [];
-  put(`${REL}peer`, peers.map((p) => link(String(p), MEDIA_TYPE)));
+  // AGSC-10-12: each peer is named by its canonical well-known URL; a typed peer of
+  // AGSC-11-24 by its `url` alone, so a 1.0 reader sees the same link.
+  put(`${REL}peer`, peerUrls(config && config.peers).map((p) => link(p, MEDIA_TYPE)));
 
   // AGSC-11-16: one `rel#surface` link per surface the node serves, and no other.
   const surfaces = Array.isArray(options.surfaces) ? options.surfaces : [];
+  // AGSC-06-44: the link of the `chunks` surface carries the digest of `/chunks.jsonl` (the
+  // manifest when sharded), the count and the set commitment, at Level ≥ 2 on a public node;
+  // a restricted node omits all three (AGSC-11-20 (d)), as `digest()` already does for the file.
+  const chunkFacts = (s) => (s.surface !== 'chunks' || !full || gated || options.chunkSet == null ? {} : {
+    digest: digest('/chunks.jsonl'),
+    'agsc-chunk-count': options.chunkSet.count,
+    'agsc-chunk-set': options.chunkSet.set,
+  });
   put(`${REL}surface`, surfaces.map((s) => link(String(s.target), s.type == null ? undefined : s.type, {
     'agsc-surface': s.surface,
     'agsc-surface-version': s.version,
     'agsc-access': s.access == null ? BUILTIN_SURFACE_ACCESS[s.surface] : s.access,
+    ...chunkFacts(s),
   })));
 
   // AGSC-11-14 / AGSC-11-20.
@@ -378,6 +392,9 @@ function surfaceFindings(one, fail, warn) {
   if ((name === 'llms-txt' || name === 'chunks') && version !== undefined) {
     fail('AGSC-E210', `rel#surface ${one.href}: agsc-surface-version must be absent for ${name} (AGSC-11-16)`);
   }
+  if (name === 'webmcp' && Array.isArray(version) && version.length === 1 && !surfaces.isDate(version[0])) {
+    fail('AGSC-E210', `rel#surface ${one.href}: the agsc-surface-version of webmcp is a date YYYY-MM-DD, not ${JSON.stringify(version[0])} (AGSC-11-16)`);
+  }
   if (name === 'llms-txt' && !/\/llms\.txt$/u.test(String(one.href).split(/[?#]/u)[0])) {
     fail('AGSC-E210', 'rel#surface llms-txt must target /llms.txt (AGSC-11-16)');
   }
@@ -425,7 +442,7 @@ function check(doc, options = {}) {
     // AGSC-11-20: a restricted node keeps `agsc-generated-at` and `agsc-spec-version`
     // at every Level, so the Level-0 omission of AGSC-06-08a does not reach them there.
     const gatedAnchor = [].concat(anchorLink['agsc-visibility'] || []).map(String).includes('restricted');
-    const newer = newerMinor(declared, options.specVersion == null ? OWN_SPEC_VERSION : options.specVersion);
+    const newer = newerMinor(declared, options.specVersion == null ? SPEC_VERSION : options.specVersion);
     for (const relation of Object.keys(context)) {
       if (relation === 'anchor') continue;
       if (!ALLOWED_RELATIONS.includes(relation)) {
@@ -578,10 +595,8 @@ function peerCheck(nodes) {
 
 module.exports = {
   anchorOnOrigin,
-  KNOWN_ATTRIBUTES,
   OPEN_WHEN_RESTRICTED,
   linkset,
-  newerMinor,
   check,
   peerCheck,
   peersOf,

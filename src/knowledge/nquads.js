@@ -6,8 +6,10 @@
 // fourteen Link keys and their computed inverses), AGSC-05-26/05-26a/05-27 (the
 // frontmatter → property table), AGSC-05-29/05-30 (attachments, ports, task state),
 // AGSC-05-31 (the three literal forms), AGSC-05-32 (N-Quads escaping),
-// AGSC-04-13/04-15/04-16 (the sort that IS the canonicalisation) and AGSC-06-33
-// (the optional static fragments).
+// AGSC-04-13/04-15/04-16 (the sort that IS the canonicalisation), AGSC-06-33
+// (the optional static fragments), AGSC-05-40 (the two triples of an item's warrant) and,
+// for a node that uses the domain layer, AGSC-05-38/05-39 (the site vocabulary's triples
+// and the items' domain triples).
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require. The build
 // instant, the file bytes of an attachment and the Bundle configuration are passed in.
@@ -27,6 +29,8 @@
 
 const { compareCodePoint } = require('./unicode.js');
 const skos = require('./skos.js');
+const { RELATIONS } = require('./relations.js');
+const { warrantOf } = require('./warrants.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 // ---------------------------------------------------------------- namespaces
@@ -55,6 +59,12 @@ const PREFIXES = Object.freeze({
   skos: SKOS,
   xsd: XSD,
 });
+
+/** `skos:related` -> its IRI, over `PREFIXES`; the relation table (`relations.js`) writes properties as curies. */
+function expandCurie(curie) {
+  const colon = curie.indexOf(':');
+  return `${PREFIXES[curie.slice(0, colon)]}${curie.slice(colon + 1)}`;
+}
 
 // ---------------------------------------------------------------- terms
 
@@ -181,22 +191,11 @@ function serialize(quads) {
  * authored direction only (`prov:wasDerivedFrom`), and AGSC-05-27's object-property
  * list is closed, so no `prov:hadDerivation` is invented.
  */
-const LINK_PROPERTIES = Object.freeze({
-  related: { property: `${SKOS}related`, symmetric: true },
-  broader: { property: `${SKOS}broader`, inverse: `${SKOS}narrower` },
-  narrower: { property: `${SKOS}narrower`, inverse: `${SKOS}broader` },
-  uses: { property: `${NS}uses`, inverse: `${NS}usedBy` },
-  requires: { property: `${DCTERMS}requires`, inverse: `${DCTERMS}isRequiredBy` },
-  excludes: { property: `${NS}excludes`, symmetric: true },
-  'derived-from': { property: `${PROV}wasDerivedFrom` },
-  contradicts: { property: `${NS}contradicts`, symmetric: true },
-  supersedes: { property: `${DCTERMS}replaces`, inverse: `${DCTERMS}isReplacedBy` },
-  implements: { property: `${NS}implements`, inverse: `${NS}implementedBy` },
-  verifies: { property: `${NS}verifies`, inverse: `${NS}isVerifiedBy` },
-  covers: { property: `${NS}covers`, inverse: `${NS}coveredBy` },
-  'blocked-by': { property: `${NS}blockedBy`, inverse: `${NS}blocks` },
-  'decided-by': { property: `${NS}decidedBy`, inverse: `${NS}decides` },
-});
+const LINK_PROPERTIES = Object.freeze(Object.fromEntries(RELATIONS.map((r) => [r.key, Object.freeze({
+  property: expandCurie(r.property),
+  ...(r.symmetric ? { symmetric: true } : {}),
+  ...(r.inverseProperty ? { inverse: expandCurie(r.inverseProperty) } : {}),
+})])));
 
 /**
  * The AGSC-05-26 table, extended by AGSC-05-30: frontmatter key (dotted for a nested
@@ -326,6 +325,21 @@ function sourceQuads(item, subject, graph) {
   return out;
 }
 
+/**
+ * AGSC-05-40: a valid `warrant` adds two triples on the item, `dcterms:source` with the source
+ * and `asc:warrant` with the kind, both `xsd:string` (the AGSC-05-26 table). It is not a
+ * Source node: the `#source-n` nodes of `sources[]` are written by `sourceQuads` alone. A
+ * warrant that breaks the rule adds nothing (`warrants.js#warrantOf`); the lint reports it.
+ */
+function warrantQuads(item, subject, graph) {
+  const warrant = warrantOf(item);
+  if (warrant === null) return [];
+  return [
+    quad(iri(subject), iri(`${DCTERMS}source`), literal(warrant.source), graph),
+    quad(iri(subject), iri(`${NS}warrant`), literal(warrant.type), graph),
+  ];
+}
+
 /** The Review nodes of `verified[]` and the `asc:review` reachability edges (AGSC-05-15). */
 function reviewQuads(item, subject, graph) {
   const out = [];
@@ -445,6 +459,42 @@ function linkQuads(item, subject, index, graph) {
 }
 
 /**
+ * AGSC-05-39: the triples an item adds with the keys of the domain layer, read against the
+ * site vocabulary `domain` (`domain.js#load`): `domain_type` a second `rdf:type`, the class it
+ * names; `domain_role` one `schema:additionalType` string; `domain_context` one
+ * `dcterms:isPartOf` to that cluster; each member of `domain_links` the triple
+ * `<item> <property> <target>` and the inverse or symmetric edge the vocabulary declares
+ * (AGSC-03-27). A name the vocabulary does not define, or a target that does not resolve,
+ * emits nothing; the lint reports it. Like `linkQuads`, a property that specialises
+ * `skos:related`, `skos:broader` or `skos:narrower` is never written at a cluster (AGSC-05-20).
+ */
+function domainQuads(item, subject, index, graph, domain) {
+  const out = [];
+  const type = domain.classFor(item);
+  if (type !== null) out.push(quad(iri(subject), iri(RDF_TYPE), iri(type), graph));
+  if (typeof item.domain_role === 'string') {
+    out.push(quad(iri(subject), iri(`${SCHEMA}additionalType`), literal(item.domain_role), graph));
+  }
+  const context = item.domain_context === undefined ? null : resolveTarget(item.domain_context, index);
+  if (context !== null && context.type === 'cluster') {
+    out.push(quad(iri(subject), iri(`${DCTERMS}isPartOf`), iri(context.iri), graph));
+  }
+  const links = item.domain_links !== null && typeof item.domain_links === 'object' ? item.domain_links : {};
+  for (const [name, values] of Object.entries(links)) {
+    const property = domain.propertyFor(item, name);
+    if (property === null) continue;
+    for (const value of asArray(values)) {
+      const target = resolveTarget(value, index);
+      if (!target || (property.conceptOnly && (item.type === 'cluster' || target.type === 'cluster'))) continue;
+      out.push(quad(iri(subject), iri(property.iri), iri(target.iri), graph));
+      if (property.symmetric) out.push(quad(iri(target.iri), iri(property.iri), iri(subject), graph));
+      else if (property.inverse !== null) out.push(quad(iri(target.iri), iri(property.inverse), iri(subject), graph));
+    }
+  }
+  return out;
+}
+
+/**
  * The RDF dataset of a set of items (AGSC-05). Blank-node-free by construction.
  *
  * @param {object[]} items  parsed items: `{ type, slug, ...frontmatter }`
@@ -462,6 +512,12 @@ function linkQuads(item, subject, index, graph) {
  *                     already resolved to slugs by the Links module
  *   `citations`       `[{source, see_also, peer}]` — the AGSC-11-12 peer citations,
  *                     already normalised by `boundary/federation.js#peerCitations`
+ *   `domain`          the site vocabulary (`domain.js#load`), for a node that uses the
+ *                     domain layer: its triples join the Bundle graph (AGSC-05-38) and
+ *                     each item's domain keys add theirs (AGSC-05-39). Absent, no byte
+ *                     changes
+ *   `siteVocabulary`  `false` leaves the vocabulary's own triples out, as a per-item
+ *                     view does (AGSC-05-38: they are in no `pages/<slug>.jsonld`)
  * @returns {object[]} quads
  */
 function dataset(items, options = {}) {
@@ -481,6 +537,9 @@ function dataset(items, options = {}) {
     }
     out.push(...licenceQuads(options.bundle, base, graph));
   }
+  if (options.domain && options.siteVocabulary !== false) {
+    for (const [s, p, o] of options.domain.triples) out.push(quad(s, p, o, graph));
+  }
 
   for (const item of list) {
     const subject = itemIri(item, { base });
@@ -496,8 +555,10 @@ function dataset(items, options = {}) {
     out.push(...dateQuads(item, subject, graph));
     out.push(...linkQuads(item, subject, index, graph));
     out.push(...sourceQuads(item, subject, graph));
+    out.push(...warrantQuads(item, subject, graph));
     out.push(...reviewQuads(item, subject, graph));
     out.push(...attachmentQuads(item, { ...options, base, graph, subject }));
+    if (options.domain) out.push(...domainQuads(item, subject, index, graph, options.domain));
   }
 
   for (const edge of skos.membership(list, (slug) => (index.has(slug) ? index.get(slug).iri : null))) {

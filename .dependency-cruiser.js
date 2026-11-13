@@ -12,6 +12,11 @@
 //   application  -> everything, adapters included (the only layer that wires)
 //   adapters     -> ports, adapters, shared
 //
+// The TypeScript parts under src-ts/<context>/ (docs/ENGINEERING.md, "TypeScript parts")
+// keep the same map: each rule reads `src(?:-ts)?/`, so a source and the file tsc compiles
+// from it into src/ are judged alike. The benchmark runners under src-ts/bench/, which tsc
+// compiles into bench/runners/, belong to no context and require nothing of the engine.
+//
 // Every rule below is an error: a violation fails the gate.
 
 const CONTEXTS = {
@@ -38,15 +43,15 @@ const contextRules = Object.entries(CONTEXTS).map(([from, allowed]) => ({
   name: `context-${from}`,
   comment: `src/${from}/ may require only ${allowed.length ? allowed.join(', ') : 'nothing inside src/'} (docs/ARCHITECTURE-DDD.md §2)`,
   severity: 'error',
-  from: { path: `^src/${from}/` },
-  to: { path: '^src/', pathNot: allowed.length ? `^src/(${allowed.join('|')})/` : '^$' },
+  from: { path: `^src(?:-ts)?/${from}/` },
+  to: { path: '^src(?:-ts)?/', pathNot: allowed.length ? `^src(?:-ts)?/(${allowed.join('|')})/` : '^$' },
 }));
 
 const builtinRules = Object.entries(BUILTINS).map(([from, allowed]) => ({
   name: `builtins-${from.split('|')[0]}`,
   comment: `src/(${from})/ may use only these Node built-ins: ${allowed.join(', ')}; the rest reach the host through a port`,
   severity: 'error',
-  from: { path: `^src/(${from})/` },
+  from: { path: `^src(?:-ts)?/(${from})/` },
   to: { dependencyTypes: ['core'], pathNot: `^(node:)?(${allowed.join('|')})$` },
 }));
 
@@ -58,36 +63,45 @@ module.exports = {
       name: 'adapters-wired-by-application-only',
       comment: 'only src/application/ and bin/ construct an adapter; a bounded context receives a port',
       severity: 'error',
-      from: { path: '^src/', pathNot: '^src/(application|adapters)/' },
-      to: { path: '^src/adapters/' },
+      from: { path: '^src(?:-ts)?/', pathNot: '^src(?:-ts)?/(application|adapters)/' },
+      to: { path: '^src(?:-ts)?/adapters/' },
     },
     {
       name: 'interchange-distribution-apart',
       comment: 'Interchange (import/export) and Distribution (the published node) meet only in the application layer',
       severity: 'error',
-      from: { path: '^src/(interchange|distribution)/' },
-      to: { path: '^src/(interchange|distribution)/', pathNot: '^src/$1/' },
+      from: { path: '^src(?:-ts)?/(interchange|distribution)/' },
+      to: { path: '^src(?:-ts)?/(interchange|distribution)/', pathNot: '^src(?:-ts)?/$1/' },
     },
     {
       name: 'plugins-loaded-never-required',
-      comment: 'a plugin is loaded through src/application/plugin-loader.js by path; no module requires a sample plugin or a checker',
+      comment: 'a plugin is loaded through src/application/plugin-loader.js by path; no module requires a sample plugin, a checker'
+        + ' or a companion package under packages/ (each is published on its own and depends on the engine, never the reverse)',
       severity: 'error',
-      from: { path: '^(src|bin)/|^index\\.js$' },
-      to: { path: '^(examples|tools|plugins)/' },
+      from: { path: '^(src|src-ts|bin)/|^index\\.js$' },
+      to: { path: '^(examples|tools|plugins|packages)/' },
     },
     {
       name: 'no-dev-dependency-at-run-time',
       comment: 'the engine runs on its dependencies only; devDependencies serve the tests and the gates',
       severity: 'error',
-      from: { path: '^(src|bin)/|^index\\.js$' },
+      from: { path: '^(src|src-ts|bin)/|^index\\.js$' },
       to: { dependencyTypes: ['npm-dev'] },
     },
     {
       name: 'no-undeclared-package',
       comment: 'every package the engine requires is declared, pinned, in package.json',
       severity: 'error',
-      from: { path: '^(src|bin)/|^index\\.js$' },
+      from: { path: '^(src|src-ts|bin)/|^index\\.js$' },
       to: { dependencyTypes: ['npm-no-pkg', 'npm-unknown', 'undetermined'] },
+    },
+    {
+      name: 'bench-runners-standalone',
+      comment: 'a benchmark runner under src-ts/bench/ measures what a consumer of the published files gets, so it '
+        + 'requires nothing of the engine under src/ or src-ts/ (the independence of AGSC-09-90; docs/BENCHMARKS.md)',
+      severity: 'error',
+      from: { path: '^src-ts/bench/' },
+      to: { path: '^src(?:-ts)?/', pathNot: '^src-ts/bench/' },
     },
     {
       name: 'no-unresolvable',
@@ -105,7 +119,8 @@ module.exports = {
     },
     {
       name: 'no-orphans',
-      comment: 'every module under src/ is reachable (the port typedefs are documentation and required by nothing)',
+      comment: 'every module under src/ is reachable (the port typedefs are documentation and required by nothing; '
+        + 'a source under src-ts/ is reached through the file tsc compiles from it, which this rule judges)',
       severity: 'error',
       from: { orphan: true, path: '^src/', pathNot: '^src/ports/' },
       to: {},
@@ -113,8 +128,13 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '^(node_modules|GABBE|tests/vectors|tests/fixtures)/' },
-    moduleSystems: ['cjs'],
+    // src/distribution/vendor/ holds the files of one release of the query engine the `/query/`
+    // page runs in the browser (AGSC-06-39): served byte for byte, required by no module.
+    exclude: { path: '^(node_modules|GABBE|tests/vectors|tests/fixtures|src/distribution/vendor)/' },
+    // CommonJS for the engine, ES module syntax for the sources under src-ts/, which tsc
+    // compiles to CommonJS; the TypeScript resolution follows tsconfig.json.
+    moduleSystems: ['cjs', 'es6'],
+    tsConfig: { fileName: 'tsconfig.json' },
     combinedDependencies: false,
     // Two pinned libraries publish ES modules only; Node >= 22.13 requires them
     // (require(esm)), so the resolver reads their `import` export condition too.

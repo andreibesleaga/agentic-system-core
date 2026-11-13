@@ -1,0 +1,17 @@
+# sh:nodeKind, a single kind on a node shape with sh:targetObjectsOf, and a union of two kinds.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:LinkTarget
+    a sh:NodeShape ;
+    sh:nodeKind sh:IRI ;
+    sh:targetObjectsOf ex:link .
+
+exs:Labelled
+    a sh:NodeShape ;
+    sh:property [
+        sh:nodeKind sh:BlankNodeOrLiteral ;
+        sh:path ex:label
+    ] ;
+    sh:targetSubjectsOf ex:link .

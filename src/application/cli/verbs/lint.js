@@ -10,13 +10,18 @@
 // AGSC-08-13…17).
 
 const validate = require('../../../knowledge/validate.js');
+const domain = require('../../../knowledge/domain.js');
 const frontmatter = require('../../../knowledge/frontmatter.js');
 const links = require('../../../knowledge/links.js');
+const suggest = require('../../../knowledge/suggest.js');
 const slug = require('../../../knowledge/slug.js');
 const govLint = require('../../../governance/lint.js');
 const govFix = require('../../../governance/fix.js');
+const portable = require('../../../governance/portable-names.js');
+const textFiles = require('../../../governance/text-files.js');
 const { checkAgents } = require('../../../governance/agents.js');
 const { RANGE_CHECKED_KEYS } = require('../../../boundary/visibility.js');
+const federation = require('../../../boundary/federation.js');
 const site = require('../../../distribution/site.js');
 const { readSchemas } = require('../../../adapters/node-fs.js');
 const helpers = require('./_helpers.js');
@@ -63,6 +68,73 @@ function configAndRoot(bundle, options = {}) {
   return findings;
 }
 
+/** The site vocabulary of each loaded Bundle, read once: the Bundle record is frozen, so the model never goes stale. */
+const MODELS = new WeakMap();
+
+/**
+ * AGSC-05-38: the site vocabulary of the Bundle as the checks read it (`domain.js#load`), or
+ * `null` for a Bundle that names none, or whose vocabulary does not load (AGSC-E420 says why).
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {object|null}
+ */
+function siteModel(bundle) {
+  if (!bundle.domain || typeof bundle.domain.vocabulary !== 'string') return null;
+  if (!MODELS.has(bundle)) MODELS.set(bundle, domain.load(bundle.domain.vocabulary, { contexts: ((bundle.config || {}).domain || {}).contexts }));
+  return MODELS.get(bundle);
+}
+
+/** The options of `links.resolve` for the Bundle: its assets, and its site vocabulary when it has one. */
+function linkOptions(bundle) {
+  const model = siteModel(bundle);
+  return { assets: bundle.assets, config: bundle.config, ...(model === null ? {} : { domain: model }) };
+}
+
+/**
+ * AGSC-01-41, AGSC-05-38 and AGSC-02-25: the domain layer's own checks — the faults of the
+ * `domain` object the schema cannot see, the rules (a) to (g) over the site vocabulary the
+ * loader read, and the domain keys of the items that name no class or context
+ * (`AGSC-E418`). `build` runs them too, so what `lint` refuses here is never published. A
+ * Bundle with no `domain` object and no item that states a domain key has none.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} findings.
+ */
+function domainLayer(bundle) {
+  const config = bundle.config || {};
+  const object = config.domain || {};
+  const findings = [];
+  if (bundle.domain !== undefined) {
+    findings.push(...domain.configFindings(config, { items: bundle.items || [] }));
+    if (typeof bundle.domain.vocabulary === 'string') {
+      findings.push(...domain.check(bundle.domain.vocabulary, { contexts: object.contexts, file: object.vocabulary }));
+    }
+  }
+  findings.push(...domain.itemFindings(bundle.items || [], {
+    contexts: object.contexts, model: siteModel(bundle), vocabulary: typeof object.vocabulary === 'string',
+  }));
+  return findings;
+}
+
+/**
+ * AGSC-11-24: the statements of the crosswalks the typed peers name, each refused one
+ * `AGSC-E209` on its file (`federation.js#readCrosswalk`), judged against the Bundle's own base,
+ * contexts, items and the terms of its site vocabulary. The schema reports a relationship outside the three (`AGSC-E203`) and a
+ * translation layer with no crosswalk (`AGSC-E202`); the loader an absent file (`AGSC-E901`).
+ * `build` runs it too. A Bundle with no typed peer that names a crosswalk has none.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} findings.
+ */
+function contextMapFindings(bundle) {
+  if (bundle.crosswalks === undefined) return [];
+  const config = bundle.config || {};
+  const items = (bundle.items || []).map((item) => ({ slug: item.slug, type: item.type }));
+  const model = siteModel(bundle);
+  const options = { base: String((config.site || {}).base || ''), contexts: (config.domain || {}).contexts, items, terms: model === null ? [] : model.terms };
+  return [...bundle.crosswalks].flatMap(([file, text]) => federation.readCrosswalk(text, { ...options, file }).findings);
+}
+
 /** Whether a ProcessRunner port is wired, so a missing git answer means "no repository". */
 function hasRunner(ctx) {
   const proc = ctx.ports && ctx.ports.proc;
@@ -100,6 +172,52 @@ function encodingFindings(fsPort) {
   return findings;
 }
 
+/**
+ * AGSC-01-40 and AGSC-04-05 (1.1): the warnings for names, paths and characters that
+ * only some file systems or I-JSON readers refuse. The files are those the Bundle
+ * carries as input: `content/`, `site/`, `PRIVACY.md` and the configuration.
+ * `lint`, `ci` and `build` all report them.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} warnings, AGSC-E423.
+ */
+function portableNames(ctx, bundle) {
+  const fsPort = ctx.ports && ctx.ports.fs;
+  const paths = [];
+  if (fsPort && typeof fsPort.exists === 'function') {
+    for (const dir of ['content', 'site']) if (fsPort.exists(dir)) paths.push(...fsPort.walk(dir));
+    for (const file of ['PRIVACY.md', 'agsc.config.json']) if (fsPort.exists(file)) paths.push(file);
+  }
+  return [...portable.checkPaths(paths), ...portable.checkBundleText(bundle)];
+}
+
+/**
+ * AGSC-01-14 (1.1) over the four text files that carry none of its four suffixes: the
+ * root `.env`, the authored `.well-known/security.txt`, `LICENSE-CONTENT` and every SVG
+ * under `content/attachments/`. A byte-order mark and non-NFC text are warnings; a file
+ * that is absent, or that the port cannot decode, is not this check's to report.
+ *
+ * @param {object} [fsPort] the FileSystem port.
+ * @returns {Array<object>} warnings, AGSC-E108.
+ */
+function textFileFindings(fsPort) {
+  if (!fsPort || typeof fsPort.exists !== 'function') return [];
+  const files = ['.env', '.well-known/security.txt', 'LICENSE-CONTENT'].filter((file) => fsPort.exists(file));
+  if (fsPort.exists('content/attachments')) {
+    files.push(...fsPort.walk('content/attachments').filter((file) => file.toLowerCase().endsWith('.svg')));
+  }
+  const findings = [];
+  for (const file of files) {
+    try {
+      findings.push(...textFiles.check(file, String(fsPort.readFile(file, 'utf8'))));
+    } catch (e) {
+      // Not decodable or not readable: the loader and the attachment lint report those.
+    }
+  }
+  return findings;
+}
+
 function lane(ctx, bundle) {
   const findings = [];
   const lanes = ['parse', 'schema'];
@@ -107,6 +225,10 @@ function lane(ctx, bundle) {
   findings.push(...configAndRoot(bundle, { ownVersion: ctx.specVersion }));
   lanes.push('config');
   lanes.push('root');
+  findings.push(...domainLayer(bundle));
+  if (bundle.domain !== undefined) lanes.push('domain');
+  findings.push(...contextMapFindings(bundle));
+  if (bundle.crosswalks !== undefined) lanes.push('context map');
 
   // AGSC-01-03 placement and AGSC-01-11 uniqueness.
   const base = String(((bundle.config || {}).site || {}).base || '');
@@ -122,9 +244,8 @@ function lane(ctx, bundle) {
   // AGSC-03-11's asset branch needs the set `loadBundle` listed: without
   // it every body image reference to a real file under `content/assets/` is
   // `AGSC-E310`, which is the one case the branch exists to admit.
-  findings.push(...links.resolve(bundle.items || [], {
-    assets: bundle.assets, config: bundle.config,
-  }).errors);
+  // AGSC-03-27: with a site vocabulary the domain links are read too.
+  findings.push(...links.resolve(bundle.items || [], linkOptions(bundle)).errors);
   lanes.push('links');
 
   // AGSC-08-13…17 and the structural lints. Every file fact is injected.
@@ -149,6 +270,10 @@ function lane(ctx, bundle) {
   // are `.md` files a Bundle carries as input.
   findings.push(...encodingFindings(fsPort));
   lanes.push('encoding');
+
+  findings.push(...textFileFindings(fsPort));
+  findings.push(...portableNames(ctx, bundle));
+  lanes.push('portable names');
 
   // RFC 9116 + PRD-019: the two legal-facing surfaces need a security contact, a
   // privacy notice and an operator that only the publisher can supply. They are
@@ -226,6 +351,28 @@ function fix(ctx, bundle) {
   return { findings, written };
 }
 
+/** Where `lint --suggest` writes (AGSC-05-35): local, never a route, never under `content/`. */
+const SUGGESTIONS_FILE = 'dist/suggestions.json';
+
+/**
+ * `lint --suggest` (AGSC-05-35): the Links the content suggests, written to
+ * `dist/suggestions.json` and nowhere else. The generators are `knowledge/suggest.js`'s;
+ * this function is only the wiring: the loaded items in, the content version of the
+ * invocation stamped on the file, one file out through the FileSystem port.
+ *
+ * @param {object} ctx the verb context.
+ * @param {object} bundle the loaded Bundle.
+ * @returns {Array<object>} the warnings about the content version, if any.
+ */
+function suggestLinks(ctx, bundle) {
+  const derived = helpers.bundleVersionOf(ctx, helpers.gitLog(ctx));
+  const text = suggest.file(bundle.items || [], derived.version);
+  ctx.ports.fs.mkdirp('dist');
+  ctx.ports.fs.writeFile(SUGGESTIONS_FILE, text);
+  helpers.note(ctx, `wrote: ${SUGGESTIONS_FILE} sha256:${helpers.sha256(text)}`);
+  return derived.findings;
+}
+
 function run(ctx) {
   let bundle = helpers.bundleOf(ctx);
   // AGSC-04-19: `--fix` runs FIRST, and the lanes then judge the repaired files, so a
@@ -235,9 +382,10 @@ function run(ctx) {
   if (repaired.written.length > 0) bundle = helpers.bundleOf(ctx);
   const result = lane(ctx, bundle);
   for (const name of result.lanes) helpers.note(ctx, `lane: ${name}`);
+  const suggested = ctx.verbFlags && ctx.verbFlags.suggest === true ? suggestLinks(ctx, bundle) : [];
   return {
-    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...repaired.findings]),
+    findings: validate.sortFindings([...(bundle.findings || []), ...result.findings, ...repaired.findings, ...suggested]),
   };
 }
 
-module.exports = { name: 'lint', configAndRoot, fix, lane, run };
+module.exports = { name: 'lint', configAndRoot, contextMapFindings, domainLayer, fix, lane, linkOptions, portableNames, run, siteModel, textFileFindings };

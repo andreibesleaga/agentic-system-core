@@ -1,0 +1,12 @@
+# sh:zeroOrMorePath: a property path operator outside the subset.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path [ sh:zeroOrMorePath ex:broader ]
+    ] ;
+    sh:targetClass ex:C .

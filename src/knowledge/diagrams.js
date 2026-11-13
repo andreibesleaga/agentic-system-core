@@ -3,7 +3,15 @@
 //
 // The deterministic diagram compiler: one `.diagram` DSL source (AGSC-01-07) in,
 // one SVG out (AGSC-02-13), inside the AGSC-02-98 element/attribute allow-list by
-// construction. It is the engine's port of the owner's own compiler
+// construction. From 1.1 the language and the bytes are pinned by AGSC-01-42: the
+// twelve statements, the refusals, the number and escape rules and the document
+// written by `render` (cases bundle-0018 and bundle-0019). 1.1 adds one token to what
+// 1.0 compiled: `rel=KEY` on `arrow`, `line` and `text` writes the class
+// `agsc-rel-KEY`, KEY one of the fourteen Link keys of AGSC-03-01, the hook of the
+// graph view of AGSC-06-38 (a class, no colour). It refuses two sources 1.0 accepted,
+// as the rule says: `acc` with `thick` on one statement, which wrote `stroke-width`
+// twice, and a `via` waypoint of more than two numbers. It is the engine's port of
+// the owner's own compiler
 // (`OldAgenticSystemPatterns.com/diagrams/compile.js`, Node stdlib, the owner's
 // code) with three changes the specification requires:
 //
@@ -20,19 +28,19 @@
 //      colour of its own (AGSC-06-05 forbids a third-party origin; a `<style>`
 //      element would also be AGSC-E412).
 //
-// Rules implemented: AGSC-01-07 (the source's home), AGSC-02-13 (`<slug>.svg`
+// Rules implemented: AGSC-01-07 (the source's home), AGSC-01-42 (the grammar and
+// the bytes), AGSC-02-13 (`<slug>.svg`
 // compiled from `content/diagrams/<slug>.diagram`), AGSC-02-98 (the allow-list,
 // PRD-059), AGSC-04-01/04-02 (byte-deterministic — no clock, no randomness,
 // no locale, fixed decimal rendering), AGSC-06-20 (the accessible names).
 //
 // PURE: no fs, no process, no clock, no network, no cross-context require.
 //
-// CODE. §9.4 registers no code for "a diagram source that does not compile".
-// `AGSC-E412` is the one registered code whose rules (AGSC-02-13/02-98) own the
-// diagram artefact, and a source that cannot produce a conforming SVG is exactly
-// the absence of that artefact, so every finding here carries it. The gap is
-// reported for 1.0.0 rather than closed with an invented code.
+// CODE. Every refusal is `AGSC-E412`, which the registry of §9.4 names, from 1.1,
+// for "a `.diagram` source the grammar of AGSC-01-42 refuses", and each names the
+// source line that breaks the rule. A source over the size cap is `AGSC-E904`.
 
+const { LINK_KEYS } = require('./relations.js');
 const { finding } = require('./validate.js');
 
 /** AGSC-04-01: the canvas defaults, fixed, never read from anywhere. */
@@ -42,6 +50,8 @@ const DEFAULT_HEIGHT = 260;
 /** AGSC-02-98: the accent is a class plus a presentation attribute, never CSS. */
 const ACCENT_CLASS = 'agsc-accent';
 const ACCENT_STROKE_WIDTH = '2.2';
+/** AGSC-01-42: `rel=KEY` writes this prefix and the key, a class with no colour. */
+const REL_CLASS_PREFIX = 'agsc-rel-';
 
 /** px of canvas that must stay clear either side of the centred footer note. */
 const NOTE_MARGIN = 16;
@@ -216,7 +226,7 @@ function compile(dslText, options = {}) {
   const slug = options.slug === undefined ? 'diagram' : String(options.slug);
   const findings = [];
   const fail = (message, line) => {
-    findings.push(finding('AGSC-E412', `${message} (AGSC-02-13, AGSC-02-98)`,
+    findings.push(finding('AGSC-E412', `${message} (AGSC-01-42, AGSC-02-13)`,
       { file, slug, line }));
   };
 
@@ -237,7 +247,7 @@ function compile(dslText, options = {}) {
   const texts = [];
   const arrowGeometry = new Map();
   const arrowRef = `url(#${esc(markerId(slug))})`;
-  let accentCount = 0;
+  const accentLines = [];
 
   const flag = (t, name) => t.includes(name);
   const num = (value, what, line) => {
@@ -255,11 +265,32 @@ function compile(dslText, options = {}) {
     }
     return true;
   };
-  /** The accent: a class AND a presentation attribute, so no CSS is needed. */
-  const accentAttrs = (t) => {
-    if (!flag(t, 'acc')) return '';
-    accentCount += 1;
-    return ` class="${ACCENT_CLASS}" stroke-width="${ACCENT_STROKE_WIDTH}"`;
+  /**
+   * The accent: a class AND a presentation attribute, so no CSS is needed. `rel` is
+   * the key of a `rel=KEY` token already checked by `relOf`, or null; with the accent
+   * it joins the one class attribute, without it it is the whole attribute.
+   */
+  const accentAttrs = (t, line, rel = null) => {
+    const relClass = rel === null ? '' : `${REL_CLASS_PREFIX}${rel}`;
+    if (!flag(t, 'acc')) return rel === null ? '' : ` class="${relClass}"`;
+    accentLines.push(line);
+    const classes = rel === null ? ACCENT_CLASS : `${ACCENT_CLASS} ${relClass}`;
+    return ` class="${classes}" stroke-width="${ACCENT_STROKE_WIDTH}"`;
+  };
+  /**
+   * AGSC-01-42: the key of the `rel=KEY` token of an `arrow`, `line` or `text`, or null
+   * when there is none; undefined, after a finding, when any `rel=` token of the statement
+   * names no one of the fourteen Link keys of AGSC-03-01, so that nothing but a known key
+   * reaches an attribute. Of two known keys the first is the class, as with every other
+   * repeated token.
+   */
+  const relOf = (t, line) => {
+    const rels = t.filter((each) => each.startsWith('rel='));
+    if (rels.length === 0) return null;
+    const unknown = rels.find((token) => !LINK_KEYS.includes(token.slice(4)));
+    if (unknown === undefined) return rels[0].slice(4);
+    fail(`${JSON.stringify(unknown)} names no Link key; rel= takes one of ${LINK_KEYS.join(', ')}`, line);
+    return undefined;
   };
   const dashAttr = (t, pattern) => (flag(t, 'dashed') ? ` stroke-dasharray="${pattern}"` : '');
   const pushTextLines = (x, y, value, size) => {
@@ -314,12 +345,12 @@ function compile(dslText, options = {}) {
       const w = num(t[4], id, line);
       const h = num(t[5], id, line);
       if (x === null || y === null || w === null || h === null) continue;
-      const box = { x, y, w, h, region: false };
+      const box = { x, y, w, h, line, region: false };
       shapes.set(id, box);
       if (!inCanvas(x, y, `box ${id}`, line) || !inCanvas(x + w, y + h, `box ${id}`, line)) continue;
       // The accented box keeps the arrow dash pattern, a plain box the wider one:
       // the owner's compiler encodes this as a `.replace` on the emitted string.
-      const accent = accentAttrs(t);
+      const accent = accentAttrs(t, line);
       const dash = flag(t, 'dashed') ? ` stroke-dasharray="${accent === '' ? '5 3' : '4 3'}"` : '';
       draw.push(`<rect x="${fixed(x)}" y="${fixed(y)}" width="${fixed(w)}" height="${fixed(h)}" rx="6"${accent}${dash}/>`);
       const text = t[6];
@@ -343,8 +374,8 @@ function compile(dslText, options = {}) {
       const cy = num(t[3], id, line);
       const r = num(t[4], id, line);
       if (cx === null || cy === null || r === null) continue;
-      shapes.set(id, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, region: false });
-      draw.push(`<circle cx="${fixed(cx)}" cy="${fixed(cy)}" r="${fixed(r)}"${accentAttrs(t)}${dashAttr(t, '4 3')}/>`);
+      shapes.set(id, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, line, region: false });
+      draw.push(`<circle cx="${fixed(cx)}" cy="${fixed(cy)}" r="${fixed(r)}"${accentAttrs(t, line)}${dashAttr(t, '4 3')}/>`);
       if (t[5] !== undefined && t[5] !== '') pushTextLines(cx, cy + 4, t[5], 11);
       continue;
     }
@@ -363,7 +394,7 @@ function compile(dslText, options = {}) {
       const w = num(t[4], id, line);
       const h = num(t[5], id, line);
       if (x === null || y === null || w === null || h === null) continue;
-      shapes.set(id, { x, y, w, h, region: true });
+      shapes.set(id, { x, y, w, h, line, region: true });
       draw.push(`<rect x="${fixed(x)}" y="${fixed(y)}" width="${fixed(w)}" height="${fixed(h)}" rx="8" stroke-dasharray="6 4"/>`);
       // A caption is the house style (every trust boundary is named), not a
       // compiler rule: the owner's compiler emits none when none is given, and a
@@ -381,6 +412,8 @@ function compile(dslText, options = {}) {
         fail(`arrow references an unknown id (${String(t[1])} -> ${String(t[2])})`, line);
         continue;
       }
+      const rel = relOf(t, line);
+      if (rel === undefined) continue;
       const via = t.find((token) => token.startsWith('via='));
       const centreFrom = { x: from.x + from.w / 2, y: from.y + from.h / 2 };
       const centreTo = { x: to.x + to.w / 2, y: to.y + to.h / 2 };
@@ -391,6 +424,11 @@ function compile(dslText, options = {}) {
         let malformed = false;
         for (const pair of via.slice(4).split(';')) {
           const coordinates = pair.split(',');
+          if (coordinates.length > 2) {
+            fail(`via= takes number pairs X,Y;X,Y…, and ${JSON.stringify(pair)} has ${coordinates.length} numbers`, line);
+            malformed = true;
+            break;
+          }
           const x = num(coordinates[0], 'via', line);
           const y = num(coordinates[1], 'via', line);
           if (x === null || y === null) {
@@ -409,6 +447,12 @@ function compile(dslText, options = {}) {
           + ` L${fixed(p2.x)} ${fixed(p2.y)}`;
         poly = [p1, ...points, p2];
       } else {
+        // AGSC-01-42 as amended 2026-11-10: with no waypoint, two shapes that share a centre give the
+        // arrow no direction (the path was NaN, 1.0.1 too).
+        if (centreFrom.x === centreTo.x && centreFrom.y === centreTo.y) {
+          fail(`arrow ${String(t[1])} -> ${String(t[2])}: the two shapes share a centre, so the arrow has no direction; give it a via= waypoint`, line);
+          continue;
+        }
         const border1 = clip(from, centreFrom, centreTo);
         const border2 = clip(to, centreTo, centreFrom);
         poly = [border1, border2];
@@ -428,7 +472,7 @@ function compile(dslText, options = {}) {
       }
       arrowGeometry.set(key, `${String(t[1])} -> ${String(t[2])}`);
       const start = flag(t, 'both') ? ` marker-start="${arrowRef}"` : '';
-      draw.push(`<path d="${d}" marker-end="${arrowRef}"${start}${dashAttr(t, '4 3')}${accentAttrs(t)}/>`);
+      draw.push(`<path d="${d}" marker-end="${arrowRef}"${start}${dashAttr(t, '4 3')}${accentAttrs(t, line, rel)}/>`);
       continue;
     }
     if (command === 'line') {
@@ -437,8 +481,14 @@ function compile(dslText, options = {}) {
       const x2 = num(t[3], 'line', line);
       const y2 = num(t[4], 'line', line);
       if (x1 === null || y1 === null || x2 === null || y2 === null) continue;
+      const rel = relOf(t, line);
+      if (rel === undefined) continue;
+      if (flag(t, 'acc') && flag(t, 'thick')) {
+        fail('acc and thick on one line would write stroke-width twice; keep one of them', line);
+        continue;
+      }
       const thick = flag(t, 'thick') ? ' stroke-width="5"' : '';
-      draw.push(`<path d="M${fixed(x1)} ${fixed(y1)} L${fixed(x2)} ${fixed(y2)}"${accentAttrs(t)}${dashAttr(t, '6 5')}${thick}/>`);
+      draw.push(`<path d="M${fixed(x1)} ${fixed(y1)} L${fixed(x2)} ${fixed(y2)}"${accentAttrs(t, line, rel)}${dashAttr(t, '6 5')}${thick}/>`);
       continue;
     }
     if (command === 'path') {
@@ -448,7 +498,7 @@ function compile(dslText, options = {}) {
         continue;
       }
       const arrow = flag(t, 'arrow') ? ` marker-end="${arrowRef}"` : '';
-      draw.push(`<path d="${esc(d)}"${arrow}${accentAttrs(t)}${dashAttr(t, '4 3')}/>`);
+      draw.push(`<path d="${esc(d)}"${arrow}${accentAttrs(t, line)}${dashAttr(t, '4 3')}/>`);
       continue;
     }
     if (command === 'text') {
@@ -462,6 +512,8 @@ function compile(dslText, options = {}) {
       const x = num(t[1], 'text', line);
       const y = num(t[2], 'text', line);
       if (size === null || x === null || y === null) continue;
+      const rel = relOf(t, line);
+      if (rel === undefined) continue;
       const anchor = flag(t, 'left') ? ' text-anchor="start"' : (flag(t, 'right') ? ' text-anchor="end"' : '');
       const w = textWidth(value, size);
       const x0 = flag(t, 'left') ? x : (flag(t, 'right') ? x - w : x - w / 2);
@@ -473,7 +525,8 @@ function compile(dslText, options = {}) {
         fail(`text ${JSON.stringify(value)} renders ~${fixed(w)}px wide at size ${size} — ${over}`, line);
         continue;
       }
-      texts.push(`<text x="${fixed(x)}" y="${fixed(y)}" font-size="${size}"${anchor}>${esc(value)}</text>`);
+      const relClass = rel === null ? '' : ` class="${REL_CLASS_PREFIX}${rel}"`;
+      texts.push(`<text x="${fixed(x)}" y="${fixed(y)}" font-size="${fixed(size)}"${anchor}${relClass}>${esc(value)}</text>`);
       continue;
     }
     if (command === 'cross') {
@@ -510,8 +563,10 @@ function compile(dslText, options = {}) {
     draw.push(`<path d="M${fixed(x)} ${fixed(y)} L${fixed(x + w)} ${fixed(y)}"${thick}/>`);
   }
 
-  if (accentCount !== 1) {
-    fail(`exactly one element must be marked acc (found ${accentCount})`, 1);
+  if (accentLines.length !== 1) {
+    // The second accent is the one that breaks the rule; with none, no line does.
+    fail(`exactly one element must be marked acc (found ${accentLines.length})`,
+      accentLines.length === 0 ? 1 : accentLines[1]);
   }
 
   // Layout sanity: no two non-region shapes overlap, and nothing sits in the
@@ -523,7 +578,7 @@ function compile(dslText, options = {}) {
       const b = shapes.get(ids[j]);
       const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
       if (overlap && !(a.region || b.region)) {
-        fail(`shapes ${JSON.stringify(ids[i])} and ${JSON.stringify(ids[j])} overlap`, 1);
+        fail(`shapes ${JSON.stringify(ids[i])} and ${JSON.stringify(ids[j])} overlap`, b.line);
       }
     }
   }
@@ -531,7 +586,7 @@ function compile(dslText, options = {}) {
     for (const id of ids) {
       const shape = shapes.get(id);
       if (!shape.region && shape.y + shape.h > height - 26) {
-        fail(`shape ${JSON.stringify(id)} intrudes into the footer note band (y > ${fixed(height - 26)})`, 1);
+        fail(`shape ${JSON.stringify(id)} intrudes into the footer note band (y > ${fixed(height - 26)})`, shape.line);
       }
     }
   }
@@ -621,9 +676,8 @@ function altFrom(dslText, options = {}) {
 module.exports = {
   ACCENT_CLASS,
   ACCENT_STROKE_WIDTH,
-  GLYPH,
   MAX_SOURCE_LENGTH,
-  NOTE_MARGIN,
+  REL_CLASS_PREFIX,
   STATEMENTS,
   TEXT_MARGIN,
   altFrom,

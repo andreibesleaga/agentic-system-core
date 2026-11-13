@@ -1,4 +1,4 @@
-# Trace: PRD-005, PRD-017, PRD-018, PRD-021, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056 · PLAN §7
+# Trace: PRD-003, PRD-005, PRD-017, PRD-018, PRD-021, PRD-022, PRD-044, PRD-045, PRD-048, PRD-049, PRD-056, NFR-01 · PLAN §7
 @persona-i @mode-0
 Feature: Maintainer-as-operator keeps the site green with zero maintenance
   As P9 (maintainer-as-operator)
@@ -97,4 +97,128 @@ Feature: Maintainer-as-operator keeps the site green with zero maintenance
     And each imported item keeps the old card's aliases
     And a second import over the same input writes nothing (AGSC-01-23)
     And the imported Bundle passes "agsc ci"
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A site vocabulary is published with the graph, and every note keeps its item type
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds every triple of "domain/vocabulary.ttl" in the Bundle's named graph, and "www/graph.ttl" holds the same triples as "www/graph.nq" (AGSC-05-38)
+    And no per-item view under "www/pages" names a term of "domain/vocabulary.ttl" (AGSC-05-38)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A site vocabulary outside the rules is refused by lint, by the build and by the shipped ontology checker
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Widget" is a subclass of no item class, named by "domain.vocabulary" (AGSC-01-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E420"
+    When the maintainer runs "agsc build --json" under the network trap
+    Then the command exits 1
+    And the Bundle does not hold "www/graph.nq"
+    And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A site vocabulary whose inverse is a term the file does not define cannot write that term into the graph
+    Given a site vocabulary "domain/vocabulary.ttl" whose property "typeOf" is declared the inverse of rdf:type, named by "domain.vocabulary" (AGSC-01-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E420"
+    When the maintainer runs "agsc build --json" under the network trap
+    Then the command exits 1
+    And the Bundle does not hold "www/graph.nq"
+    And the shipped validate-ontology reports "AGSC-E420" on "domain/vocabulary.ttl" (AGSC-05-38)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A note states its domain type, its role and a domain link the site vocabulary defines
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds the domain link "controlled-by" from "handoff" to "supervisor" and the inverse "controls" the vocabulary declares back (AGSC-03-27)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A domain type or a domain link the site vocabulary does not define is refused by lint and by the build
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Turbine", the role "entity" and the domain link "owns" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 1
+    And the JSON envelope carries the error "AGSC-E418"
+    And the JSON envelope carries the error "AGSC-E317"
+    When the maintainer runs "agsc build --json" under the network trap
+    Then the command exits 1
+    And the Bundle does not hold "www/graph.nq"
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: The site's own invariants and competency questions are checked by verify and ci, never by lint
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    And the shapes file "domain/shapes.ttl" asks every engine for a "controls" link, and the questions file "domain/questions.json" expects no engine, both named under "domain" (AGSC-01-41, AGSC-05-41)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc verify --json" under the network trap
+    Then the command exits 1
+    And the error "AGSC-E421" names the item "handoff" and the error "AGSC-E422" names the question "engines" (AGSC-09-20)
+    When the maintainer runs "agsc ci --json" under the network trap
+    Then the command exits 1
+    And "dist/gate.json" fails its "verify" check with "AGSC-E421" and "AGSC-E422" (AGSC-08-10, AGSC-09-20)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A term states its warrant, and the graph carries its source and its kind of warrant
+    Given a fresh copy of the acceptance Bundle
+    And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And "www/graph.nq" holds the source "https://example.org/glossary" and the warrant "literary" on "handoff", both as xsd:string (AGSC-05-40)
+    And "www/graph.jsonld", expanded with "www/ns/context.jsonld" and compacted again, is the same document (AGSC-06-32)
+    And no network call was attempted
+
+  @PRD-076 @human
+  Scenario: A note's page, its page tool answer and its brief show its domain type, role, warrant and domain link
+    Given a site vocabulary "domain/vocabulary.ttl" whose class "Engine" is a subclass of the item class "asc:Concept", named by "domain.vocabulary" (AGSC-01-41)
+    And the item "content/concepts/handoff.md" states the domain type "Engine", the role "aggregate-root" and the domain link "controlled-by" to "supervisor" (AGSC-02-25, AGSC-03-27)
+    And the item "content/concepts/handoff.md" states a "literary" warrant grounded in "https://example.org/glossary" (AGSC-02-25, AGSC-05-40)
+    When the maintainer runs "agsc build" under the network trap
+    Then the command exits 0
+    And the page "www/concepts/handoff/index.html" lists under its relations table the domain type "Engine", the role "aggregate root" and the warrant "literary: https://example.org/glossary" (AGSC-06-38)
+    And the page tool "read" of "handoff", run from the published scripts, carries the domain type "Engine", the role "aggregate-root" and that warrant (AGSC-09-13)
+    When the maintainer runs "agsc compose handoff --brief" under the network trap
+    Then the command exits 0
+    And the brief's "BRIEF.md" has, after "## Members", the line "- `handoff`: type Engine; role aggregate-root; warrant literary — https://example.org/glossary" under "## Domain" (AGSC-07-25)
+    And the brief's "BRIEF.md" lists under "## Relations" the domain link "- `handoff` controlled-by `supervisor` (authored, inside)" and its inverse "- `supervisor` controls `handoff` (inverse, inside)" (AGSC-07-25, AGSC-03-27)
+    And no network call was attempted
+
+  @NFR-01 @PRD-049 @human
+  Scenario: A TypeScript part ships as its compiled CommonJS, and neither an install nor a run needs TypeScript
+    When the maintainer checks the TypeScript parts with "node tools/build-ts --check"
+    Then the command exits 0
+    And every module under "src-ts/" has its compiled file under "src/", headed with its source and the compiler version, byte for byte what tsc writes now
+    And TypeScript and its type packages are development dependencies only, and no module the package ships requires them
+    And the compiled "src/shared/version-line.js" gives the line "agsc --version" prints (AGSC-09-09)
+
+  @PRD-003 @PRD-084 @human @matrix-H5
+  Scenario: lint warns about a pattern with fewer sources than the node asks for, and a source a model wrote does not count
+    Given a fresh copy of the acceptance Bundle
+    And the configuration sets "lint.min_sources" to 1
+    And the item "content/concepts/handoff.md" cites "https://example.org/handoff-paper/" in "sources[]"
+    And the ai-generated term "content/concepts/ai-note.md" is added, and the item "content/concepts/supervisor.md" cites only its address in "sources[]"
+    When the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the "AGSC-E417" warnings name exactly "content/concepts/a2a.md", "content/concepts/mcp.md", "content/concepts/supervisor.md" and "content/concepts/tool-use-retries.md" (AGSC-08-31)
+    When the configuration sets "lint.min_sources" to 0
+    And the maintainer runs "agsc lint --json" under the network trap
+    Then the command exits 0
+    And the JSON envelope carries no "AGSC-E417"
     And no network call was attempted

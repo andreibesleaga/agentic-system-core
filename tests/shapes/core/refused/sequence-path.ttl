@@ -1,0 +1,12 @@
+# property path: a sequence path (a list) is neither a predicate IRI nor the inverse of one.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path ( ex:author ex:name )
+    ] ;
+    sh:targetClass ex:C .

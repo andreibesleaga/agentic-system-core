@@ -1,7 +1,7 @@
 # `tools/` — the checkers, the generators and the maintainer's tools
 
 **Summary.** Standalone programs that check or generate the artefacts of the
-specification. The nine checkers of AGSC-09-90 are independent by construction: none
+specification. The eleven checkers of AGSC-09-90 are independent by construction: none
 imports anything from `src/`, because a checker that imported the engine it checks
 would prove nothing. Anyone can run them against any distribution of the format.
 Every tool prints the diagnostics envelope of AGSC-09-11 with `--json` and exits 0
@@ -17,21 +17,23 @@ output with them.
 |---|---|
 | `validate-spec` | the rule text of `spec/`: rule ids, key words, trace brackets, the error-code registry |
 | `validate-schemas` | `schema/*.json` against JSON Schema 2020-12 |
-| `validate-ontology` | `ontology/agsc.ttl`: Turtle, the OWL 2 RL axiom list and datatypes, the declarations of the entities of other vocabularies, SKOS pitfalls |
+| `validate-ontology` | `ontology/agsc.ttl`: Turtle, the OWL 2 RL axiom list and datatypes, the declarations of the entities of other vocabularies, SKOS pitfalls; a `.ttl` file of another name is a site vocabulary, checked against the rules (a) to (g) of AGSC-05-38 (`AGSC-E420`), with the context namespaces of the `agsc.config.json` that names it |
 | `validate-vectors` | every conformance vector's members and the rule and code it cites |
 | `validate-wellknown` | one discovery document, at a Level; given a URL, also the cross-origin and caching headers it is served with; `--peer` for the mutual check |
 | `validate-features` | the Gherkin scenarios of `features/` and their requirement tags |
 | `validate-diagrams` | the Mermaid pack of `docs/diagrams/` against its index |
 | `gen-spec-html` | `spec/` → the `/specs/` pages; `--check` compares a publisher's pages |
 | `gen-ns` | the ontology → `context.jsonld`, `agsc.rdf` and the `/ns/` index |
+| `gen-dc-profile` | the table of AGSC-05-26 and `schema/item.schema.json` → `schema/dctap.csv`, the Dublin Core Tabular Application Profile; `--check` |
+| `gen-shapes` | `schema/item.schema.json`, the relation table of AGSC-03-01 and the table of AGSC-05-26 → `schema/item-shapes.ttl`, the SHACL shapes of the graph (informative; they run in a development lane, [docs/SHACL-SHAPES.md](../docs/SHACL-SHAPES.md)); `--check` |
 | `count-artifacts` | every published count, derived from the files (rules, codes, vectors, terms) |
-| `bench` | the retrieval benchmark over a built node's published surfaces (`docs/BENCHMARKS.md`) |
+| `bench` | the retrieval benchmark over a built node's published surfaces; `--dry-run` scores nothing and checks the kit of the agent-side study and the results-row contract, against a build with `--node` (`docs/BENCHMARKS.md`) |
 
-**What `validate-wellknown` does not check at 1.0.** Given a URL, it checks the
-response headers of the discovery document and of every same-origin public artefact
-it fetches. It does not read the home page `/`, so the `describedby` response header
-that AGSC-11-05 recommends there goes unchecked; that rule is a recommendation, not a
-requirement. Checking it, with one more fetch, is planned for 1.1.
+**What `validate-wellknown` reads from a URL.** It checks the response headers of the
+discovery document and of every same-origin public artefact it fetches. From 1.1 it
+also reads the `Link` header of the home page `/` and warns (`AGSC-E202`) when it
+carries no `describedby` link to the discovery document (AGSC-06-25, AGSC-06-40); that
+rule is a recommendation, not a requirement.
 
 ## Kept in the repository only
 
@@ -40,10 +42,12 @@ requirement. Checking it, with one more fetch, is planned for 1.1.
 | `rule-coverage` | the rule-coverage matrix; `--write` regenerates `docs/RULE-COVERAGE.md`, `--check` fails when it is stale |
 | `requirements-matrix` | the requirements matrix: for every requirement of `docs/PRD.md`, the rules that trace to it and the checks that name it; `--write` regenerates `docs/REQUIREMENTS-MATRIX.md`, `--check` fails when it is stale |
 | `gen-glossary` | writes `docs/GLOSSARY.md` from the specification and the ontology; `--check` |
-| `lint-claims` | the claims lint of the benchmark kit: ranking words in a results text, and results rows that name no model, calendar date, sample size, metric, value or confidence interval, or compare with another system without both configurations ([docs/BENCHMARKS.md](../docs/BENCHMARKS.md)) |
+| `gen-ontology-questions` | writes `docs/ONTOLOGY-QUESTIONS.md` (the ten questions and their SPARQL text) from `docs/ontology-questions.json`; `--check` |
+| `lint-claims` | the claims lint of the benchmark kit: ranking words in a results text, and results rows that name no model, calendar date, sample size, metric, value or confidence interval, or compare with another system without both configurations; with `--record docs/measurements.json`, every number of a measured region that the record does not hold ([docs/BENCHMARKS.md](../docs/BENCHMARKS.md)) |
 | `public-hygiene` | "public means clean": a sweep of a working tree for text that must never be published |
 | `publish-set` | sets which items of a Bundle are published, from one list |
 | `release` | the release lane as a dry run: version, changelog, package contents, provenance step |
+| `build-ts` | compiles the TypeScript sources of `src-ts/` to the committed CommonJS files under `src/` (`npm run build:ts`); `--check` fails when a committed file is not what the compiler writes now (`npm run check:ts`). The one tool that requires a development dependency, the pinned compiler ([docs/ENGINEERING.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/ENGINEERING.md) §8) |
 
 ## Run them
 
@@ -53,6 +57,7 @@ node tools/validate-spec --json        # and the same for the other six validate
 node tools/rule-coverage --check       # one summary line; exit 0 when the matrix is current
 node tools/requirements-matrix --check # the same for the requirements matrix
 node tools/gen-glossary --check        # "docs/GLOSSARY.md: current (…)"
+node tools/gen-ontology-questions --check  # "docs/ONTOLOGY-QUESTIONS.md: current (…)"
 ```
 
 Each takes `--help`. Requires Node 22.13 or later and `npm ci` at the root (the

@@ -214,13 +214,16 @@ test('AGSC-06-21: above 500 items /search.json IS the manifest and the shards ca
 test('AGSC-09-16: the EMITTED page tools follow the manifest and answer as the local server does', async () => {
   const { bundle, files } = built(generatedBundle());
   const page = await browser(files, bundle.config);
-  const local = mcpTools.tools(bundle, {});
+  const local = mcpTools.tools(bundle, { artifacts: files });
 
-  // The seven tools registered, and the page read the manifest and BOTH shards.
-  assert.strictEqual(page.registered.length, 7);
+  // The ten tools registered, and the page read the manifest and BOTH shards.
+  assert.strictEqual(page.registered.length, 10);
   assert.ok(page.fetched.includes('/search.json'));
   assert.ok(page.fetched.includes('/search-01.json'), 'the first shard was never fetched');
   assert.ok(page.fetched.includes('/search-02.json'), 'the second shard was never fetched');
+  // AGSC-06-31: the chunk export is sharded the same way, and `read` cites from both shards.
+  assert.ok(page.fetched.includes('/chunks-01.jsonl') && page.fetched.includes('/chunks-02.jsonl'),
+    'the chunk shards were never fetched');
   assert.strictEqual(page.refused.length, 0, `the page left this origin: ${page.refused.join(' ')}`);
   assert.strictEqual(page.fetched.filter((r) => r.startsWith('/pages/')).length, ITEMS,
     'the page did not fetch one source file per published item');
@@ -256,6 +259,11 @@ test('AGSC-09-16: the EMITTED page tools follow the manifest and answer as the l
       `${name}(${JSON.stringify(args)}) differs between the EMITTED page script and the local server`);
   }
 
+  // AGSC-09-13: the citation records of an item in each chunk shard are the local server's.
+  for (const n of [0, 501]) {
+    assert.ok((await page.tools.call('read', { slug: slugOf(n) })).body.chunks.length > 0, `${slugOf(n)} carries no chunk`);
+  }
+
   // The cross-shard query really does span the boundary, so the comparison above
   // proves what it claims.
   const hits = JSON.parse(JSON.stringify(
@@ -280,6 +288,17 @@ test('AGSC-09-16: the module and the emitted script merge the shards identically
     assert.deepStrictEqual(corpus.index.terms[token], whole.terms[token],
       `the merged postings for ${JSON.stringify(token)} are not the unsharded ones`);
   }
+});
+
+test('AGSC-06-31: a chunk shard that is not served makes `read` say so, never an empty chunk list', async () => {
+  const { bundle, files } = built(generatedBundle());
+  const broken = new Map(files);
+  broken.delete('/chunks-02.jsonl');
+  const page = await browser(broken, bundle.config);
+  const answer = await page.tools.call('read', { slug: slugOf(0) });
+  assert.strictEqual(answer.type, 'error');
+  assert.strictEqual(answer.body.code, 'AGSC-E901');
+  assert.match(answer.body.message, /chunks-02\.jsonl/u);
 });
 
 test('a manifest whose shard is not served answers with a finding, never a silent empty result', async () => {

@@ -29,6 +29,7 @@
 
 const crypto = require('node:crypto');
 const federation = require('./federation.js');
+const { LINK_KEYS } = require('../knowledge/relations.js'); // AGSC-03-01: the fourteen Link keys
 
 const { plural } = federation;
 const { ACCESS_CLASSES, REL, SURFACE_NAMES, finding } = require('./surfaces.js');
@@ -102,8 +103,8 @@ function etag(bytes) {
 /**
  * headersFor(route, options) -> the response headers this node sends.
  * options: { visibility = 'public', level = 2, bytes }. AGSC-11-03,
- * AGSC-11-05, AGSC-11-20. `Cache-Control: ... immutable` is emitted nowhere
- * at 1.0 because no route of AGSC-06-01 is digest-named.
+ * AGSC-11-05, AGSC-11-20. `Cache-Control: ... immutable` is emitted only on the
+ * versioned copies under `/ns/<x.y.z>/` (AGSC-06-06), by `headers.headerSets`.
  */
 function headersFor(route, options) {
   const opts = options || {};
@@ -279,8 +280,6 @@ function checkBoundaryConfig(config) {
  * a retired item) lives in `composition/compose.js`, which owns selections.
  */
 const PROV_EXEMPT_KEYS = Object.freeze(['supersedes']);
-const LINK_KEYS = Object.freeze(['related', 'broader', 'narrower', 'uses', 'requires', 'excludes',
-  'derived-from', 'contradicts', 'supersedes', 'implements', 'verifies', 'covers', 'blocked-by', 'decided-by']);
 
 function retirement(items, options) {
   const opts = options || {};

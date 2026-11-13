@@ -157,6 +157,26 @@ function explicitKeys(tokens) {
   return found;
 }
 
+/** AGSC-02-02 (1.1): the deepest nesting of block mappings and sequences a tool must handle. */
+const NESTING_BOUND = 64;
+
+/**
+ * The deepest nesting of block mappings and block sequences in the document: the
+ * frontmatter mapping is level 1 and each block collection inside a value adds one.
+ * A flow sequence of scalars is a value and adds none.
+ */
+function blockDepth(doc) {
+  let deepest = 0;
+  YAML.visit(doc, {
+    Node(_key, node, path) {
+      if (!(YAML.isMap(node) || YAML.isSeq(node)) || node.flow === true) return;
+      const ancestors = path.filter((p) => (YAML.isMap(p) || YAML.isSeq(p)) && p.flow !== true).length;
+      deepest = Math.max(deepest, ancestors + 1);
+    },
+  });
+  return deepest;
+}
+
 /**
  * Parse the AGSC-02-02 failsafe subset.
  *
@@ -168,6 +188,16 @@ function explicitKeys(tokens) {
  * @throws {YamlError} carrying a registered AGSC-E1xx code, a line and a column.
  */
 function parse(text, options = {}) {
+  return parseWithDepth(text, options).value;
+}
+
+/**
+ * `parse`, and the nesting depth of the document beside the value (AGSC-02-02, 1.1),
+ * so that a caller can report a frontmatter nested deeper than NESTING_BOUND.
+ *
+ * @returns {{value: unknown, depth: number}} `depth` is 0 for an empty document.
+ */
+function parseWithDepth(text, options = {}) {
   const lineOffset = options.lineOffset || 0;
   const maxBytes = options.maxBytes == null ? MAX_INPUT_BYTES : options.maxBytes;
   const source = String(text);
@@ -195,7 +225,7 @@ function parse(text, options = {}) {
       'a second YAML document is not permitted (AGSC-02-01)');
   }
   const doc = docs[0];
-  if (!doc) return {};
+  if (!doc) return { depth: 0, value: {} };
 
   const faults = [
     ...doc.errors.map((e) => ({
@@ -214,7 +244,7 @@ function parse(text, options = {}) {
   }
 
   const value = doc.toJS({ maxAliasCount: 0 });
-  return value === null || value === undefined ? {} : value;
+  return { depth: blockDepth(doc), value: value === null || value === undefined ? {} : value };
 }
 
-module.exports = { parse, YamlError, MAX_INPUT_BYTES };
+module.exports = { parse, parseWithDepth, YamlError, MAX_INPUT_BYTES, NESTING_BOUND };

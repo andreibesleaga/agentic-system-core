@@ -7,7 +7,7 @@
 // page with no published member is a page that lists nothing (AGSC-06-30 keeps a
 // draft off every surface, which is exactly what such a cluster should be).
 //
-// It is a content operation, not a validator: AGSC-09-90's nine command contracts
+// It is a content operation, not a validator: AGSC-09-90's eleven command contracts
 // are untouched, and this tool adds no rule, no code and no vector.
 
 const assert = require('node:assert/strict');

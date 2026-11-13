@@ -14,42 +14,66 @@
  * PURE.
  */
 
-/**
- * AGSC-10-15: the Level IS the vector set. These four arrays are transcribed
- * from AGSC-10-02 to AGSC-10-05 and from nowhere else — in particular NOT from
- * the class sentences of AGSC-00-09 to AGSC-00-11, which describe what a class
- * implements and are never read as a competing list (`conform-0003`).
- * Membership, not order, is what those rules fix.
- */
-const LEVEL_AREAS = Object.freeze({
-  // AGSC-10-02 — Level 0, Publisher.
-  0: Object.freeze(['frontmatter', 'slug', 'bundle', 'discovery']),
-  // AGSC-10-03 — Level 1, Reader: Level 0 + links, lint, jcs.
-  1: Object.freeze(['frontmatter', 'slug', 'bundle', 'jcs', 'discovery', 'links', 'lint']),
-  // AGSC-10-04 — Level 2, Writer/Exporter.
-  2: Object.freeze(['frontmatter', 'slug', 'bundle', 'jcs', 'discovery', 'links', 'lint',
-    'graph', 'build', 'adopt', 'ledger', 'import', 'export', 'skills', 'chunks', 'boards', 'boundary']),
-  // AGSC-10-05 — Level 3, Full engine: all twenty-five areas of AGSC-09-04.
-  3: Object.freeze(['frontmatter', 'slug', 'links', 'jcs', 'graph', 'lint', 'cli', 'bundle',
-    'prov', 'ledger', 'compose', 'build', 'discovery', 'adopt', 'import', 'export', 'skills',
-    'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards']),
-});
+const { SLUG_PATTERN } = require('../knowledge/slug.js');
 
 /**
- * AGSC-10-15 (amended for 1.0.0): the cases of a Level's areas that exercise a
+ * AGSC-09-04: the twenty-five areas in the order the rule names them. From 1.1 a
+ * claim lists a Level's areas in this order (AGSC-10-15, AGSC-09-01(d)).
+ */
+const AREA_ORDER = Object.freeze(['frontmatter', 'slug', 'links', 'jcs', 'graph', 'lint', 'cli',
+  'bundle', 'prov', 'ledger', 'compose', 'build', 'discovery', 'adopt', 'import', 'export',
+  'skills', 'adapters', 'channels', 'harness', 'run', 'conform', 'boundary', 'chunks', 'boards']);
+
+/**
+ * AGSC-10-15: the Level IS the vector set. The membership of each Level is
+ * transcribed from AGSC-10-02 to AGSC-10-05 and from nowhere else — in particular
+ * NOT from the class sentences of AGSC-00-09 to AGSC-00-11, which describe what a
+ * class implements and are never read as a competing list (`conform-0005`).
+ * Each Level names the areas of the one below it and these additions; Level 3
+ * names all twenty-five.
+ */
+const LEVEL_ADDS = Object.freeze({
+  // AGSC-10-02 — Level 0, Publisher.
+  0: Object.freeze(['frontmatter', 'slug', 'bundle', 'discovery']),
+  // AGSC-10-03 — Level 1, Reader.
+  1: Object.freeze(['links', 'jcs', 'lint']),
+  // AGSC-10-04 — Level 2, Writer/Exporter.
+  2: Object.freeze(['graph', 'build', 'adopt', 'ledger', 'import', 'export', 'skills',
+    'chunks', 'boards', 'boundary']),
+  // AGSC-10-05 — Level 3, Full engine: every area.
+  3: AREA_ORDER,
+});
+
+/** The areas of each Level, in the fixed order of AREA_ORDER. */
+const LEVEL_AREAS = Object.freeze([0, 1, 2, 3].reduce((byLevel, level) => {
+  const names = new Set([].concat(...Object.keys(LEVEL_ADDS).filter((l) => Number(l) <= level).map((l) => LEVEL_ADDS[l])));
+  byLevel[level] = Object.freeze(AREA_ORDER.filter((area) => names.has(area)));
+  return byLevel;
+}, []));
+
+/**
+ * AGSC-10-15 (amended for 1.0.0 and 1.1.0): the cases of a Level's areas that exercise a
  * HIGHER Level's behaviour, each with the Level it belongs to. Transcribed from the
  * rule's table and from nowhere else; `tests/composition/conform-higher-level-cases
- * .test.js` holds the two to one list.
+ * .test.js` holds the two to one list. From 1.1 the table also holds the rows for the
+ * cases 1.1 adds (AGSC-10-19) and the withdrawn cases keep theirs (AGSC-00-13).
  */
 const HIGHER_LEVEL_CASES = Object.freeze({
   'bundle-0001': 1, 'bundle-0006': 1, 'bundle-0007': 1, 'bundle-0009': 1, 'bundle-0010': 1,
-  'disc-0005': 1, 'disc-0019': 1,
-  'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2, 'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2,
-  'lint-0026': 2,
-  'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3,
-  'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3, 'lint-0028': 3, 'lint-0029': 3,
-  'lint-0032': 3, 'lint-0033': 3,
-  'adopt-0007': 3, 'adopt-0008': 3, 'adopt-0009': 3,
+  'disc-0005': 1, 'disc-0019': 1, 'bundle-0012': 1, 'bundle-0013': 1, 'bundle-0014': 1,
+  'bundle-0015': 1, 'bundle-0016': 1, 'bundle-0017': 1, 'bundle-0020': 1, 'bundle-0021': 1,
+  'fm-0021': 1, 'fm-0022': 1, 'fm-0023': 1, 'fm-0024': 1, 'fm-0025': 1, 'disc-0023': 1, 'fm-0026': 1,
+  'fm-0027': 1,
+  'bundle-0008': 2, 'disc-0009': 2, 'disc-0012': 2, 'disc-0015': 2, 'disc-0016': 2, 'disc-0017': 2,
+  'disc-0018': 2, 'disc-0020': 2, 'disc-0021': 2, 'lint-0026': 2, 'bundle-0011': 2, 'disc-0026': 2,
+  'disc-0027': 2, 'disc-0028': 2, 'disc-0029': 2, 'disc-0030': 2, 'disc-0031': 2, 'disc-0032': 2,
+  'disc-0033': 2, 'disc-0035': 2, 'disc-0036': 2, 'disc-0037': 2, 'disc-0038': 2,
+  'bundle-0003': 3, 'bundle-0004': 3, 'bundle-0005': 3, 'lint-0001': 3, 'lint-0002': 3, 'lint-0003': 3,
+  'lint-0028': 3, 'lint-0029': 3, 'lint-0032': 3, 'lint-0033': 3, 'adopt-0007': 3, 'adopt-0008': 3,
+  'adopt-0009': 3, 'bundle-0018': 3, 'bundle-0019': 3, 'imp-0006': 3, 'imp-0007': 3, 'imp-0008': 3,
+  'bnd-0046': 3, 'bnd-0047': 3, 'bnd-0048': 3, 'bnd-0050': 3, 'lint-0046': 3, 'lint-0047': 3,
+  'lint-0048': 3, 'lint-0049': 3, 'lint-0050': 3, 'lint-0057': 3, 'lint-0058': 3, 'lint-0059': 3,
+  'lint-0063': 3, 'lint-0065': 3,
 });
 
 /** AGSC-04-24: the artefacts for which byte-identity ACROSS implementations holds. */
@@ -61,6 +85,46 @@ const CROSS_IMPLEMENTATION = Object.freeze([
   // leading slash — and AGSC-04-24 says their obligation
   // is discharged only when `tests/vectors/harness/` is populated, which it is not.
   'harness.jsonld', 'AGENTS.md', 'workspace.dsl', 'diagram.mmd', 'arc42.md',
+]);
+
+/**
+ * AGSC-04-24 (amended 2026-10-29 for 1.1.0): the files 1.1 adds to the obligation. Each
+ * entry is spelled as the rule `named_by` names the file (`<slug>` and `NNNN` stand for a
+ * slug and a four-digit number), under the name the expected-byte cases in `cases` use, and
+ * is claimable only through those cases; a file that no case pins is outside the obligation.
+ * `except` names the members no case pins: the manifest's own `spec_version` (AGSC-09-17).
+ * None of these is a route except the chunk index, so only it takes a leading slash. The
+ * compiled diagram is the SVG a page inlines (AGSC-01-07, AGSC-02-13), not the page.
+ */
+function entry(artefact, namedBy, cases, except) {
+  const pattern = artefact.replace(/[.]/gu, '\\.').replace('NNNN', '\\d{4}')
+    .replace('<slug>', SLUG_PATTERN.replace(/^\^|\$$/gu, ''));
+  const re = new RegExp(`^${artefact.startsWith('/') ? `/?${pattern.slice(1)}` : pattern}$`, 'u');
+  return Object.freeze({
+    artefact, cases: Object.freeze(cases), except: Object.freeze(except || []), named_by: namedBy,
+    test: (name) => re.test(name),
+  });
+}
+
+const BRIEF_CASES = ['compose-0024', 'compose-0034'];
+
+const CROSS_IMPLEMENTATION_1_1 = Object.freeze([
+  entry('skos.ttl', 'AGSC-05-36', ['graph-0040']),
+  entry('closure.nt', 'AGSC-05-37', ['graph-0041', 'graph-0042']),
+  entry('dist/suggestions.json', 'AGSC-05-35', ['lint-0046', 'lint-0047', 'lint-0048', 'lint-0049', 'lint-0050']),
+  entry('BRIEF.md', 'AGSC-07-25', BRIEF_CASES),
+  entry('brief.json', 'AGSC-07-25', BRIEF_CASES),
+  entry('brief.mmd', 'AGSC-07-25', BRIEF_CASES),
+  entry('context.md', 'AGSC-07-25', BRIEF_CASES),
+  entry('/chunks-index.toon', 'AGSC-06-37', ['chk-0010']),
+  entry('context-map.json', 'AGSC-07-30', ['compose-0032']),
+  entry('blueprint/c4-context.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/c4-containers.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/c4-components.mmd', 'AGSC-07-29', ['compose-0028']),
+  entry('blueprint/decisions/NNNN-<slug>.md', 'AGSC-07-29', ['compose-0029']),
+  entry('blueprint/build-plan.md', 'AGSC-07-29', ['compose-0030']),
+  entry('export-manifest.json', 'AGSC-09-17', ['export-0003', 'export-0004'], ['spec_version']),
+  entry('<slug>.svg', 'AGSC-02-13', ['bundle-0018', 'bundle-0019']),
 ]);
 
 /** The reason AGSC-04-24 gives for keeping generated HTML out of that set. */
@@ -135,11 +199,18 @@ function divergenceVerdicts(divergences, options) {
   })));
 }
 
+/** The 1.1 entry a claimed name falls under, or undefined. */
+function entry11(name) {
+  return CROSS_IMPLEMENTATION_1_1.find((e) => e.test(name));
+}
+
 /**
- * crossImplementationClaim(claimed) -> { accepted, rejected, reason }
+ * crossImplementationClaim(claimed) -> { accepted, excepted, rejected, reason }
  * AGSC-04-24: byte-identity across implementations is claimable only for the
  * machine artefacts. A claim listing generated HTML has that entry rejected
- * and the rest of the claim stands.
+ * and the rest of the claim stands. `excepted` maps each accepted name that has
+ * members outside the obligation to those members (from 1.1, the manifest's
+ * `spec_version`); it is `{}` when there is none.
  *
  * A claimed ROUTE is recognised in the AGSC-06-01 form, with its leading slash
  * (`conform-0004`); the bare form without the slash is also
@@ -149,21 +220,27 @@ function divergenceVerdicts(divergences, options) {
 function crossImplementationClaim(claimed) {
   const list = Array.isArray(claimed) ? claimed : [];
   const accepted = [];
+  const excepted = {};
   const rejected = [];
   const routes = new Set(CROSS_IMPLEMENTATION.flatMap((r) => [r, r.replace(/^\//u, '')]));
   for (const artefact of list) {
     const name = String(artefact);
     const isHtml = /\.html?$/u.test(name);
+    const added = entry11(name);
     const known = routes.has(name)
       || /^\/?search-\d{2}\.json$/u.test(name)
       || /^\/?chunks-\d{2}\.jsonl$/u.test(name)
       || /^\/?boards\//u.test(name)
-      || /\.jsonld$/u.test(name);
+      || /\.jsonld$/u.test(name)
+      || added !== undefined;
     if (isHtml || !known) rejected.push(name);
     else accepted.push(name);
+    // No 1.1 entry is an HTML file, so an entry found here was accepted above.
+    if (added && added.except.length > 0) excepted[name] = added.except;
   }
   return Object.freeze({
     accepted: Object.freeze(accepted),
+    excepted: Object.freeze(excepted),
     reason: HTML_REASON,
     rejected: Object.freeze(rejected),
   });
@@ -199,6 +276,7 @@ function report(input) {
 
 module.exports = {
   CROSS_IMPLEMENTATION,
+  CROSS_IMPLEMENTATION_1_1,
   HIGHER_LEVEL_CASES,
   HTML_REASON,
   LEVEL_NAMES,

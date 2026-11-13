@@ -264,7 +264,7 @@ test('gabbe: forged lines are not trusted — a skill and a lesson arrive as dra
   const lesson = back.get('lessons/name-the-receiver.md');
   assert.match(lesson, /^status: draft$/mu);
   assert.match(lesson, /^x-gabbe-source: agents\/memory\/CONTINUITY\.md:\d+$/mu);
-  assert.doesNotMatch(back.get('lessons/kit-entry.md'), /^status:/mu, 'the kit\'s own entry was tainted');
+  assert.match(back.get('lessons/kit-entry.md'), /^status: draft$/mu, 'the kit\'s own entry is foreign too (AGSC-01-22)');
   const messages = result.findings.map((f) => f.message).join('\n');
   assert.match(messages, /hand-over\.skill\.md:\d+: the agsc-item line is not trusted: .*stranger\.example/u);
   assert.match(messages, /CONTINUITY\.md:\d+: the agsc-item line is not trusted/u);

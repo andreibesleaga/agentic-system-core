@@ -11,31 +11,269 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+## [1.1.0] - 2026-11-13
 
-- CI: `test.yml` runs pushes on `main` and `release/` branches only, and a newer push to a
-  pull request cancels the run it supersedes. A push to a pull request's branch had run
-  all nine legs twice, once for the push and once for the pull request. Every pull
-  request, every merge and the weekly run still cover the three operating systems and
-  three Node lines; the required check names are unchanged.
-- Docs: `TESTING.md` names the public export for the real-bundles lane.
-- Development dependencies: `package.json` pins `minimatch` to 11.0.4 through `overrides`, so `npm audit`
-  (the audit gate of `docs/ENGINEERING.md`) is clean again after GHSA-g3hv-75wg-m249 (moderate, `minimatch`
-  below 11.0.1, reached only through eslint and `eslint-plugin-import-x`). Lint and the whole suite pass
-  with it; nothing the package ships changes.
+A MINOR release of the specification and the packages. **Specification `1.1.0`** adds keys, values,
+rules, vectors and more cautious output, and removes nothing (AGSC-00-14): every Bundle valid at 1.0
+stays valid. AGSC-00-20 lists what 1.1 makes normative, group by group, and what it leaves for a later
+MINOR; every rule 1.1 changes carries a dated note in `spec/`. The entries below give the net change
+against 1.0.1, one line for each change a user can see, with the rules that state it; the last
+section lists every file of a 1.0.1 node whose bytes change.
+
+### Upgrading from 1.0.1
+
+- Every envelope, report, provenance header, skill pack, page script and Harness states
+  `spec_version` 1.1.0, the version the engine implements (AGSC-00-14, AGSC-09-11); `agsc init`
+  writes 1.1.0 into a new Bundle. The graph files and the line of `/now/` and `/now.md` state the
+  version the Bundle declares, so a 1.0 Bundle's `graph.jsonld`, `graph.nq`, `graph.ttl` and
+  `now.md` keep their bytes (AGSC-05-26, AGSC-06-22, AGSC-00-17).
+- The vocabulary is version 1.1.0, served under `/ns/1.1.0/` (`owl:versionIRI`, `owl:versionInfo`,
+  `dcterms:modified` the release date), because it gains `asc:warrant`; version 1.0.0 stays served
+  unchanged under `/ns/1.0.0/`, and the JSON-LD context address of `graph.jsonld` stays
+  `/ns/1.0.0/context.jsonld` (AGSC-05-09, AGSC-05-25, AGSC-06-32).
+- Three answers a 1.0 client sees change, the named exceptions of AGSC-00-14: a call of a tool the
+  server does not serve is the JSON-RPC error -32602, not an envelope with `AGSC-E001`, and every
+  tool result carries MCP's `isError` (AGSC-09-13a); a failed conformance case is `AGSC-E005`, not
+  `AGSC-E001` (AGSC-09-02); `search` answers at most 100 hits, with `total` when more match
+  (AGSC-09-13). Every other envelope keeps its bytes.
+- `import` writes every item from a source this node does not own as `status: draft` and reports it
+  once as `AGSC-E506`; an export imported back into the node that wrote it keeps its status
+  (AGSC-01-22, AGSC-10-09).
+- The item keys 1.1 adds are validated wherever they appear, even in a 1.0 Bundle that used the name
+  for something else: `domain_type`, `domain_role`, `domain_context`, `domain_links` and `warrant`
+  (AGSC-00-14, AGSC-02-25, AGSC-03-27, AGSC-05-40).
+- New warnings, with no exit code changed: `AGSC-E313` to `AGSC-E316` from the relation table
+  (AGSC-03-23 to AGSC-03-26), among them `AGSC-E315` for a `related` that joins a cluster, an edge the
+  graph files leave out (AGSC-05-20); `AGSC-E423` for names and paths some file systems refuse and for
+  Unicode noncharacters (AGSC-01-40, AGSC-04-05); `AGSC-E108` for a byte-order mark or non-NFC text in
+  `.env`, `security.txt`, `LICENSE-CONTENT` and SVG files (AGSC-01-14); `AGSC-E202` for a home-page
+  description under 50 characters (AGSC-06-41); `AGSC-E506` when `content/index.md` and
+  `agsc.config.json` state different `spec_version` values (AGSC-00-17); `AGSC-E204` when the root
+  `base` differs from `site.base` (AGSC-01-04); `AGSC-E403` for a tracked `.env.<name>` (AGSC-01-37);
+  `AGSC-E203` for a gate whose `checks[]` differ from its level (AGSC-02-18); `AGSC-E302` for a cycle
+  of `blocked-by` (AGSC-03-07); `AGSC-E301` for a `clusters[]` entry that names no cluster
+  (AGSC-02-19) and, in `build`, for a missing typed-link target (AGSC-03-02); `AGSC-E603` for an
+  empty `SOURCE_DATE_EPOCH` (AGSC-04-09); `AGSC-E105` for front matter nested deeper than 64 levels
+  (AGSC-02-02); `AGSC-E416` also for overlapping aliases (AGSC-05-21).
+- The package `exports` `.`, `./bin/agsc.js`, `./package.json` and the trees `schema/`, `ontology/`,
+  `spec/` and `tests/vectors/`; `require('agentic-system-core/src/…')` now fails with
+  `ERR_PACKAGE_PATH_NOT_EXPORTED`. The commands are unchanged.
+- The tool server is built on the official MCP SDK v2: `@modelcontextprotocol/sdk` 1.32.1 is replaced
+  by `@modelcontextprotocol/server` 2.4.0 and `@modelcontextprotocol/node` 2.1.2.
 
 ### Added
 
-- `bench/metrics.js`: the statistics of the agent-side study — citation precision and
-  recall on unit ids, a percentile bootstrap interval, a paired permutation test (exact
-  up to 16 pairs), Holm's correction and Cliff's delta. The resampling draws from a
-  seeded generator, so the same seed gives the same bytes; probabilities are returned
-  unrounded, and a list holding a missing value (`null`, `undefined`, `NaN`) is
-  refused rather than read as a number.
-- `tools/lint-claims` (kept in the repository): fails ranking words in a results text and
-  results rows that do not name their model, calendar date, sample size, metric, value
-  and confidence interval, or that compare with another system without both
-  configurations (docs/BENCHMARKS.md, "What this project will never claim").
+- Link meanings: the relation table gains each key's transitive reading, self-link, expected target
+  kinds and meaning (AGSC-03-01); derived readings with their steps (AGSC-05-33); the ten questions of
+  the graph, with their SPARQL texts in `docs/ontology-questions.json` (AGSC-05-34).
+- `lint --suggest` writes proposed Links with their evidence to `dist/suggestions.json` and never
+  writes `content/`; it proposes no `related` for a pair with a cluster (AGSC-05-35).
+- `export --skos` writes `dist/export/skos.ttl` (AGSC-05-36); `import <file.ttl> --from skos` turns a
+  SKOS thesaurus into draft items (AGSC-01-39).
+- `export --closure` writes `dist/export/closure.nt`, the triples an OWL 2 RL subset entails from the
+  graph; it is never a published file (AGSC-05-37, AGSC-05-23).
+- `export --manifest` writes `export-manifest.json` with the RFC 9530 digest of every file, and
+  `import` checks a manifest it finds (AGSC-09-17).
+- `tools/gen-shapes` and `schema/item-shapes.ttl`, SHACL shapes of the graph (AGSC-05-24);
+  `tools/gen-dc-profile` and `schema/dctap.csv`, the Dublin Core Tabular Application Profile
+  (AGSC-05-26). Both ship, and `--check` reports a stale file (AGSC-09-90).
+- `lint.min_sources`: a published pattern, taxonomy, explainer or principle concept with fewer counted
+  sources warns `AGSC-E417` (AGSC-08-31).
+- The domain layer, optional (AGSC-01-41): a site vocabulary in Turtle, checked by `lint`, `build`
+  and `tools/validate-ontology` (`AGSC-E420`, AGSC-05-38); the item keys `domain_type`, `domain_role`,
+  `domain_context`, `warrant` and `domain_links` (AGSC-02-25, AGSC-03-27, AGSC-05-40; `AGSC-E418`,
+  `AGSC-E317`, `AGSC-E512`); their triples in the graph files and the per-item views (AGSC-05-39).
+- `verify` and `ci` check a node's own SHACL Core invariants (`domain.shapes`) and competency
+  questions (`domain.questions`) over the graph and its closure: `AGSC-E421`, `AGSC-E422`
+  (AGSC-05-41, AGSC-09-20).
+- Bounded contexts: inside a declared context two equal titles warn `AGSC-E419`, and items of two
+  contexts are not compared (AGSC-08-32); a typed `peers[]` entry carries a relationship and a SKOS
+  crosswalk (AGSC-11-24); `compose` writes `context-map.json` beside the Harness (AGSC-07-30).
+- The domain layer is shown on item pages, on `/query/`, in tool answers and in the brief
+  (AGSC-06-38, AGSC-06-39, AGSC-09-13, AGSC-07-25).
+- `compose --brief` (or `compose.brief`) writes `brief.json`, `BRIEF.md`, `context.md` and `brief.mmd`
+  beside the Harness, never in it or its archive: why each member is there, the relations one step
+  out, the dependency order, the readings, the gaps and a checklist; `derived` holds at most 1,000,000
+  steps, with `derived_total` above that (AGSC-07-25 to AGSC-07-27). The seven Harness files keep their
+  bytes but for the `spec_version` they state (AGSC-07-12, AGSC-00-16).
+- `compose --narrate <agent>` needs `--brief`; this distribution ships no model adapter and answers
+  `AGSC-E001` (AGSC-07-28).
+- For an item of `kind: architecture`, `compose --from <slug> --brief` also writes `blueprint/`: the
+  C4 levels 1 to 3 in Mermaid, one MADR record per decision and a build plan (AGSC-07-29). The
+  item's page shows the brief and links `/compose/?from=<slug>` (AGSC-07-24, AGSC-07-25).
+- `/compose/` gains filters by cluster and tag, the verdict in words, the brief of the selection with
+  its downloads, and an archive of the skill files (AGSC-07-25, AGSC-07-29, AGSC-07-13a).
+- Every `SKILL.md` is checked against the Agent Skills format before it is written (AGSC-07-22); a pack
+  with a member that carries `x-skills-license` ends with a "Notices" section (AGSC-01-22, AGSC-07-20).
+- `/query/`: SPARQL 1.1 over the node's own `/graph.nq` in the browser, with no server; on by default,
+  left out with `site.query_page: false` (AGSC-06-39, AGSC-01-18). The engine is a vendored copy of
+  Oxigraph 0.5.13 (MIT OR Apache-2.0); `_headers` gives `/query/*` the site policy with
+  `'wasm-unsafe-eval'` added (AGSC-06-17); `agsc-host serve` serves `.wasm` as `application/wasm`.
+- Graph view: an item page shows its relations and backlinks as a figure and a table, a cluster page a
+  map of its members, and `/clusters/` an overview, a legend and an explorer of `/graph.jsonld`
+  (AGSC-06-38). The diagram language takes `rel=KEY` (AGSC-01-42).
+- Chunks: each line gains `abstract`, `license_url` and, on request, `content_digest` (AGSC-06-29);
+  the chunks link of the discovery document gains `digest`, `agsc-chunk-count` and `agsc-chunk-set`,
+  and the ledger link `agsc-ledger-length` (AGSC-06-44); `/chunks-index.toon`, a TOON index of the
+  chunks at Level 2 and above (AGSC-06-37).
+- `/`: the `Link` header carries the FAIR Signposting links (AGSC-06-40); the Dataset block is the
+  node's `@id` with `license`, one `creator` and a `DataDownload` per machine file, with an opt-in
+  DCAT 3 block, `discovery.dcat` (AGSC-06-41).
+- `/.well-known/agent-card.json`, the A2A 1.0 card of a node that declares `a2a-card` and an A2A
+  responder, with the responder's security members (AGSC-06-34); `/.well-known/ard.json` and
+  `/.well-known/ai-catalog.json` when `discovery.ai_catalog` is `true` (AGSC-06-42).
+- Every generated page links `/llms.txt`, and an item page its Markdown copy, the page relations of
+  llms.txt v2 (AGSC-06-46).
+- Page head: every `<title>` ends with the node's name; pages carry Open Graph properties and the icon
+  when the node publishes one; an item page links its tags (AGSC-06-01); an empty type folder says
+  that the node publishes none (AGSC-06-02); the default stylesheet marks the target of a fragment
+  link. HTML pages are the implementation's own (AGSC-04-24).
+- Ten tools on both transports: `brief`, `explain` and `check` join the seven (AGSC-09-13,
+  AGSC-09-16); `read` returns each chunk's citation record (AGSC-09-13); arguments are checked
+  against each tool's `inputSchema` (`AGSC-E201`, AGSC-09-13a).
+- MCP revision 2026-07-28 beside 2025-11-25 over standard input and output: stateless requests and
+  `server/discover` (AGSC-09-19, AGSC-11-18).
+- `agsc mcp --http <port> [--bind <address>]`: Streamable HTTP on a loopback address, read-only, with
+  `Host` and `Origin` checked (AGSC-09-18, AGSC-09-09).
+- `ledger.actors` maps a commit author's address to an actor (AGSC-08-20b, AGSC-08-23);
+  `contribute[].repository` and `branch` set the edit link (AGSC-11-14); `dist/forge/ruleset.json` is a
+  GitHub ruleset in the shape its import takes (AGSC-08-12).
+- A `restricted` node declares `chunks` with `agsc-access` `credential`, detaches the host's wildcard
+  origin, and leaves the content version out of `/llms.txt`, `/now/` and `/now.md` (AGSC-11-20).
+- Memory adapters, a capability of the reference distribution: `export --to` and `import --from`
+  `mem0`, `letta`, `zep`, `csv`, `basic-memory` and `claude-code` (AGSC-01-26a, AGSC-00-20). None
+  reaches the network; a person moves the files with each tool's own client.
+- The benchmark kit: `node bench/measure.js --all`, the agent-side study's kit under `bench/queries/`,
+  `tools/bench --dry-run`, and `tools/lint-claims --record`, which holds the numbers of a page to the
+  measurement record (`docs/BENCHMARKS.md`). The record `docs/measurements.json` and
+  `docs/MEASUREMENTS.md` give all ten layers measured on the 1.1.0 tree.
+- Examples: three worked blueprints under `examples/blueprints/` and `examples/demos/domain-layer/`.
+- The REUSE layout: `REUSE.toml` and `LICENSES/` (REUSE 3.3).
+
+### Changed
+
+- `trace` writes an Episode's three sections, "What happened", "Outcome" and "Next" (AGSC-02-21).
+- The ledger's build entry names `process:agsc`, not the engine's version (AGSC-08-20a); a ledger
+  written by 1.0 still verifies.
+- Chunk 0 of a body that begins with blank lines starts at its next non-blank line, so its `text` and
+  `digest` change and its `id` does not (AGSC-06-45).
+- `/llms.txt` and `/llms-full.txt` put the summary before the provenance comment and escape `\`, `[`,
+  `]` and `(` in link lines (AGSC-06-13a). The AI-assistance line keeps its bytes (AGSC-06-15).
+- `SKILL.md` writes `name` and `description` double-quoted when the plain text would not read back as
+  the same string, such as a text that holds a colon and a space (AGSC-07-19, AGSC-07-22).
+- `Cache-Control: immutable` for the versions under `/ns/<version>/` (AGSC-06-06); `security.txt`
+  takes `Policy` from `site.security_policy` (AGSC-06-36); the `webmcp` surface version defaults to
+  2026-10-27, and a version that is not a date is `AGSC-E210` (AGSC-11-16).
+- `tools/validate-wellknown`: at `--level 2` it requires and recomputes the chunk link's digest,
+  count and set (AGSC-09-93); it warns when `/` has no `describedby` link to the discovery document
+  (AGSC-06-40) and when a declared `a2a-card` target is not served (AGSC-11-16); it admits `immutable`
+  under `/ns/<version>/` (AGSC-06-06).
+- `agsc-host serve` reports `http://localhost:<port>/` when asked for `localhost` (AGSC-01-18).
+- The note `build` and `ci` print for `/feed.xml` says "reserved to a later MINOR (AGSC-00-20 as
+  amended for 1.1.0)".
+- Run-time dependencies, each at an exact pin and each the official or the maintained library for its
+  format: `@a2a-js/sdk` 1.3.0, `@modelcontextprotocol/server` 2.4.0 and `@modelcontextprotocol/node`
+  2.1.2 (Apache-2.0); `@traqula/parser-sparql-1-1` 1.4.0, `rdf-validate-shacl` 0.6.5,
+  `structured-headers` 2.1.1, `csv-parse` 7.0.3, `csv-stringify` 6.9.0 and `http-link-header` 1.1.4
+  (MIT); `oxigraph` 0.5.13 (MIT OR Apache-2.0); `@toon-format/toon` 4.1.1 → 4.4.0, `dotenv` 18.0.3 →
+  18.0.9, `fast-xml-parser` 5.11.1 → 5.12.0 (5.12.0 for GHSA-474x-hrwr-fgx4, quadratic time on an
+  unterminated stop-node tag). `tests/arch/dependency-licences.test.js` holds every
+  run-time package to a list of permissive licences. `npm audit`: 0.
+- Development: the protocol modules are strict TypeScript under `src-ts/`, compiled to `src/` and
+  committed, so no install needs TypeScript (`typescript` 6.0.3, `typescript-eslint` 8.72.1,
+  `@types/node` 22.20.5); the tests' MCP client is `@modelcontextprotocol/client` 2.4.0; `minimatch`
+  is held at 11.0.4 through `overrides`.
+- CI: `test.yml` runs pushes on `main` and `release/` branches only and cancels a run a newer push
+  supersedes; its browser job runs the page, query, explorer, compose and domain browser tests.
+- Release: the release workflow also builds the Claude Desktop extension
+  `agentic-system-core-<version>.mcpb` from the tagged tree with the official packer
+  `@anthropic-ai/mcpb` 2.1.2 (MIT, run by `npx`, not a dependency), keeps it as a run artifact and
+  writes its SHA-256 to the run summary (PRD-085; manifest `.github/mcpb/manifest.json`).
+  `tools/release` holds every copy of the version to `package.json` (the citation file, the plugin
+  and its marketplace entry, the two agent-skill copies and the extension manifest) and writes them
+  with `--apply`, the release date into `CITATION.cff`.
+
+### Fixed
+
+- The graph files and the now line state the `spec_version` the Bundle declares, as AGSC-05-26 and
+  AGSC-06-22 say; 1.0.1 wrote the engine's own, the same value for every 1.0 Bundle.
+- `tools/gen-ns --check` asks for `agsc.ttl` and `agsc.rdf` only in a tree that holds the `/ns/`
+  index, so a built content node passes with no warning (AGSC-06-06).
+- Diagrams (AGSC-01-42): a `line` with both `acc` and `thick` (it wrote `stroke-width` twice), a `via`
+  waypoint of three numbers and an arrow whose two shapes share a centre (it wrote `NaN`) are
+  `AGSC-E412`; `size=N` follows the number rule; each refusal names its line.
+- `_headers` gives `/skills/*.json` `Content-Type: application/json; charset=utf-8`, the type the
+  discovery document declares for `/skills/index.json` (AGSC-07-19, AGSC-06-17).
+- `agsc-host static-host` writes a restricted node's detached `Access-Control-Allow-Origin` for Apache
+  and leaves it out of nginx; the profile refused such a node (AGSC-06-17, AGSC-11-20).
+- `import --from skills` with no `--layout` no longer settles on a detected layout that imports
+  nothing while another one would import items; `agsc skills import <file>` outside the Bundle names
+  `import --from skills` (AGSC-07-22); the Markdown board reader keeps `- [/]` and `- [-]` cards.
+- A failed `oneOf` of the configuration schema always carries an error, and a repeated `if` error no
+  longer appears (AGSC-01-18).
+- `export --to` names AGSC-01-26a once, and `--to skos` points to `import --from skos` and
+  `export --skos`; messages say "an episode", not "a episode".
+- A link-shaped key (`peer-ref`, `mentions` or a foreign relation name) is the one warning
+  `AGSC-E304`; 1.0.1 also reported it as `AGSC-E207`, two codes for one key (AGSC-03-03).
+- One credential is one `AGSC-E403`: an OpenSSH key block and an `sk-ant-` token were reported twice;
+  the messages read "an AWS access-key id", not "a AWS" (AGSC-08-15).
+- A `webmcp` `agsc-surface-version` must name a day of the calendar: `2026-13-45` has the form and is
+  `AGSC-E210` in `tools/validate-wellknown` and the engine's own check (AGSC-11-16).
+- `export --to csv` quotes a field that holds a bare line feed, so a reader that ends a record at
+  any line break keeps the row whole (RFC 4180).
+- The tools' `inputSchema` says what an array argument holds: `selection` lists strings, `sources`
+  objects (AGSC-09-13); some model providers refuse an array schema without `items`.
+
+### Security
+
+- `federation.walk` fails closed on a host it was given no resolution for (AGSC-11-08);
+  `tools/validate-wellknown` counts its requests against a budget, 500 by default, set by
+  `--max-requests`, and stops with `AGSC-E906` when it is spent (AGSC-11-10).
+- Route matching in `hosts/rules.js`, the readers of the page scripts and the patterns of the
+  repository tools run in linear time on long runs of one character; a front-matter key `__proto__`
+  stays a key in the page reader and in `compose` on both transports.
+- `/query/` refuses an update or a `SERVICE` clause before its engine runs (AGSC-06-39), and
+  `mcp --http` refuses a `Host` or `Origin` that is not loopback before a tool runs (AGSC-09-18).
+
+### Bytes a node built with 1.0.1 sees change
+
+Measured on seven inputs as they stood at 1.0.1, each built by 1.0.1 and by 1.1.0 with
+`SOURCE_DATE_EPOCH=1767225600` and compared file by file by SHA-256: `fixture`
+(`tests/fixtures/minimal`), `mode-2` to `mode-5` (`examples/demos/mode-2-project`, `mode-3-skills`,
+`mode-4-compose` and `mode-5-board`), and `demo` and `patterns`, the two public content nodes; `all`
+is the seven. Of the 753 files the seven builds wrote at 1.0.1, 426 change and 327 keep their bytes;
+1.1.0 writes 84 new files and removes none, so 510 files differ, each counted once below.
+`graph.jsonld`, `graph.nq`, `graph.ttl`, `search.json`, `now.md`, `robots.txt` and the copies under
+`/pages/` keep their bytes, as do the seven Harness files of a composition and its archive but for
+the `spec_version` they state, which is now 1.1.0 (AGSC-07-12, AGSC-07-13a; `compose-0027` fixes the
+version and holds every other byte). `lint`, `ci` and `build` exit as they did.
+
+None of the seven uses the domain layer, and no row below comes from it. A node that uses it (a
+`domain` object, or an item that states a key of AGSC-02-25) also changes `graph.nq`, `graph.ttl`,
+`graph.jsonld` and the `/pages/<slug>.jsonld` of the items that state a key, and with them
+`.well-known/knowledge-linkset`, `now.md` and `/now/` (AGSC-05-39, AGSC-05-40); the pages of those
+items (AGSC-06-38); `/query/index.html` (AGSC-06-39); and `/compose/agsc-core.js` and
+`/compose/agsc-page-tools.js` (AGSC-07-25, AGSC-09-13).
+
+| Rule | Files | Nodes | Change | Count |
+|---|---|---|---|---|
+| AGSC-08-20a: the build entry names `process:agsc` | `ledger.jsonl` | demo, patterns | changed | 2 |
+| AGSC-00-14, AGSC-07-19 (the `spec_version` the files state is the writer's, 1.1.0); on demo also AGSC-07-22 (a `description` that holds a colon and a space is double-quoted, and the index's `lock` values follow) | `skills/*/SKILL.md`, `skills/index.json` | all | changed | 56 |
+| AGSC-00-14: the script's `spec_version` line names 1.1.0 | `search/agsc-search.js` | all | changed | 7 |
+| AGSC-06-44 (the chunk and ledger link attributes), AGSC-11-16 (`webmcp` 2026-10-27), AGSC-06-08 (`agsc-spec-version` 1.1.0), and the digests of the files below | `.well-known/knowledge-linkset` | all | changed | 7 |
+| AGSC-06-40 (Signposting on `/`), AGSC-06-37, AGSC-07-19 (`/skills/*.json`), AGSC-06-06 (`/ns/1.0.0/*`), AGSC-06-39 (`/query/*`), with AGSC-06-17 | `_headers` | all | changed | 7 |
+| AGSC-06-13a: the summary before the provenance comment; AGSC-06-15, AGSC-00-14: its `spec_version` line names 1.1.0 | `llms.txt`, `llms-full.txt` | all | changed | 14 |
+| AGSC-06-29 (`abstract`; `license_url` where the node has a licence URL); AGSC-06-45 (one chunk 0 on mode-2) | `chunks.jsonl` | all | changed | 7 |
+| AGSC-06-19, AGSC-06-39: the `/query/` entry | `sitemap.xml` | all | changed | 7 |
+| AGSC-04-24: the mark of a fragment target (a node with its own stylesheet keeps it) | `assets/site.css` | all but patterns | changed | 6 |
+| AGSC-09-13, AGSC-09-13a, AGSC-09-14b, AGSC-09-16 (the ten tools), AGSC-07-25, AGSC-07-29 (the brief and the blueprint), AGSC-00-14 (the `spec_version` line, 1.1.0) | `compose/agsc-core.js`, `compose/agsc-compose.js`, `compose/agsc-page-tools.js`, `compose/webmcp.js` | all | changed | 28 |
+| AGSC-06-41: the Dataset block; and the page head of the next rows | `index.html` | all | changed | 7 |
+| AGSC-06-38: the overview, the legend and the explorer; and the page head | `clusters/index.html` | all | changed | 7 |
+| AGSC-07-25, AGSC-07-29: the filters, the verdict and the brief; and the page head | `compose/index.html` | all | changed | 7 |
+| The page head of every page: AGSC-06-46 (the `/llms.txt` link, an item page's Markdown copy), AGSC-06-39 (Query in the navigation), AGSC-04-24 (title, Open Graph); also AGSC-06-38 (the relations of item and cluster pages with Links), AGSC-06-01 (an item page's tags), AGSC-06-02 (an empty type folder) | `**/index.html`, `404.html` | all | changed | 264 |
+| AGSC-06-37: the chunk index | `chunks-index.toon` | all | new | 7 |
+| AGSC-06-38: the explorer's script and stylesheet | `clusters/agsc-explorer.js`, `clusters/agsc-explorer.css` | all | new | 14 |
+| AGSC-06-39: the query page, its scripts and the vendored engine | `query/*`, `query/vendor/oxigraph-0.5.13/*` | all | new | 63 |
 
 ## [1.0.1] - 2026-10-21
 

@@ -58,6 +58,12 @@ function runPreParsed(vector, ctx) {
     list.push(['vendor-not-warned', keys.vendor.every((k) => !warned.has(k)),
       `AGSC-E207 raised for a reserved x- key: ${[...warned].join(', ')}`]);
   }
+  // fm-0025 (AGSC-02-25): a key that 1.1 knows raises no AGSC-E207, so it is not a finding.
+  if (Array.isArray(vector.expected.no_warning_for)) {
+    const warned = findings.filter((f) => f.code === 'AGSC-E207').map((f) => f.key);
+    list.push(['no_warning_for', vector.expected.no_warning_for.every((k) => !warned.includes(k)),
+      `AGSC-E207 raised for ${warned.join(', ')}`]);
+  }
   if (vector.expected.valid !== undefined) {
     // The case states only the keys under test (AGSC-09-04 `items[]` convention), so
     // "valid" means no error is attributable to a key it preserves.
@@ -77,6 +83,10 @@ function run(vector, ctx) {
     const errors = item.findings.filter((f) => f.severity === 'error');
     const warnings = item.findings.filter((f) => f.severity === 'warn');
     const list = [];
+    // fm-0026 (AGSC-02-02, the near miss of fm-0021): the number of warnings, not only their absence.
+    if (typeof expected.warning_count === 'number') {
+      list.push(['warning_count', warnings.length === expected.warning_count, JSON.stringify(warnings.map((f) => f.code))]);
+    }
     if (typeof expected.error === 'string') {
       list.push(['error', errors.length > 0 && errors[0].code === expected.error,
         JSON.stringify(errors.map((f) => f.code))]);

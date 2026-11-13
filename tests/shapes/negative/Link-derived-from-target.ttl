@@ -1,0 +1,7 @@
+# Link-derived-from-target: a lesson derived from a concept, not an episode (AGSC-E315).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+ex:l a asc:Lesson ; prov:wasDerivedFrom ex:c .
+ex:c a asc:Concept .

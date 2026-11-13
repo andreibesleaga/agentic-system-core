@@ -1,0 +1,5 @@
+# OrphanShape: a concept nothing points at (warning).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept .

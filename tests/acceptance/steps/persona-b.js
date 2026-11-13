@@ -1,11 +1,13 @@
 'use strict';
-// verifies AGSC-04-02, AGSC-08-05, AGSC-08-06, AGSC-08-10, AGSC-08-27, AGSC-08-30, AGSC-09-07, AGSC-11-14
+// verifies AGSC-01-42, AGSC-04-02, AGSC-08-05, AGSC-08-06, AGSC-08-10, AGSC-08-27, AGSC-08-30, AGSC-09-07, AGSC-11-14
 // Steps of features/persona-b-contributor.feature that run offline: the edit link
 // a contributor follows, the local half of a contribution (the Proposal files
 // `propose` writes, a commit signed off under the contributor agreement, and the
 // ledger entry the build derives from it), and the `ci` and `review` lanes a
 // change runs through, under a preload that refuses every network call (so no
-// model service can be reached either).
+// model service can be reached either); and the diagram grammar a contributor writes
+// to (AGSC-01-42): an arrow marked with its relation, and the refusals the build
+// reports with the line of the source.
 
 const assert = require('node:assert');
 const path = require('node:path');
@@ -22,7 +24,48 @@ const CONTRIBUTE = 'https://w3id.org/agentic-system-core/rel#contribute';
 const CONTRIBUTOR = { local: 'ada.contributor', name: 'Ada Contributor' };
 const signOff = () => `Signed-off-by: ${CONTRIBUTOR.name} <${[CONTRIBUTOR.local, 'example.org'].join('@')}> (CA-v1)`;
 
+/** A small diagram: two boxes, one highlighted, and the arrow between them marked with its relation. */
+const DIAGRAM = ['label "A client and the server it requires"', 'box client 20 60 120 40 "client" acc',
+  'box server 300 60 120 40 "server"', 'arrow client server rel=requires', ''].join('\n');
+
 module.exports = [
+  {
+    pattern: 'the item "content/concepts/a2a.md" names the diagram "content/diagrams/a2a.diagram", whose arrow is marked "rel=requires"',
+    run(world) {
+      const item = world.read('content/concepts/a2a.md');
+      world.write('content/concepts/a2a.md', item.replace('kind: pattern\n',
+        'kind: pattern\ndiagram:\n  file: a2a.svg\n  alt: A client and the server it requires.\n'));
+      world.write('content/diagrams/a2a.diagram', DIAGRAM);
+    },
+  },
+  {
+    pattern: 'the arrow of that diagram on "/concepts/a2a/" carries the class "agsc-rel-requires" and no colour of its own (AGSC-01-42)',
+    run(world) {
+      const html = world.read('www/concepts/a2a/index.html');
+      const svg = /<svg[^>]*aria-labelledby="a2a-title[\s\S]*?<\/svg>/u.exec(html);
+      assert.ok(svg, 'the page carries no compiled diagram');
+      assert.match(svg[0], /<path d="[^"]*" marker-end="url\(#a2a-arrow\)" class="agsc-rel-requires"\/>/u);
+      // The class is a hook for a stylesheet: the arrow's colour stays the drawing's own.
+      assert.doesNotMatch(svg[0], /stroke="(?!currentColor)|fill="(?!none|currentColor)|style=/u);
+    },
+  },
+  {
+    pattern: 'the contributor writes "acc" with "thick" on line 3 of the diagram and a "via" waypoint of three numbers on line 4',
+    run(world) {
+      world.write('content/diagrams/a2a.diagram', ['box client 20 60 120 40 "client" acc', 'box server 300 60 120 40 "server"',
+        'line 20 200 400 200 acc thick', 'arrow client server via=200,150,9', ''].join('\n'));
+    },
+  },
+  {
+    pattern: 'the refusals name "content/diagrams/a2a.diagram" at line 3 for "acc" with "thick" and at line 4 for the "via" of three numbers',
+    run(world) {
+      const refusals = world.json().findings.filter((f) => f.code === 'AGSC-E412' && f.file === 'content/diagrams/a2a.diagram');
+      const at = (line) => refusals.filter((f) => f.line === line).map((f) => f.message).join(' ');
+      assert.match(at(3), /acc and thick/u, JSON.stringify(refusals));
+      assert.match(at(4), /via=.*3 numbers/u, JSON.stringify(refusals));
+      for (const f of refusals) assert.match(f.message, /AGSC-01-42/u, 'a refusal names the rule');
+    },
+  },
   {
     pattern: 'the contributor has edited the body of "content/concepts/a2a.md" in the fork',
     run(world) {

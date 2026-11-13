@@ -18,6 +18,17 @@ AGSC-04-03). Standard formats are read and written by maintained libraries at ex
 pinned versions; what this engine writes by hand is only what the specification pins
 byte for byte and no library produces.
 
+A few modules are written in TypeScript: their sources are under `../src-ts/`, and each
+compiles to the CommonJS file of the same path here, committed with a first line that
+names its source (`// generated from src-ts/… by tsc …; do not edit`). Never edit such a
+file by hand; `docs/ENGINEERING.md` §8 says why the compiled files are committed and how
+to add one. Today there are four here: `shared/version-line.js`, the proof of the chain,
+`distribution/mcp-core.js`, the MCP core of the tool server on the official SDK,
+`distribution/mcp-http.js`, its Streamable HTTP transport, and `distribution/a2a-card.js`,
+the A2A agent card written by the official A2A SDK. Two more TypeScript sources are the
+benchmark runners `src-ts/bench/kit.ts` and `src-ts/bench/install.ts`, which compile to
+`bench/runners/` outside `src/` and require nothing of it (`bench/README.md`).
+
 ---
 
 ## 1. The folders
@@ -29,11 +40,11 @@ byte for byte and no library produces.
 | `composition/` | bounded context | selection and closure, the Harness, skill packs, the archive, the browser build of the algebra | [composition/README.md](composition/README.md) |
 | `distribution/` | bounded context | the build: every route, page, header, discovery document, text file, search index, tool surface and hosting profile | [distribution/README.md](distribution/README.md) |
 | `boundary/` | bounded context | where a node meets anything outside it: peers and federation, visibility, the agent surfaces | [boundary/README.md](boundary/README.md) |
-| `interchange/` | supporting context | foreign formats in and out: OKF, COGX, GABBE, skills repositories, project boards, steering files, the old site | [interchange/README.md](interchange/README.md) |
+| `interchange/` | supporting context | foreign formats in and out: OKF, SKOS, COGX, GABBE, skills repositories, project boards, steering files, the old site | [interchange/README.md](interchange/README.md) |
 | `application/` | application layer | configuration, the command line and its sixteen verbs, the Bundle loader, the conformance run, plugins, `agsc-host` | [application/README.md](application/README.md) |
 | `ports/` | hexagonal ports | four interfaces, no code: FileSystem, Clock, ProcessRunner, Network | none: `tests/ports/` holds the folder to exactly its four interface files, and each file's header is its documentation |
 | `adapters/` | hexagonal adapters | the Node implementations of the four ports | [adapters/README.md](adapters/README.md) |
-| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, and the reader of the rest of a line after a fixed head, and nothing else | [shared/README.md](shared/README.md) |
+| `shared/` | shared kernel | the two string orderings, the trailing-slash and trailing line-feed trims, the reader of the rest of a line after a fixed head, the indefinite article, the `--version` line compiled from TypeScript, and the version of the specification the engine implements (`spec-version.js`), and nothing else | [shared/README.md](shared/README.md) |
 
 Entry points: `bin/agsc.js` builds the four ports from `adapters/` and calls
 `application/cli/main.js#main`, which dispatches to one module per verb in
@@ -99,7 +110,11 @@ linear in the length of the text where the patterns it replaced were quadratic.
 `shared/key-value-line.js` reads the rest of one line after a fixed head (a "key:
 value" line of a foreign frontmatter block, a heading's text): the head is matched
 once, the rest searched once for a line terminator and then sliced, where the patterns
-it replaced read the rest again for every blank they gave back.
+it replaced read the rest again for every blank they gave back. `shared/article.js` puts
+"a" or "an" before a word a message names at run time (an item type, a format).
+`shared/version-line.js`, compiled from `src-ts/shared/version-line.ts`, gives the line
+`agsc --version` prints (AGSC-09-09), and the command line prints it through that module:
+the proof that the TypeScript toolchain works end to end, with the bytes of 1.0.
 
 **Ubiquitous language.** Bundle, Item, Link, Cluster, Chunk, Attachment, Proposal,
 Review, Gate, Ledger, Channel, Agent lane, Selection, Verdict, Harness, Page, Route,
@@ -113,7 +128,8 @@ return records. Everything else that reaches the outside world does so through a
 port, and only the application layer and `bin/` may construct an adapter, with one
 exception: `application/hosting.js`, the deployment profiles and local server of
 `agsc-host`, reads and writes files with `node:fs` directly. Moving it behind the
-FileSystem port is planned for 1.1. `tests/arch/core-purity.test.js` enforces the
+FileSystem port is deferred to a later MINOR (the 1.1 HTTP
+transport put its socket in the adapter instead, so the move is no longer on the path). `tests/arch/core-purity.test.js` enforces the
 purity of the three contexts, `tests/arch/never-touches.test.js` the "Never touches"
 column of `docs/ARCHITECTURE-DDD.md` §2, and `tests/arch/application-builtins.test.js`
 the Node built-ins the application layer may load (`path`, `crypto`, `util`; `fs` in
@@ -155,18 +171,18 @@ which calls into the contexts.
 | Verb | Rule | Where the work is done |
 |---|---|---|
 | `init` | AGSC-02-90…95, AGSC-01-37 | `distribution/init.js`, `knowledge/adopt.js` |
-| `lint` | AGSC-09-12, AGSC-08-13…17 | `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js`; `--fix` in `governance/fix.js` |
-| `build` | AGSC-06-01, AGSC-04-01/02 | `distribution/site.js` |
-| `verify` | AGSC-04-02, AGSC-08-23 | `distribution/site.js#verify`, `governance/ledger.js#verify` |
-| `ci` | AGSC-09-08 | `distribution/ci.js`, with the lint lane injected |
-| `export` | AGSC-01-26…29, AGSC-01-26a | `interchange/{export-bundle,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to` |
-| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board}.js`, `interchange/import.js` for the old site |
-| `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js` |
+| `lint` | AGSC-09-12, AGSC-08-13…17, AGSC-05-35, AGSC-08-31, AGSC-01-41, AGSC-05-38, AGSC-08-32, AGSC-11-24 | `knowledge/{validate,links,slug}.js`, `governance/lint.js`, `governance/agents.js`; `--fix` in `governance/fix.js`; `--suggest` in `knowledge/suggest.js`; the site vocabulary in `knowledge/domain.js`; the contexts of the label check in `knowledge/contexts.js`; a peer's crosswalk in `boundary/federation.js` |
+| `build` | AGSC-06-01, AGSC-04-01/02, AGSC-05-38, AGSC-05-39, AGSC-05-40, AGSC-06-38, AGSC-06-39 | `distribution/site.js`; the site vocabulary and the domain triples through `knowledge/domain.js` and `knowledge/nquads.js`; the warrant triples through `knowledge/warrants.js`; the graph view of item and cluster pages in `distribution/graph-view.js` (over `knowledge/link-graph.js`) with the domain parts of `distribution/domain-view.js` on a node with a site vocabulary, and the overview, legend and explorer of `/clusters/` in `distribution/clusters-page.js` and `distribution/explorer/`; the query page in `distribution/query-page.js`, its examples and vocabulary in `distribution/query-examples.js`, `distribution/query/` and the vendored engine of `distribution/vendor/` (AGSC-06-39) |
+| `verify` | AGSC-04-02, AGSC-08-23, AGSC-09-20 | `distribution/site.js#verify`, `governance/ledger.js#verify`; the site's own shapes and questions through `verbs/_site-checks.js` → `knowledge/site-checks.js` |
+| `ci` | AGSC-09-08, AGSC-09-20 | `distribution/ci.js`, with the lint lane injected and the site checks (`verbs/_site-checks.js` → `knowledge/site-checks.js`; not under `--level` 0 to 2) |
+| `export` | AGSC-01-26…29, AGSC-01-26a, AGSC-09-17, AGSC-05-36, AGSC-05-37 | `interchange/{export-bundle,export-manifest,steer}.js`, the build's own bytes, `interchange/adapters/<name>.js` for `--to`; `--skos` in `knowledge/skos-export.js`; `--closure` in `knowledge/closure.js` |
+| `import` | AGSC-01-22/23, AGSC-03-19, AGSC-01-26a | `interchange/okf.js`, `interchange/adapters/{cogx,gabbe,skills,board,skos}.js`, `interchange/import.js` for the old site |
+| `compose` | AGSC-07-04…09, 07-12, 07-18, 07-24, 07-25…07-30 | `composition/{compose,architecture,harness}.js`; `--zip` through `composition/archive.js`; the context map of a node that declares contexts in `composition/context-map.js`, with the peers' crosswalks read by `boundary/federation.js`; the brief of `--brief` in `composition/brief.js`, and with `--from` a saved architecture's blueprint outputs in `composition/blueprint.js` |
 | `propose` | AGSC-08-04, AGSC-08-05 | `knowledge/adopt.js`, the `diff` library |
 | `review` | AGSC-08-27 | the lint lane; no model call is reachable |
 | `refresh` | AGSC-08-28(f) | `governance/agents.js#checkProposal`; the live path needs a model and a channel adapter |
-| `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**` |
-| `mcp` | AGSC-09-13 | `distribution/mcp-stdio.js` → `distribution/mcp-tools.js`; a streaming verb, nothing but protocol bytes on stdout |
+| `skills` | AGSC-07-19…22, AGSC-07-15 | `composition/skills.js`; the build writes the same bytes at `/skills/**`; from 1.1 every `SKILL.md` passes the Agent Skills check of `composition/skill-format.js` before it is written (AGSC-07-22), and `compose` runs it over the Harness skill files |
+| `mcp` | AGSC-09-13, AGSC-09-18, AGSC-09-19 | `verbs/mcp.js` → `distribution/mcp-core.js` (compiled from `src-ts/`; the official MCP SDK, both revisions) → `distribution/mcp-tools.js`; with `--http <port>`, `distribution/mcp-http.js` (compiled from `src-ts/`) behind `adapters/node-http-server.js#listenWith` on a loopback address; a streaming verb, nothing but protocol bytes on stdout |
 | `run` | AGSC-09-94, AGSC-02-22 | `knowledge/runblocks.js` and the ProcessRunner port; off by default, and it executes only on a runner that declares network isolation, which the shipped adapter does not |
 | `trace` | AGSC-09-94, AGSC-02-14 | `interchange/trace.js`; off by default |
 | `conform` | AGSC-09-01…03, AGSC-10-15 | `application/conformance.js`, `composition/conform.js` |
@@ -179,16 +195,14 @@ known verb this distribution does not offer — `refresh --agent` without `--dry
 holds the set to sixteen; `tests/application/cli/verbs-wired.test.js` runs every verb
 end to end over a copy of the fixture.
 
-**The seven tools** are a surface, not verbs (AGSC-09-13, AGSC-09-16). They are served
+**The ten tools** are a surface, not verbs (AGSC-09-13, AGSC-09-16). They are served
 over the local MCP server (`distribution/mcp-tools.js`) and as page tools in a built
 site (`distribution/page-tools.js`), and the two answer identically for the same
-input; vector `cli-0003` compares them call by call.
-
-| Tool | Local server | Page tool |
-|---|---|---|
-| `search`, `read`, `links`, `ask` | over the loaded Bundle | over the published files (`/search.json`, `/pages/<slug>.md`) |
-| `compose` | `composition/compose.js` | the same algebra, shipped to the page by `composition/browser.js` |
-| `propose`, `remember` | the caller may write `dist/proposal/<n>.{patch,md}` | the payload is returned and nothing is written |
+input; vector `cli-0026` compares them call by call. What 1.1 adds — the bound on `search`
+and `ask`, the citation records of `read`, and `brief`, `explain` and `check` over the listed
+set — is in `distribution/tool-answers.js`, whose portable functions both call. Each tool's
+module on both transports is in the tool table of
+[REFERENCE.md §11.2](REFERENCE.md#112-verb--module).
 
 ## 4. Libraries
 
@@ -200,21 +214,33 @@ and the `require` calls in `src/`, `bin/` and `tools/`.
 | Need | Library | Version | Licence | Used in |
 |---|---|---|---|---|
 | YAML failsafe subset | `yaml` | 2.9.1 | ISC | `knowledge/yaml.js`, `knowledge/adopt.js`, `governance/fix.js` |
-| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT | `knowledge/schema.js`, `tools/validate-schemas` |
-| `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same two |
+| JSON Schema 2020-12 | `ajv` (`ajv/dist/2020`) | 8.20.0 | MIT | `knowledge/schema.js`, `tools/validate-schemas`, `bench/runners/kit.js` (from `src-ts/bench/kit.ts`) |
+| `format` keyword | `ajv-formats` | 3.0.1 | MIT | the same three |
 | RFC 8785 (JCS) | `json-canonicalize` | 3.0.1 | MIT | `knowledge/jcs.js` |
 | CommonMark + GFM tables | `markdown-it` | 15.0.3 | MIT | `knowledge/markdown.js`, `tools/gen-spec-html` |
-| Turtle and N-Quads | `n3` | 2.7.12 | MIT | `knowledge/turtle.js`, `tools/validate-ontology`, `tools/gen-ns` |
-| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.11.1 | MIT | `governance/lint.js`, `tools/gen-ns` |
+| Turtle and N-Quads, rule closure | `n3` | 2.7.12 | MIT | `knowledge/turtle.js` (the one reader of RDF in `src/`, `tests/arch/rdf-reader.test.js`; `interchange/adapters/skos.js`, `knowledge/skos-export.js`, `knowledge/domain.js` and the crosswalk reader of `boundary/federation.js` go through it), `knowledge/closure.js` (the library's `Reasoner`, for `export --closure`), `tools/validate-ontology`, `tools/gen-ns` |
+| XML (SVG allow-list, RDF/XML re-read) | `fast-xml-parser` | 5.12.0 | MIT | `governance/lint.js`, `tools/gen-ns` |
 | JSON-LD round-trip proof | `jsonld` | 9.0.0 | BSD-3-Clause | the shipped conformance areas under `tests/conformance/areas/` |
+| SHACL Core validation | `rdf-validate-shacl` | 0.6.5 | MIT | `knowledge/shacl-core.js` only (`tests/arch/shacl-library.test.js`), for a site's own invariants (AGSC-05-41); never at build |
+| SPARQL 1.1 parser | `@traqula/parser-sparql-1-1` | 1.4.0 | MIT | `knowledge/competency.js` only (`tests/arch/sparql-library.test.js`), for a site's competency questions (AGSC-05-41); never at build |
+| SPARQL 1.1 engine | `oxigraph` | 0.5.13 | MIT OR Apache-2.0 | `knowledge/competency.js` only, the same test; run by `verify` and `ci` (AGSC-09-20), never at build. Its WebAssembly build is also the engine of `/query/`, vendored byte for byte under `distribution/vendor/oxigraph-0.5.13/` and kept equal to this dependency by `tests/arch/query-engine-pin.test.js`; its Node build runs the page's examples in `tests/distribution/query-examples.test.js` |
 | argv parsing | `commander` | 15.0.0 | MIT | `application/cli/main.js` |
-| `.env` tokenising (`parse` only) | `dotenv` | 18.0.3 | BSD-2-Clause | `application/config/env.js` |
+| `.env` tokenising (`parse` only) | `dotenv` | 18.0.9 | BSD-2-Clause | `application/config/env.js` |
 | unified diffs | `diff` | 9.0.0 | BSD-3-Clause | `application/cli/verbs/propose.js` |
-| MCP over stdio | `@modelcontextprotocol/sdk` | 1.32.1 | MIT | `distribution/mcp-stdio.js` |
-| TOON encoding | `@toon-format/toon` | 4.1.1 | MIT | `interchange/adapters/llm-context.js` |
-| property tests (dev) | `fast-check` | 4.10.1 | MIT | tests only |
+| MCP server, revisions 2026-07-28 and 2025-11-25 | `@modelcontextprotocol/server` (with `@modelcontextprotocol/core`) | 2.4.0 | Apache-2.0 | `distribution/mcp-core.js` (from `src-ts/distribution/mcp-core.ts`) |
+| MCP Streamable HTTP transport for Node (`toNodeHandler`, the `Host` and `Origin` guards) | `@modelcontextprotocol/node` (with `hono`, `@hono/node-server`, MIT) | 2.1.2 | Apache-2.0 | `distribution/mcp-http.js` (from `src-ts/distribution/mcp-http.ts`) |
+| MCP client, to test the server as an assistant reaches it (dev) | `@modelcontextprotocol/client` | 2.4.0 | Apache-2.0 | tests only |
+| A2A agent card (the protocol's own JSON form of `AgentCard`) | `@a2a-js/sdk` (with `jose`, MIT) | 1.3.0 | Apache-2.0 | `distribution/a2a-card.js` (from `src-ts/distribution/a2a-card.ts`), loaded only by a node that declares a card |
+| RFC 8288 `Link` header parser, to read the emitted header independently | `http-link-header` | 1.1.4 | MIT | the conformance handler of `disc-0026` (`tests/conformance/areas/_discovery-web.js`, shipped in the package so that `agsc conform` runs every vector) and the tests; a run-time dependency from B08-WP5, a development one before |
+| TOON encoding | `@toon-format/toon` | 4.4.0 | MIT | `knowledge/chunks-index.js`, the tabular chunk index that the build serves as `/chunks-index.toon` (AGSC-06-37) and `interchange/adapters/llm-context.js` writes beside the node |
+| RFC 9651 Structured Fields (the Dictionary of an RFC 9530 digest value) | `structured-headers` | 2.1.1 | MIT | `knowledge/digest-field.js`, the one writer of `sha-256=:<base64>:` (AGSC-06-08, AGSC-06-29, AGSC-06-44, AGSC-09-17) |
+| RFC 4180 CSV, read and written (1.1) | `csv-parse`, `csv-stringify` | 7.0.3, 6.9.0 | MIT, MIT | `interchange/adapters/csv.js` only, loaded by `export --to csv` and `import --from csv` and never by `build` or `lint` (`tests/arch/memory-adapters-lazy.test.js`) |
+| property tests (dev) | `fast-check` | 4.10.2 | MIT | tests only |
 | ZIP reader, to prove the archive (dev) | `fflate` | 0.8.3 | MIT | tests only |
 | Gherkin parser (dev) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 | MIT | the acceptance runner |
+| TypeScript compiler (dev) | `typescript` | 6.0.3 | Apache-2.0 | `tools/build-ts` and `npm run typecheck`, for the sources under `src-ts/`; never at run time |
+| Node type declarations (dev) | `@types/node` | 22.20.5 | MIT | the same; the major line of the Node floor |
+| TypeScript lint rules (dev) | `typescript-eslint` | 8.72.1 | MIT | `npm run lint` over `src-ts/` |
 
 What this engine still writes by hand, and why: the AGSC-02-02 **allow-list** on top
 of the YAML parser (no library knows which constructs this specification forbids or
@@ -336,3 +362,22 @@ of `distribution/search.js#tokenize` and `#query` (both self-contained and named
 `search.PORTABLE`) and of `page-tools.js#pageShardRoutes` and `#pageIndexOf`, so the
 search box, the page tools and the index builder tokenize one way. `html.js#searchPage`
 is the page; `site.js#putIndex` takes an optional renderer for it.
+
+`distribution/explorer/page.js` writes `/clusters/agsc-explorer.js` the same way, from the
+own source text of the functions each `distribution/explorer/*.js` module names in its
+`PORTABLE` list; `tests/arch/explorer-portable.test.js` checks that none of them reaches
+outside itself, so the page runs exactly what the Node tests test.
+
+`distribution/query-page.js` writes the `/query/` page (AGSC-06-39) and its two scripts the
+same way, from `distribution/query/*.js` and the explorer's layout and scene writer:
+`/query/agsc-query.js` for the page and `/query/agsc-query-worker.js`, a module worker that
+imports the vendored engine `distribution/vendor/oxigraph-0.5.13/web.js`
+(`tests/arch/query-portable.test.js`). The engine's files and the data file of the ten
+questions are the engine's, not a Bundle's, so the application layer reads them
+(`application/cli/verbs/_helpers.js#queryPageInput`, through `adapters/node-fs.js#readEngineFiles`)
+and hands them to the build; `site.js` emits nothing under `/query/` without them. The build
+adds what is the node's: the items `/graph.nq` holds, the build's instant and the domain layer,
+from which `distribution/query-examples.js` fills the ten examples in and reads the node's own
+competency questions and site vocabulary; it runs at build time and is never shipped as source
+text, and it reads the questions file for its shape only, so the build never reaches the SPARQL
+parser or engine (`tests/arch/sparql-library.test.js`).

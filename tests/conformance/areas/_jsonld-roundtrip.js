@@ -27,6 +27,13 @@ async function main() {
   };
   const expanded = await jsonld.expand(input.doc, { documentLoader: loader });
   const compacted = await jsonld.compact(expanded, input.contextUrl, { documentLoader: loader });
+  // AGSC-06-32 (1.1): a graph of one node comes back without `@graph`, its members beside
+  // `@context`; as a value that is the same document, so put the `@graph` back.
+  if (compacted['@graph'] === undefined && Array.isArray(input.doc['@graph'])) {
+    const { '@context': context, ...node } = compacted;
+    process.stdout.write(JSON.stringify({ '@context': context, '@graph': [node] }));
+    return;
+  }
   process.stdout.write(JSON.stringify(compacted));
 }
 

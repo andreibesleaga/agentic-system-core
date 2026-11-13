@@ -8,7 +8,7 @@
 npm run test:e2e
 ```
 
-The optional lanes are switched on with `AGSC_E2E=1` (the two real Bundles, from sibling checkouts) and `AGSC_BROWSER=1` with `CHROME_EXE` (a real browser); `docs/TESTING.md` says how.
+The optional lanes are switched on with `AGSC_E2E=1` (the two real Bundles, from sibling checkouts) and `AGSC_BROWSER=1` with `CHROME_EXE` (a real browser); `docs/TESTING.md` says how. With both, `query-sites.test.js` builds the demonstration node, the main site's Bundle and the patterns node and checks `/query/` on each: it loads, the ten examples answer what the questions' functions answer, and axe-core finds nothing in either colour scheme.
 
 Every test here fixes its own clock, reaches no network and writes only under the
 system temporary directory, removing what it wrote. The mode walks run every child

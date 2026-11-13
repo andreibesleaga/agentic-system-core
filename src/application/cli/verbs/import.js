@@ -35,19 +35,35 @@ const path = require('node:path');
 const { finding } = require('../../../knowledge/validate.js');
 const { compareCodePoint } = require('../../../knowledge/unicode.js');
 const slugs = require('../../../knowledge/slug.js');
+const { isTypedPeer, peerUrls } = require('../../../knowledge/contexts.js');
 const { ARCHIVE_EXTENSIONS, readSchemas } = require('../../../adapters/node-fs.js');
 const interchange = require('../../../interchange/import.js');
 const okf = require('../../../interchange/okf.js');
+const exportManifest = require('../../../interchange/export-manifest.js');
 const cogx = require('../../../interchange/adapters/cogx.js');
 const gabbe = require('../../../interchange/adapters/gabbe.js');
 const { LICENSE_NAME } = require('../../../interchange/licences.js');
 const skills = require('../../../interchange/adapters/skills.js');
 const board = require('../../../interchange/adapters/board.js');
+const skos = require('../../../interchange/adapters/skos.js');
+const mem0 = require('../../../interchange/adapters/mem0.js');
+const letta = require('../../../interchange/adapters/letta.js');
+const zep = require('../../../interchange/adapters/zep.js');
+const csv = require('../../../interchange/adapters/csv.js');
+const basicMemory = require('../../../interchange/adapters/basic-memory.js');
+const claudeCode = require('../../../interchange/adapters/claude-code.js');
 const loader = require('../../plugin-loader.js');
 const helpers = require('./_helpers.js');
 
 /** The foreign formats this node reads. AGSC-01-22 names the verb, not a list. */
-const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT]);
+/**
+ * The direct memory adapters (AGSC-01-26a; PRD-070): each reads the files of one memory
+ * tool through the same lane, `importMemory`, and owns only its own file shapes.
+ */
+const MEMORY_ADAPTERS = Object.freeze([mem0, letta, zep, csv, basicMemory, claudeCode]);
+
+const FORMATS = Object.freeze([okf.FORMAT, interchange.FORMAT, cogx.FORMAT, gabbe.FORMAT, skills.FORMAT, board.FORMAT,
+  skos.FORMAT, ...MEMORY_ADAPTERS.map((adapter) => adapter.FORMAT)]);
 
 /**
  * `--selection` belongs to the `old-site` adapter and not to the verb: AGSC-01-26a
@@ -266,7 +282,11 @@ function identity(config) {
   if (typeof bundle.license_prose === 'string') options.licenseProse = bundle.license_prose;
   if (typeof bundle.license_schema === 'string') options.licenseSchema = bundle.license_schema;
   if (typeof site.tagline === 'string' && site.tagline !== '') options.tagline = site.tagline;
-  if (Array.isArray(config && config.peers)) options.peers = config.peers.map((p) => String(p));
+  // AGSC-11-24: a typed peer is kept whole, so the configuration the import rewrites
+  // keeps its relationship and crosswalk; only the trust check reads the addresses.
+  if (Array.isArray(config && config.peers)) {
+    options.peers = config.peers.map((entry) => (isTypedPeer(entry) ? { ...entry } : String(entry)));
+  }
   return { findings, options };
 }
 
@@ -504,6 +524,7 @@ function importOkf(ctx, source, identityOptions) {
   }
 
   const planned = okf.plan(files, {
+    base: identityOptions.base,
     licenceFiles,
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     operator: identityOptions.operator,
@@ -511,8 +532,65 @@ function importOkf(ctx, source, identityOptions) {
     sourceVersion: facts.bundleVersion,
   });
   const newer = okf.versionWarning(facts.specVersion, { toolSpecVersion: ctx.specVersion });
-  const all = [...findings, ...(newer === null ? [] : [newer]), ...planned.findings];
+  const manifest = checkManifest(fs, facts.base, planned.writes);
+  const all = [...findings, ...(newer === null ? [] : [newer]), ...planned.findings, ...manifest];
   return finish(ctx, all, planned);
+}
+
+/**
+ * AGSC-09-17 (a): a source folder that holds the manifest of `export --manifest` is checked
+ * against it — each listed file's digest, the item count and the items digest — and a
+ * difference is a warning. The import goes on as it would without a manifest.
+ *
+ * @param {object} fs the read-only port rooted at the source.
+ * @param {string|null} base the base the source's root document states.
+ * @param {Array<{path:string}>} writes the plan's writes, which are the items the folder holds.
+ * @returns {Array<object>} findings.
+ */
+function checkManifest(fs, base, writes) {
+  if (!fs.exists(exportManifest.FILE)) return [];
+  const text = String(fs.readFile(exportManifest.FILE, 'utf8'));
+  const files = new Map();
+  for (const listed of exportManifest.listedPaths(text)) {
+    try {
+      files.set(listed, fs.exists(listed) ? String(fs.readFile(listed, 'utf8')) : null);
+    } catch (e) {
+      files.set(listed, null);
+    }
+  }
+  return exportManifest.check(text, { files, itemIris: exportManifest.irisOfWrites(writes, base) });
+}
+
+/**
+ * `import <file.ttl> --from skos` (AGSC-01-39). The rules are `interchange/adapters/skos.js`'s;
+ * this function reads the one Turtle file through its own read-only port (it lies outside
+ * the Bundle) and hands the plan to the shared tail, so `--dry-run`, the collision survey
+ * and `--replace` behave exactly as in every other lane (AGSC-01-23).
+ *
+ * @param {object} ctx
+ * @param {string} source the Turtle file.
+ * @param {object} identityOptions the target Bundle's identity.
+ * @returns {{findings:Array<object>, status?:string}}
+ */
+function importSkos(ctx, source, identityOptions) {
+  let text;
+  try {
+    text = readOutside(ctx, source);
+  } catch (e) {
+    const code = e && typeof e.code === 'string' && /^AGSC-E\d{3}$/u.test(e.code) ? e.code : 'AGSC-E901';
+    return {
+      findings: [finding(code, `${JSON.stringify(String(source))} could not be read as a file: ${e && e.message}`
+        + ' (AGSC-01-39)', { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  const planned = skos.plan({ turtle: text }, {
+    i18nDefault: ((ctx.config || {}).i18n || {}).default || 'en',
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+  });
+  if (planned.findings.some((f) => f.severity === 'error')) return { findings: planned.findings, status: 'fail' };
+  return finish(ctx, planned.findings, planned);
 }
 
 /**
@@ -558,15 +636,7 @@ function importCogx(ctx, source, identityOptions) {
       status: 'fail',
     };
   }
-  const planned = cogx.plan(files, {
-    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    toolSpecVersion: ctx.specVersion,
-  });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, cogx.plan(files, planOptions(ctx, identityOptions)));
 }
 
 /**
@@ -595,13 +665,7 @@ function importGabbe(ctx, source, identityOptions) {
   const findings = [];
   const files = Object.create(null);
   const paths = typeof fs.walk === 'function' && fs.exists('agents') ? fs.walk('agents') : [];
-  for (const file of paths.filter(gabbe.isKitFile)) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter(gabbe.isKitFile), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -611,27 +675,106 @@ function importGabbe(ctx, source, identityOptions) {
       status: 'fail',
     };
   }
-  const planned = gabbe.plan(files, {
-    allowNewer: verbFlags['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
-  });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, gabbe.plan(files, planOptions(ctx, identityOptions, stated)));
 }
 
 /**
- * The origins whose own-record lines an import may trust: this node's
- * `site.base` and its declared `peers[]`.
+ * `import --from <memory tool> <dir>` (AGSC-01-26a; PRD-070): `mem0`, `letta`, `zep`,
+ * `csv`, `basic-memory` and `claude-code`. The rules are the adapter's and
+ * `interchange/memory-records.js`'s; this function lists the folder (`.git/` and
+ * `node_modules/` excluded), reads only the files the adapter names through a
+ * read-only port rooted at the folder, and hands the plan to the shared tail, so
+ * `--dry-run`, the collision survey and `--replace` behave as in every other lane
+ * (AGSC-01-23). `--source-version <v>` states the content version of a foreign
+ * source, which none of these tools publishes (AGSC-01-22).
  *
+ * @param {object} ctx
+ * @param {string} source the folder.
  * @param {object} identityOptions the target Bundle's identity.
- * @returns {{origin:string, peers:string[]}}
+ * @param {object} adapter one of `MEMORY_ADAPTERS`.
+ * @returns {{findings:Array<object>, status?:string}}
  */
-function trustOptions(identityOptions) {
-  return { origin: identityOptions.base, peers: identityOptions.peers || [] };
+function importMemory(ctx, source, identityOptions, adapter) {
+  const verbFlags = ctx.verbFlags || {};
+  const stated = verbFlags['source-version'];
+  const bad = sourceVersionRefusal(stated);
+  if (bad !== null) return { findings: [bad], status: 'fail' };
+  const fs = openRoot(ctx, source);
+  const findings = [];
+  const files = Object.create(null);
+  // A folder that is not there, or a path that is not a folder, lists nothing, and the
+  // E901 below says so.
+  readListed(fs, (listClone(fs) || []).filter(adapter.isSourceFile), files, findings);
+  if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
+  if (Object.keys(files).length === 0) {
+    return {
+      findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no file the`
+        + ` ${adapter.FORMAT} adapter reads (AGSC-01-22, AGSC-01-26a)`, { file: String(source), line: 1 })],
+      status: 'fail',
+    };
+  }
+  return finishPlanned(ctx, findings, adapter.plan(files, planOptions(ctx, identityOptions, stated)));
+}
+
+/**
+ * The options every adapter's `plan` takes: `--allow-newer`, the item schema, this Bundle's
+ * operator, the origins whose own-record lines an import may trust (this node's `site.base`
+ * and its declared `peers[]`, as their addresses), the stated `--source-version` and the
+ * tool's own specification version.
+ *
+ * @param {object} ctx
+ * @param {object} identityOptions the target Bundle's identity.
+ * @param {string} [stated] `--source-version`, already checked by `sourceVersionRefusal`.
+ * @returns {object}
+ */
+function planOptions(ctx, identityOptions, stated) {
+  return {
+    allowNewer: (ctx.verbFlags || {})['allow-newer'] === true,
+    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
+    operator: identityOptions.operator,
+    origin: identityOptions.base,
+    peers: peerUrls(identityOptions.peers),
+    sourceVersion: stated === undefined ? undefined : String(stated),
+    toolSpecVersion: ctx.specVersion,
+  };
+}
+
+/** The shared tail of a lane whose plan may refuse the whole source: a refusal fails, anything else is `finish`ed. */
+function finishPlanned(ctx, findings, planned) {
+  const all = [...findings, ...planned.findings];
+  return planned.refused ? { findings: all, status: 'fail' } : finish(ctx, all, planned);
+}
+
+/**
+ * Read each of `paths` through `fs` into `files` as text; a file that cannot be read is named in
+ * `findings` (AGSC-01-22) and left out.
+ */
+function readListed(fs, paths, files, findings) {
+  for (const file of paths) {
+    try {
+      files[file] = String(fs.readFile(file, 'utf8'));
+    } catch (e) {
+      findings.push(unreadable(e, String(file)));
+    }
+  }
+}
+
+/** The refusal of a source that is not a folder this import can read. */
+function notAFolder(source) {
+  return {
+    findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
+      + ' (AGSC-01-22)', { file: String(source), line: 1 })],
+    status: 'fail',
+  };
+}
+
+/** `cloneFiles(fs)`, or `null` when the source is not a folder that can be listed. */
+function listClone(fs) {
+  try {
+    return cloneFiles(fs);
+  } catch (e) {
+    return null;
+  }
 }
 
 /** Directories of a local clone that hold no skill and are never walked. */
@@ -698,33 +841,12 @@ function importSkills(ctx, source, identityOptions) {
   }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths;
-  try {
-    paths = cloneFiles(fs);
-  } catch (e) {
-    return {
-      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
-        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
-      status: 'fail',
-    };
-  }
+  const paths = listClone(fs);
+  if (paths === null) return notAFolder(source);
   const files = Object.create(null);
-  for (const file of paths.filter(skills.isRelevant)) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter(skills.isRelevant), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
-  const options = {
-    allowNewer: verbFlags['allow-newer'] === true,
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
-  };
+  const options = planOptions(ctx, identityOptions, stated);
   if (verbFlags.list === true) {
     const listed = skills.catalogue({ files, paths }, options);
     for (const line of listed.lines) helpers.note(ctx, line);
@@ -738,7 +860,7 @@ function importSkills(ctx, source, identityOptions) {
     return { findings };
   }
   const detected = skills.detect(paths);
-  const chosen = layout === undefined ? detected[0] : layout;
+  const chosen = layout === undefined ? skills.firstImportable(detected, { files, paths }, options) : layout;
   if (chosen === undefined) {
     return {
       findings: [...findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds no skill or rule in any`
@@ -749,9 +871,7 @@ function importSkills(ctx, source, identityOptions) {
   }
   helpers.note(ctx, `import: skills layout ${chosen}${layout === undefined ? ' (detected)' : ''}`
     + `${detected.length > 1 ? `; also found: ${detected.filter((l) => l !== chosen).join(', ')}` : ''}`);
-  const planned = skills.plan({ files, paths }, { ...options, cluster, layout: chosen });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, skills.plan({ files, paths }, { ...options, cluster, layout: chosen }));
 }
 
 /**
@@ -785,24 +905,10 @@ function importBoard(ctx, source, identityOptions) {
   }
   const fs = openRoot(ctx, source);
   const findings = [];
-  let paths;
-  try {
-    paths = cloneFiles(fs);
-  } catch (e) {
-    return {
-      findings: [finding('AGSC-E901', `${JSON.stringify(String(source))} is not a directory this import can read`
-        + ' (AGSC-01-22)', { file: String(source), line: 1 })],
-      status: 'fail',
-    };
-  }
+  const paths = listClone(fs);
+  if (paths === null) return notAFolder(source);
   const files = Object.create(null);
-  for (const file of paths.filter((p) => board.isBoardFile(format, p))) {
-    try {
-      files[file] = String(fs.readFile(file, 'utf8'));
-    } catch (e) {
-      findings.push(unreadable(e, String(file)));
-    }
-  }
+  readListed(fs, paths.filter((p) => board.isBoardFile(format, p)), files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -813,24 +919,18 @@ function importBoard(ctx, source, identityOptions) {
   }
   const own = ctx.ports.fs;
   const planned = board.plan(files, {
-    allowNewer: verbFlags['allow-newer'] === true,
+    ...planOptions(ctx, identityOptions, stated),
     format,
     hasCluster: (slug) => own.exists(`content/clusters/${slug}.md`),
-    itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
-    operator: identityOptions.operator,
-    ...trustOptions(identityOptions),
-    sourceVersion: stated === undefined ? undefined : String(stated),
-    toolSpecVersion: ctx.specVersion,
   });
-  if (planned.refused) return { findings: [...findings, ...planned.findings], status: 'fail' };
-  if (planned.totals.items === 0) {
+  if (!planned.refused && planned.totals.items === 0) {
     return {
       findings: [...findings, ...planned.findings, finding('AGSC-E901', `${JSON.stringify(String(source))} holds`
         + ` no row this adapter could read as a ${format} task (AGSC-01-22)`, { file: String(source), line: 1 })],
       status: 'fail',
     };
   }
-  return finish(ctx, [...findings, ...planned.findings], planned);
+  return finishPlanned(ctx, findings, planned);
 }
 
 /**
@@ -1001,6 +1101,9 @@ function run(ctx) {
   if (from === gabbe.FORMAT) return importGabbe(ctx, source, identified.options);
   if (from === skills.FORMAT) return importSkills(ctx, source, identified.options);
   if (from === board.FORMAT) return importBoard(ctx, source, identified.options);
+  if (from === skos.FORMAT) return importSkos(ctx, source, identified.options);
+  const memoryAdapter = MEMORY_ADAPTERS.find((adapter) => adapter.FORMAT === from);
+  if (memoryAdapter !== undefined) return importMemory(ctx, source, identified.options, memoryAdapter);
 
   let selectionText;
   try {
@@ -1054,6 +1157,7 @@ function run(ctx) {
 
 module.exports = {
   FORMATS,
+  MEMORY_ADAPTERS,
   SELECTION_REQUIRED,
   apply,
   bundleConfig,

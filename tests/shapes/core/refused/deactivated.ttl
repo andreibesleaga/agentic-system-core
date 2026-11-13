@@ -1,0 +1,9 @@
+# sh:deactivated: a term of the sh: namespace the subset does not name.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:S
+    a sh:NodeShape ;
+    sh:deactivated true ;
+    sh:targetClass ex:C .

@@ -1,0 +1,6 @@
+# Link-verifies-target: verifies an episode (AGSC-E315).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Procedure ; asc:verifies ex:e .
+ex:e a asc:Episode .

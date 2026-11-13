@@ -1,0 +1,6 @@
+# Item-additionalType: a domain role outside the closed list.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:a a asc:Concept ; schema:additionalType "aggregate" .

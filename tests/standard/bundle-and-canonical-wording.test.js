@@ -42,7 +42,7 @@ test('Bundle rules, slug grammar: the grammar settles case-insensitive collision
   const t = r01('AGSC-01-10');
   assert.match(t, /case-insensitive file system/u);
   assert.match(t, /`con`/u);
-  assert.match(t, /AGSC-00-20/u);
+  assert.match(t, /From 1\.1 AGSC-01-40 reports each of them as a warning; none is refused/u);
   assert.ok(t.includes(NOTE), t);
 });
 

@@ -304,11 +304,19 @@ function state(items, config, options = {}) {
  * (AGSC-04-15). This module never hashes — the caller passes the value, exactly
  * as it passes the instant — so `/now.md` is written AFTER the graph views.
  *
- * @param {{bundleVersion:string, instant:string, fingerprint:string, specVersion:string}} facts
+ * From 1.1 a `restricted` node (`facts.visibility`, AGSC-11-20) states only
+ * `built at <instant>, specification <spec_version>`.
+ *
+ * @param {{bundleVersion:string, instant:string, fingerprint:string, specVersion:string, visibility?:string}} facts
  * @returns {string}
  */
 function buildLine(facts) {
   const f = facts || {};
+  // AGSC-06-22, AGSC-11-20: a `restricted` node's page is readable by anyone, so it states
+  // neither the content version nor the fingerprint.
+  if (f.visibility === 'restricted') {
+    return `built at ${singleLine(f.instant)}, specification ${singleLine(f.specVersion)}`;
+  }
   return `content version ${singleLine(f.bundleVersion)}, built at ${singleLine(f.instant)}, `
     + `fingerprint ${singleLine(f.fingerprint)}, specification ${singleLine(f.specVersion)}`;
 }

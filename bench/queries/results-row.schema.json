@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Results file of the benchmark kit",
+  "description": "One row per reported number (docs/BENCHMARKS.md, 'The results-row contract'). A row names its model, its date, its sample size n, its metric, its value and a confidence interval [low, high]; a row that compares with another system names that system and publishes both configurations. tools/lint-claims holds a results file to the same contract and adds the two checks a JSON Schema cannot state: low is not above high, and the configuration of the other system is keyed by the name in `system`. `tools/bench --dry-run` checks that this schema accepts each of its own examples.",
+  "type": "object",
+  "required": ["rows"],
+  "properties": {
+    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } }
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "required": ["model", "date", "n", "metric", "value", "ci"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1, "description": "the model id as the provider served it, or the name of a model-free condition" },
+        "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "format": "date", "description": "the calendar day of the run, YYYY-MM-DD" },
+        "n": { "type": "integer", "minimum": 1, "description": "the sample size behind the value" },
+        "metric": { "type": "string", "minLength": 1, "description": "what was measured, for example recall@10 or citation precision" },
+        "value": { "type": "number" },
+        "ci": {
+          "type": "array",
+          "description": "the confidence interval [low, high] of the value",
+          "prefixItems": [{ "type": "number" }, { "type": "number" }],
+          "items": false,
+          "minItems": 2
+        },
+        "system": { "type": "string", "description": "the system the row measures; absent or agentic-system-core for this one" },
+        "cited_unit_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "the chunk ids an answer cited" },
+        "gold_unit_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "the gold chunk ids of the question" }
+      },
+      "if": {
+        "required": ["system"],
+        "properties": { "system": { "not": { "const": "agentic-system-core" } } }
+      },
+      "then": {
+        "required": ["configs"],
+        "properties": {
+          "configs": {
+            "type": "object",
+            "description": "one configuration per system, each an object with at least one member",
+            "required": ["agentic-system-core"],
+            "properties": { "agentic-system-core": { "type": "object", "minProperties": 1 } },
+            "minProperties": 2
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "rows": [
+        { "model": "example/model-a", "date": "2027-01-15", "n": 50, "metric": "citation precision", "value": 0.5, "ci": [0.4, 0.6],
+          "cited_unit_ids": ["3bb4f25f4fb8a70ba578e4c5ca207bf13fae7e9cb726c8ab12c7a16cc3170056"],
+          "gold_unit_ids": ["3bb4f25f4fb8a70ba578e4c5ca207bf13fae7e9cb726c8ab12c7a16cc3170056"] },
+        { "model": "example/model-a", "date": "2027-01-15", "n": 50, "metric": "recall@10", "value": 0.5, "ci": [0.4, 0.6],
+          "system": "example-system", "configs": { "agentic-system-core": { "surfaces": "chunks" }, "example-system": { "index": "default" } } }
+      ]
+    }
+  ]
+}

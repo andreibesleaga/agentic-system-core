@@ -1,0 +1,4 @@
+# The link points to a literal, so the literal is the focus node; the label is an IRI.
+@prefix ex: <https://example.org/> .
+
+ex:a ex:label ex:A ; ex:link "b" .

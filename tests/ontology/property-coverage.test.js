@@ -33,6 +33,8 @@ function emittedPredicates() {
     `${nq.NS}verifiedAt`, `${nq.NS}specVersion`, `${nq.NS}mentions`,
     // AGSC-11-12: placed by `dataset`'s `citations` option since.
     `${nq.NS}peerOrigin`,
+    // AGSC-05-40: an item's warrant (`warrantQuads`), a term of the vocabulary from 1.1.0.
+    `${nq.NS}warrant`,
   ]);
 }
 

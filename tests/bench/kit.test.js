@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const { describe, it } = require('node:test');
 
 const security = require('../../bench/security.js');
@@ -237,6 +238,43 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(r.per_tool.remember.required_difference, 1);
   });
 
+  it('AGSC-04-25, AGSC-09-16: a Bundle inside a git repository is built in process with the content version `agsc mcp` derives', async () => {
+    const dir = path.join(tmpdir(), 'bundle-git');
+    fs.cpSync(FIXTURE, dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.gitconfig-empty'), '');
+    const env = {
+      GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_AUTHOR_EMAIL: 'operator@example.org', GIT_AUTHOR_NAME: 'Operator',
+      GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_EMAIL: 'operator@example.org', GIT_COMMITTER_NAME: 'Operator',
+      GIT_CONFIG_GLOBAL: path.join(dir, '.gitconfig-empty'), GIT_CONFIG_NOSYSTEM: '1', PATH: process.env.PATH,
+    };
+    for (const args of [['init', '-q', '-b', 'main'], ['add', '-A'], ['commit', '-q', '-m', 'bundle']]) {
+      assert.equal(spawnSync('git', args, { cwd: dir, env }).status, 0, `git ${args[0]}`);
+    }
+    const r = await parity.run(dir, { calls: [['brief', { selection: [] }]], per_item: [['read', { slug: '$slug' }]] });
+    assert.equal(r.stdio_exit, 0);
+    assert.deepEqual(r.differing, []);
+    assert.equal(r.transport_equal, r.calls);
+  });
+
+  it('AGSC-09-13, AGSC-09-16: on a node with the domain layer the in-process servers read the site vocabulary, as `agsc mcp` does', async () => {
+    const { VALID } = require('../knowledge/_domain-fixtures.js');
+    const dir = path.join(tmpdir(), 'bundle-domain');
+    fs.cpSync(FIXTURE, dir, { recursive: true });
+    const config = JSON.parse(fs.readFileSync(path.join(dir, 'agsc.config.json'), 'utf8'));
+    fs.writeFileSync(path.join(dir, 'agsc.config.json'), `${JSON.stringify({ ...config, domain: { vocabulary: 'domain/vocabulary.ttl' }, spec_version: '1.1.0' }, null, 2)}\n`);
+    fs.mkdirSync(path.join(dir, 'domain'));
+    fs.writeFileSync(path.join(dir, 'domain', 'vocabulary.ttl'), VALID);
+    const handoff = path.join(dir, 'content', 'concepts', 'handoff.md');
+    fs.writeFileSync(handoff, fs.readFileSync(handoff, 'utf8').replace('\nkind: pattern\n', '\nkind: pattern\ndomain_type: Engine\ndomain_links:\n  controlled-by:\n    - supervisor\n'));
+    const spec = { calls: [['brief', { selection: ['handoff', 'supervisor'] }], ['search', { query: 'handoff' }]], per_item: [['read', { slug: '$slug' }]] };
+    const r = await parity.run(dir, spec);
+    assert.equal(r.stdio_exit, 0);
+    assert.deepEqual(r.differing, [], 'the page, the module, the projected and the local server and the stdio process agree');
+    assert.equal(r.equal, r.calls);
+    const local = parity.inProcess(dir);
+    assert.ok(local.local.call('read', { slug: 'handoff' }).body.domain, 'the local server gives the item its domain parts');
+  });
+
   it('a difference that does not have the required shape stays a difference', () => {
     const server = { body: { code: 'AGSC-E003' }, type: 'error' };
     const page = { body: { findings: [{ code: 'AGSC-E506' }], frontmatter: { prov: { origin: 'ai-generated' } } }, type: 'proposal' };
@@ -248,10 +286,12 @@ describe('bench/parity.js — one contract, two transports', () => {
     assert.equal(parity.requiredDifference('remember', {}, server, { ...page, body: { ...page.body, findings: [] } }), false);
   });
 
-  it('the committed call list covers all seven tools', () => {
+  it('the committed call list covers all ten tools', () => {
     const spec = JSON.parse(fs.readFileSync(path.join(REPO, 'bench', 'corpus', 'parity-calls.json'), 'utf8'));
     const names = new Set([...spec.calls, ...spec.per_item].map(([name]) => name));
-    for (const tool of ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']) assert.ok(names.has(tool), tool);
+    const tools = require('../../src/boundary/surfaces.js').TOOL_NAMES;
+    assert.equal(tools.length, 10);
+    for (const tool of tools) assert.ok(names.has(tool), tool);
   });
 });
 

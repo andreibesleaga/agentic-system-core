@@ -12,6 +12,8 @@ const chunks = require('../knowledge/chunks.js');
 const fix = require('../governance/fix.js');
 const { nfc, singleLine } = require('../knowledge/unicode.js');
 const { serialize } = require('../knowledge/adopt.js');
+const { provenanceLines } = require('../knowledge/provenance-header.js');
+const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** Is this a JSON object (not an array, not null)? */
 function isObject(value) {
@@ -54,4 +56,39 @@ function lessonText(body) {
   return text.trim();
 }
 
-module.exports = { isObject, itemText, lessonText, oneLine, plain, yamlString };
+/**
+ * What every export adapter reads from the Bundle first: the configuration, `site`, the Bundle
+ * IRI (`site.base` with one trailing `/`) and the prose licence (AGSC-01-29).
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @returns {{config:object, site:object, base:string, license:string}}
+ */
+function exportScope(bundle) {
+  const config = (bundle && bundle.config) || {};
+  const site = config.site || {};
+  const base = `${withoutTrailingSlashes(String(site.base || ''))}/`;
+  return { config, site, base, license: (config.bundle && config.bundle.license_prose) || chunks.TERMS };
+}
+
+/**
+ * `exportScope` with the terms of the licence and the AGSC-06-15 provenance lines an export
+ * file starts with, and the content version those lines state (AGSC-04-25), which every
+ * record of the export repeats.
+ *
+ * @param {object} bundle the loaded Bundle.
+ * @param {{instant:string, specVersion:string, bundleVersion?:string}} options
+ * @returns {{config:object, site:object, base:string, license:string, terms:string,
+ *   header:string[], bundleVersion:string}}
+ */
+function exportHeader(bundle, options) {
+  const scope = exportScope(bundle);
+  const terms = chunks.termsFor(scope.license);
+  const header = provenanceLines({
+    bundle: scope.base, bundleVersion: options.bundleVersion, generatedAt: options.instant,
+    license: scope.license, specVersion: options.specVersion, terms,
+  });
+  const bundleVersion = header.find((line) => line.startsWith('bundle_version: ')).slice(16);
+  return { ...scope, terms, header, bundleVersion };
+}
+
+module.exports = { exportHeader, exportScope, isObject, itemText, lessonText, oneLine, plain, yamlString };

@@ -3,13 +3,17 @@
 //
 // The static query fragments of AGSC-06-33 (cut from `graph.nq`), the search
 // tokenizer and the sharded index, the served header set, `security.txt`, the
-// content version, the trailing LF, the stale instant and the reproducible assets.
+// content version, the trailing LF, the stale instant and the reproducible assets;
+// the graph view of an item page (build-0032) is in _build-graph-view.js, the 1.1 route set
+// and the query page (build-0029, build-0030) in _build-query-page.js, the llms.txt v2 link
+// relations of every page (build-0033) in _build-page-links.js.
 // HANDLERS at the bottom maps each case id to its handler.
 
 const crypto = require('node:crypto');
 const nq = require('../../../src/knowledge/nquads.js');
 const search = require('../../../src/distribution/search.js');
 const headers = require('../../../src/distribution/headers.js');
+const hostRules = require('../../../src/distribution/hosts/rules.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const site = require('../../../src/distribution/site.js');
 const now = require('../../../src/distribution/now.js');
@@ -19,6 +23,9 @@ const { createClock } = require('../../../src/adapters/node-clock.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
 const surfaces = require('./_build-surfaces.js');
+const graphView = require('./_build-graph-view.js');
+const queryPage = require('./_build-query-page.js');
+const pageLinks = require('./_build-page-links.js');
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
@@ -276,7 +283,7 @@ function contentVersionCase(vector) {
       JSON.stringify(findings.map((f) => f.code))]);
     if (want.ledger_kind_of_built_commit !== undefined) {
       // The tag AGSC-04-25 could not use is still the tag AGSC-08-20a releases on.
-      const derived = ledger.derive(input.git_log, 'f'.repeat(40), '1.0.0',
+      const derived = ledger.derive(input.git_log, 'f'.repeat(40),
         { epoch: input.source_date_epoch });
       const built = derived.entries[input.git_log.length - 1];
       list.push([`${input.name} ledger kind`, built.kind === want.ledger_kind_of_built_commit,
@@ -375,7 +382,153 @@ function reproducibleAssetsCase(vector, ctx) {
   return checks(list);
 }
 
+/**
+ * build-0034 — AGSC-06-06 with AGSC-06-17: the `Cache-Control` of the versioned copies
+ * under `/ns/<major>.<minor>.<patch>/`, and nowhere else; each address pattern written
+ * once; the `Link` values in the one block of `/`; one policy for `/query/`.
+ *
+ * Stated on the header set of the Cloudflare Pages profile (AGSC-06-01): the writer's
+ * `_headers` is read back by the profile reader, which answers what the host sends.
+ */
+function immutableCacheCase(vector) {
+  const { expected, input } = vector;
+  const parsed = hostRules.parseHeaders(headers.headersFile({}, input.routes));
+  const valueOf = (path, name) => (hostRules.headersFor(parsed.sets, path)
+    .find(([seen]) => seen.toLowerCase() === name.toLowerCase()) || [])[1];
+  const immutable = (path) => /\bimmutable\b/u.test(String(valueOf(path, 'Cache-Control')));
+  const patterns = parsed.sets.map((set) => set.route);
+  const policies = (path) => parsed.sets.filter((set) => hostRules.matches(set.route, path))
+    .reduce((n, set) => n + set.headers.filter(([name]) => name === 'Content-Security-Policy').length, 0);
+  const list = [
+    ['the header file parses', parsed.findings.length === 0, JSON.stringify(parsed.findings)],
+    ['every address pattern is written once', new Set(patterns).size === patterns.length === expected.every_address_pattern_written_once,
+      JSON.stringify(patterns)],
+    ['the Link values are in the block of /', Boolean(valueOf('/', 'Link')) === expected.link_header_on_home_block,
+      JSON.stringify(valueOf('/', 'Link'))],
+  ];
+  for (const path of expected.cache_control_immutable_on) {
+    list.push([`${path} immutable`, immutable(path), JSON.stringify(valueOf(path, 'Cache-Control'))]);
+    list.push([`${path} value`, valueOf(path, 'Cache-Control') === expected.cache_control_value_on_versioned_copies,
+      JSON.stringify(valueOf(path, 'Cache-Control'))]);
+  }
+  for (const path of [...expected.cache_control_immutable_not_on, ...expected.namespace_site_addresses_not_immutable]) {
+    list.push([`${path} not immutable`, !immutable(path), JSON.stringify(valueOf(path, 'Cache-Control'))]);
+  }
+  for (const [path, count] of Object.entries(expected.content_security_policy_count)) {
+    list.push([`${path} policies`, policies(path) === count, `${policies(path)} policies for ${path}`]);
+  }
+  return checks(list);
+}
+
+/**
+ * build-0035 — AGSC-06-36 as amended for 1.1: `Policy` follows the disclosure page that
+ * `site.security_policy` declares, else `/legal/` where that route is emitted.
+ */
+function securityPolicyCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) {
+      list.push([input.name, false, 'the vector states no expected case of this name']);
+      continue;
+    }
+    const got = site.securityTxt(vector.input.base, input.instant, {
+      authored: input.authored,
+      legal: input.legal,
+      policy: input.security_policy,
+      publishing: true,
+    });
+    list.push([`${input.name} text`, got.text === want.text, JSON.stringify(got.text)]);
+    const matched = findingsMatch(want.findings || [], got.findings);
+    list.push([`${input.name} findings`, matched.ok && got.findings.length === want.findings.length, matched.detail]);
+  }
+  return checks(list);
+}
+
+/**
+ * build-0036 — AGSC-06-22 with AGSC-11-20: the pinned line of `/now/` and `/now.md`
+ * on a public node and on a restricted one, which states neither the content version
+ * nor the fingerprint.
+ */
+function nowLineCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  for (const input of vector.input.cases || []) {
+    const want = byName.get(input.name);
+    if (want === undefined) {
+      list.push([input.name, false, 'the vector states no expected case of this name']);
+      continue;
+    }
+    const facts = {
+      bundleVersion: input.bundle_version,
+      fingerprint: input.fingerprint,
+      specVersion: input.spec_version,
+      visibility: input.visibility,
+    };
+    const line = now.buildLine({ ...facts, instant: input.instant });
+    list.push([`${input.name} line`, line === want.line, JSON.stringify(line)]);
+    const page = now.nowMarkdown({ counts: {}, last_build: input.instant }, facts);
+    list.push([`${input.name} is its own paragraph`, page.includes(`\n\n${want.line}\n\n`), JSON.stringify(page)]);
+    list.push([`${input.name} content version`, page.includes('content version') === (input.visibility !== 'restricted'),
+      JSON.stringify(page)]);
+  }
+  return checks(list);
+}
+
+/** A Bundle of `item_count` copies of `item_template`, built in memory as chk-0008 builds its records. */
+function syntheticBundle(input) {
+  const items = Array.from({ length: Number(input.item_count) }, (_, i) => {
+    const slug = `i-${String(i + 1).padStart(4, '0')}`;
+    const frontmatter = { ...input.item_template, title: slug };
+    delete frontmatter.body;
+    return { body: input.item_template.body, frontmatter, path: `content/concepts/${slug}.md`, slug, type: 'concept' };
+  });
+  return {
+    config: { bundle: { id: 'synthetic' }, chunks: input.chunks, site: { ...input.site, title: 'Synthetic' } },
+    findings: [], index: { body: '', frontmatter: { title: 'Synthetic' } }, items, root: '',
+  };
+}
+
+/**
+ * build-0037 — AGSC-06-37: `/chunks-index.toon` only when the published set holds at most
+ * 500 items. This writer chooses to emit it whenever the rule lets it, so the three-item
+ * Bundle has it, with the header of the case and one row per line of `/chunks.jsonl`, in
+ * the same order; the 501-item Bundle has none, its build reports no finding for that and names
+ * the route among the ones it skipped.
+ */
+function chunkIndexBuildCase(vector) {
+  const list = [];
+  const byName = new Map((vector.expected.cases || []).map((c) => [c.name, c]));
+  const clock = createClock({ env: { SOURCE_DATE_EPOCH: '1767225600' } });
+  for (const input of vector.input.cases) {
+    const want = byName.get(input.name) || {};
+    const built = site.build(syntheticBundle(input), { clock }, { specVersion: '1.1.0' });
+    const index = built.files.get('/chunks-index.toon');
+    if (want.index_emitted === false) {
+      list.push([`${input.name} not emitted`, index === undefined, String(index)]);
+      // Its absence is no finding; the build says why it wrote none, as for every conditional route.
+      list.push([`${input.name} no fault`, built.findings.every((f) => !String(f.message).includes('chunks-index')),
+        JSON.stringify(built.findings)]);
+      list.push([`${input.name} named as skipped`, (built.skipped || []).some((why) => why.startsWith('/chunks-index.toon')),
+        JSON.stringify(built.skipped)]);
+      continue;
+    }
+    list.push([`${input.name} emitted`, (index !== undefined) === want.index_may_be_emitted, String(index)]);
+    const rows = String(index).split('\n').slice(1, -1);
+    const lines = String(built.files.get('/chunks.jsonl')).split('\n').slice(0, -1).map((l) => JSON.parse(l));
+    list.push([`${input.name} header`, String(index).split('\n')[0] === want.header_if_emitted, String(index).split('\n')[0]]);
+    list.push([`${input.name} rows follow the lines`, rows.length === lines.length
+      && rows.every((row, i) => row.trim().startsWith(`${lines[i].id.slice(0, 16)},`)), JSON.stringify(rows)]);
+  }
+  return checks(list);
+}
+
 const HANDLERS = {
+  'build-0034': immutableCacheCase,
+  'build-0035': securityPolicyCase,
+  'build-0036': nowLineCase,
+  'build-0037': chunkIndexBuildCase,
   'build-0011': fragmentIndexCase,
   'build-0013': securityTxtCase,
   'build-0014': contentVersionCase,
@@ -386,6 +539,12 @@ const HANDLERS = {
   'build-0019': shardedSearchCase,
   // The cases over the files a whole build writes (_build-surfaces.js).
   ...surfaces.HANDLERS,
+  // The graph view of an item page (_build-graph-view.js).
+  ...graphView.HANDLERS,
+  // The 1.1 route set and the query page (_build-query-page.js).
+  ...queryPage.HANDLERS,
+  // The llms.txt v2 link relations of every page (_build-page-links.js).
+  ...pageLinks.HANDLERS,
   // The search-tokenizer cases (AGSC-06-16/06-23).
   'build-0001': searchCase,
   'build-0002': searchCase,

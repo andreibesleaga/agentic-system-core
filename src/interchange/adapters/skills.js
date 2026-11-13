@@ -47,10 +47,13 @@
  * THE LICENCE CHECK. A skill's licence is read from its `license` key (an SPDX
  * identifier, or a sentence naming a bundled licence file, which is then read), else
  * from a licence file beside it, else from the plugin, else from the collection's
- * root licence file. A skill whose licence this adapter does not recognise as an
- * open licence — or that has none — is imported with `status: draft` and a warning:
- * AGSC-06-30 keeps a draft out of every published surface, so it is never published
- * until a person has read the terms and changed the status.
+ * root licence file. Every foreign skill is imported with `status: draft` and a warning
+ * (AGSC-01-22 from 1.1): AGSC-06-30 keeps a draft out of every published surface, so it
+ * is never published until a person has read the terms and changed the status. The
+ * licence is still checked: a skill whose licence this adapter does not recognise as an
+ * open licence — or that has none — is reported as such, and one whose licence is open
+ * keeps it in `x-skills-license`, which a pack that publishes the skill states in its
+ * notices block (AGSC-07-20, `composition/skills.js`).
  *
  * EXPORT — our published packs (`agsc skills`, one per Cluster, AGSC-07-19; drafts
  * never, AGSC-06-30) in each foreign layout, content-only (no script, no symlink, no
@@ -410,6 +413,28 @@ function detect(paths) {
   return found;
 }
 
+/**
+ * The layout an import with no `--layout` reads: the first detected layout (priority
+ * order) that would import at least one skill or rule. A marketplace file whose plugins
+ * all name a source outside the clone is detected first and imports nothing, so reading
+ * it would report "0 written, pass" beside a clone that holds a plain SKILL.md. When no
+ * detected layout imports anything the first detected one is returned, so the report
+ * still names what was found.
+ *
+ * @param {string[]} detected `detect()`'s answer.
+ * @param {{files:object, paths:string[]}} input
+ * @param {object} options as `plan()`'s, without `layout`.
+ * @returns {(string|undefined)} `undefined` when nothing was detected.
+ */
+function firstImportable(detected, input, options) {
+  // A refused plan (a newer major, AGSC-01-22) is chosen on purpose: the refusal is the answer.
+  const found = detected.find((layout) => {
+    const planned = plan(input, { ...options, layout });
+    return planned.refused || planned.writes.length > 0;
+  });
+  return found === undefined ? detected[0] : found;
+}
+
 /** Should the verb read this file's text? (Everything else is listed, never read.) */
 function isRelevant(path) {
   const p = String(path);
@@ -558,7 +583,7 @@ function plan(input, options) {
   const files = plain(input && input.files);
   const paths = ((input && input.paths) || Object.keys(files)).map(String).sort(compareCodePoint);
   const source = { files, paths };
-  const totals = { draft_unlicensed: 0, foreign_skipped: 0, items: 0, own: 0, records_rejected: 0, records_untrusted: 0 };
+  const totals = { draft_licensed: 0, draft_unlicensed: 0, foreign_skipped: 0, items: 0, own: 0, records_rejected: 0, records_untrusted: 0 };
   const findings = [];
   const taken = new Set();
   const items = [];
@@ -654,8 +679,9 @@ function plan(input, options) {
     fm.type = candidate.type;
     fm.title = derived.title;
     const { licence } = candidate;
-    const draft = licence.id === null;
-    if (draft) fm.status = 'draft';
+    // AGSC-01-22 (from 1.1): every foreign skill is a draft, whatever its licence.
+    const unlicensed = licence.id === null;
+    fm.status = 'draft';
     const prov = { operator: String(opts.operator === undefined ? 'human:unknown' : opts.operator), origin: 'imported' };
     const version = typeof opts.sourceVersion === 'string' ? opts.sourceVersion : candidate.version;
     if (typeof version === 'string' && VERSION.test(version)) prov.source_version = version;
@@ -673,7 +699,7 @@ function plan(input, options) {
     if (licence.declared !== null) {
       fm['x-skills-license'] = licence.id === null ? licence.declared : `${licence.id} (${licence.from})`;
     }
-    if (draft) {
+    if (unlicensed) {
       totals.draft_unlicensed += 1;
       findings.push(finding('AGSC-E506', licence.declared === null
         ? `${entry.path}: no licence was found (not in the frontmatter, beside the file, in the plugin or at the`
@@ -683,18 +709,22 @@ function plan(input, options) {
           + ' recognises; imported as status: draft, so it is never published (AGSC-06-30) until a person has read'
           + ' the terms and changes the status', { file: entry.path, line: 1, severity: 'warn' }));
     } else {
+      totals.draft_licensed += 1;
+      findings.push(finding('AGSC-E506', `${entry.path}: imported as status: draft, so it is not published (AGSC-06-30)`
+        + ` until a person changes the status, although its licence ${licence.id} is open (AGSC-01-22)`,
+      { file: entry.path, line: 1, severity: 'warn' }));
       licences.set(licence.id, (licences.get(licence.id) || 0) + 1);
     }
     const clean = neutraliseSingleLine(fm);
     items.push({ body: nfc(String(candidate.body)), fm: plain(clean.frontmatter), foreign: true, slug, type: candidate.type });
     entries.push({
-      draft,
       dropped: Array.isArray(candidate.fm['x-skills-dropped']) ? candidate.fm['x-skills-dropped'].length : 0,
       kind: entry.kind,
       layout: opts.layout,
       licence: licence.id === null ? (licence.declared === null ? 'none' : `unrecognised: ${singleLine(licence.declared)}`)
         : `${licence.id} (${licence.from})`,
       name: slug,
+      open: !unlicensed,
       path: entry.path,
       version: typeof prov.source_version === 'string' ? prov.source_version : null,
     });
@@ -744,7 +774,8 @@ function catalogue(input, options) {
   for (const e of entries) {
     lines.push(`skills: [${e.layout}] ${e.kind} ${e.name} ${e.path} licence ${e.licence}`
       + `${e.version === null ? '' : ` version ${e.version}`}${e.dropped > 0 ? ` dropped ${e.dropped}` : ''}`
-      + ` -> ${e.draft ? 'draft (never published until its licence is settled)' : 'importable'}`);
+      + ` -> ${e.open ? 'draft (open licence; published when a person changes the status)'
+        : 'draft (never published until its licence is settled)'}`);
   }
   if (links > 0) {
     lines.push(`skills: README.md is a link list: ${links} entr${links === 1 ? 'y points' : 'ies point'} to other`
@@ -866,7 +897,7 @@ function run(bundle, options) {
 
 module.exports = {
   CLAIMED_KEYS, FORMAT, LAYOUTS, NEEDS_SKILL_PACKS, OPEN_LICENSES,
-  catalogue, decodeRecord, detect, encodeRecord, flatFrontmatter, isRelevant, licenceFromText, licenceId,
+  catalogue, decodeRecord, detect, encodeRecord, firstImportable, flatFrontmatter, isRelevant, licenceFromText, licenceId,
   licenceOf, linkEntries, packBody, packLicence, plan, readFrontmatter, relativeDir, run, sources,
   supportingFiles,
 };

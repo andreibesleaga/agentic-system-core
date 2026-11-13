@@ -56,6 +56,7 @@ const TYPES = Object.freeze({
   svg: 'image/svg+xml',
   ttl: 'text/turtle; charset=utf-8',
   txt: 'text/plain; charset=utf-8',
+  wasm: 'application/wasm',
   webp: 'image/webp',
   xml: 'application/xml; charset=utf-8',
 });

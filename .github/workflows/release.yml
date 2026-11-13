@@ -25,7 +25,8 @@
 # Every action is pinned to a commit SHA with the version beside it, so that a
 # moved tag cannot change what runs (docs/PLAN.md §7). Each SHA was read from the
 # action's own repository (GitHub API `git/ref/tags/<tag>`) on 2026-09-24; all
-# three run on Node 24.
+# three run on Node 24. `actions/upload-artifact` carries the pin the other workflows
+# of this project use (v7.0.2).
 #
 # The gates below are the same ones `tools/release` checks locally and the same
 # ones the maintainer's checklist runs before the tag is pushed. test.yml runs each
@@ -123,6 +124,47 @@ jobs:
         env:
           AGSC_AUDIT: '1'
         run: node --test "tests/arch/*.test.js"
+
+  # The Claude Desktop extension of this version, built from the tagged tree with the
+  # official packer (@anthropic-ai/mcpb, exact version) and kept as a run artifact; its
+  # SHA-256 goes to the run summary, for the release notes. The job holds no token and
+  # no publish waits for it.
+  mcpb:
+    name: Claude Desktop extension (.mcpb)
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      # `npm pack` runs the prepack script (check:ts, typecheck), which needs the
+      # development dependencies; no dependency's install script runs.
+      - run: npm ci --ignore-scripts
+      - name: pack the engine into the bundle, validate, pack, print the SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          dir="$RUNNER_TEMP/mcpb"
+          mkdir -p "$dir/server"
+          cp .github/mcpb/manifest.json "$dir/manifest.json"
+          npm pack --pack-destination "$RUNNER_TEMP"
+          printf '{ "private": true }\n' > "$dir/server/package.json"
+          npm install --ignore-scripts --omit=dev --no-audit --no-fund --prefix "$dir/server" "$RUNNER_TEMP/agentic-system-core-$VERSION.tgz"
+          npx -y @anthropic-ai/mcpb@2.1.2 validate "$dir/manifest.json"
+          npx -y @anthropic-ai/mcpb@2.1.2 pack "$dir" "agentic-system-core-$VERSION.mcpb"
+          sha256sum "agentic-system-core-$VERSION.mcpb" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mcpb
+          path: agentic-system-core-*.mcpb
+          if-no-files-found: error
 
   publish:
     name: publish (npm trusted publishing)

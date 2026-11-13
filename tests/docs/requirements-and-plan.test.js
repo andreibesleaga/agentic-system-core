@@ -99,7 +99,7 @@ test('PRD: the coverage requirement names the thresholds continuous integration 
   assert.match(notes, /test \(ubuntu-latest, Node 24\)/u);
 });
 
-test('PRD: the definition of done reads at 1.0.0 with every persona, final releases and benchmarks at 1.1', () => {
+test('PRD: the definition of done reads at 1.0.0 with every persona, a DOI for each release and benchmarks at 1.1', () => {
   const prd = read('docs/PRD.md');
   const notes = section(prd, PRD_NOTES);
   assert.match(notes, /Note to §5, the definition of done/u);
@@ -110,7 +110,8 @@ test('PRD: the definition of done reads at 1.0.0 with every persona, final relea
   const last = personas.map((f) => f[8]).filter((c) => c !== '0').sort().pop();
   assert.equal(last, 'o', 'the note names persona-o as the last persona file');
   assert.ok(notes.includes('"a DOI for each release"'));
-  assert.match(notes, /a DOI for each final release/u);
+  // The software's record gets a version for each GitHub release (Zenodo, read 2026-11-11: rc.7, 1.0.0, 1.0.1).
+  assert.match(notes, /software's Zenodo record \(concept DOI\s+10\.5281\/zenodo\.23233817\) gets a version for each GitHub release/u);
   assert.match(notes, /tools\/bench/u);
   assert.ok(notes.includes('"published benchmarks are a v1.0.1 gate within 30 days of launch"'));
   // The scope line points to the exceptions note at once.

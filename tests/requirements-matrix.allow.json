@@ -9,19 +9,19 @@
   "partly": {
     "PRD-009": {
       "reason": "deferred",
-      "why": "AGSC-02-94 checks the four files init writes; the three example Concepts, the type folders and the forge workflow the row names are planned for 1.1, and ci passes only after the three steps init prints, as the note to PRD-009 in docs/PRD.md says"
+      "why": "AGSC-02-94 checks the four files init writes; the three example Concepts, the type folders and the forge workflow the row names are planned for a later MINOR (AGSC-00-20), and ci passes only after the three steps init prints, as the note to PRD-009 in docs/PRD.md says"
     },
     "PRD-043": {
       "reason": "host",
-      "why": "its one rule, AGSC-01-30, carries no check: running pull requests from forks lint-only and without secrets is done by the forge, and the cap of five open Proposals binds a channel adapter, which the reference distribution does not ship at 1.0 (planned for 1.1, as the note on the capabilities planned for 1.1 in docs/PRD.md says)"
+      "why": "its one rule, AGSC-01-30, carries no check: running pull requests from forks lint-only and without secrets is done by the forge, and the cap of five open Proposals binds a channel adapter, which the reference distribution does not ship at 1.0 (planned for a later MINOR, AGSC-00-20)"
     },
     "PRD-056": {
       "reason": "deferred",
-      "why": "the channel rules, the channels[] keys and the channel-adapter plugin kind are specified and checked, and the ask half is the ask tool; no channel adapter, ingest option or reference stub ships at 1.0, and they are planned for 1.1, as the note to PRD-056 in docs/PRD.md says"
+      "why": "the channel rules, the channels[] keys and the channel-adapter plugin kind are specified and checked, and the ask half is the ask tool; no channel adapter, ingest option or reference stub ships at 1.0, and they are planned for a later MINOR (AGSC-00-20), as the note to PRD-056 in docs/PRD.md says"
     },
     "PRD-063": {
       "reason": "deferred",
-      "why": "the rules of the agent lane are checked and refresh --agent runs with --dry-run; a live run is made by an agent outside the engine, as a client of the local tool server or the page tools, and the model adapter for the agent lane is planned for 1.1, as the note to PRD-063 in docs/PRD.md says"
+      "why": "the rules of the agent lane are checked and refresh --agent runs with --dry-run; a live run is made by an agent outside the engine, as a client of the local tool server or the page tools, and the model adapter for the agent lane is planned for a later MINOR (AGSC-00-20), as the note to PRD-063 in docs/PRD.md says"
     }
   },
   "requirements": {
@@ -35,7 +35,7 @@
     },
     "PRD-045": {
       "reason": "deferred",
-      "why": "the clone-and-rebuild half runs in the end-to-end lane over the real Bundles; the per-release archive deposit is the Zenodo record of each final release (1.0.0 and later), outside this repository, and release candidates get none; the git mirror and the weekly attested snapshot are not in place at 1.0.0 and are planned for later, with no version fixed, as the note in docs/PRD.md says"
+      "why": "the clone-and-rebuild half runs in the end-to-end lane over the real Bundles; the per-release archive deposit is the software's Zenodo record, one version per GitHub release, outside this repository; the git mirror and the weekly attested snapshot are not in place at 1.0.0 and are planned for later, with no version fixed, as the note in docs/PRD.md says"
     },
     "PRD-048": {
       "reason": "host",

@@ -226,7 +226,9 @@ test('an empty source directory is AGSC-E901 and writes nothing', () => {
 });
 
 test('AGSC-01-26a: --selection is the old-site adapter flag, not a verb requirement', () => {
-  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board']);
+  // From 1.1 the six direct memory adapters (PRD-070) join the list; none of them needs --selection.
+  assert.deepStrictEqual([...importVerb.FORMATS], ['okf', 'old-site', 'cogx', 'gabbe', 'skills', 'board', 'skos',
+    'mem0', 'letta', 'zep', 'csv', 'basic-memory', 'claude-code']);
   assert.deepStrictEqual([...importVerb.SELECTION_REQUIRED], ['old-site']);
 });
 
@@ -262,26 +264,64 @@ test('AGSC-01-26a: --selection is still required for the old-site adapter', () =
   assert.ok(result.findings.some((f) => f.code === 'AGSC-E003' && /--selection/u.test(f.message)));
 });
 
-// AGSC-01-22: a foreign record whose licence the importer cannot establish as
-// permitting publication is written `status: draft` — never published (AGSC-06-30) —
-// and reported (AGSC-E506). The licence is established by the record's own `license`,
-// the source root's index.md `license`, or a licence file at the source root. And a
-// document mapped to `concept` gets `kind: explainer`, the adoption default of
-// AGSC-02-90, so the imported item passes the node's own lint (AGSC-02-12).
-test('AGSC-01-22: an unestablished licence imports as draft; a mapped concept gets kind explainer', () => {
+// AGSC-01-22 (from 1.1): every item of a source this node does not own is written
+// `status: draft` — never published (AGSC-06-30) — and reported once (AGSC-E506), whatever
+// its licence and whatever status the source gave it. A source is this node's own when its
+// root document carries this Bundle's `base`; for such a source the 1.0 rule stays: only a
+// record whose licence the importer cannot establish as permitting publication is a draft,
+// and the licence is established by the record's own `license`, the source root's index.md
+// `license`, or a licence file at the source root. And a document mapped to `concept` gets
+// `kind: explainer`, the adoption default of AGSC-02-90, so the imported item passes the
+// node's own lint (AGSC-02-12).
+test('AGSC-01-22: a foreign record is a draft whatever its licence; a mapped concept gets kind explainer', () => {
   const doc = { path: 'playbooks/dataplex.md', text: '---\ntype: playbook\ntitle: Dataplex\n---\n\n# Dataplex\n' };
   const none = okf.plan([doc], { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
   assert.match(none.writes[0].text, /^status: draft$/mu, none.writes[0].text);
   assert.match(none.writes[0].text, /^kind: explainer$/mu);
-  assert.ok(none.findings.some((f) => f.code === 'AGSC-E506' && /licen[cs]e/u.test(f.message) && /draft/u.test(f.message)));
+  assert.ok(none.findings.some((f) => f.code === 'AGSC-E506' && /status: draft/u.test(f.message)));
 
+  // A licence established by the source root, or by a licence file, no longer publishes the record.
   const byIndex = okf.plan([doc, { path: 'index.md', text: '---\nokf_version: "0.2"\nlicense: CC-BY-4.0\n---\n' }],
     { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
-  assert.doesNotMatch(byIndex.writes[0].text, /^status: draft$/mu);
+  assert.match(byIndex.writes[0].text, /^status: draft$/mu);
   const byFile = okf.plan([doc], { itemSchema: ITEM_SCHEMA, licenceFiles: { LICENSE: 'MIT License\n\nPermission is hereby granted, free of charge' }, operator: 'human:x' });
-  assert.doesNotMatch(byFile.writes[0].text, /^status: draft$/mu);
-  const own = okf.plan([{ path: 'a.md', text: '---\ntype: concept\nkind: pattern\ntitle: A thing\nlicense: Proprietary\n---\n\nA.\n' }],
-    { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
-  assert.match(own.writes[0].text, /^status: draft$/mu, 'a licence that is not open is not established');
+  assert.match(byFile.writes[0].text, /^status: draft$/mu);
+
+  // Nor does the record's own licence, or the status it gave itself; the warning names the status it replaced.
+  const stable = { path: 'a.md', text: '---\ntype: concept\nkind: pattern\ntitle: A thing\nlicense: MIT\nstatus: stable\n---\n\nA.\n' };
+  const own = okf.plan([stable], { itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.match(own.writes[0].text, /^status: draft$/mu);
   assert.match(own.writes[0].text, /^kind: pattern$/mu, 'an authored kind is kept');
+  const warned = own.findings.filter((f) => /status: draft/u.test(f.message));
+  assert.strictEqual(warned.length, 1, 'one warning for the draft, and not a second for the licence');
+  assert.match(warned[0].message, /"stable".*not kept/u);
+});
+
+test('AGSC-01-22: a source whose root document carries this Bundle\'s base keeps the 1.0 licence rule', () => {
+  const root = (base) => ({ path: 'index.md', text: `---\nokf_version: "0.2"\nbase: ${base}\nlicense: CC-BY-4.0\n---\n` });
+  const open = { path: 'a.md', text: '---\ntype: concept\nkind: pattern\ntitle: A thing\nstatus: stable\n---\n\nA.\n' };
+  const closed = { path: 'b.md', text: '---\ntype: concept\nkind: pattern\ntitle: B thing\nlicense: Proprietary\n---\n\nB.\n' };
+  const own = okf.plan([root('https://node.example/'), open, closed],
+    { base: 'https://node.example', itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.match(own.writes.find((w) => w.path.endsWith('a.md')).text, /^status: stable$/mu, 'an established licence stays published');
+  assert.match(own.writes.find((w) => w.path.endsWith('b.md')).text, /^status: draft$/mu, 'a licence that is not open is not established');
+  const stranger = okf.plan([root('https://other.example/'), open],
+    { base: 'https://node.example', itemSchema: ITEM_SCHEMA, operator: 'human:x' });
+  assert.match(stranger.writes[0].text, /^status: draft$/mu, 'another node\'s base makes the source foreign');
+  assert.strictEqual(okf.sourceOwned([open], 'https://node.example'), false, 'no root document: foreign');
+});
+
+test('AGSC-01-22: the export of another node is foreign and arrives as drafts', () => {
+  const source = workspace();
+  exportVerb.run(ctxFor(source, { verbFlags: { okf: true } }));
+  const target = temp('agsc-okf-foreign-');
+  const config = JSON.parse(nodeFs.readFileSync(path.join(source, 'agsc.config.json'), 'utf8'));
+  config.site.base = 'https://another.example/';
+  nodeFs.writeFileSync(path.join(target, 'agsc.config.json'), JSON.stringify(config));
+  const ctx = ctxFor(target, { argv: [path.join(source, 'dist/export/okf')], verbFlags: { from: 'okf' } });
+  const imported = importVerb.run(ctx);
+  assert.deepStrictEqual(imported.findings.filter((f) => f.severity !== 'warn'), []);
+  const items = [...tree(path.join(target, 'content'))].filter(([at]) => at.endsWith('.md'));
+  assert.ok(items.length >= 3);
+  for (const [at, text] of items) assert.match(text, /^status: draft$/mu, at);
 });

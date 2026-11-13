@@ -24,6 +24,15 @@ function nfc(s) {
   return typeof s === 'string' ? s.normalize('NFC') : s;
 }
 
+/**
+ * NFC, then case folding: the form two labels are compared in (AGSC-05-21, AGSC-05-35).
+ * Upper-casing first and then lower-casing folds the characters whose lower case alone
+ * would keep them apart (`ß`, final sigma), which is the folding the labels rules use.
+ */
+function foldCase(s) {
+  return String(s).normalize('NFC').toUpperCase().toLowerCase();
+}
+
 /** Number of Unicode code points in `s` (AGSC-02-24). */
 function codePointLength(s) {
   let n = 0;
@@ -155,6 +164,7 @@ function commentSafe(s) {
 
 module.exports = {
   nfc,
+  foldCase,
   commentSafe,
   codePointLength,
   compareCodePoint,

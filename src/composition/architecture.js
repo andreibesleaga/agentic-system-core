@@ -5,7 +5,9 @@
  * fenced `yaml agsc-selection` block, never rendered as prose; a second block
  * is AGSC-E201; every slug in it MUST resolve or AGSC-E301; an optional
  * `verdict_digest`) and AGSC-07-24 (`compose --from <slug>` runs Steps 1 to 5
- * over that selection; a stale stored digest is the warning AGSC-E805).
+ * over that selection; a stale stored digest is the warning AGSC-E805); and says
+ * whether an item is a saved architecture, which is when `compose --from <slug>
+ * --brief` also writes the blueprint outputs of AGSC-07-29 (`isArchitecture`).
  * Requirements: PRD-057.
  *
  * PURE. Findings carry registered codes and are returned, never thrown.
@@ -131,8 +133,20 @@ function composeFrom(items, slug) {
   return { findings: Object.freeze(findings), result, selection: block.selection };
 }
 
+/**
+ * AGSC-02-97 / AGSC-07-29: whether `item` is a saved architecture — a Concept whose
+ * `kind` is `architecture`. Only for such an item does `compose --from <slug> --brief`
+ * write the blueprint outputs; a `--from` item of another kind writes none.
+ */
+function isArchitecture(item) {
+  const fm = frontmatterOf(item);
+  const type = typeof fm.type === 'string' ? fm.type : item && item.type;
+  return type === 'concept' && fm.kind === 'architecture';
+}
+
 module.exports = {
   composeFrom,
+  isArchitecture,
   selectionBlock,
   selectionFences,
 };

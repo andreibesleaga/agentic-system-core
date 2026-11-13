@@ -24,15 +24,16 @@ A steering file is context, not enforcement. A `CLAUDE.md` can keep the node's f
 
 ## Assistants: the tool server
 
-Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -- npx -y agsc-cli mcp`. Codex CLI: `codex mcp add my-knowledge -- npx -y agsc-cli mcp`. Cursor (`.cursor/mcp.json`) and Claude Desktop use `{"mcpServers":{"my-knowledge":{"command":"npx","args":["-y","agsc-cli","mcp"]}}}`; VS Code (`.vscode/mcp.json`) uses the top-level key `servers` with `"type": "stdio"`. The server reads the Bundle once at start; restart it after edits.
+Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -- npx -y agsc-cli mcp`. Codex CLI: `codex mcp add my-knowledge -- npx -y agsc-cli mcp`. Cursor (`.cursor/mcp.json`) and Claude Desktop use `{"mcpServers":{"my-knowledge":{"command":"npx","args":["-y","agsc-cli","mcp"]}}}`; VS Code (`.vscode/mcp.json`) uses the top-level key `servers` with `"type": "stdio"`. The server reads the Bundle once at start; restart it after edits. From 1.1, `agsc mcp --http <port>` serves the same tools over Streamable HTTP (MCP 2026-07-28 only) at `http://127.0.0.1:<port>/mcp`, loopback only.
 
 ## Skills
 
-`agsc skills` then `agsc skills install .claude/skills` (or `.agents/skills`, `.github/skills`). From a cloned collection: `agsc import <clone> --from skills --list`, then `--dry-run`, then the import. To a collection: `agsc export --to skills --layout agentskills|claude-plugin|marketplace|cursor|windsurf`. Imported skills lose scripts, hooks and tool allow-lists; a skill without an open licence arrives as a draft.
+`agsc skills` then `agsc skills install .claude/skills` (or `.agents/skills`, `.github/skills`). From a cloned collection: `agsc import <clone> --from skills --list`, then `--dry-run`, then the import. To a collection: `agsc export --to skills --layout agentskills|claude-plugin|marketplace|cursor|windsurf`. Imported skills lose scripts, hooks and tool allow-lists, and every one arrives as a draft until a person publishes it. A SKOS thesaurus: `agsc import thesaurus.ttl --from skos` (drafts; every dropped statement is a warning). `agsc export --okf --manifest` adds a manifest of file digests that `import` checks.
 
 ## Memory systems and trackers
 
 - Cognee (and what it migrated from Mem0, Letta, LangMem, Zep): `agsc export --to cogx`; back with `agsc import <dir> --from cogx`.
+- Mem0, Letta, Zep, CSV, Basic Memory and Claude Code directly (from 1.1): `agsc export --to <tool>` writes the tool's own files under `dist/export/<tool>/`, and `agsc import <dir> --from <tool>` reads them back (this node's own records exactly, any other record as a draft). Tools: `mem0`, `letta`, `zep`, `csv`, `basic-memory`, `claude-code`. Files only: the engine reaches no network, so move the files with the tool's own client (the engine's `docs/CONNECTORS.md`, Route 10).
 - One context file for a model: `agsc export --to llm-context`.
 - Trackers: `agsc import <dir> --from board --format <f> --dry-run`, then without `--dry-run`; out with `agsc export --to board --format <f>`. Formats: `agsc-board`, `github`, `gitlab`, `jira`, `trello`, `linear`, `asana`, `notion`, `obsidian-kanban`, `markdown`, `todotxt`. Every imported row is a draft until a person publishes it.
 - Diagrams: `agsc export --to mermaid`.

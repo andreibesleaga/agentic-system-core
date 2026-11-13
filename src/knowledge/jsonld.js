@@ -103,8 +103,17 @@ function termName(compact, ascNames, externalLocals) {
  */
 function context(ontologyTerms, externalProperties = []) {
   const wanted = new Set(externalProperties || []);
-  return contextFrom(ontologyTerms, EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact)));
+  const ofContextVersion = (ontologyTerms || []).filter((entry) => !TERMS_AFTER_CONTEXT_VERSION.includes(entry.term));
+  return contextFrom(ofContextVersion, EXTERNAL_PROPERTIES.filter(([compact]) => wanted.has(compact)));
 }
+
+/**
+ * AGSC-06-32: the context is generated from the vocabulary file of the context version
+ * (`ontology/agsc.ttl` as it stood at 1.0.0); these are the terms the file gained later,
+ * so the context leaves them out and `graph.jsonld` writes them as compact IRIs.
+ * `tools/gen-ns` keeps the same list (`tests/tools/gen-ns.test.js` holds the two equal).
+ */
+const TERMS_AFTER_CONTEXT_VERSION = Object.freeze(['warrant']);
 
 /**
  * The same derivation over EXPLICIT external rows `[compact, type]`, rather than
@@ -147,20 +156,26 @@ function allExternalProperties() {
 }
 
 /**
+ * AGSC-05-09: the **context version** — `1.0.0` at every version 1.x of the
+ * specification. It is not the ontology version of AGSC-05-25: the ontology moves when
+ * the vocabulary file changes, the context version only when a later MINOR releases a
+ * new context file and says so, and 1.1.0 releases none.
+ */
+const CONTEXT_VERSION = '1.0.0';
+
+/**
  * AGSC-05-09: the specification's **persistent versioned context
- * URL**, `https://w3id.org/agentic-system-core/ns/<ontology-version>/context.jsonld`.
+ * URL**, `https://w3id.org/agentic-system-core/ns/<context-version>/context.jsonld`.
  * It is a constant of the specification, resolvable by every reader at every Level,
  * so a Level-0 `graph.jsonld` — which AGSC-06-32 forbids to serve a context of its
  * own — still names one and loses no triple when a processor expands it.
  *
- * Both halves are derived, never typed: the namespace is `nquads.js`'s `NS` without
- * its `#`, and the version is the `owl:versionIRI` version of AGSC-05-25, which
- * `turtle.js#ontologyVersion` reads out of `ontology/agsc.ttl`.
- *
- * @param {string} ontologyVersion e.g. `1.0.0-draft.1`
+ * Both halves are constants: the namespace is `nquads.js`'s `NS` without its `#`, and
+ * the version is `CONTEXT_VERSION`, never the `owl:versionIRI` version of the
+ * vocabulary, so raising the ontology version changes no byte of any `graph.jsonld`.
  */
-function persistentContextUrl(ontologyVersion) {
-  return `${NS.slice(0, -1)}/${ontologyVersion}/context.jsonld`;
+function persistentContextUrl() {
+  return `${NS.slice(0, -1)}/${CONTEXT_VERSION}/context.jsonld`;
 }
 
 // ---------------------------------------------------------------- memory:// (AGSC-05-04b)
@@ -197,15 +212,21 @@ function resolveMemory(value, options = {}) {
 
 // ---------------------------------------------------------------- graph.jsonld (AGSC-05-09)
 
-/** The `@id` → term-name index of a context object, for the emitter to compact with. */
-function termIndex(contextObject) {
+/**
+ * What the emitter compacts with, read from a context object: `terms`, the `@id` → term-name
+ * index, and `prefixes`, the `[name, namespace]` pairs of its simple string definitions
+ * (`asc`, `dcterms`, … in a context of AGSC-06-32).
+ */
+function compactionTable(contextObject) {
   const definitions = (contextObject && contextObject['@context']) || {};
-  const index = new Map();
+  const terms = new Map();
+  const prefixes = [];
   for (const [name, definition] of Object.entries(definitions)) {
+    if (typeof definition === 'string' && !name.startsWith('@')) prefixes.push([name, definition]);
     if (!definition || typeof definition !== 'object' || !definition['@id']) continue;
-    index.set(expandCompact(definition['@id']), { name, type: definition['@type'] });
+    terms.set(expandCompact(definition['@id']), { name, type: definition['@type'] });
   }
-  return index;
+  return { terms, prefixes };
 }
 
 /** A sort key that orders JSON-LD values deterministically (AGSC-04-12). */
@@ -214,15 +235,42 @@ function valueKey(value) {
   return String(value['@id'] || value['@value'] || '');
 }
 
+/**
+ * An IRI the context has no term for, written as the compact IRI a JSON-LD processor writes
+ * with the context's prefixes (`asc:warrant`, `schema:additionalType`, `rdfs:subClassOf`), or as
+ * itself when no prefix covers it (the terms of a site namespace, of OWL). AGSC-06-32's round
+ * trip needs exactly this form, because re-compaction turns a full IRI under a prefix into the
+ * compact IRI. Every predicate and class of a 1.0 graph has a term, so its bytes never depend
+ * on this; the property `asc:warrant` (AGSC-05-40), which the context of the context version
+ * does not define (AGSC-05-09), and the domain triples of AGSC-05-38/05-39 do.
+ */
+function prefixed(value, table) {
+  for (const [prefix, namespace] of table.prefixes) {
+    if (value.length > namespace.length && value.startsWith(namespace)) return `${prefix}:${value.slice(namespace.length)}`;
+  }
+  return value;
+}
+
+/** A member name, a class or a datatype: the term the context defines for the IRI, else `prefixed`. */
+function compactName(value, table) {
+  const term = table.terms.get(value);
+  return term ? term.name : prefixed(value, table);
+}
+
 /** One object term, in the most compact form the term definition allows (AGSC-05-31). */
-function jsonValue(object, definition) {
+function jsonValue(object, definition, table) {
   if (object.termType === 'iri') {
-    return definition && definition.type === '@id' ? object.value : { '@id': object.value };
+    // An `@id` value is compacted as a document IRI: prefixes apply, term names do not.
+    const value = prefixed(object.value, table);
+    return definition && definition.type === '@id' ? value : { '@id': value };
   }
   if (object.lang) return { '@language': object.lang, '@value': object.value };
+  // A literal under a term that selects IRIs (a site vocabulary may give `rdfs:seeAlso` a
+  // literal, AGSC-05-38): a bare string there would be read as an IRI, so it is a value object.
+  if (definition && definition.type === '@id') return { '@type': compactName(object.datatype, table), '@value': object.value };
   if (definition && definition.type === object.datatype) return object.value;
   if (object.datatype === nq.XSD_STRING) return object.value;
-  return { '@type': object.datatype, '@value': object.value };
+  return { '@type': compactName(object.datatype, table), '@value': object.value };
 }
 
 /**
@@ -238,7 +286,7 @@ function jsonValue(object, definition) {
  */
 function toJsonLd(items, options = {}) {
   const quads = nq.dataset(items, options);
-  const index = termIndex(options.context || context([], allExternalProperties()));
+  const table = compactionTable(options.context || context([], allExternalProperties()));
   const bySubject = new Map();
   for (const q of quads) {
     if (!bySubject.has(q.subject.value)) bySubject.set(q.subject.value, new Map());
@@ -246,24 +294,24 @@ function toJsonLd(items, options = {}) {
     if (!properties.has(q.predicate.value)) properties.set(q.predicate.value, []);
     properties.get(q.predicate.value).push(q.object);
   }
+  // Nodes in code-point order of their IRIs; a node of a site vocabulary that declares a term
+  // of a prefixed namespace (`asc:Concept a owl:Class`, AGSC-05-25) is written as its compact IRI.
   const nodes = [...bySubject.keys()].sort(compareCodePoint).map((subject) => {
-    const node = { '@id': subject };
+    const node = { '@id': prefixed(subject, table) };
     const properties = bySubject.get(subject);
     const types = (properties.get(nq.RDF_TYPE) || [])
-      .map((object) => {
-        const term = index.get(object.value);
-        return term ? term.name : object.value;
-      })
-      .sort(compareCodePoint);
+      .map((object) => object.value)
+      .sort(compareCodePoint)
+      .map((value) => compactName(value, table));
     // AGSC-05-12/05-13: every node this specification instantiates carries exactly
-    // one class and there is no union type, so `@type` is a name, not a list; the
-    // list form is kept only so that a second class could never be dropped silently.
+    // one class and there is no union type, so `@type` is a name, not a list. An item
+    // with a domain type has two (AGSC-05-39), listed in code-point order of their IRIs.
     if (types.length > 0) node['@type'] = types.length === 1 ? types[0] : types;
     for (const [predicate, objects] of properties) {
       if (predicate === nq.RDF_TYPE) continue;
-      const definition = index.get(predicate);
-      const name = definition ? definition.name : predicate;
-      const values = objects.map((object) => jsonValue(object, definition))
+      const definition = table.terms.get(predicate);
+      const name = compactName(predicate, table);
+      const values = objects.map((object) => jsonValue(object, definition, table))
         .sort((a, b) => compareCodePoint(valueKey(a), valueKey(b)));
       const unique = values.filter((value, n) => values
         .findIndex((other) => valueKey(other) === valueKey(value)) === n);
@@ -302,11 +350,15 @@ function restrictTo(whole, single) {
 module.exports = {
   NS,
   EXTERNAL_PROPERTIES,
+  compactName,
+  compactionTable,
   expandCompact,
   termName,
   context,
   contextFrom,
   allExternalProperties,
+  CONTEXT_VERSION,
+  TERMS_AFTER_CONTEXT_VERSION,
   persistentContextUrl,
   resolveMemory,
   restrictTo,

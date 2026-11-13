@@ -34,13 +34,13 @@ flowchart TD
 ```
 
 Steps 1–13 are `agsc build`'s own pipeline; N8 budget
-enforcement (HTML ≤100 KB/page, ≤1 MB per index document, ≤60 s/500 items) is checked inline during
+enforcement (HTML ≤100 KB/page, ≤1 MB per index document; the ≤60 s/500 items is advisory from 1.1 and never measured) is checked inline during
 steps 7–9 and is a lint-style failure, not a numbered step. `agsc ci` wraps `build` with the
 double-build byte-compare (already step 13 internally), then `export`/`attest`, the deterministic
 re-derivation of `ledger.jsonl` into the build output, and offline chain re-verification against the
 published head (PLAN.md §6(a) steps 9–12; ADR-006). Error codes in this system have
 exactly one format, `AGSC-E<nnn>` (spec/09 §9.4).
 
-Trace: PRD-004, PRD-005, PRD-020, NFR-04 · PLAN.md §6(a), ADR-006.
+Trace: PRD-004, PRD-005, PRD-020, NFR-04 · PLAN.md §6(a), ADR-006 · step 5: AGSC-01-42 (the diagram grammar and its bytes).
 
-The build discovers items under `content/`; step 3 uses the JSON Schema library the engine pins; step 6 generates no shapes (no SHACL is generated at 1.x, AGSC-05-23).
+The build discovers items under `content/`; step 3 uses the JSON Schema library the engine pins; step 6 generates no shapes (the build runs no reasoner and no SHACL engine, AGSC-05-23; `tools/gen-shapes` writes the informative shapes, AGSC-05-24).

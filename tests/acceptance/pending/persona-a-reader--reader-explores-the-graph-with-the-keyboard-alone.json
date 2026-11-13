@@ -1,0 +1,6 @@
+{
+  "class": "conditional",
+  "needs": "browser",
+  "reason": "the explorer is drawn by its script, so moving through it by keyboard needs a browser; its pure parts (reading the graph, layout, tooltip place, keyboard state) are checked by tests/distribution/explorer/.",
+  "scenario": "Reader explores the graph with the keyboard alone"
+}

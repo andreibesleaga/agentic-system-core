@@ -331,4 +331,4 @@ const HANDLERS = Object.freeze({
   'build-0028': surfacesCase,
 });
 
-module.exports = { HANDLERS, disallowAllGroups, isJcsWithOneLf, onBuild, pageAssets, parseOr, tdmMatches };
+module.exports = { HANDLERS, disallowAllGroups, fileOf, isJcsWithOneLf, onBuild, pageAssets, parseOr, surfaceChecks, tdmMatches };

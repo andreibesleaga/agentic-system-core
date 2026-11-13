@@ -92,7 +92,8 @@ function synthesizeConfig({ directory, title, operator, specVersion, tdmCrawlers
 
 /**
  * AGSC-02-94(b): the synthesized `content/index.md` frontmatter. The description is
- * ≥ 40 code points by construction, so the AGSC-01-04 bound always holds. With no
+ * ≥ 50 code points by construction, so the AGSC-01-04 bound always holds and dataset search
+ * reads it (AGSC-06-41; amended 2026-11-10). With no
  * date (the build instant defaulted, `AGSC-E606`) the sentence carries none: a
  * 1970 date baked into authored content would be a false statement.
  */
@@ -100,8 +101,8 @@ function synthesizeIndex({ title, count, date, specVersion }) {
   return {
     base: PLACEHOLDER_BASE,
     description: date
-      ? `Adopted from ${count} Markdown files by agsc init on ${date}.`
-      : `Adopted from ${count} Markdown files by agsc init.`,
+      ? `This node was adopted from ${count} Markdown files by agsc init on ${date}.`
+      : `This node was adopted from ${count} Markdown files by agsc init.`,
     okf_version: OKF_VERSION,
     spec_version: specVersion,
     title,
@@ -226,10 +227,16 @@ function plan(files, options = {}) {
 
   // AGSC-02-91: a note outside `content/` that already carries a closed frontmatter
   // block is neither modified nor moved, so it is not an item. It is named, so that it
-  // is not left out silently (the command says so; no finding, no file changes).
+  // is not left out silently: a warning for each, and no file changes (AGSC-E506).
   const kept = adopted.files
     .filter((result, i) => !result.skipped && !result.changed && !String(markdown[i].path).startsWith('content/'))
     .map((result) => result.path);
+  for (const path of kept) {
+    findings.push(finding('AGSC-E506',
+      `${path} is left where it is: it already carries a frontmatter block, which init never changes, `
+      + 'so it is not an item; move it under content/ with a type to make it one (AGSC-02-91)',
+      { file: path, severity: 'warn' }));
+  }
 
   // AGSC-02-94: existing files are NEVER overwritten.
   const title = adopt.titleFor('', String(options.directory), slugify(String(options.directory))).title;

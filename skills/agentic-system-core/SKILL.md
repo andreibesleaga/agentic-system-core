@@ -3,7 +3,7 @@ name: agentic-system-core
 description: Use the AgenticSystemCore engine (command `agsc`) to turn a folder of Markdown into a knowledge node and to work in one as an agent — initialise, lint, build, verify, read, cite, propose, compose, export, import, skill packs and live boards. Use when a project holds `agsc.config.json`, when the user mentions agsc, a Bundle, a knowledge node, AgenticSystemCore or the Agentic Knowledge Web, or when an agent must read, cite or change a published node.
 license: CC0-1.0
 metadata:
-  version: "1.0.1"
+  version: "1.1.0"
   homepage: "https://agenticsystemcore.com/docs/how-to-use/"
   repository: "https://github.com/andreibesleaga/agentic-system-core"
 ---
@@ -39,7 +39,7 @@ The configuration keys are in `references/configuration.md`.
 
 ```bash
 node --version            # 22.13 or later
-npx -y agsc-cli --version # agsc 1.0.1; when the person wants it installed: npm install -g agentic-system-core
+npx -y agsc-cli --version # agsc 1.1.0; when the person wants it installed: npm install -g agentic-system-core
 cd <bundle>               # every verb runs in the folder that holds agsc.config.json
 ```
 
@@ -60,18 +60,18 @@ Then `agsc ci`. Until the security file exists, lint, build and ci report `AGSC-
 | Job | Command | What it does |
 |---|---|---|
 | start | `agsc init` | adopts notes as in section 3 |
-| check | `agsc lint [--fix]` | schema, links, tags, provenance, secrets; `--fix` normalises key order and bytes |
+| check | `agsc lint [--fix] [--suggest]` | schema, links, tags, provenance, secrets; `--fix` normalises key order and bytes; `--suggest` writes link proposals to `dist/suggestions.json` and touches nothing under `content/` |
 | build | `agsc build [--level <n>]` | writes `www/`: pages, `graph.jsonld`/`.nq`/`.ttl`, `search.json`, `llms.txt`, `llms-full.txt`, `now.md`, `chunks.jsonl`, `skills/`, `/.well-known/knowledge-linkset`; `boards/` when a cluster holds a task; `ledger.jsonl` inside a git repository |
 | prove | `agsc verify [--ledger]` | builds twice and compares the bytes; `--ledger` re-derives the chain from `git log` and compares it with the published one |
 | pipeline | `agsc ci [--level <n>]` | lint, two builds, verify; verdict in `dist/gate.json`; forge files under `dist/forge/` for gates with `enforce:`; leaves no `www/` |
 | change | `agsc propose <slug>` | diffs the item against its last commit; writes `dist/proposal/<n>.patch` and `<n>.md` (the pull-request body); prints the person's git commands |
 | review | `agsc review` | the lint-only review lane |
 | lane | `agsc refresh --agent <name> --dry-run [--task <t>]` | a dry run of a declared, enabled agent lane: writes its proposal with the run's Episode, calls no model; without `--dry-run` it refuses (`AGSC-E001`) because no model adapter ships |
-| export | `agsc export --markdown\|--okf\|--jsonld\|--jsonl\|--steer [--target <a,b>]\|--to <adapter> [--zip]` | adapters `llm-context`, `cogx`, `gabbe`, `skills`, `board`, `mermaid`; per-adapter flags in `agsc export --help` |
-| import | `agsc import <dir> --from <adapter> [--dry-run] [--replace]` | adapters `okf`, `cogx`, `gabbe`, `skills`, `board`, `old-site`; writes nothing over an existing item unless `--replace` |
-| assemble | `agsc compose <slug>… [--out <dir>] [--zip]`, `agsc compose --from <slug>` | a Harness under `dist/harness/<selection-hash>/`: `AGENTS.md`, `arc42.md`, `workspace.dsl`, `diagram.mmd`, `harness.jsonld`, `decisions/`, `skills/` |
+| export | `agsc export --markdown\|--okf\|--jsonld\|--jsonl\|--skos\|--closure\|--steer [--target <a,b>]\|--to <adapter> [--zip] [--manifest]` | `--skos` writes `dist/export/skos.ttl`, `--closure` writes `dist/export/closure.nt` (derived, never published); adapters `llm-context`, `cogx`, `gabbe`, `skills`, `board`, `mermaid`, and from 1.1 the memory tools `mem0`, `letta`, `zep`, `csv`, `basic-memory`, `claude-code` (files under `dist/export/<tool>/`; no network); per-adapter flags in `agsc export --help` |
+| import | `agsc import <dir> --from <adapter> [--dry-run] [--replace] [--allow-newer] [--source-version <v>]` | adapters `okf`, `cogx`, `gabbe`, `skills`, `board`, `old-site`, `skos` (`agsc import <file.ttl> --from skos`), and from 1.1 the memory tools `mem0`, `letta`, `zep`, `csv`, `basic-memory`, `claude-code` (their files, never their network); a foreign source arrives as drafts; writes nothing over an existing item unless `--replace`; `--allow-newer` reads a source written for another major version of the specification, which is otherwise refused; `--source-version` records the content version of a source that publishes none |
+| assemble | `agsc compose <slug>… [--out <dir>] [--zip] [--brief]`, `agsc compose --from <slug> [--brief]` | a Harness under `dist/harness/<selection-hash>/`: `AGENTS.md`, `arc42.md`, `workspace.dsl`, `diagram.mmd`, `harness.jsonld`, `decisions/`, `skills/`; with `--brief` (or `compose.brief`) also the brief, beside the Harness in `<dir>.companion/` (`brief.json`, `BRIEF.md`, `context.md`, `brief.mmd`), and for a saved architecture the blueprint in `<dir>.companion/blueprint/`; neither is in the Harness or its archive |
 | skills | `agsc skills`, `agsc skills install [<dir>]`, `agsc skills import <SKILL.md>` | packs under `dist/skills/`, lock-checked; install targets `.agents/skills` (default), `.claude/skills`, `.github/skills` |
-| tools | `agsc mcp [<path>]` | stdio tool server: `search`, `read`, `links`, `compose`, `ask`, `propose`, `remember` |
+| tools | `agsc mcp [<path>]` | stdio tool server: `search`, `read`, `links`, `compose`, `ask`, `propose`, `remember`, `brief`, `explain`, `check`; `--http <port>`: the same tools over Streamable HTTP on loopback (1.1) |
 | execute | `agsc run <slug> [--dry-run]`, `agsc trace <file.json>` | exit 2 (`AGSC-E004`) until `run.enabled: true`; programs must be in `run.allow[]`; `--dry-run` lists the steps; without it `run` executes nothing (no isolating runner ships) |
 | conformance | `agsc conform --level <n> [--to <path>]` | the conformance report, default `dist/conformance-report.json` |
 

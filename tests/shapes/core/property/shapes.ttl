@@ -1,0 +1,15 @@
+# sh:property inside a property shape: every author of a paper has a name.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:PaperShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path ex:author ;
+        sh:property [
+            sh:minCount 1 ;
+            sh:path ex:name
+        ]
+    ] ;
+    sh:targetClass ex:Paper .

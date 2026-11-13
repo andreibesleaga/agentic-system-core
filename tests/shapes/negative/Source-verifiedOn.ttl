@@ -1,0 +1,5 @@
+# Source-verifiedOn: a verification date that is a plain string.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:s a asc:Source ; asc:verifiedOn "yesterday" .

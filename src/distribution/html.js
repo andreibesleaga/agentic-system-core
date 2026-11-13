@@ -6,8 +6,13 @@
 // cookie, no `localStorage`, no beacon), AGSC-06-19 (the Schema.org JSON-LD),
 // AGSC-06-20 (WCAG 2.2 AA semantics and the `alt` text of a diagram), AGSC-06-24
 // (the `/about/` Quickstart, generated from the verb set so it cannot drift),
-// AGSC-06-25 (the `describedby` link in every `<head>`) and AGSC-06-18 (the Content
-// Use Terms line every prose-carrying export embeds).
+// AGSC-06-25 (the `describedby` link in every `<head>`), AGSC-06-46 (the two link
+// relations of llms.txt v2: `describedby` for `/llms.txt` on every page, `alternate`
+// `text/markdown` for the Markdown copy on an item page), AGSC-06-18 (the Content
+// Use Terms line every prose-carrying export embeds), AGSC-06-38 (it places the graph
+// view's sections, written by `graph-view.js`, on an item page) and AGSC-02-13 /
+// AGSC-02-98 (`inlineDiagram`: the author's diagram and every figure of the graph view
+// are compiled and checked against the SVG allow-list through this one function).
 //
 // The Markdown renderer is C's `knowledge/markdown.js` (AGSC-06's CommonMark
 // subset); it is INJECTED, never imported, so that this module stays a template and
@@ -21,6 +26,7 @@ const { ASSISTANCE } = require('../knowledge/provenance-header.js');
 const diagrams = require('../knowledge/diagrams.js');
 const lint = require('../governance/lint.js');
 const { WELLKNOWN_PATH, MEDIA_TYPE } = require('./discovery.js');
+const { LLMS_MEDIA_TYPE, LLMS_ROUTE } = require('./llms.js');
 const theme = require('./theme.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
@@ -200,6 +206,43 @@ function withChunkAnchors(body, anchors) {
     ? `${open}<span id="${escapeHtml(bySection.get(id))}"></span>` : open));
 }
 
+/** A present, non-blank string. */
+function hasText(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+/**
+ * The `<title>` of a page (WCAG 2.4.2, Page Titled): the page's own name, then the
+ * site's name, so a reader with several tabs or a history list can tell the pages of
+ * this node from those of another. A page named like the site — the home page —, a page
+ * with no name and a build with no site name keep the page name alone. The visible `<h1>`
+ * is never changed.
+ */
+function documentTitle(page) {
+  return !hasText(page.title) || !hasText(page.siteTitle) || page.siteTitle === page.title
+    ? page.title : `${page.title} — ${page.siteTitle}`;
+}
+
+/**
+ * The Open Graph properties of a page, so a shared link shows a preview (The Open Graph protocol,
+ * ogp.me): only on a page with a canonical address of its own, because `og:url` is that
+ * address, so the 404 page and a build with no site base carry none. `og:image` (with
+ * `og:image:alt`) only when the build is given an image (`site.js` option `ogImage`); no
+ * rule of the specification and no configuration key names one, so nothing is invented.
+ */
+function openGraph(page, canonical) {
+  if (canonical === null) return [];
+  const meta = (property, content) => `<meta property="og:${property}" content="${escapeHtml(content)}">`;
+  const lines = [meta('type', page.route === '/' ? 'website' : 'article'), meta('url', canonical), meta('title', page.title)];
+  if (hasText(page.description)) lines.push(meta('description', page.description));
+  if (hasText(page.siteTitle)) lines.push(meta('site_name', page.siteTitle));
+  if (page.ogImage != null) {
+    lines.push(meta('image', page.ogImage.url));
+    if (hasText(page.ogImage.alt)) lines.push(meta('image:alt', page.ogImage.alt));
+  }
+  return lines;
+}
+
 function shell(page) {
   const head = [
     '<!doctype html>',
@@ -207,9 +250,12 @@ function shell(page) {
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    `<title>${escapeHtml(page.title)}</title>`,
+    `<title>${escapeHtml(documentTitle(page))}</title>`,
     `<meta name="description" content="${escapeHtml(page.description)}">`,
     `<link rel="describedby" href="${WELLKNOWN_PATH}" type="${MEDIA_TYPE}">`,
+    // AGSC-06-46: the llms.txt file that covers the page, after the discovery document's
+    // link (AGSC-06-25); a reader tells the two `describedby` links apart by their type.
+    `<link rel="describedby" href="${LLMS_ROUTE}" type="${LLMS_MEDIA_TYPE}">`,
   ];
   // The canonical address of the page: stated by the caller (an item page), or the
   // configured site base plus the page's own route. A page with no route of its own
@@ -223,6 +269,9 @@ function shell(page) {
       head.push(`<link rel="alternate" href="${escapeHtml(alt.href)}" type="${escapeHtml(alt.type)}">`);
     }
   }
+  // The node's icon, when the build publishes one (`site.js#iconOf`).
+  if (page.icon != null) head.push(`<link rel="icon" href="${escapeHtml(page.icon.href)}" type="${escapeHtml(page.icon.type)}">`);
+  head.push(...openGraph(page, canonical));
   if (page.jsonld !== undefined) {
     // Serialised by the caller with JCS so the bytes are reproducible (AGSC-04-04).
     head.push(`<script type="application/ld+json">${page.jsonld}</script>`);
@@ -236,6 +285,9 @@ function shell(page) {
   // The default theme (theme.js) — one same-origin stylesheet and one small
   // same-origin script that applies the visitor's stored theme before first paint.
   head.push(`<link rel="stylesheet" href="${theme.STYLESHEET_ROUTE}">`);
+  // A page's own same-origin stylesheets come right after the theme, so they build on it
+  // (`/clusters/` loads the explorer's and the relation filter's, AGSC-06-38).
+  for (const href of (page.stylesheets || [])) head.push(`<link rel="stylesheet" href="${escapeHtml(href)}">`);
   head.push(`<script src="${theme.SCRIPT_ROUTE}"></script>`);
   head.push('</head>', '<body>');
   // The header of AgenticSystemCore.com: skip link, brand linking home, the navigation
@@ -308,8 +360,28 @@ function diagramFigure(item, source, options = {}) {
     return { html: '', findings: [] };
   }
   const slug = String(item.slug);
-  const file = `content/diagrams/${slug}.diagram`;
-  const compiled = diagrams.compile(source, { accessibleName: diagram.alt, file, slug });
+  return inlineDiagram(source, {
+    accessibleName: diagram.alt, caption: diagram.caption, file: `content/diagrams/${slug}.diagram`, item: slug, slug,
+  }, options);
+}
+
+/**
+ * One diagram source compiled, checked against AGSC-02-98's allow-list and wrapped in
+ * the page's `<figure>`: the author's diagram (above) and the figures the graph view
+ * writes (`graph-view.js`, AGSC-06-38) take this one path, so every inline picture
+ * meets the same SVG rules. A source that does not compile, or whose SVG the
+ * allow-list refuses, gives no element and the findings (`AGSC-E412`).
+ *
+ * @param {string} source the diagram source.
+ * @param {{slug:string, item:string, file:string, accessibleName?:string, caption?:string}} figure
+ *   `slug` names the SVG's own ids (`<slug>-title`, `<slug>-desc`, `<slug>-arrow`), so two
+ *   figures on one page need two slugs; `item` and `file` are what a finding names.
+ * @param {{svgViolations?:Function}} [options]
+ * @returns {{html:string, findings:Array<object>}}
+ */
+function inlineDiagram(source, figure, options = {}) {
+  const { file, slug } = figure;
+  const compiled = diagrams.compile(source, { accessibleName: figure.accessibleName, file, slug });
   if (compiled.svg === null) return { html: '', findings: compiled.findings };
 
   const check = options.svgViolations === undefined ? lint.svgViolations : options.svgViolations;
@@ -324,12 +396,12 @@ function diagramFigure(item, source, options = {}) {
         line: 1,
         message: `the compiled diagram is outside the AGSC-02-98 allow-list: ${reasons.join(', ')} (AGSC-02-13)`,
         severity: 'error',
-        slug,
+        slug: figure.item,
       }],
     };
   }
-  const caption = diagram.caption == null || diagram.caption === ''
-    ? '' : `<figcaption>${escapeHtml(diagram.caption)}</figcaption>`;
+  const caption = figure.caption == null || figure.caption === ''
+    ? '' : `<figcaption>${escapeHtml(figure.caption)}</figcaption>`;
   // `class="diagram"`: the theme keeps a diagram at no less than its drawn width on a
   // narrow screen and scrolls it inside the figure, so its labels stay readable.
   // `tabindex="0"`: a region that scrolls must be reachable by keyboard (WCAG 2.1.1,
@@ -342,7 +414,9 @@ function diagramFigure(item, source, options = {}) {
  * AGSC-11-22: a retired item keeps its page, which carries a visible notice.
  *
  * @param {object} item
- * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource}`.
+ * @param {object} options `{render, licenseProse, jsonld, canonical, diagramSource,
+ *   relations, members, membersTotal, clusterMap}` — `relations` and `clusterMap` are the
+ *   graph view's sections (`graph-view.js`, AGSC-06-38), written whole by the caller.
  * @returns {string}
  */
 /** How each `prov.origin` reads to a person (the metadata list's Provenance row). */
@@ -364,6 +438,14 @@ function itemMeta(item, options) {
   if (clusters.length > 0) {
     rows.push(`<dt>Cluster</dt><dd>${clusters.map((c) => (c.href
       ? `<a href="${escapeHtml(c.href)}">${escapeHtml(c.title)}</a>` : escapeHtml(c.title))).join(', ')}</dd>`);
+  }
+  // The item's tags, each linked to its `/tags/<tag>/` page (AGSC-06-01), so
+  // every tag page is reachable; a tag with no page (`options.tagRoutes` lacks it) stays text.
+  const tags = Array.isArray(item.tags) ? item.tags.map(String) : [];
+  if (tags.length > 0) {
+    const routes = options.tagRoutes instanceof Map ? options.tagRoutes : new Map();
+    rows.push(`<dt>Tags</dt><dd>${tags.map((t) => (routes.has(t)
+      ? `<a href="${escapeHtml(routes.get(t))}">${escapeHtml(t)}</a>` : escapeHtml(t))).join(', ')}</dd>`);
   }
   // AGSC-02-99: a task shows its state (UNSPECIFIED when none is authored).
   if (item.type === 'concept' && item.kind === 'task') {
@@ -394,15 +476,14 @@ function itemPage(item, options = {}) {
   }
   // AGSC-06-28: the anchor of each chunk that begins with a heading, on that heading.
   parts.push(withoutRepeatedTitle(withChunkAnchors(rendered.html, options.chunkAnchors), item.title == null ? item.slug : item.title));
-  // AGSC-03-01: the typed Links the item authors, each target linked — the caller
-  // passes published targets only, so a held-back item is never named here.
-  const typed = (Array.isArray(options.links) ? options.links : []).filter((l) => l.targets.length > 0);
-  if (typed.length > 0) {
-    parts.push('<h2 id="links">Links</h2>');
-    parts.push(`<ul class="links">${typed.map((l) => `<li><code>${escapeHtml(l.key)}</code>: ${l.targets
-      .map((t) => (t.href ? `<a href="${escapeHtml(t.href)}">${escapeHtml(t.title)}</a>` : escapeHtml(t.title)))
-      .join(', ')}</li>`).join('')}</ul>`);
-  }
+  // AGSC-06-38: the relations of the item — its figure, the relations table with the
+  // backlinks and the meaning of each key — under the `#links` anchor the 1.0 list of
+  // Links used. Written by `graph-view.js` from published items only; empty when the
+  // item has no relation, and then no section is shown.
+  if (typeof options.relations === 'string' && options.relations !== '') parts.push(options.relations);
+  // AGSC-07-25 / AGSC-07-24: on a saved architecture's page, the brief of its composition and the
+  // link to it on `/compose/` (`architecture-brief.js`); empty on every other page.
+  if (typeof options.brief === 'string' && options.brief !== '') parts.push(options.brief);
   // A cluster page lists its published members (the caller passes only published
   // items, so a draft never appears), each linked, with its description.
   if (Array.isArray(options.members)) {
@@ -417,6 +498,8 @@ function itemPage(item, options = {}) {
     if (Number.isInteger(options.membersTotal) && options.membersTotal > options.members.length) {
       parts.push(`<p class="members-more">The first ${options.members.length} of ${options.membersTotal} members are listed, in the published order; every member names this cluster in <a href="/search.json">the search index</a> and in <a href="/graph.jsonld">the graph</a>.</p>`);
     }
+    // AGSC-06-38: the map of the members and the links among them (`graph-view.js`).
+    if (typeof options.clusterMap === 'string' && options.clusterMap !== '') parts.push(options.clusterMap);
   }
   // AGSC-02-13: the compiled diagram, inline, before the attachments.
   if (typeof options.diagramSource === 'string') {
@@ -455,6 +538,8 @@ function itemPage(item, options = {}) {
   return shell({
     ...options,
     url: options.url,
+    // AGSC-06-46: the Markdown copy of the page (AGSC-06-02), by the relation llms.txt v2 names.
+    alternates: [{ href: `/pages/${item.slug}.md`, type: 'text/markdown' }],
     title: item.title == null ? item.slug : item.title,
     description: item.description == null ? '' : item.description,
     lang: item.lang,
@@ -469,9 +554,16 @@ function entryList(entries) {
     : `<ul>${entries.map((e) => `<li><a href="${escapeHtml(e.href)}">${escapeHtml(e.title)}</a>${Number.isInteger(e.count) ? ` (${e.count} ${e.count === 1 ? 'item' : 'items'})` : ''}${e.description ? `: ${escapeHtml(e.description)}` : ''}</li>`).join('')}</ul>`;
 }
 
-/** An index page — a type folder, a cluster list or a tag list (AGSC-06-01). */
-function indexPage({ title, description, entries }, options = {}) {
-  return shell({ ...options, title, description, body: entryList(entries) });
+/**
+ * An index page — a type folder, a cluster list or a tag list (AGSC-06-01). `after` is
+ * markup the caller wrote whole, placed after the list (the overview, the legend and the
+ * explorer of `/clusters/`, `clusters-page.js`). `empty`, also the caller's markup, replaces
+ * the empty list when there are no entries (an empty type folder, which
+ * AGSC-06-02 keeps resolving, says what it is instead of showing an empty list).
+ */
+function indexPage({ title, description, entries, after, empty }, options = {}) {
+  const list = entries.length === 0 && hasText(empty) ? `<p>${empty}</p>` : entryList(entries);
+  return shell({ ...options, title, description, body: after ? `${list}\n${after}` : list });
 }
 
 /**
@@ -552,6 +644,13 @@ const HONEST_LIMIT = 'These lints prove neither safety nor the absence of novel 
  * registration are three same-origin scripts, because AGSC-06-17's own
  * `script-src 'self'` policy admits no inline script.
  *
+ * NO LAYOUT SHIFT. Everything the controller fills — the filters, the item list, the
+ * verdict, the brief and the downloads — sits in one `#workspace` block that starts
+ * `hidden`, below a single paragraph that says what the page needs. The controller
+ * hides that paragraph and shows the block in the same step, once the list is painted,
+ * so no element a reader already sees moves while the page loads; without script the
+ * paragraph is the page, and no control that cannot work is offered.
+ *
  * @param {object} page `{assets}` — the script file names, in load order.
  * @param {object} options the shared page options.
  */
@@ -564,36 +663,51 @@ function composePage({ assets }, options = {}) {
     body: [
       '<p>Tick the items you want. The composition rules of the specification (AGSC-07) run <em>in this page</em>:',
       'no request leaves this origin, no key is needed and nothing is uploaded. The seven',
-      'Harness files are offered one download per file, or all together as one .zip.</p>',
+      'Harness files are offered one download per file, or all together as one .zip, and the brief of the',
+      'composition is shown and offered the same way (AGSC-07-25).</p>',
+      '<p id="loading" aria-live="polite">This page composes in the browser and needs JavaScript; the same result comes from <code>agsc compose</code>.</p>',
+      '<div id="workspace" hidden>',
       '<h2>Items</h2>',
-      // The filter box starts hidden and the controller shows it once the list is
-      // painted: a control that cannot work without script is not offered.
-      '<div role="search"><form class="search" id="filter-form" hidden>',
-      '<label for="filter">Filter the items</label>',
-      '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items">',
+      '<div role="search"><form class="search" id="filter-form">',
+      '<p><label for="filter">Filter the items</label>',
+      '<input id="filter" name="filter" type="search" autocomplete="off" spellcheck="false" aria-controls="items"></p>',
+      '<p><label for="filter-cluster">Cluster</label>',
+      '<select id="filter-cluster" name="cluster" aria-controls="items"><option value="">Every cluster</option></select></p>',
+      '<p><label for="filter-tag">Tag</label>',
+      '<select id="filter-tag" name="tag" aria-controls="items"><option value="">Every tag</option></select></p>',
       '</form></div>',
       '<p id="filter-status" role="status" aria-live="polite"></p>',
-      // Replaced by one checkbox per item once the controller runs; without script it
-      // says what the page needs and where the same result comes from.
-      '<ul id="items"><li>This page needs JavaScript; the same result comes from <code>agsc compose</code>.</li></ul>',
+      '<ul id="items"></ul>',
       '<h2>Verdict</h2>',
       '<p id="validity" aria-live="polite">Select one or more items to compose.</p>',
+      '<p id="verdict-words"></p>',
       // Focusable: the stylesheet lets a long verdict scroll sideways, and a scrollable
       // region must be reachable by keyboard (WCAG 2.1.1, AGSC-06-20).
       '<pre id="verdict" tabindex="0"></pre>',
-      // Both lists start hidden: without a selection (or without script) a reader
-      // would otherwise meet two empty headings. The controller reveals each one
-      // when it has something to say.
+      // Each list starts hidden: without a selection a reader would otherwise meet empty
+      // headings. The controller reveals each one when it has something to say.
       '<h3 id="explanations-heading" hidden>Why an item was added</h3>',
       '<ul id="explanations" hidden></ul>',
       '<h3 id="conflicts-heading" hidden>Conflicts</h3>',
       '<ul id="conflicts" hidden></ul>',
       '<h3 id="warnings-heading" hidden>Warnings</h3>',
       '<ul id="warnings" hidden></ul>',
+      '<h2>Brief</h2>',
+      '<p id="brief-status" aria-live="polite">The brief of the composition appears here once items are selected.</p>',
+      '<h3 id="brief-order-heading" hidden>Dependency order</h3>',
+      '<ol id="brief-order" hidden></ol>',
+      '<h3 id="brief-gaps-heading" hidden>Gaps</h3>',
+      '<ul id="brief-gaps" hidden></ul>',
+      '<h3 id="brief-checklist-heading" hidden>Checklist</h3>',
+      '<ul id="brief-checklist" hidden></ul>',
+      '<ul id="brief-files"></ul>',
+      '<p id="brief-archive" aria-live="polite"></p>',
       '<h2>Harness</h2>',
       '<p><button id="download" type="button" disabled>Build the Harness</button></p>',
       '<ul id="files"></ul>',
       '<p id="archive" aria-live="polite"></p>',
+      '<p id="skills-archive" aria-live="polite"></p>',
+      '</div>',
       scripts,
     ].join('\n'),
   });
@@ -740,7 +854,7 @@ function changelogPage(rows, options = {}) {
 module.exports = {
   homePage,
   chunkAnchors, withChunkAnchors,
-  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure,
+  shell, itemPage, indexPage, nowPage, notFoundPage, aboutPage, changelogPage, diagramFigure, inlineDiagram,
   boardPage, composePage, legalPage, searchPage,
   adoptsTerms, escapeHtml, termsLine, NO_CLAIM_SENTENCE, HONEST_LIMIT,
 };

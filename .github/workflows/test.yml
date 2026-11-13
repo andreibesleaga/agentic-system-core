@@ -2,7 +2,9 @@
 # on every pull request, every push to main or a release branch, and once a week.
 #
 #   What runs  `npm ci`, the linter (`npm run lint`), the dependency rule
-#              (`npm run arch`), `npm test` (unit, integration, architecture, the
+#              (`npm run arch`), the TypeScript parts (`npm run check:ts`: the
+#              committed files compiled from src-ts/ are what tsc writes; `npm run
+#              typecheck`: tsc --noEmit), `npm test` (unit, integration, architecture, the
 #              conformance vectors, the acceptance scenarios, the tests of the
 #              standard and the end-to-end tests that need nothing outside the
 #              repository), the rule-coverage matrix in its checking mode, and
@@ -33,13 +35,17 @@
 #              files themselves: the release binary of version 1.7.12, fetched from
 #              its GitHub release and refused unless its SHA-256 is the one recorded
 #              below (read from the release's checksums file on 2026-09-25).
-#   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the three
+#   Browser    One job on Ubuntu runs the browser lane (AGSC_BROWSER=1): the seven
 #              browser test files, none of which may skip, and the acceptance
 #              scenarios, none of which may skip for want of the browser. playwright-core 1.61.1 comes from the
 #              npm registry and chrome-headless-shell 149.0.7827.55 from Chrome for
 #              Testing, each refused unless its SHA-256 is the one recorded below
 #              (read on 2026-10-10; the registry's sha512 integrity of the same
-#              tarball agrees). The job is not a check context branch protection
+#              tarball agrees); axe-core 4.13.0, which the explorer's browser test
+#              runs over /clusters/ in both colour schemes (and the query, compose
+#              and domain-parts browser tests over their pages), comes from the npm
+#              registry the same way (read on 2026-11-03; the registry's sha512
+#              integrity agrees). The job is not a check context branch protection
 #              requires.
 #   Weekly     A scheduled run every Monday, so that a new advisory or a changed
 #              runner image is found in a week even when nothing is pushed. GitHub
@@ -108,6 +114,10 @@ jobs:
         run: npm run duplicates
       - name: architecture (the dependency rule, by dependency-cruiser)
         run: npm run arch
+      - name: TypeScript output (the committed files under src/ are what tsc writes from src-ts/)
+        run: npm run check:ts
+      - name: TypeScript types (tsc --noEmit over src-ts/)
+        run: npm run typecheck
       - name: suite
         if: ${{ !(matrix.os == 'ubuntu-latest' && matrix.node == '24') }}
         run: npm test
@@ -197,17 +207,23 @@ jobs:
           node-version: '24'
       - name: install
         run: npm ci
-      - name: fetch playwright-core 1.61.1 and chrome-headless-shell 149.0.7827.55 and verify their checksums before use
+      - name: fetch playwright-core 1.61.1, axe-core 4.13.0 and chrome-headless-shell 149.0.7827.55 and verify their checksums before use
         shell: bash
         run: |
           set -euo pipefail
-          # playwright-core has no dependencies: its tarball is unpacked outside the
-          # repository and reached through NODE_PATH, so no install script runs.
+          # playwright-core and axe-core have no dependencies: their tarballs are
+          # unpacked outside the repository and reached through NODE_PATH, so no
+          # install script runs.
           pw="$RUNNER_TEMP/pw/node_modules/playwright-core"
           mkdir -p "$pw"
           curl -sSL --retry 3 -o "$RUNNER_TEMP/playwright-core.tgz" "https://registry.npmjs.org/playwright-core/-/playwright-core-1.61.1.tgz"
           echo "3740bba3a3e93b4c7bd7c0f6e3c0e5f8cdce498bef13511e4d534cc99a8ce198  $RUNNER_TEMP/playwright-core.tgz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/playwright-core.tgz" -C "$pw" --strip-components=1
+          axe="$RUNNER_TEMP/pw/node_modules/axe-core"
+          mkdir -p "$axe"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/axe-core.tgz" "https://registry.npmjs.org/axe-core/-/axe-core-4.13.0.tgz"
+          echo "096912f6e77b4b695fc9304b7be65091db42d98de054da674ae222a11cb33f70  $RUNNER_TEMP/axe-core.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/axe-core.tgz" -C "$axe" --strip-components=1
           curl -sSL --retry 3 -o "$RUNNER_TEMP/chrome-headless-shell.zip" "https://storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/chrome-headless-shell-linux64.zip"
           echo "410c9407d5de3fea80d9398666be06f2aa09154a3fa7b327dc254e336bb4c4b7  $RUNNER_TEMP/chrome-headless-shell.zip" | sha256sum -c -
           unzip -q "$RUNNER_TEMP/chrome-headless-shell.zip" -d "$RUNNER_TEMP"
@@ -220,7 +236,7 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: |
           set -euo pipefail
-          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
+          node --test --test-reporter=tap tests/e2e/browser.test.js tests/e2e/modes/browser.test.js tests/distribution/search-page-browser.test.js tests/distribution/explorer-browser.test.js tests/distribution/query-browser.test.js tests/distribution/compose-browser.test.js tests/distribution/domain-browser.test.js tests/distribution/page-head-browser.test.js | tee "$RUNNER_TEMP/browser.tap"
           # A browser that failed to start would make these tests skip, not fail.
           grep -qx '# skipped 0' "$RUNNER_TEMP/browser.tap" || { echo "a browser test skipped: the browser lane did not run"; exit 1; }
       - name: the acceptance scenarios, with the browser present

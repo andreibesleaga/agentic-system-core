@@ -1,0 +1,12 @@
+# sh:pattern without sh:flags.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:Slugged
+    a sh:NodeShape ;
+    sh:property [
+        sh:path ex:slug ;
+        sh:pattern "^[a-z][a-z0-9-]*$"
+    ] ;
+    sh:targetClass ex:Term .

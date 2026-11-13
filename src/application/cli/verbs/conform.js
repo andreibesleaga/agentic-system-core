@@ -69,6 +69,9 @@ function run(ctx) {
  * finding. AGSC-10-05, AGSC-09-01: the report is the record of a run, never a
  * claim.
  *
+ * The code is `AGSC-E005` from 1.1 (AGSC-09-02, `conform-0006`); 1.0 used `AGSC-E001`,
+ * the code of an unknown verb.
+ *
  * A pure function of the run's results, so the mapping can be asserted without a
  * distribution that is missing a handler.
  *
@@ -79,7 +82,7 @@ function findingsFor(results) {
   return (results || [])
     .filter((r) => r.status !== 'pass' && r.withdrawn !== true)
     .map((r) => ({
-      code: 'AGSC-E001',
+      code: 'AGSC-E005',
       message: `vector ${r.id} (${r.rule}) ${r.status}: ${r.detail === undefined ? '' : r.detail}`,
       severity: 'error',
     }));

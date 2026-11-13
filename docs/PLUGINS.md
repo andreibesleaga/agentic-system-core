@@ -31,7 +31,7 @@ are `examples/plugins/`, one per kind, each with tests.
 | `surface` | serves the published projection at its own route | derived from what the writer emits, or `surfaces[]` | AGSC-11-16, AGSC-11-02 |
 | `page-tool` | answers a question inside the published page | `registerTool()` in the page | AGSC-09-16 |
 | `composition-emitter` | renders a Harness for one runtime | `compose --emit <target>` | AGSC-07-18 |
-| `checker` | validates one normative artefact, standalone | one of the nine of AGSC-09-90 | AGSC-09-90…92 |
+| `checker` | validates one normative artefact, standalone | one of the eleven of AGSC-09-90 | AGSC-09-90…92 |
 
 At 1.0 this engine loads a plugin you write for **three** of the kinds —
 the memory adapter (`export --to <path>` / `import --from <path>`), the composition
@@ -52,7 +52,7 @@ direction is specified for implementations and is not implemented by this engine
 **The `responder` surface at 1.0.** A node may declare a `responder` surface through the
 `surfaces[]` entry of `agsc.config.json` (AGSC-11-16, AGSC-11-21). No remote tool responder ships
 with this engine and no sample opens a network listener: a responder plugin, with its own
-security text and tests, is planned for 1.1.
+security text and tests, is planned for a later MINOR (AGSC-00-20).
 
 There is no ninth. If what you want to add is not one of these eight, it is a
 change to the specification and the place for it is a proposal against
@@ -142,6 +142,17 @@ the command line, each through the registry of its kind, so every plugin passes 
 | `import --from <path or package> <dir>` | `memory-adapter` | `importFiles(files, context)` → `{documents: [{path, text}], findings?}` | the documents, mapped exactly as an OKF bundle is (AGSC-01-22), with the same collision survey, `--dry-run` and `--replace` |
 | `compose <slug…> --emit <path or package>` | `composition-emitter` | `emit(harnessFiles, harnessDir)` → one `{path, text}` or a list | beside the Harness directory, never inside it (AGSC-07-18) |
 | `agsc-host emit <path or package>` | `deployment-profile` | `emit(input)` → `{site, server, findings}` (or the older `headerFile(sets)`) | host files in the build directory (never on a route) and under `dist/hosts/<name>/` or `--out` |
+
+**The memory adapters that ship with the engine.** A bare name that is one of the engine's
+own adapters selects it before any package is looked up: `cogx`, `gabbe`, `skills`, `board`,
+`skos`, `okf`, `llm-context`, `mermaid`, and from 1.1 the direct memory adapters `mem0`,
+`letta`, `zep`, `csv`, `basic-memory` and `claude-code` (`docs/CONNECTORS.md` Route 10). They
+live in `src/interchange/adapters/` and answer the engine's internal adapter interface —
+`FORMAT`, `CLAIMED_KEYS`, `run(bundle, options)` for export, `isSourceFile(path)` and
+`plan(files, options)` for import — documented in `src/REFERENCE.md` §11.3b. That interface is
+not the plugin API and makes no stability promise; a plugin you write answers `exportFiles` and
+`importFiles` as the table above says, and is held to the same rows of `KINDS`: no network,
+no file system, no executable output.
 
 `items` is a frozen copy of the published items; `files` a frozen copy of every
 file of the source directory, read by the engine; `context` carries the

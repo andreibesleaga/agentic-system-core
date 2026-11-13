@@ -93,7 +93,7 @@ test('Mode 0, an agent: search, read, links, ask with citations, propose the can
   const mcp = await kit.mcpClient(dir);
   try {
     const listed = await mcp.client.listTools();
-    assert.deepStrictEqual(listed.tools.map((t) => t.name).sort(), ['ask', 'compose', 'links', 'propose', 'read', 'remember', 'search']);
+    assert.deepStrictEqual(listed.tools.map((t) => t.name).sort(), ['ask', 'brief', 'check', 'compose', 'explain', 'links', 'propose', 'read', 'remember', 'search']);
     const remember = listed.tools.find((t) => t.name === 'remember');
     for (const name of ['usage', 'operator', 'agent', 'model']) {
       assert.ok(name in remember.inputSchema.properties, `the manifest does not name remember's ${name}`);

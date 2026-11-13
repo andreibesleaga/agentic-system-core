@@ -148,3 +148,54 @@ Both are planned as additions for 1.1, the next version. Any such addition is a 
 change: a later MINOR may add members to a chunk line (AGSC-06-29) and a reader ignores
 a member it does not know (AGSC-00-21), so a citation made under 1.0.0 stays checkable.
 The plan carries no promise of dates.
+
+## From 1.1: what a chunk line and the discovery document add
+
+*(Added for 1.1.0. The sections above describe 1.0.0 and stay as they were; where they say
+"1.0.0 does not give", this section says what 1.1 gives instead.)*
+
+A 1.1 node adds four things a citer can use. A reader of 1.0 ignores each of them
+(AGSC-00-21), so a citation made under 1.0.0 stays checkable.
+
+| Addition | Where | What it is for | Rule |
+|---|---|---|---|
+| `abstract` | every chunk line of an item that has a `description` | the item's own description, copied unchanged and never written by a model: one sentence of context for a chunk read alone | AGSC-06-29 |
+| `license_url` | every chunk line, when the node has a licence URL | a URL that resolves to the licence text: `bundle.license_url` when configured (a versioned licence address), else the node's `/legal/` page. `license` and `terms` keep their meaning | AGSC-06-44 |
+| `content_digest` | every chunk line, only when `chunks.content_digest` is `true` | the same SHA-256 as `digest`, written `sha-256=:<base64>:` as RFC 9530 writes it, for a client with an RFC 9530 library | AGSC-06-29 |
+| `digest`, `agsc-chunk-count`, `agsc-chunk-set` | the `…/rel#surface` link of the `chunks` surface in `/.well-known/knowledge-linkset`, at Level 2 and above on a node that is not `restricted` | the digest of `/chunks.jsonl` (the manifest when sharded), the number of chunk lines, and a commitment to the set: the SHA-256 over every `id` in file order, each as 64 hex characters and one LF | AGSC-06-44 |
+
+The commitment answers the first gap above. A citer who holds the lines of a version
+recomputes the count and the commitment and compares them with the discovery document:
+a line that was dropped, added or moved changes both, and a changed text changes that
+line's `digest`. None of the three says who published the file; a signature does
+(AGSC-06-08).
+
+```bash
+curl -s https://<node>/chunks.jsonl \
+  | node -e '
+let s = ""; process.stdin.on("data", (d) => { s += d; }).on("end", () => {
+  const lines = s.split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const ids = lines.map((l) => `${l.id}\n`).join("");
+  const set = require("node:crypto").createHash("sha256").update(ids).digest("base64");
+  console.log("agsc-chunk-count", lines.length);
+  console.log("agsc-chunk-set   sha-256=:" + set + ":");
+});'
+```
+
+Compare the two printed values with the `chunks` surface link of the node's discovery
+document. `tools/validate-wellknown --level 2` makes the same comparison, from a URL or
+from a build output on disk.
+
+The chunk-0 text of an item whose body begins with blank lines starts at its first line
+that is not blank (AGSC-06-45). For such an item the `text` and the `digest` of chunk 0
+differ from those a 1.0 node served for the same body; the `id` does not change. Check
+a 1.0 citation of such a chunk against the 1.0 content version it names.
+
+A 1.1 node also serves `/chunks-index.toon` (AGSC-06-37) when it publishes at most 500
+items: one row per chunk line, in the same order, with the first 16 hex characters of
+`id` and `digest`, in the TOON tabular form. It is a cheap table to find a chunk in, not
+a proof: check the full `digest` of the line before you cite it.
+
+The second gap, the algorithm name, is closed in the rule text: AGSC-06-29 now names
+SHA-256 (FIPS 180-4) over the UTF-8 bytes of the decoded `text`. The member itself stays
+bare hex, as in 1.0.

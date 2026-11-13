@@ -98,7 +98,7 @@ The agent lane goes into `agsc.config.json`. These are the four blocks to add; t
 `node -e` line merges them into the file `init` wrote (by hand is the same):
 
 ```bash demo
-agsc init > /dev/null
+agsc init > /dev/null 2>&1
 mkdir -p .well-known && printf 'Contact: mailto:security@example.org\n' > .well-known/security.txt
 cat > lanes.json <<'JSON'
 {
@@ -124,7 +124,7 @@ Commit, check and build, and read the board:
 ```bash demo
 git init -q -b main && git add -A && git commit -q -m 'the board'
 agsc lint
-agsc build > /dev/null
+agsc build > /dev/null 2>&1
 node -e 'const b = require("./www/boards/website.json"); console.log("done:", b.done); for (const t of b.tasks) console.log(t.slug, t.state, t.claimed_by || "(unclaimed)");'
 ```
 
@@ -162,7 +162,7 @@ the holder from that commit:
 ```bash demo
 node -e 'process.stdout.write(require("./claim.json").body.patch);' > claim.patch
 git apply claim.patch && git add content && git commit -q -m 'claim task-write-the-faq' -m 'Channel-Auto: worker'
-agsc build > /dev/null
+agsc build > /dev/null 2>&1
 node -e 'const b = require("./www/boards/website.json"); for (const t of b.tasks) console.log(t.slug, t.state, t.claimed_by || "(unclaimed)");'
 ```
 

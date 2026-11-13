@@ -10,7 +10,7 @@
 
 | File | What it does |
 |---|---|
-| `federation.js` | peers, the client-side federation walk, fetch safety, peer citations |
+| `federation.js` | peers, the client-side federation walk, fetch safety, peer citations, and the context maps between nodes: a typed peer's relationship and crosswalk, checked before any fetch and applied by the client only (AGSC-11-24) |
 | `visibility.js` | what a stranger may see: CORS, `no-cache`, restricted nodes, the profile link header |
 | `surfaces.js` | the surface declaration and the plugin contract: declare, pin, inherit, prove |
 

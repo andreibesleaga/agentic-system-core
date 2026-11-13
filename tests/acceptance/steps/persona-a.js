@@ -1,6 +1,6 @@
 'use strict';
 /* global document */
-// verifies AGSC-02-13, AGSC-03-04, AGSC-06-02, AGSC-06-16, AGSC-06-22, AGSC-06-25, AGSC-06-30
+// verifies AGSC-02-13, AGSC-03-04, AGSC-05-34, AGSC-06-02, AGSC-06-16, AGSC-06-20, AGSC-06-22, AGSC-06-25, AGSC-06-30, AGSC-06-38, AGSC-06-39
 // Steps of features/persona-a-reader.feature. Offline: the pages a reader opens are
 // read from the build output of the acceptance Bundle, which stands in for the
 // deployed site (the same bytes a host serves from `www/`). In a browser
@@ -12,11 +12,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ROOT, built, splitItem } = require('./_world.js');
+const { RELATIONS } = require('../../../src/knowledge/relations.js');
+const questions = require('../../../src/knowledge/questions.js');
+const { publishedItems } = require('../../distribution/_query-lane.js');
 const browser = require('./_browser.js');
 
 const BASE = 'https://agenticsystemcore.com/';
 const DRAFT = 'content/concepts/unreleased-idea.md';
 const ALT = 'Two agents of two organisations exchange a task through an agent card.';
+const RELATIONS_MEANING_REQUIRES = RELATIONS.find((r) => r.key === 'requires').meaning;
 
 /** The `<main>` element of a built page. */
 function mainOf(html) {
@@ -28,6 +32,15 @@ function mainOf(html) {
 /** Every href of an anchor, in document order. */
 function hrefs(html) {
   return [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/gu)].map((m) => m[1]);
+}
+
+/** The rows of a page's relations table under `anchor`, each as its cells without markup. */
+function relationRows(html, anchor) {
+  const at = html.indexOf(`id="${anchor}"`);
+  assert.ok(at >= 0, `the page has no #${anchor} section`);
+  const table = html.slice(html.indexOf('<table class="relations">', at), html.indexOf('</table>', at));
+  return [...table.matchAll(/<tr>(.*?)<\/tr>/gu)].slice(1)
+    .map((m) => [...m[1].matchAll(/<td>(.*?)<\/td>/gu)].map((c) => c[1].replace(/<[^>]+>/gu, '')));
 }
 
 /** The published items of the fixture, read from its files: slug → frontmatter. */
@@ -158,8 +171,9 @@ module.exports = [
     pattern: 'the page shows the SVG compiled from "content/diagrams/a2a.diagram" inline, named by "diagram.alt", and no diagram route exists (AGSC-02-13)',
     run(world) {
       const main = mainOf(world.state.page);
-      const svg = /<svg\b([^>]*)>([\s\S]*?)<\/svg>/u.exec(main);
-      assert.ok(svg, 'no inline <svg> on the page');
+      // The author's diagram: its ids carry the item's slug (the graph view's figure is `links_a2a`).
+      const svg = /<svg\b([^>]*aria-labelledby="a2a-title[^>]*)>([\s\S]*?)<\/svg>/u.exec(main);
+      assert.ok(svg, 'no inline <svg> of the author\'s diagram on the page');
       assert.match(svg[1], /role="img"/u);
       const labelled = /aria-labelledby="([^"\s]+)/u.exec(svg[1])[1];
       assert.ok(svg[2].includes(`<title id="${labelled}">${ALT}</title>`), 'the accessible name is not diagram.alt');
@@ -208,6 +222,35 @@ module.exports = [
     },
   },
   {
+    pattern: 'the page is titled "Agent2Agent Protocol — Acceptance Bundle", and the home page "/" by the node\'s name alone',
+    run(world) {
+      assert.ok(world.state.page.includes('<title>Agent2Agent Protocol — Acceptance Bundle</title>'), 'the item page title');
+      assert.ok(world.read('www/index.html').includes('<title>Acceptance Bundle</title>'), 'the home page title');
+    },
+  },
+  {
+    pattern: 'the page head names it to a link preview: "og:type" "article", "og:url" its canonical address, "og:title", "og:description" and "og:site_name", and no "og:image", because the build was given none',
+    run(world) {
+      const head = /<head>([\s\S]*?)<\/head>/u.exec(world.state.page)[1];
+      const { frontmatter } = splitItem(world.read('content/concepts/a2a.md'));
+      assert.ok(head.includes('<link rel="canonical" href="https://agenticsystemcore.com/concepts/a2a/">'), head);
+      for (const line of ['<meta property="og:type" content="article">',
+        '<meta property="og:url" content="https://agenticsystemcore.com/concepts/a2a/">',
+        '<meta property="og:title" content="Agent2Agent Protocol">',
+        `<meta property="og:description" content="${frontmatter.description}">`,
+        '<meta property="og:site_name" content="Acceptance Bundle">']) assert.ok(head.includes(line), `${line}\n${head}`);
+      assert.ok(!head.includes('og:image'), 'no image was given, so none is announced');
+    },
+  },
+  {
+    pattern: 'the page lists the tags "agents" and "protocols", each linked to its "/tags/<tag>/" page, which the build wrote',
+    run(world) {
+      const main = mainOf(world.state.page);
+      assert.ok(main.includes('<dt>Tags</dt><dd><a href="/tags/agents/">agents</a>, <a href="/tags/protocols/">protocols</a></dd>'), main);
+      for (const tag of ['agents', 'protocols']) assert.ok(fs.existsSync(path.join(world.dir, 'www', 'tags', tag, 'index.html')), tag);
+    },
+  },
+  {
     pattern: 'the reader navigates to "/clusters/protocols/"',
     run(world) {
       world.state.page = world.read('www/clusters/protocols/index.html');
@@ -236,7 +279,8 @@ module.exports = [
   {
     pattern: '"/now/" and "/now.md" carry the line "content version …, built at …, fingerprint …, specification …" (AGSC-06-22)',
     run(world) {
-      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.0\.0$/mu;
+      // `specification` names the version the acceptance Bundle declares (AGSC-06-22, AGSC-00-17).
+      const line = /^content version \S+, built at 2026-01-01T00:00:00Z, fingerprint [0-9a-f]{64}, specification 1\.1\.0$/mu;
       const md = line.exec(world.state.nowMd);
       assert.ok(md, world.state.nowMd);
       assert.ok(world.state.nowHtml.includes(`<p>${md[0]}</p>`), 'the HTML page does not carry the same line');
@@ -318,6 +362,323 @@ module.exports = [
     run(world) {
       assert.deepStrictEqual(world.state.search.offOrigin, [], 'the page requested another origin');
       assert.deepStrictEqual(world.state.search.errors, [], 'the page logged errors');
+    },
+  },
+  {
+    pattern: 'the draft "unreleased-idea" also requires "mcp" and the Bundle is built again',
+    run(world) {
+      world.write(DRAFT, world.read(DRAFT).replace('kind: pattern\n', 'kind: pattern\nrequires:\n  - mcp\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/concepts/mcp/"',
+    run(world) {
+      world.state.page = world.read('www/concepts/mcp/index.html');
+    },
+  },
+  {
+    pattern: 'the relations table lists the backlink "requires" from "Agent2Agent Protocol" with the meaning of "requires" (AGSC-06-38)',
+    run(world) {
+      const meaning = RELATIONS.find((r) => r.key === 'requires').meaning;
+      assert.deepStrictEqual(relationRows(world.state.page, 'links'), [['requires', 'incoming', 'Agent2Agent Protocol', meaning]]);
+      assert.match(world.state.page, /<td><a href="\/concepts\/a2a\/">Agent2Agent Protocol<\/a><\/td>/u);
+    },
+  },
+  {
+    pattern: 'the figure beside the table draws exactly the rows of the table and is named by its title and description',
+    run(world) {
+      const html = world.state.page;
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="links"')))[0];
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, relationRows(html, 'links').length, 'one arrow per row');
+      assert.match(svg, /role="img" aria-labelledby="links_mcp-title links_mcp-desc"/u);
+      assert.match(svg, /<title id="links_mcp-title">Relations of Model Context Protocol<\/title>/u);
+      assert.match(svg, />Agent2Agent Protocol<\/text>/u);
+    },
+  },
+  {
+    pattern: 'each arrow of the figure carries the class of its relation, "agsc-rel-requires" for the backlink, and no colour (AGSC-01-42)',
+    run(world) {
+      const html = world.state.page;
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="links"')))[0];
+      const arrows = [...svg.matchAll(/<path [^>]*marker-end=[^>]*>/gu)].map((m) => m[0]);
+      const classes = arrows.map((a) => (/class="agsc-rel-([a-z-]+)"/u.exec(a) || [])[1]);
+      assert.deepStrictEqual(classes, relationRows(html, 'links').map((row) => row[0]), 'one class per arrow, the key of its row');
+      assert.ok(classes.includes('requires'), 'the backlink from Agent2Agent Protocol');
+      assert.doesNotMatch(svg, /fill="#|stroke="#|style=/u, 'the class carries no colour');
+    },
+  },
+  {
+    pattern: 'the draft "unreleased-idea" is neither drawn nor named on the page',
+    run(world) {
+      assert.ok(!world.state.page.includes('unreleased-idea') && !world.state.page.includes('Unreleased idea'), 'the page names the draft');
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/clusters/agent-patterns/"',
+    run(world) {
+      world.state.page = world.read('www/clusters/agent-patterns/index.html');
+    },
+  },
+  {
+    pattern: 'the cluster map draws the link "requires" from "Handoff" to "Supervisor" and its table lists the same link',
+    run(world) {
+      const html = world.state.page;
+      const meaning = RELATIONS.find((r) => r.key === 'requires').meaning;
+      assert.deepStrictEqual(relationRows(html, 'member_links'), [['Handoff', 'requires', 'Supervisor', meaning]]);
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(html.indexOf('id="member_links"')))[0];
+      assert.match(svg, />Handoff<\/text>/u);
+      assert.match(svg, />Supervisor<\/text>/u);
+      assert.match(svg, />requires<\/text>/u);
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, 1, 'one arc');
+    },
+  },
+  {
+    pattern: 'the concept "handoff" also uses "mcp" and the Bundle is built again',
+    run(world) {
+      const file = 'content/concepts/handoff.md';
+      world.write(file, world.read(file).replace('---\n', '---\nuses:\n  - mcp\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the reader navigates to "/clusters/"',
+    run(world) {
+      world.state.page = world.read('www/clusters/index.html');
+    },
+  },
+  {
+    pattern: 'the overview table counts the relation "uses" from "Agent patterns" to "Protocols", and its figure draws the same arc (AGSC-06-38)',
+    run(world) {
+      const html = world.state.page;
+      const at = html.indexOf('id="overview"');
+      assert.ok(at >= 0, 'the page has no overview');
+      const table = html.slice(html.indexOf('<table class="relations">', at), html.indexOf('</table>', at));
+      const rows = [...table.matchAll(/<tr data-relation="([a-z-]+)">(.*?)<\/tr>/gu)]
+        .map((m) => [m[1], ...[...m[2].matchAll(/<td>(.*?)<\/td>/gu)].map((c) => c[1].replace(/<[^>]+>/gu, ''))]);
+      const meaning = RELATIONS.find((r) => r.key === 'uses').meaning;
+      assert.ok(rows.some((r) => JSON.stringify(r) === JSON.stringify(['uses', 'Agent patterns', 'uses', 'Protocols', '1', meaning])), JSON.stringify(rows));
+      const svg = /<svg[\s\S]*?<\/svg>/u.exec(html.slice(at))[0];
+      assert.match(svg, />Agent patterns<\/text>/u);
+      assert.match(svg, />Protocols<\/text>/u);
+      assert.match(svg, />uses<\/text>/u);
+      assert.strictEqual((svg.match(/marker-end=/gu) || []).length, new Set(rows.map((r) => `${r[1]}>${r[3]}`)).size, 'one arc per pair of clusters');
+    },
+  },
+  {
+    pattern: 'a radio button for each relation in the table filters it through the page\'s own stylesheet, with no script',
+    run(world) {
+      const html = world.state.page;
+      const keys = [...new Set([...html.matchAll(/<tr data-relation="([a-z-]+)">/gu)].map((m) => m[1]))];
+      const radios = [...html.matchAll(/<input type="radio" name="relation-filter" id="relation-filter-([a-z-]+)"/gu)].map((m) => m[1]);
+      assert.deepStrictEqual(radios, ['all', ...keys]);
+      const sheet = /<link rel="stylesheet" href="(\/clusters\/[a-z-]+\.css)">/u.exec(html);
+      assert.ok(sheet, 'the page loads no stylesheet of its own');
+      const css = world.read(`www${sheet[1]}`);
+      for (const key of keys) {
+        assert.ok(css.includes(`:has(#relation-filter-${key}:checked) ~ .table-wrap tr[data-relation]:not([data-relation="${key}"]) { display: none; }`), key);
+      }
+      // The filter is markup and rules only: the overview carries no script.
+      const overview = html.slice(html.indexOf('id="overview"'), html.indexOf('id="legend"'));
+      assert.doesNotMatch(overview, /<script|\son[a-z]+=/u);
+    },
+  },
+  {
+    pattern: 'the legend lists the fourteen relations in the order of AGSC-03-01, each with its meaning',
+    run(world) {
+      const html = world.state.page;
+      const legend = html.slice(html.indexOf('id="legend"'), html.indexOf('</table>', html.indexOf('id="legend"')));
+      const rows = [...legend.matchAll(/<tr><td>(.*?)<\/td><td>.*?<\/td><td>(.*?)<\/td><\/tr>/gu)].map((m) => [m[1], m[2]]);
+      assert.deepStrictEqual(rows, RELATIONS.map((r) => [r.key, r.meaning]));
+    },
+  },
+  {
+    pattern: 'the reader opens the explorer on "/clusters/"',
+    async run(world) {
+      const opened = await browser.open(world, '/clusters/');
+      await opened.page.waitForSelector('#explorer[data-state="ready"]', { timeout: 15000 });
+      world.state.explorer = opened;
+    },
+  },
+  {
+    pattern: 'the concept "tool-use-retries" is retired and the Bundle is built again',
+    run(world) {
+      const file = 'content/concepts/tool-use-retries.md';
+      world.write(file, world.read(file).replace('kind: pattern\n', 'kind: pattern\nstatus: retired\n'));
+      built(world);
+    },
+  },
+  {
+    pattern: 'the explorer draws every listed item and not the retired "tool-use-retries", and the page requests nothing from another origin',
+    async run(world) {
+      const { errors, offOrigin, page } = world.state.explorer;
+      // The listed items (AGSC-00-05) are those of `search.json` (AGSC-06-30); each one's
+      // IRI is the graph entry whose address ends in its slug. The graph file itself also
+      // keeps the retired item (AGSC-11-22), which must not be drawn.
+      const listed = new Set(JSON.parse(world.read('www/search.json')).docs.map((d) => d.slug));
+      const graph = JSON.parse(world.read('www/graph.jsonld'))['@graph'];
+      assert.ok(graph.some((n) => n['@id'] === `${BASE}concepts/tool-use-retries/`), 'the graph file lost the retired item');
+      const items = graph.filter((n) => {
+        const id = String(n['@id']);
+        const m = /^[a-z]+\/([a-z0-9-]+)\/$/u.exec(id.startsWith(BASE) ? id.slice(BASE.length) : '');
+        return m !== null && listed.has(m[1]);
+      });
+      const drawn = await page.evaluate(() => [...document.querySelectorAll('#explorer-picture circle')].map((c) => c.getAttribute('data-id')));
+      assert.deepStrictEqual([...drawn].sort(), items.map((n) => n['@id']).sort());
+      assert.strictEqual(items.length, listed.size, 'a listed item has no graph entry');
+      assert.ok(!drawn.some((id) => id.includes('unreleased-idea')), 'the explorer draws a draft');
+      assert.ok(!drawn.some((id) => id.includes('tool-use-retries')), 'the explorer draws the retired item');
+      assert.deepStrictEqual(offOrigin, []);
+      assert.deepStrictEqual(errors, []);
+    },
+  },
+  {
+    pattern: 'the arrow keys move through the explorer\'s list with the tooltip following, and Enter selects an item whose relations the detail panel names with their meanings',
+    async run(world) {
+      const { page } = world.state.explorer;
+      await page.focus('#explorer-items button[tabindex="0"]');
+      await page.keyboard.press('ArrowDown');
+      const state = () => page.evaluate(() => ({
+        described: (document.querySelector('[aria-describedby="explorer-tip"]') || { id: '' }).getAttribute('data-id'),
+        focused: document.activeElement.getAttribute('data-id'),
+      }));
+      const moved = await state();
+      assert.ok(moved.focused && moved.focused === moved.described, JSON.stringify(moved));
+      // Move to Handoff, which requires Supervisor, and select it.
+      const order = await page.evaluate(() => [...document.querySelectorAll('#explorer-items button[data-id]')].map((b) => b.firstChild.textContent));
+      for (let i = order.indexOf(order[1]); i < order.indexOf('Handoff'); i += 1) await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      const detail = await page.evaluate(() => document.getElementById('explorer-detail').textContent);
+      assert.match(detail, /^Handoff/u);
+      assert.ok(detail.includes('requires') && detail.includes('Supervisor'), detail);
+      assert.ok(detail.includes(RELATIONS_MEANING_REQUIRES), 'the meaning of "requires" is not shown');
+    },
+  },
+  {
+    pattern: 'Escape closes the tooltip first and then clears the selection',
+    async run(world) {
+      const { page } = world.state.explorer;
+      await page.keyboard.press('ArrowDown');
+      const look = () => page.evaluate(() => ({
+        selected: document.querySelectorAll('#explorer-picture circle.is-selected').length,
+        tip: !document.getElementById('explorer-tip').hidden,
+      }));
+      assert.deepStrictEqual(await look(), { selected: 1, tip: true });
+      await page.keyboard.press('Escape');
+      assert.deepStrictEqual(await look(), { selected: 1, tip: false });
+      await page.keyboard.press('Escape');
+      assert.deepStrictEqual(await look(), { selected: 0, tip: false });
+    },
+  },
+  {
+    pattern: 'the reader opens the query page "/query/"',
+    async run(world) {
+      const opened = await browser.open(world, '/query/', { acceptDownloads: true });
+      await opened.page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
+      world.state.query = opened;
+    },
+  },
+  {
+    pattern: 'the page loads the node\'s own graph into the engine it ships and requests nothing from another origin (AGSC-06-39)',
+    async run(world) {
+      const { errors, offOrigin, page } = world.state.query;
+      const quads = world.read('www/graph.nq').split('\n').filter((line) => line.trim() !== '').length;
+      assert.match(await page.textContent('#query-status'), new RegExp(`^The graph is loaded: ${quads} statements\\.`, 'u'));
+      assert.deepStrictEqual(offOrigin, []);
+      assert.deepStrictEqual(errors, []);
+    },
+  },
+  {
+    pattern: 'a CONSTRUCT query for the "requires" links shows "Handoff" requiring "Supervisor" as a table and as a picture, with the result offered as CSV and as JSON',
+    async run(world) {
+      const { page } = world.state.query;
+      await page.fill('#query-text', 'PREFIX dcterms: <http://purl.org/dc/terms/>\nCONSTRUCT { ?a dcterms:requires ?b } WHERE { ?a dcterms:requires ?b }');
+      await page.click('#query-run');
+      await page.waitForSelector('#query[data-result="answered"]', { timeout: 20000 });
+      const rows = await page.evaluate(() => [...document.querySelectorAll('#query-table tbody tr')].map((tr) => tr.textContent));
+      assert.ok(rows.includes(`<${BASE}concepts/handoff/>dcterms:requires<${BASE}concepts/supervisor/>`), JSON.stringify(rows));
+      const drawn = await page.evaluate(() => [...document.querySelectorAll('#query-picture circle')].map((c) => c.getAttribute('data-id')));
+      assert.ok(drawn.includes(`uri ${BASE}concepts/handoff/`) && drawn.includes(`uri ${BASE}concepts/supervisor/`), JSON.stringify(drawn));
+      assert.ok(await page.locator('#query-picture line.link').count() >= 1, 'the picture draws no link');
+      const fileOf = async (selector) => {
+        const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
+        return fs.readFileSync(await file.path(), 'utf8');
+      };
+      const csv = await fileOf('#query-csv');
+      assert.ok(csv.startsWith('subject,predicate,object\r\n'), csv);
+      assert.ok(csv.includes(`${BASE}concepts/handoff/,http://purl.org/dc/terms/requires,${BASE}concepts/supervisor/\r\n`), csv);
+      assert.deepStrictEqual(JSON.parse(await fileOf('#query-json')).head.vars, ['subject', 'predicate', 'object']);
+      world.state.queryText = await page.inputValue('#query-text');
+    },
+  },
+  {
+    pattern: 'the share link of that query opens it in the editor of a new page without running it, and no request carries the query',
+    async run(world) {
+      const href = await world.state.query.page.getAttribute('#query-share', 'href');
+      assert.ok(href.startsWith('#query='), href);
+      const opened = await browser.open(world, `/query/${href}`);
+      await opened.page.waitForSelector('#query[data-state="ready"]', { timeout: 20000 });
+      assert.strictEqual(await opened.page.inputValue('#query-text'), world.state.queryText);
+      assert.strictEqual(await opened.page.getAttribute('#query', 'data-result'), null, 'the query of a link ran by itself');
+      assert.ok(opened.requests.every((url) => !url.includes('CONSTRUCT') && !url.includes('requires')), JSON.stringify(opened.requests));
+      assert.deepStrictEqual(opened.errors, []);
+    },
+  },
+  {
+    pattern: 'a SERVICE clause after an escaped name or an IRI with a code point escape is refused before anything runs, and a SELECT of RAND() shows the same value in the table, the CSV file and the JSON file',
+    async run(world) {
+      const { page } = world.state.query;
+      const run = async (text) => {
+        await page.fill('#query-text', text);
+        await page.evaluate(() => document.getElementById('query').removeAttribute('data-result'));
+        await page.click('#query-run');
+        await page.waitForSelector('#query[data-result]', { timeout: 20000 });
+        return page.getAttribute('#query', 'data-result');
+      };
+      for (const text of ['PREFIX ex: <x:> SELECT * WHERE { ?s ?p ?o OPTIONAL { ?s ?p ex:a\\# } SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }',
+        'SELECT * WHERE { ?s ?p <x:a\\u0041#> . SERVICE SILENT <https://example.org/s> { ?x ?y ?z } }']) {
+        assert.strictEqual(await run(text), 'refused', text);
+        assert.strictEqual(await page.textContent('#query-status'), 'This page sends no query to another server: a SERVICE clause is refused.');
+      }
+      assert.strictEqual(await run('SELECT (STR(RAND()) AS ?r) WHERE {}'), 'answered');
+      const fileOf = async (selector) => {
+        const [file] = await Promise.all([page.waitForEvent('download'), page.click(selector)]);
+        return fs.readFileSync(await file.path(), 'utf8');
+      };
+      const value = JSON.parse(await fileOf('#query-json')).results.bindings[0].r.value;
+      assert.strictEqual(await fileOf('#query-csv'), `r\r\n${value}\r\n`);
+      assert.ok((await page.textContent('#query-table')).includes(value));
+    },
+  },
+  {
+    pattern: 'the example "If I choose X, what else must I take?" asks about "Agent2Agent Protocol" in its query and names it in the sentence under it (AGSC-06-39, AGSC-05-34)',
+    async run(world) {
+      const { page } = world.state.query;
+      assert.strictEqual(await page.textContent('#example-1-question'), '1. If I choose X, what else must I take?');
+      assert.match(await page.textContent('#example-1-query'), new RegExp(`\\{ <${BASE}concepts/a2a/> dcterms:requires\\+ \\?item \\}`, 'u'));
+      assert.strictEqual(await page.textContent('#example-1-note'), 'Filled in from this node: ?x is “Agent2Agent Protocol” (a2a).');
+    },
+  },
+  {
+    pattern: 'Enter on the example\'s button puts its query into the editor, and Ctrl+Enter runs it: the one row is the item "mcp", which is what the engine\'s own function answers for "a2a" (AGSC-06-20)',
+    async run(world) {
+      const { page } = world.state.query;
+      await page.focus('button[data-example="example-1-query"]');
+      await page.keyboard.press('Enter');
+      assert.strictEqual(await page.inputValue('#query-text'), await page.textContent('#example-1-query'));
+      await page.keyboard.press('Control+Enter');
+      await page.waitForSelector('#query[data-result="answered"]', { timeout: 20000 });
+      const rows = await page.evaluate(() => [...document.querySelectorAll('#query-table tbody tr')].map((tr) => tr.textContent));
+      assert.deepStrictEqual(rows, [`<${BASE}concepts/mcp/>`]);
+      assert.deepStrictEqual(questions.answer(1, publishedItems(world.dir), { subject: 'a2a' }), ['mcp']);
+    },
+  },
+  {
+    pattern: 'the vocabulary lists the fourteen relations, each with the meaning the specification gives it',
+    async run(world) {
+      const rows = await world.state.query.page.evaluate(() => [...document.querySelectorAll('#vocabulary-relation-table tbody tr')]
+        .map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent)));
+      assert.deepStrictEqual(rows, RELATIONS.map((r) => [r.key, r.property, r.meaning]));
     },
   },
 ];

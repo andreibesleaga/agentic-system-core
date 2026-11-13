@@ -17,17 +17,17 @@ different about it.
 | Reader | What you get today | Try it |
 |---|---|---|
 | A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | [guides/mode-0.md](guides/mode-0.md) |
-| A developer | a local tool server: seven tools over your folder for an assistant; nothing leaves the machine | [guides/mode-1.md](guides/mode-1.md); [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) |
-| A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | [guides/mode-2.md](guides/mode-2.md) |
-| A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | [guides/mode-3.md](guides/mode-3.md); `agsc import --from skills --list <clone>`; [USE-CASES.md](USE-CASES.md), L4 and L7 |
-| An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | [guides/mode-4.md](guides/mode-4.md); the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
-| A team of people and agents on a live board | tasks as checked files, and every cluster that holds tasks published as a board; claims and moves as proposals through the tool server, merged by a person; board files to and from ten project tools and other nodes | [guides/mode-5.md](guides/mode-5.md); [USE-CASES.md](USE-CASES.md), M7 and M8 |
-| An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) |
+| A developer | a local tool server: ten tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md); [guides/mode-1.md](guides/mode-1.md) |
+| A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | [guides/mode-2.md](guides/mode-2.md); `agsc ci`, `agsc export --steer` |
+| A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | [guides/mode-3.md](guides/mode-3.md); `agsc skills install .claude/skills`; `agsc import --from skills --list <clone>`; [USE-CASES.md](USE-CASES.md), L4 and L7 |
+| An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | [guides/mode-4.md](guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |
+| A team of people and agents on a live board | tasks as checked files, and every cluster that holds tasks published as a board; claims and moves as proposals through the tool server, merged by a person; board files to and from ten project tools and other nodes | [guides/mode-5.md](guides/mode-5.md); `agsc import --from board --format jira <folder> --dry-run`; [USE-CASES.md](USE-CASES.md), M7 and M8 |
+| An engineer implementing or checking the format | test cases with expected bytes; checkers that judge any implementation's files; a second checker in Python | `agsc conform --level 3`; `node node_modules/agentic-system-core/tools/validate-wellknown https://agenticsystemcore.com/.well-known/knowledge-linkset --level 2`; [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) |
 | A security reviewer | a ledger re-derived from git history and checked offline; an anchor file that `agsc-host verify-anchor` checks against the build; `security.txt` checked by `ci`; untrusted prose fenced in every tool result; a security corpus with its scores | `agsc verify --ledger`; [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md), [SECURITY.md](../SECURITY.md); the [security reviewer's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-m-security-reviewer.feature) |
-| A researcher | a benchmark kit that runs offline with no model and no key; the graph as JSON-LD, Turtle and N-Quads, which hold the same statements; a citation file and a conformance report to cite | [BENCHMARKS.md](BENCHMARKS.md), [MEASUREMENTS.md](MEASUREMENTS.md), [CITATION.cff](../CITATION.cff); the [researcher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-n-researcher.feature) |
+| A researcher | a benchmark kit that needs no model and no key and runs offline, all but its install measurement; the graph as JSON-LD, Turtle and N-Quads, which hold the same statements; a citation file and a conformance report to cite | [BENCHMARKS.md](BENCHMARKS.md), [MEASUREMENTS.md](MEASUREMENTS.md), [CITATION.cff](../CITATION.cff); the [researcher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-n-researcher.feature) |
 | A publisher whose content is gated | a node that says it exists while its content stays behind access control: the discovery document stays public, the bundle facts a public node shows are left out, and the checker accepts their absence | `"visibility": "restricted"` in `agsc.config.json` (AGSC-11-20 in [spec/11-boundary.md](../spec/11-boundary.md)); the [restricted publisher's scenarios](https://github.com/andreibesleaga/agentic-system-core/blob/main/features/persona-o-restricted.feature) |
-| A manager deciding whether to depend on it | what you can rely on (open licences, permanent addresses, archived releases, checks by published bytes) and what you cannot (one maintainer, no support promise, no schedule); the state of every outside step; the security policy | [GOVERNANCE.md](../GOVERNANCE.md), [SECURITY.md](../SECURITY.md), the [status page](https://agenticsystemcore.com/docs/status/) |
-| An agent or its operator reading a node | one discovery document that lists every machine file with its digest; text files, chunks and graph files at fixed addresses | `curl -s https://agenticsystemcore.com/.well-known/knowledge-linkset` |
+| A manager deciding whether to depend on it | what you can rely on (open licences, permanent addresses, archived releases, checks by published bytes) and what you cannot (one maintainer, no support promise, no schedule); the state of every outside step; the security policy | [GOVERNANCE.md](../GOVERNANCE.md), [SECURITY.md](../SECURITY.md), the [status page](https://agenticsystemcore.com/docs/status/); a live node: <https://patterns.agenticsystemcore.com/> |
+| An agent or its operator reading a node | one discovery document that lists every machine file with its digest; text files, chunks and graph files at fixed addresses | `curl -s https://agenticsystemcore.com/.well-known/knowledge-linkset`, then the engineer's checker line above |
 
 The paths below say what to read, in order, for each of these readers and a few more.
 
@@ -79,7 +79,7 @@ The paths below say what to read, in order, for each of these readers and a few 
 2. [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) — the reading order, the byte-level
    pitfalls, a ten-step path to a Level-0 node, the platform table, running the vectors.
 3. [tests/vectors/README.md](../tests/vectors/README.md) — the vector file format.
-4. [tools/README.md](../tools/README.md) — the nine standalone checkers you can run
+4. [tools/README.md](../tools/README.md) — the eleven standalone checkers you can run
    against your own output.
 5. [CONFORMANCE-STATEMENTS.md](CONFORMANCE-STATEMENTS.md) — how to say that your
    implementation conforms.
@@ -91,7 +91,9 @@ The paths below say what to read, in order, for each of these readers and a few 
 2. [plain/modes.md](plain/modes.md) — the six modes, including the live board.
 3. [spec/07-composition.md](../spec/07-composition.md) — how selected items become a
    Harness: seven kinds of file an architect or a runtime starts from; and
-   [guides/mode-4.md](guides/mode-4.md) to try it.
+   [guides/mode-4.md](guides/mode-4.md) to try it. From 1.1 a brief and, for a saved
+   architecture, C4 levels, decision records and a build plan come beside it;
+   [examples/blueprints/](../examples/blueprints/README.md) holds three worked ones.
 4. [spec/11-boundary.md](../spec/11-boundary.md) — the boundary chapter: federation,
    visibility, the agent surfaces and their plugin contract.
 5. [SECURITY-CONSIDERATIONS.md](SECURITY-CONSIDERATIONS.md) — threats, the rules that
@@ -113,7 +115,7 @@ The paths below say what to read, in order, for each of these readers and a few 
 
 1. [AGENTS.md](../AGENTS.md) — what this repository is, how to check your work, what you
    may and may not change, where everything is.
-2. [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) — `agsc mcp`: seven tools over a
+2. [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md) — `agsc mcp`: ten tools over a
    Bundle.
 3. [CONNECTORS.md](CONNECTORS.md) — every route into a node: steering files, skill
    packs, the tool server, memory archives, the page tools.

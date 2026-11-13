@@ -108,7 +108,8 @@ function loadUserConfig(userConfigPorts) {
  * working directory. Returns the root, or null when the path is not a directory.
  */
 function bundleRoot(argv, cwd) {
-  const words = argv.filter((a) => !String(a).startsWith('-'));
+  // The values of `mcp --http <port>` and `--bind <address>` (AGSC-09-09) are not the path.
+  const words = argv.filter((a, i) => !String(a).startsWith('-') && !['--http', '--bind'].includes(argv[i - 1]));
   if (words[0] !== 'mcp' || words[1] === undefined) return cwd;
   const path = require('path');
   const fs = require('fs');

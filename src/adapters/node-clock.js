@@ -55,6 +55,18 @@ function createClock(options = {}) {
   const findings = [];
   let seconds;
 
+  // AGSC-04-09: an empty value is read as unset. From 1.1 the Clock also says it was set
+  // and empty, as a warning, because that is almost always a variable that lost its value.
+  if (raw !== undefined && raw !== null && String(raw) === '') {
+    findings.push({
+      code: 'AGSC-E603',
+      col: 1,
+      file: '',
+      line: 1,
+      message: 'SOURCE_DATE_EPOCH is set but empty; it is read as unset (AGSC-04-09)',
+      severity: 'warn',
+    });
+  }
   if (raw !== undefined && raw !== null && String(raw) !== '') {
     const text = String(raw);
     if (isMalformedEpoch(text)) {

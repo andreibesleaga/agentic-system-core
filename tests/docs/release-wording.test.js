@@ -278,12 +278,14 @@ test('the reference engine\'s claim is written once, in the form of AGSC-09-01, 
   const chunks = liveCases('chunks');
   assert.ok(chunks.length > 0);
   assert.ok(claim.includes(`chunks (proved by ${chunks.join(', ')})`), 'the chunks surface does not name every live chunks case');
-  assert.ok(claim.includes('llms-txt (proved by disc-0013, disc-0014)'));
-  assert.ok(claim.includes('webmcp (proved by cli-0003)'));
-  for (const [area, id] of [['discovery', 'disc-0013'], ['discovery', 'disc-0014'], ['cli', 'cli-0003']]) {
+  // 1.1 withdrew disc-0013, disc-0014 and cli-0003; their successors prove the surfaces
+  // (disc-0024, disc-0025; cli-0026 for the ten tools, AGSC-11-21 as amended for 1.1.0).
+  assert.ok(claim.includes('llms-txt (proved by disc-0024, disc-0025)'));
+  assert.ok(claim.includes('webmcp (proved by cli-0026)'));
+  for (const [area, id] of [['discovery', 'disc-0024'], ['discovery', 'disc-0025'], ['cli', 'cli-0026']]) {
     assert.equal(caseLevel(area, id), 'required', `${id} proves a surface and must be a required case`);
   }
-  assert.doesNotMatch(claim, /\bmcp \(proved/u, 'a 1.0 writer does not declare mcp (AGSC-11-16)');
+  assert.doesNotMatch(claim, /\bmcp \(proved/u, 'the engine does not declare mcp (AGSC-11-16)');
   // No word that suggests the project vouches for itself.
   assert.doesNotMatch(claim, /certif|approved|official/iu);
 
@@ -397,4 +399,53 @@ test('the 1.0.0 change log names every rule amended after the previous release, 
   const sectionKey = noteKey(entries);
   const missing = notes.filter((n) => !sectionKey.includes(noteKey(n.text))).map((n) => `${n.rule} (${n.day})`);
   assert.deepEqual(missing, [], 'amendment notes whose text the 1.0.0 section does not carry');
+});
+
+/** The `## [Unreleased]` section and the newest dated section of the change log, each up to the next `## [`. */
+function openSections() {
+  const text = read('CHANGELOG.md');
+  const heads = [...text.matchAll(/^## \[[^\]]+\]/gmu)].map((m) => m.index);
+  return heads.slice(0, 2).map((start, k) => text.slice(start, heads[k + 1] ?? text.length));
+}
+
+test('the unreleased and the newest change-log sections name no later version and no internal work label', () => {
+  // A public entry says what changed and the rule that allows it. It names no version after
+  // the one being prepared ("1.2"; "0.1.2" or "1.2.0" of a format or package are other numbers)
+  // and none of the labels the maintainers' private planning uses for its runs, audits, blocks,
+  // work packages, inventory items, decisions and gates.
+  const forms = [
+    [/(?<![\d.])1\.2(?![\d.])/u, 'the version number 1.2'],
+    [/\b[Rr]un [A-D]\b/u, 'a planning run label ("run B")'],
+    [/\bpre-block audit\b/iu, 'a planning audit label ("pre-block audit")'],
+    [/\bB\d{1,2}[a-z]?(?:-WP\d+)?\b/u, 'a block or work package label ("B11-WP1", "B2")'],
+    [/\b[Bb]lock \d{1,2}[a-z]?\b/u, 'a block label ("block 8")'],
+    [/\b(?:I|D|N)-\d{1,3}\b/u, 'an inventory, decision or need id ("I-164", "D-15")'],
+    [/\bG-(?:ENGINE|PIN|REF|PY|SITE|DOCS|RED)\b/u, 'a gate label ("G-REF")'],
+  ];
+  const found = [];
+  for (const section of openSections()) {
+    const name = section.slice(0, section.indexOf(']') + 1);
+    section.split('\n').forEach((line, i) => {
+      for (const [pattern, what] of forms) if (pattern.test(line)) found.push(`line ${i + 1} of ${name}: ${what}`);
+    });
+  }
+  assert.deepEqual(found, [], 'a change-log section names a later version or an internal label');
+});
+
+test('no test or source file names an inventory id of the private planning', () => {
+  // A comment or a test title names the rule it holds ("AGSC-04-09"), not the private
+  // planning's inventory item ("I-122"), which no reader of this repository can look up.
+  // In the `/` form the walk below builds, also on Windows, where path.relative gives `\`.
+  const self = path.relative(ROOT, __filename).split(path.sep).join('/');
+  const found = [];
+  const visit = (rel) => {
+    for (const name of fs.readdirSync(path.join(ROOT, rel)).sort()) {
+      const child = `${rel}/${name}`;
+      if (fs.statSync(path.join(ROOT, child)).isDirectory()) { if (name !== 'vendor' && name !== 'vectors') visit(child); continue; }
+      if (!/\.(?:js|ts|mjs|cjs)$/u.test(name) || child === self) continue;
+      read(child).split('\n').forEach((line, i) => { if (/\bI-\d{3}\b/u.test(line)) found.push(`${child}:${i + 1}`); });
+    }
+  };
+  for (const root of ['src', 'tests', 'src-ts']) if (fs.existsSync(path.join(ROOT, root))) visit(root);
+  assert.deepEqual(found, [], 'an inventory id in a test or source file: name the rule instead');
 });

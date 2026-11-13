@@ -109,3 +109,27 @@ test('the skill never tells an agent to read a person\'s identity from the machi
     assert.doesNotMatch(fs.readFileSync(path.join(ROOT, rel), 'utf8'), /user\.email/u, rel);
   }
 });
+
+/** The adapter names one row of the skill's command table lists after the word "adapters". */
+function rowAdapters(job) {
+  const text = fs.readFileSync(path.join(SKILL, 'SKILL.md'), 'utf8');
+  const row = text.split('\n').find((l) => l.startsWith(`| ${job} |`));
+  assert.ok(row, `SKILL.md has no "${job}" row`);
+  const tail = row.slice(row.indexOf('adapters '));
+  return new Set([...tail.matchAll(/`([a-z][a-z0-9-]*)`/gu)].map((m) => m[1]));
+}
+
+test('the skill names every import adapter and every direct memory adapter the engine ships (AGSC-01-26a)', () => {
+  // The import verb's own list is the source; an adapter the skill leaves out is one an
+  // assistant reading the skill never offers.
+  const { FORMATS, MEMORY_ADAPTERS } = require('../../src/application/cli/verbs/import.js');
+  const imports = rowAdapters('import');
+  assert.deepEqual(FORMATS.filter((f) => !imports.has(f)), [], 'import adapters the SKILL.md import row does not name');
+  const row = fs.readFileSync(path.join(SKILL, 'SKILL.md'), 'utf8').split('\n').find((l) => l.startsWith('| import |'));
+  for (const flag of ['--allow-newer', '--source-version']) assert.ok(row.includes(flag), `the import row does not name ${flag}`);
+  const exports = rowAdapters('export');
+  const memory = MEMORY_ADAPTERS.map((a) => a.FORMAT);
+  assert.deepEqual(memory.filter((f) => !exports.has(f)), [], 'memory adapters the SKILL.md export row does not name');
+  const connectors = fs.readFileSync(path.join(SKILL, 'references', 'connectors.md'), 'utf8');
+  for (const f of memory) assert.ok(connectors.includes(`--to ${f}`) || connectors.includes(`\`${f}\``), `references/connectors.md does not name the ${f} adapter`);
+});

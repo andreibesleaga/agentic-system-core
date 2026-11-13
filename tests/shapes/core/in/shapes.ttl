@@ -1,0 +1,13 @@
+# sh:in, a list of literals, on a property shape of severity sh:Info.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:DocStatus
+    a sh:NodeShape ;
+    sh:property [
+        sh:in ( "draft" "approved" ) ;
+        sh:path ex:status ;
+        sh:severity sh:Info
+    ] ;
+    sh:targetClass ex:Doc .

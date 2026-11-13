@@ -1,0 +1,4 @@
+# The link points to an IRI and the label is a literal.
+@prefix ex: <https://example.org/> .
+
+ex:a ex:label "A" ; ex:link ex:b .

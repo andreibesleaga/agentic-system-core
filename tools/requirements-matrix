@@ -221,7 +221,7 @@ function ruleTraces(text) {
 
 /** The trace bracket of one line, or null (the reading of tools/validate-spec). */
 function traceBracket(line) {
-  const stripped = line.replace(/(\s*\*\([^()]*(?:\([^()]*\)[^()]*)*\)\*)+\s*$/u, '');
+  const stripped = line.replace(/((?<!\s)\s*\*\([^()]*(?:\([^()]*\)[^()]*)*\)\*)+\s*$/u, '');
   const match = /\[([^[\]]+)\]\s*$/u.exec(stripped);
   return match ? match[1] : null;
 }

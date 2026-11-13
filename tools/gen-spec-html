@@ -152,7 +152,7 @@ function render(root, texts) {
   for (const section of sections) {
     const file = `spec/${section.name}`;
     const text = texts.get(section.name);
-    if (/^\s*<[a-zA-Z!/]/mu.test(text)) {
+    if (hasRawHtml(text)) {
       findings.push(finding('AGSC-E109', file, 'raw HTML in a specification file (AGSC-02-20)'));
     }
     const heading = (text.match(/^#\s+(.*)$/mu) || [null, section.slug])[1];
@@ -206,10 +206,31 @@ function numberOrderedItems(fragment) {
   });
 }
 
+/**
+ * Does a line of the text open with a tag? The indent is horizontal space: with `\s`
+ * a run of blank lines was read again from every line start above the line it ends at.
+ */
+function hasRawHtml(text) {
+  return /^[^\S\n\r\u2028\u2029]*<[a-zA-Z!/]/mu.test(text);
+}
+
+/** The text without its tags: each `<...>` (up to the next `>`) becomes one space. */
+function dropTags(html) {
+  let out = '';
+  let from = 0;
+  for (;;) {
+    const open = html.indexOf('<', from);
+    const close = open < 0 ? -1 : html.indexOf('>', open + 1);
+    // With no `>` after this `<` there is none after any later `<` either.
+    if (close < 0) return out + html.slice(from);
+    out += `${html.slice(from, open)} `;
+    from = close + 1;
+  }
+}
+
 /** The visible text of an HTML fragment: tags dropped, entities decoded, spaces collapsed. */
 function plainText(fragment) {
-  return numberOrderedItems(fragment)
-    .replace(/<[^>]*>/gu, ' ')
+  return dropTags(numberOrderedItems(fragment))
     .replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);/gu, (all, name) => {
       if (name[0] === '#') {
         const cp = name[1] === 'x' ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
@@ -429,6 +450,6 @@ function run(argv, io) {
 if (require.main === module) process.exit(run(process.argv.slice(2)));
 
 module.exports = {
-  HELP, anchoredRules, canonicalize, compareCodePoint, numberOrderedItems, page, plainText, render, ruleText, run, sectionOf,
+  HELP, anchoredRules, canonicalize, compareCodePoint, dropTags, hasRawHtml, numberOrderedItems, page, plainText, render, ruleText, run, sectionOf,
   tableRows, textDrift,
 };

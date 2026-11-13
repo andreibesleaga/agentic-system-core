@@ -1,0 +1,11 @@
+[
+  {
+    "component": "MinCountConstraintComponent",
+    "focus": "https://example.org/term",
+    "message": "Every term with a kind needs a title.",
+    "path": "https://example.org/title",
+    "severity": "Violation",
+    "shape": "https://example.org/shapes#Titled > https://example.org/title",
+    "value": null
+  }
+]

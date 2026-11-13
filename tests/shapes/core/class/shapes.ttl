@@ -1,0 +1,17 @@
+# sh:class, through rdfs:subClassOf in the data; a named property shape; two messages.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:CarShape
+    a sh:NodeShape ;
+    sh:property exs:CarOwner ;
+    sh:targetClass ex:Car .
+
+exs:CarOwner
+    a sh:PropertyShape ;
+    sh:class ex:Person ;
+    sh:message "Auton omistaa henkilö."@fi , "A car is owned by a person."@en ;
+    sh:path ex:owner ;
+    sh:severity sh:Violation .

@@ -15,12 +15,23 @@ function walk(dir) {
     : [path.join(dir, e.name)]));
 }
 
-/** Every `.js` under src/, as `{ rel, dir, text, requires: string[] }`. */
+/**
+ * The vendored files of the query engine `/query/` runs in the browser (AGSC-06-39): one
+ * release of a third-party engine, byte for byte, required by no module and pinned by
+ * tests/arch/query-engine-pin.test.js. They are not the engine's code, so no scan reads them.
+ */
+const VENDOR = path.join(SRC, 'distribution', 'vendor');
+
+/**
+ * Every `.js` under src/ but the vendored engine, as `{ rel, dir, text, requires: string[] }`;
+ * the files compiled from src-ts/ are among them, so every scan reads what actually runs.
+ */
 function sources() {
-  return walk(SRC).filter((f) => f.endsWith('.js')).sort().map((absolute) => {
+  return walk(SRC).filter((f) => f.endsWith('.js') && !f.startsWith(VENDOR + path.sep)).sort().map((absolute) => {
     const rel = path.relative(ROOT, absolute).split(path.sep).join('/');
     const text = fs.readFileSync(absolute, 'utf8');
-    const requires = [...text.matchAll(/\brequire\(\s*'([^']+)'\s*\)/gu)].map((m) => m[1]);
+    // Either quote: the files tsc compiles from src-ts/ write `require("...")`.
+    const requires = [...text.matchAll(/\brequire\(\s*(['"])([^'"]+)\1\s*\)/gu)].map((m) => m[2]);
     return { absolute, rel, dir: path.relative(SRC, path.dirname(absolute)).split(path.sep).join('/'), text, requires };
   });
 }
@@ -38,4 +49,25 @@ function contextOf(file, specifier) {
   return rel.split('/')[0];
 }
 
-module.exports = { ROOT, SRC, sources, contextOf, walk };
+/**
+ * Every `src/` module the given modules require, directly or through another, by its
+ * root-relative path. The fitness tests use it to show what a build, a lint or the Harness
+ * writer can reach.
+ */
+function reachable(roots) {
+  const byRel = new Map(sources().map((file) => [file.rel, file]));
+  const seen = new Set();
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const rel = stack.pop();
+    if (seen.has(rel) || !byRel.has(rel)) continue;
+    seen.add(rel);
+    const file = byRel.get(rel);
+    for (const specifier of file.requires.filter((s) => s.startsWith('.'))) {
+      stack.push(path.relative(ROOT, path.resolve(path.dirname(file.absolute), specifier)).split(path.sep).join('/'));
+    }
+  }
+  return seen;
+}
+
+module.exports = { ROOT, SRC, sources, contextOf, reachable, walk };

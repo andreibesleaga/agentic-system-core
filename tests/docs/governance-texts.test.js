@@ -84,7 +84,10 @@ test('SECURITY.md supports the latest 1.x release and no release candidate, and 
       assert.match(supported, /^no\b/u, `"${version}" is supported`);
     }
   }
-  assert.ok(rows.some(([v, s]) => /`1\.0\.x`/u.test(v) && /^yes\b/u.test(s)), 'no "1.0.x — yes" row');
+  // The line of package.json's version is the supported one; the 1.0 line is not, once 1.1 is out.
+  const line = require('../../package.json').version.replace(/^(\d+\.\d+)\..*$/u, '$1.x');
+  assert.ok(rows.some(([v, s]) => v.includes(`\`${line}\``) && /^yes\b/u.test(s)), `no "${line} — yes" row`);
+  if (line !== '1.0.x') assert.ok(rows.some(([v, s]) => /`1\.0\.x`/u.test(v) && /^no\b/u.test(s)), 'no "1.0.x — no" row');
   assert.ok(rows.some(([v, s]) => /`1\.0\.0-rc\.\*`/u.test(v) && /^no\b/u.test(s)), 'no "1.0.0-rc.* — no" row');
   const disclosure = flat(section(text, 'Coordinated disclosure'));
   assert.match(disclosure, /fix is released first/u);

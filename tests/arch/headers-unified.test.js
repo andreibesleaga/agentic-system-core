@@ -13,9 +13,9 @@ const headers = require('../../src/distribution/headers.js');
 const visibility = require('../../src/boundary/visibility.js');
 
 /** The header map `_headers` yields for one concrete route, glob rules applied. */
-function fromHeadersFile(config, route) {
+function fromHeadersFile(config, route, routes) {
   const out = {};
-  for (const set of headers.headerSets(config)) {
+  for (const set of headers.headerSets(config, routes)) {
     if (!matches(set.route, route)) continue;
     for (const [name, value] of set.headers) out[name] = value;
   }
@@ -51,11 +51,44 @@ for (const visibilityValue of ['public', 'restricted']) {
   });
 }
 
+// The files a build writes only on a condition get their block only where the build wrote them
+// (AGSC-06-34, AGSC-06-37, AGSC-06-42); where it did, the block agrees with the boundary too.
+const CONDITIONAL = Object.freeze(['/.well-known/agent-card.json', '/.well-known/ard.json',
+  '/.well-known/ai-catalog.json', '/chunks-index.toon']);
+
+for (const visibilityValue of ['public', 'restricted']) {
+  test(`AGSC-11-03: a file written on a condition agrees with boundary/visibility where it is written (${visibilityValue})`, () => {
+    for (const route of CONDITIONAL) {
+      const fromFile = boundaryMembers(fromHeadersFile({ visibility: visibilityValue }, route, [route]));
+      const fromBoundary = boundaryMembers(visibility.headersFor(route, { level: 2, visibility: visibilityValue }));
+      assert.deepStrictEqual(fromFile, fromBoundary, `${route} (${visibilityValue})`);
+    }
+  });
+}
+
+test('AGSC-09-17 (b): no Content-Digest and no static Repr-Digest reaches _headers', () => {
+  const text = headers.headersFile({}, [...CONDITIONAL, '/chunks.jsonl', '/index.html']);
+  assert.doesNotMatch(text, /Content-Digest|Repr-Digest/iu);
+});
+
 test('the CORS pair and the no-cache list are ONE definition, not two', () => {
   assert.deepStrictEqual(Object.fromEntries(headers.CORS), visibility.CORS_HEADERS);
   assert.strictEqual(headers.NO_CACHE, visibility.NO_CACHE_ROUTES);
   assert.deepStrictEqual(headers.headerSets({}).find((s) => s.route === '/').headers,
     [['Link', visibility.DESCRIBEDBY_LINK_HEADER]]);
+});
+
+// AGSC-06-40 (spec/06, a Distribution rule) adds the FAIR Signposting links to the same `Link` field
+// of `/`; the boundary's AGSC-11-05 value stays that field's first value, byte for byte.
+test('AGSC-06-40 with AGSC-11-05: the Link field of a node with a home page starts with the boundary\'s value', () => {
+  const routes = ['/index.html', '/graph.jsonld', '/graph.nq', '/graph.ttl', '/chunks.jsonl'];
+  for (const visibilityValue of ['public', 'restricted']) {
+    const config = { site: { base: 'https://a.example/' }, visibility: visibilityValue };
+    const home = headers.headerSets(config, routes).find((s) => s.route === '/').headers.filter(([name]) => name === 'Link');
+    assert.strictEqual(home.length, 1, 'one Link field in the one block of / (AGSC-06-17)');
+    assert.ok(home[0][1].startsWith(`${visibility.DESCRIBEDBY_LINK_HEADER}, `), home[0][1]);
+    assert.strictEqual(visibility.headersFor('/', { level: 2, visibility: visibilityValue }).Link, visibility.DESCRIBEDBY_LINK_HEADER);
+  }
 });
 
 test('AGSC-11-03: the credentials header is emitted nowhere', () => {

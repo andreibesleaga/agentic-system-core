@@ -78,11 +78,20 @@ test('Mode 3, a person and an agent: emit, install, verify, update with a diff, 
   const clash = kit.agsc(dir, ['skills', 'import', 'www/skills/login/SKILL.md', '--json']);
   assert.ok(kit.codes(clash).includes('AGSC-E206'));
 
-  // A foreign skill imported with --cluster joins that Cluster's pack.
+  // A foreign skill imported with --cluster joins that Cluster, as a draft (AGSC-01-22 from 1.1):
+  // it is in no pack until a person publishes it, and then the pack carries its licence.
   const clone = path.join(kit.ROOT, 'tests', 'fixtures', 'skills-agentskills');
   const foreign = kit.agsc(other, ['import', clone, '--from', 'skills', '--cluster', 'login']);
   assert.strictEqual(foreign.code, 0, foreign.stderr);
   assert.match(kit.read(other, 'content/procedures/pdf-notes.md'), /^clusters:\n {2}- login$/mu);
+  assert.match(kit.read(other, 'content/procedures/pdf-notes.md'), /^status: draft$/mu);
   assert.strictEqual(kit.agsc(other, ['skills']).code, 0);
-  assert.match(kit.read(other, 'dist/skills/login/SKILL.md'), /^- item: https:\/\/proj\.example\/procedures\/pdf-notes\/$/mu);
+  const item = /^- item: https:\/\/proj\.example\/procedures\/pdf-notes\/$/mu;
+  assert.doesNotMatch(kit.read(other, 'dist/skills/login/SKILL.md'), item);
+  kit.write(other, 'content/procedures/pdf-notes.md',
+    kit.read(other, 'content/procedures/pdf-notes.md').replace(/^status: draft$/mu, 'status: stable'));
+  assert.strictEqual(kit.agsc(other, ['skills']).code, 0);
+  assert.match(kit.read(other, 'dist/skills/login/SKILL.md'), item);
+  assert.match(kit.read(other, 'dist/skills/login/SKILL.md'),
+    /\n## Notices\n[^]*\n- PDF notes <https:\/\/proj\.example\/procedures\/pdf-notes\/>: Apache-2\.0 \(license key\); source skills\/pdf-notes\/SKILL\.md; version 1\.2/u);
 });

@@ -356,6 +356,40 @@ test('AGSC-01-27: export --jsonld is byte-identical to the graph.jsonld of the s
   assert.match(ctx.notes.join(''), /wrote: dist\/export\/graph\.jsonld sha256:[0-9a-f]{64}/u);
 });
 
+test('AGSC-05-36: export --skos writes dist/export/skos.ttl, the SKOS view of the graph.nq of the same build', () => {
+  const dir = workspace();
+  const ctx = ctxFor(dir, { verbFlags: { skos: true } });
+  const result = exportVerb.run(ctx);
+  assert.deepStrictEqual(result.findings.filter((f) => f.severity === 'error'), []);
+  const skosExport = require('../../../src/knowledge/skos-export.js');
+  const buildVerb = require('../../../src/application/cli/verbs/build.js');
+  buildVerb.run(ctxFor(dir));
+  const expected = skosExport.skosView(read(dir, 'www/graph.nq'), skosExport.schemeRecord(ctx.config));
+  assert.strictEqual(read(dir, 'dist/export/skos.ttl'), expected);
+  assert.match(expected, /\ba skos:ConceptScheme\b/u);
+  assert.match(ctx.notes.join(''), /wrote: dist\/export\/skos\.ttl sha256:[0-9a-f]{64}/u);
+});
+
+test('AGSC-05-36: a second export --skos gives the same bytes, and --skos asks for no other flag', () => {
+  const dir = workspace();
+  exportVerb.run(ctxFor(dir, { verbFlags: { skos: true } }));
+  const first = read(dir, 'dist/export/skos.ttl');
+  exportVerb.run(ctxFor(dir, { verbFlags: { skos: true } }));
+  assert.strictEqual(read(dir, 'dist/export/skos.ttl'), first);
+  assert.ok(!exists(dir, 'dist/export/graph.jsonld'));
+});
+
+test('AGSC-05-36: a build with no graph.nq (Level 0) gives one honest finding and no skos.ttl', () => {
+  const empty = exportVerb.graphFiles(new Map(), { skos: true });
+  assert.deepStrictEqual(empty.writes, []);
+  assert.deepStrictEqual(empty.findings.map((f) => f.code), ['AGSC-E001']);
+  assert.match(empty.findings[0].message, /no \/graph\.nq/u);
+  const dir = workspace();
+  const result = exportVerb.run(ctxFor(dir, { verbFlags: { level: '0', skos: true } }));
+  assert.ok(!exists(dir, 'dist/export/skos.ttl'));
+  assert.ok(result.findings.some((f) => /no \/graph\.nq/u.test(f.message)));
+});
+
 test('AGSC-01-27: export --jsonl is one JCS line per item, in slug order', () => {
   const dir = workspace();
   const ctx = ctxFor(dir, { verbFlags: { jsonl: true } });
@@ -449,6 +483,28 @@ test('an unknown adapter is one honest finding, not a crash and not a silent suc
   // AGSC-01-26a (2026-09-24): a value outside the closed adapter list, not an unknown verb.
   assert.strictEqual(result.findings[0].code, 'AGSC-E203');
   assert.match(result.findings[0].message, /no adapter named "nope"/u);
+  assert.ok(!exists(dir, 'dist'));
+});
+
+test('AGSC-01-26a: an unknown adapter names the rule once, not twice', () => {
+  const dir = workspace();
+  const [finding] = exportVerb.run(ctxFor(dir, { verbFlags: { to: 'nope' } })).findings;
+  assert.strictEqual(finding.message, 'export --to nope: no adapter named "nope" is installed (AGSC-01-26a)');
+  for (const name of ['A', 'no-such-adapter']) {
+    const refusal = exportVerb.refusalOf(name, exportVerb.adapterOf(name));
+    assert.strictEqual(refusal.match(/\(AGSC-01-26a\)/gu).length, 1, refusal);
+  }
+});
+
+test('AGSC-01-26a: export --to an import-only adapter names the import, and for skos the SKOS view', () => {
+  const dir = workspace();
+  const [skos] = exportVerb.run(ctxFor(dir, { verbFlags: { to: 'skos' } })).findings;
+  assert.strictEqual(skos.code, 'AGSC-E203');
+  assert.strictEqual(skos.message,
+    'export --to skos: "skos" is an import adapter (`agsc import --from skos`); the SKOS view is `agsc export --skos` (AGSC-01-26a)');
+  // Any other adapter with no run(): the import route only, the rule named once.
+  assert.strictEqual(exportVerb.refusalOf('probe', { module: {}, reason: null }),
+    '"probe" is an import adapter (`agsc import --from probe`) (AGSC-01-26a)');
   assert.ok(!exists(dir, 'dist'));
 });
 

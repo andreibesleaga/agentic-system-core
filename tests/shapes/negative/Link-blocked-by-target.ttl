@@ -1,0 +1,6 @@
+# Link-blocked-by-target: blocked by a concept of kind pattern (AGSC-E315).
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+
+ex:a a asc:Concept ; asc:blockedBy ex:b .
+ex:b a asc:Concept ; asc:kind "pattern" .

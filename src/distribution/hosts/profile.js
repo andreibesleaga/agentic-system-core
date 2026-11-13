@@ -22,8 +22,10 @@
 //
 // Pure: a profile is handed data and answers data.
 
+const { SPEC_VERSION } = require('../../shared/spec-version.js');
+
 /** The specification version and plugin-API version every built-in profile targets. */
-const TARGET = Object.freeze({ agsc_spec_version: '1.0.0', plugin_api_version: '1.0.0' });
+const TARGET = Object.freeze({ agsc_spec_version: SPEC_VERSION, plugin_api_version: '1.0.0' });
 
 /**
  * One built-in profile, frozen.

@@ -1,0 +1,4 @@
+# The size is an integer.
+@prefix ex: <https://example.org/> .
+
+ex:box ex:size 12 .

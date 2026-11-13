@@ -1,0 +1,29 @@
+{
+  "area": "lint",
+  "description": "Derived from AGSC-05-21 with the case comparison as worded on 2026-11-10: two titles are compared after NFC, then upper-casing, then lower-casing, by the default case mappings of Unicode, so `ß` equals `ss` (its upper case is `SS`), which Unicode simple case folding alone would not give. `gross-street` is titled Große Straße and `gross-street-caps` GROSSE STRASSE: one warning AGSC-E416 on the later item in path order (`-` sorts before `.`), `gross-street`, and lint exits 0.",
+  "expected": {
+    "lint": {
+      "exit": 0,
+      "findings": [
+        {
+          "code": "AGSC-E416",
+          "file": "content/concepts/gross-street.md",
+          "severity": "warn"
+        }
+      ]
+    }
+  },
+  "id": "lint-0064",
+  "input": {
+    "add_files": {
+      "content/concepts/gross-street-caps.md": "---\ntype: concept\ntitle: GROSSE STRASSE\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n",
+      "content/concepts/gross-street.md": "---\ntype: concept\ntitle: Große Straße\ndescription: A fixture item written for this conformance case.\ntags:\n  - agents\n  - patterns\nclusters:\n  - agent-patterns\nprov:\n  origin: human\n  operator: human:tester\nkind: principle\n---\n\nA short body.\n"
+    },
+    "bundle": "fixtures/minimal"
+  },
+  "level": "required",
+  "options": {
+    "spec_version": "1.1.0"
+  },
+  "rule": "AGSC-05-21"
+}

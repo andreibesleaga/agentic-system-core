@@ -2,13 +2,16 @@
 // Conformance area `discovery`.
 // disc-0016 the RFC 9264 link set at Level ≥ 2 with its six bundle-fact
 // attributes, disc-0004 the Level-0 form, disc-0005 the two-node mutual peer check,
-// disc-0013 / disc-0014 the byte layout of /llms.txt and /llms-full.txt with the
+// disc-0013 / disc-0014 (withdrawn at 1.1; disc-0024, disc-0025 and disc-0034 succeed
+// them) the byte layout of /llms.txt and /llms-full.txt with the
 // content-version line of the provenance header, disc-0015 the
 // `agsc-bundle-version` attribute at three levels of visibility, disc-0012 the
 // robots groups of AGSC-06-18, disc-0017 the ledger link a Level-2 public node
 // carries, disc-0018 the bundle hash, disc-0019 a newer MINOR's relation,
 // disc-0008 every item reachable from /llms.txt, disc-0009 the sitemap, disc-0022
-// the one access link of a restricted node, judged by the shipped discovery checker.
+// the one access link of a restricted node, judged by the shipped discovery checker;
+// disc-0026 to disc-0032 (Signposting, the Dataset block, the catalogue files, the A2A card)
+// in _discovery-web.js.
 //
 // Every handler is guarded (_expected-reads.js): a pass that left a member of
 // `expected` unread is a fail.
@@ -19,6 +22,7 @@ const llms = require('../../../src/distribution/llms.js');
 const { canonicalize } = require('../../../src/knowledge/jcs.js');
 const { checks, deepEqual, findingsMatch } = require('./_assert.js');
 const { guarded } = require('./_expected-reads.js');
+const web = require('./_discovery-web.js');
 
 /** RFC 8288 §3.4 / RFC 9264 §4.2.4: the members that are NOT target attributes. */
 const LINK_MEMBERS = Object.freeze(['href', 'hreflang', 'media', 'title', 'title*', 'type']);
@@ -140,6 +144,8 @@ function llmsCase(vector) {
     bundleVersion: input.bundle_version,
     generatedAt: input.generated_at,
     specVersion: input.spec_version,
+    // AGSC-11-20: a restricted node leaves the content version out of the header.
+    visibility: input.visibility,
   };
   const index = llms.llmsTxt(bundle, options);
   const list = [];
@@ -589,10 +595,14 @@ function accessLinkCase(vector) {
 const HANDLERS = {
   'disc-0013': llmsCase,
   'disc-0014': llmsCase,
+  'disc-0024': llmsCase,
+  'disc-0025': llmsCase,
+  'disc-0034': llmsCase,
   'disc-0015': bundleVersionAttributeCase,
   'disc-0017': ledgerRequiredCase,
   'disc-0018': bundleHashCase,
   'disc-0019': newerMinorCase,
+  'disc-0023': newerMinorCase,
   'disc-0020': wholeDocumentCase,
   'disc-0021': wholeDocumentCase,
   'disc-0022': accessLinkCase,
@@ -602,6 +612,8 @@ const HANDLERS = {
   'disc-0012': robotsCase,
   'disc-0008': reachabilityCase,
   'disc-0009': sitemapCase,
+  // The web connection of 1.1 (_discovery-web.js).
+  ...web.HANDLERS,
 };
 
 // Guarded: a pass that left a member of `expected` unread is a fail (_expected-reads.js).

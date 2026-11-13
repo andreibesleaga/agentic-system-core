@@ -1,0 +1,7 @@
+# Item-modified: two modified instants.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:a a asc:Concept ; dcterms:modified "2026-01-01T00:00:00Z"^^xsd:dateTime , "2026-01-02T00:00:00Z"^^xsd:dateTime .

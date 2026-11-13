@@ -427,7 +427,10 @@ test('AGSC-05-15: each verified[] entry is an asc:Review with its own IRI, never
 
 test('AGSC-05-23: no reasoner runs at build; inverses are materialized in the graph', () => {
   const pkg = JSON.parse(read('package.json'));
-  for (const name of Object.keys(pkg.dependencies)) {
+  // A SHACL processor validates and entails nothing: `rdf-validate-shacl` checks a node's own shapes
+  // in verify and ci (AGSC-05-41), and no module of the build reaches it (tests/arch/shacl-library.test.js).
+  const validators = new Set(['rdf-validate-shacl']);
+  for (const name of Object.keys(pkg.dependencies).filter((n) => !validators.has(n))) {
     assert.ok(!/reason|owl|shacl|eye|hylar/iu.test(name), `${name} looks like a reasoner`);
   }
   const { out } = richBuild();
@@ -477,13 +480,13 @@ test('AGSC-06-12: no VoID description is emitted', () => {
   assert.ok(!files.some((f) => /void/iu.test(f)));
 });
 
-test('AGSC-06-13: llms.txt is one H1, the provenance comment, one blockquote, then H2 sections of link lists', () => {
+test('AGSC-06-13: llms.txt is one H1, one blockquote, the provenance comment, then H2 sections of link lists', () => {
   const { out } = richBuild();
   const text = fs.readFileSync(path.join(out, 'llms.txt'), 'utf8');
   const blocks = text.trimEnd().split('\n\n');
   assert.match(blocks[0], /^# [^\n]+$/u);
-  assert.match(blocks[1], /^<!-- agsc:provenance\n[\s\S]*\n-->$/u);
-  assert.match(blocks[2], /^> [^\n]+$/u);
+  assert.match(blocks[1], /^> [^\n]+$/u);
+  assert.match(blocks[2], /^<!-- agsc:provenance\n[\s\S]*\n-->$/u);
   const rest = blocks.slice(3).join('\n\n');
   assert.strictEqual((text.match(/^# /gmu) || []).length, 1);
   const sections = rest.split(/^## /mu).filter((s) => s !== '');

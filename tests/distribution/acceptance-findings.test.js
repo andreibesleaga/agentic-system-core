@@ -209,7 +209,7 @@ test('AGSC-05-04b: a memory:// alias is accepted wherever a slug is, on both tra
   const bundle = loadBundle(fsPort, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0', version: '0.0.2' });
-  const local = mcpTools.tools(bundle, {});
+  const local = mcpTools.tools(bundle, { artifacts: files });
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const context = vm.createContext({ TextEncoder });
@@ -234,6 +234,8 @@ test('AGSC-05-04b: a memory:// alias is accepted wherever a slug is, on both tra
   assert.strictEqual(foreign.body.code, 'AGSC-E309');
   assert.strictEqual(local.call('compose', { selection: ['supervisor', 'memory://other-node/x'] }).body.code, 'AGSC-E309');
   assert.strictEqual(local.call('read', { slug: 'memory://minimal/no-such-item' }).body.code, 'AGSC-E301');
+  assert.deepStrictEqual(local.call('explain', { key: 'uses', source: 'memory://minimal/supervisor', target: 'handoff' }),
+    local.call('explain', { key: 'uses', source: 'supervisor', target: 'handoff' }));
 
   // AGSC-09-16: one tool contract, two transports — the page answers the same bytes.
   for (const [name, args] of [
@@ -243,6 +245,10 @@ test('AGSC-05-04b: a memory:// alias is accepted wherever a slug is, on both tra
     ['propose', { slug: 'memory://minimal/handoff' }],
     ['compose', { selection: ['memory://minimal/supervisor'] }],
     ['compose', { selection: ['memory://other-node/x'] }],
+    // AGSC-09-13: `source` and `target` are slug arguments, and so is each slug of `selection`.
+    ['explain', { key: 'uses', source: 'memory://minimal/supervisor', target: 'memory://minimal/handoff' }],
+    ['explain', { key: 'uses', source: 'memory://other-node/supervisor', target: 'handoff' }],
+    ['check', { selection: ['memory://minimal/supervisor'] }],
   ]) {
     const expected = JSON.parse(JSON.stringify(local.call(name, args)));
     assert.deepStrictEqual(JSON.parse(JSON.stringify(page.call(name, args))), expected, `${name} page script`);
@@ -255,7 +261,7 @@ test('AGSC-05-04a: wherever memory:// is accepted, the https item IRI is accepte
   const bundle = loadBundle(fsPort, { schemas: validate.schemas(readSchemas(ROOT)) });
   const clock = createClock({ env: { SOURCE_DATE_EPOCH: EPOCH } });
   const { files } = site.build(bundle, { clock, fs: fsPort }, { specVersion: '1.0.0', version: '0.0.2' });
-  const local = mcpTools.tools(bundle, {});
+  const local = mcpTools.tools(bundle, { artifacts: files });
   const sources = {};
   for (const [route, text] of files) sources[route] = String(text);
   const compose = require('../../src/composition/compose.js');

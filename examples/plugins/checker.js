@@ -7,7 +7,7 @@
 // into its own registry, reach no network, write nothing outside its declared
 // outputs and change no canonical byte of a 1.0 surface.
 //
-// Selector: one of the nine of AGSC-09-90. It answers the AGSC-09-11 envelope and
+// Selector: one of the eleven of AGSC-09-90. It answers the AGSC-09-11 envelope and
 // writes no file. It MUST NOT pass over nothing: a checker that read no input
 // reports `AGSC-E901` and exits 1, which is the whole point of the rule —
 // "nothing is wrong" must be tellable from "nothing was looked at".

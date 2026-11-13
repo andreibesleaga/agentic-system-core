@@ -1,0 +1,12 @@
+# sh:maxCount over the inverse path of a predicate.
+@prefix ex: <https://example.org/> .
+@prefix exs: <https://example.org/shapes#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+exs:OneWhole
+    a sh:NodeShape ;
+    sh:property [
+        sh:maxCount 1 ;
+        sh:path [ sh:inversePath ex:hasPart ]
+    ] ;
+    sh:targetClass ex:Part .

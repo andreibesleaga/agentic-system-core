@@ -22,7 +22,7 @@ const CTX = { root: ROOT, schemas: validate.schemas(readSchemas(ROOT)), specVers
 test('the chunks, export, links, prov and slug area handlers are guarded', () => {
   // A real case of each area and of each input shape, with one member added that no
   // branch reads: the pass becomes a fail naming it.
-  for (const id of ['chk-0006', 'export-0001', 'export-0002', 'links-0004', 'links-0009', 'prov-0005',
+  for (const id of ['chk-0012', 'export-0001', 'export-0002', 'links-0004', 'links-0009', 'prov-0005',
     'prov-0009', 'prov-0010', 'prov-0012', 'slug-0006']) {
     const vector = ALL.find((v) => v.id === id);
     assert.ok(vector, id);

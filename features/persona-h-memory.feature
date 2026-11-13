@@ -1,4 +1,4 @@
-# Trace: PRD-022, PRD-026, PRD-027, PRD-061 · PLAN §5.2 ContentStore
+# Trace: PRD-021, PRD-022, PRD-026, PRD-027, PRD-061, PRD-070 · PLAN §5.2 ContentStore
 @persona-h @mode-1
 Feature: Agent uses a node as external auditable memory
   As P8 (agent-as-memory, Mode 1)
@@ -33,6 +33,30 @@ Feature: Agent uses a node as external auditable memory
     And a second run writes nothing and reports every item unchanged
     And "npx agentic-system-core lint" finds no error in the imported items except a concept "kind" the foreign bundle never declared
 
+  @PRD-021 @PRD-026 @PRD-075 @human @matrix-A5
+  Scenario: A thesaurus kept as SKOS arrives as drafts and imports idempotently
+    Given a SKOS thesaurus "thesaurus.ttl" with a scheme, a collection and two concepts
+    When the author imports "thesaurus.ttl" with "--from skos" into a copy of the Bundle that holds no item
+    Then every item the SKOS import wrote is a draft with the provenance "imported", keeping its SKOS IRI in "x-skos-iri"
+    And a statement the SKOS import cannot carry is reported as "AGSC-E506" naming its subject and predicate
+    And the same import run again writes nothing and reports every item unchanged
+    And no network call was attempted
+
+  @PRD-021 @PRD-026 @human @matrix-A5
+  Scenario: A foreign OKF bundle arrives as drafts, whatever licence it declares
+    Given an OKF bundle "licensed-bundle" whose records declare the open licence "CC0-1.0" and the status "stable"
+    When the author imports "licensed-bundle" with "--from okf" into a copy of the Bundle that holds no item
+    Then every item the OKF import wrote is a draft, with one "AGSC-E506" warning each that names the status it replaced
+
+  @PRD-083 @human @matrix-A5
+  Scenario: A folder exported with a manifest is checked when it is imported
+    Given the Bundle root carries the Content Use Terms as "LICENSE-CONTENT"
+    When the author runs "agsc export --okf --manifest" under the network trap
+    Then the command exits 0
+    And "dist/export/okf/export-manifest.json" lists every other file of the export with its digest, the item count and the items digest
+    When one exported file is edited and the folder is imported into a copy of the Bundle that holds no item
+    Then the import warns once with "AGSC-E506" that the edited file differs from the manifest, and still writes the items
+
   @PRD-027 @agent @matrix-A5
   Scenario: memory:// URIs are documented as an alias only, never resolved
     Given an item's slug is "a2a" in bundle "agenticsystemcore"
@@ -51,6 +75,24 @@ Feature: Agent uses a node as external auditable memory
     And the same import run again writes nothing and reports every item unchanged
     And no network call was attempted
 
+  @PRD-070 @human @matrix-H13
+  Scenario Outline: A memory tool exchanges a node directly: <tool>
+    When the author runs "agsc export --to <tool>" under the network trap
+    Then the command exits 0
+    When the author imports "dist/export/<tool>" with "--from <tool>" into a copy of the Bundle that holds no item
+    Then every published item comes back as authored, with the exporting node's content version
+    And the same import run again writes nothing and reports every item unchanged
+    And no network call was attempted
+
+    Examples:
+      | tool         |
+      | mem0         |
+      | letta        |
+      | zep          |
+      | csv          |
+      | basic-memory |
+      | claude-code  |
+
   @PRD-061 @agent @matrix-A14
   Scenario: A memory framework takes the node's chunks through the records.js connector
     Given the Bundle is built
@@ -58,12 +100,51 @@ Feature: Agent uses a node as external auditable memory
     Then each shape gives one record per chunk, and every record keeps the item IRI, the chunk digest, the licence, the terms and the trust mark "untrusted"
     And no network call was attempted
 
+  @PRD-061 @PRD-079 @agent
+  Scenario: An agent checks the chunks it holds against what the node states about them
+    Given a fresh copy of the acceptance Bundle
+    And the Bundle is built and served on loopback
+    When the agent fetches "/chunks.jsonl", "/chunks-index.toon" and the discovery document over loopback
+    Then the chunks surface link states the digest of the file, the number of lines and the commitment to their ids, and the agent recomputes all three
+    And the index has one row per chunk line, in the same order, with the first 16 characters of each line's id and digest
+    And with one chunk line dropped the recomputed count and commitment no longer match what the node states
+    And the shipped validate-wellknown passes at Level 2 over loopback
+
   @PRD-026 @agent
   Scenario: The JSON-lines export is exactly the per-item graph nodes
     Given the Bundle is built
     When the agent runs "agsc export --jsonl" under the network trap
     Then the command exits 0
     And each line of "dist/export/items.jsonl" is the node of the item's "www/pages/<slug>.jsonld", one line per item in slug order
+    And no network call was attempted
+
+  @PRD-075 @human
+  Scenario: A taxonomy tool reads the SKOS export with no inference step
+    Given the Bundle is built
+    When the author runs "agsc export --skos" under the network trap
+    Then the command exits 0
+    And "dist/export/skos.ttl" types the Bundle as a skos:ConceptScheme and each published concept, lesson and cluster as a skos:Concept or skos:Collection, and holds no episode, procedure or gate
+    And "dist/export/skos.ttl" is Turtle that a second run writes again byte for byte
+    And no network call was attempted
+
+  @PRD-075 @human
+  Scenario: The author asks which notes should be linked and no note is touched
+    Given a note "alpha" that links to the note "beta" in its body, with no Link between them
+    When the author runs "agsc lint --suggest" under the network trap
+    Then the command exits 0
+    And "dist/suggestions.json" proposes the Link "related" from "alpha" to "beta" with the evidence "mention"
+    And the content folder is byte for byte what it was before the suggestions were asked for
+    And "dist/suggestions.json" is canonical JSON that a second run writes again byte for byte
+    And no network call was attempted
+
+  @PRD-075 @human
+  Scenario: The author reads what the graph entails and the answer is never published
+    Given the Bundle is built
+    When the author runs "agsc export --closure" under the network trap
+    Then the command exits 0
+    And "dist/export/closure.nt" is not empty, shares no triple with "www/graph.nq" and types a concept skos:Concept
+    And "dist/export/closure.nt" is N-Quads that a second run writes again byte for byte
+    And no file under "www" has "closure" in its name
     And no network call was attempted
 
   @PRD-026 @human

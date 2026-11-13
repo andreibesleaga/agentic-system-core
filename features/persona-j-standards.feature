@@ -1,4 +1,4 @@
-# Trace: PRD-024, PRD-025, PRD-050, PRD-054, PRD-055, PRD-057, PRD-058 · PLAN §7 (w3id conneg) · spec/10 §10.4, spec/11 §11.3
+# Trace: PRD-022, PRD-024, PRD-025, PRD-050, PRD-054, PRD-055, PRD-057, PRD-058 · PLAN §7 (w3id conneg) · spec/10 §10.4, spec/11 §11.3
 @persona-j @mode-1
 Feature: Standards implementer adopts the discovery format on their own site
   As P11 (standards implementer)
@@ -61,11 +61,31 @@ Feature: Standards implementer adopts the discovery format on their own site
     Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "validate-wellknown"
     And running it against a linkset carrying an unregistered short name exits 1
 
+  @PRD-054 @human @matrix-H15
+  Scenario: Implementer gets SHACL shapes generated from the schema and the specification, not written by hand
+    When the implementer runs "the shipped gen-shapes tool with --check"
+    Then it exits 0 and prints an agsc.diagnostics.v1 envelope with verb "gen-shapes"
+    And "schema/item-shapes.ttl" is Turtle with one warning shape for each Link key that names a kind of target, and a self-link warning
+    And the package's one SHACL library runs only a site's own shapes in one module, never at build, so the shapes of "schema/item-shapes.ttl" stay in the development lane
+
+  @PRD-022 @human @matrix-H15
+  Scenario: The engine evaluates a site's shapes with exactly the SHACL Core subset, and refuses a shapes file outside it
+    When the implementer evaluates every shared fixture of "tests/shapes/core" with the engine's SHACL Core evaluator
+    Then each graph that conforms gives no result, and each graph that violates gives exactly the results of its "results.json", in the order of AGSC-05-41
+    And each shapes file of "tests/shapes/core/refused" is the error "AGSC-E420" and is not evaluated (AGSC-05-41)
+
   @PRD-024 @PRD-055 @human @matrix-H15
   Scenario: A node served on loopback passes the shipped checker at Level 1
     Given a fresh copy of the acceptance Bundle
     When the Bundle is built and served on loopback
     Then the shipped validate-wellknown passes at Level 1 over loopback
+
+  @PRD-024 @human @matrix-H15
+  Scenario: The discovery document declares the WebMCP surface at the date of the reference Community Group Report
+    Given a fresh copy of the acceptance Bundle
+    When the Bundle is built
+    Then the discovery document has one "…rel#surface" link whose "agsc-surface" is "webmcp", with the target "/compose/" and the "agsc-surface-version" "2026-10-27", the WebMCP Draft Community Group Report of 27 October 2026 (AGSC-11-16)
+    And the shipped validate-wellknown passes that document at Level 1, and passes it as well with the date of an earlier report, "2026-09-15", because no rule pins one date (AGSC-11-16)
 
   @PRD-024 @agent @matrix-H15
   Scenario: A discovery document served as application/json with a profile Link fails Level 2

@@ -1,0 +1,6 @@
+# Item-license: two licences.
+@prefix asc: <https://w3id.org/agentic-system-core/ns#> .
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:a a asc:Concept ; schema:license "one" , "two" .
