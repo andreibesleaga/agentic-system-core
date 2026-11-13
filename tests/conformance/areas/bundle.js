@@ -117,7 +117,7 @@ function onFixture(vector, ctx, inspect) {
   const nodeFs = require('node:fs');
   const os = require('node:os');
   const { main } = require('../../../src/application/cli/main.js');
-  const { createFileSystem } = require('../../../src/adapters/node-fs.js');
+  const { portOf } = require('./_listed-names.js');
   const { captureStream } = require('./_shared.js');
   const engineRoot = (ctx && ctx.root) || '.';
   const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), `agsc-${vector.id}-`));
@@ -143,7 +143,8 @@ function onFixture(vector, ctx, inspect) {
     const stderr = captureStream();
     // `input.argv` names the verb and its flags (`lint --suggest`); a case without it runs `lint`.
     const exit = main([...(vector.input.argv || ['lint']), '--json', '--quiet'], {
-      env: environmentOf(vector), ports: { fs: createFileSystem(root) }, root,
+      // The names the vector lists, also where a case-insensitive disk kept one of two (bundle-0014).
+      env: environmentOf(vector), ports: { fs: portOf(root, vector.input.add_files || {}) }, root,
       specVersion: (vector.options || {}).spec_version, stderr, stdout, version: (vector.options || {}).spec_version,
     });
     let findings = [];

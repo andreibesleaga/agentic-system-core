@@ -630,7 +630,7 @@ mkdir -p incoming && cp ../mode-3-skills/www/skills/login/SKILL.md incoming/SKIL
 agsc skills import incoming/SKILL.md
 sed -n '1,5p' content/procedures/run-the-tests.md
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster agent-patterns
-sed -i 's/^status: draft$/status: stable/' content/procedures/plain-notes.md
+sed -i.bak 's/^status: draft$/status: stable/' content/procedures/plain-notes.md && rm content/procedures/plain-notes.md.bak
 agsc skills > /dev/null 2>&1 && grep '^- item:' dist/skills/agent-patterns/SKILL.md
 ```
 

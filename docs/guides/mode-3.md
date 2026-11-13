@@ -169,7 +169,7 @@ one-skill example; use your own folder the same way:
 ```bash demo
 agsc import --from skills --list "$ENGINE/examples/demos/mode-3-skills/foreign"
 agsc import "$ENGINE/examples/demos/mode-3-skills/foreign" --from skills --cluster releasing
-sed -i 's/^status: draft$/status: stable/' content/procedures/plain-notes.md
+sed -i.bak 's/^status: draft$/status: stable/' content/procedures/plain-notes.md && rm content/procedures/plain-notes.md.bak
 agsc skills > /dev/null 2>&1
 grep '^- item:' dist/skills/releasing/SKILL.md
 ```

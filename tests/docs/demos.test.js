@@ -67,3 +67,25 @@ test('every code a demo printed has a row on the troubleshooting page', { skip: 
   const rows = new Set(fs.readFileSync(TROUBLESHOOTING, 'utf8').split('\n').map((l) => (/^\| `(AGSC-E\d{3})` \|/u.exec(l) || [])[1]).filter(Boolean));
   for (const [code, heading] of printed) assert.ok(rows.has(code), `demo "${heading}" printed ${code}, and docs/guides/troubleshooting.md has no row for it`);
 });
+
+test('a runnable step edits a file in place the way GNU and BSD sed both accept (`sed -i.bak`)', () => {
+  // GNU sed takes `sed -i 's/…/'`, BSD sed (macOS) reads the script as the backup suffix and
+  // fails ("command c expects \ followed by text"), so a page that runs on macOS writes the
+  // suffix attached: `sed -i.bak '…' file`. Every page whose `bash demo` blocks a test runs.
+  const pages = [];
+  const visit = (rel) => {
+    for (const entry of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+      const child = `${rel}/${entry.name}`;
+      if (entry.isDirectory()) { if (entry.name !== 'node_modules') visit(child); } else if (entry.name.endsWith('.md')) pages.push(child);
+    }
+  };
+  for (const rel of ['docs', 'examples']) visit(rel);
+  const found = [];
+  for (const page of pages) {
+    const parts = fs.readFileSync(path.join(ROOT, page), 'utf8').split(/^`{3,}/mu);
+    parts.forEach((part, k) => {
+      if (k % 2 === 1 && part.startsWith('bash demo') && /\bsed\s+-i(?=\s)/u.test(part)) found.push(page);
+    });
+  }
+  assert.deepStrictEqual(found, [], 'write `sed -i.bak \'…\' file` (and remove the .bak) where a step edits in place');
+});

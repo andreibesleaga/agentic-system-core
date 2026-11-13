@@ -435,7 +435,8 @@ test('the unreleased and the newest change-log sections name no later version an
 test('no test or source file names an inventory id of the private planning', () => {
   // A comment or a test title names the rule it holds ("AGSC-04-09"), not the private
   // planning's inventory item ("I-122"), which no reader of this repository can look up.
-  const self = path.relative(ROOT, __filename);
+  // In the `/` form the walk below builds, also on Windows, where path.relative gives `\`.
+  const self = path.relative(ROOT, __filename).split(path.sep).join('/');
   const found = [];
   const visit = (rel) => {
     for (const name of fs.readdirSync(path.join(ROOT, rel)).sort()) {

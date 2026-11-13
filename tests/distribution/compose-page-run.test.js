@@ -33,6 +33,7 @@ const mcpTools = require('../../src/distribution/mcp-tools.js');
 const composePage = require('../../src/distribution/compose-page.js');
 const pageTools = require('../../src/distribution/page-tools.js');
 const { main: cliMain } = require('../../src/application/cli/main.js');
+const { compareCodePoint } = require('../../src/knowledge/unicode.js');
 const { captureStream } = require('../conformance/areas/_shared.js');
 
 /** Wait for the page-tool corpus to load; afterwards `AGSC_TOOLS` is synchronous. */
@@ -545,6 +546,14 @@ test('the filters narrow the item list by cluster and by tag, and never change t
   assert.deepStrictEqual(plain(state.selection), ['loner'], 'filtering changed the selection');
 });
 
+/**
+ * The file names of a brief in code-point order (AGSC-04-12). The companion directory is a
+ * set of files: the CLI's side is read from the disk, whose listing order is the host's
+ * (NTFS lists `BRIEF.md` before `brief.json`, ext4 need not), so both sides are sorted by
+ * one fixed, locale-independent comparator before they are compared.
+ */
+const namesOf = (files) => [...files.keys()].sort(compareCodePoint);
+
 /** `agsc compose <argv> --brief` over the built Bundle at `dir`: the files written beside the Harness. */
 function cliCompanion(dir, argv) {
   const exit = cliMain(['compose', ...argv, '--brief', '--quiet'], {
@@ -573,7 +582,7 @@ test('AGSC-07-25, AGSC-07-13: the page shows the brief inline and offers the fil
   state.render();
   const brief = await state.refreshBrief();
   const cli = cliCompanion(dir, ['supervisor']);
-  assert.deepStrictEqual([...brief.files.keys()], [...cli.keys()]);
+  assert.deepStrictEqual(namesOf(brief.files), namesOf(cli));
   for (const [name, text] of cli) assert.strictEqual(brief.files.get(name), text, `${name} differs between the page and the CLI`);
   // Inline: the verdict in words, the dependency order, the gaps and the checklist.
   assert.strictEqual(page.document.nodes.get('verdict-words').textContent, JSON.parse(cli.get('brief.json')).summary);
@@ -624,7 +633,7 @@ test('AGSC-07-29, AGSC-07-13: /compose/?from=<architecture> offers the blueprint
   const brief = await state.refreshBrief();
   const cli = cliCompanion(dir, ['--from', 'team']);
   assert.ok([...cli.keys()].includes('blueprint/build-plan.md'), [...cli.keys()].join(' '));
-  assert.deepStrictEqual([...brief.files.keys()], [...cli.keys()]);
+  assert.deepStrictEqual(namesOf(brief.files), namesOf(cli));
   for (const [name, text] of cli) assert.strictEqual(brief.files.get(name), text, `${name} differs between the page and the CLI`);
   state.selection = ['supervisor'];
   const other = await state.refreshBrief();

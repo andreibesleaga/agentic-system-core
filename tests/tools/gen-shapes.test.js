@@ -262,7 +262,7 @@ describe('tools/gen-shapes — Turtle text and the claim', () => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) { if (!['node_modules', '.git', 'spec', 'tests'].includes(entry.name)) walk(full); continue; }
-        if (/\.(md|json|js|ttl|feature)$/u.test(entry.name) && claim.test(fs.readFileSync(full, 'utf8'))) outside.push(path.relative(REPO, full));
+        if (/\.(md|json|js|ttl|feature)$/u.test(entry.name) && claim.test(fs.readFileSync(full, 'utf8'))) outside.push(path.relative(REPO, full).split(path.sep).join('/'));
       }
     };
     walk(REPO);
