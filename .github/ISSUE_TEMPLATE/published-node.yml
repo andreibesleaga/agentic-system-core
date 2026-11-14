@@ -1,0 +1,52 @@
+# GitHub issue form: someone outside the project published a node or a discovery document.
+# The answers are public; the node may be listed among known nodes only with the consent given here.
+name: I published a node
+description: Tell the project that an origin now serves a discovery document or a node, and what the checker said about it.
+title: "node: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for trying it. One origin per issue. Nothing here is required reading for anyone else, so plain words are fine.
+        A defect goes in "Report a defect"; a security problem is reported privately (SECURITY.md).
+  - type: input
+    id: url
+    attributes:
+      label: The discovery document
+      description: The full address of the document your origin serves.
+      placeholder: https://notes.example.org/.well-known/knowledge-linkset
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: What the checker printed
+      description: "The last line of `uvx --from agentic-system-core agsc validate-wellknown <address> --level 0 --allow-network` (or the level you aim for). A failing line is as useful as a passing one."
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: built-with
+    attributes:
+      label: How it was built
+      description: The engine and its version, another tool, or by hand.
+      placeholder: agsc 1.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: What was hard, unclear or missing
+      description: The step that took longest, a sentence in the docs that misled you, a file your host changed on the way.
+    validations:
+      required: false
+  - type: dropdown
+    id: listing
+    attributes:
+      label: May the project list this origin among known nodes?
+      options:
+        - "Yes, with the address above"
+        - "No, keep it in this issue only"
+    validations:
+      required: true
