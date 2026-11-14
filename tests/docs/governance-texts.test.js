@@ -207,6 +207,27 @@ test('README: a live run is made by an agent outside the engine, not by an adapt
   assert.match(text, /`agsc mcp`/u);
 });
 
+test('the published-node form asks for the address, the checker line, the build and consent to be listed', () => {
+  const form = YAML.parse(read('.github/ISSUE_TEMPLATE/published-node.yml'));
+  assert.equal(typeof form.name, 'string');
+  assert.equal(typeof form.description, 'string');
+  const fields = new Map(form.body.filter((b) => b.type !== 'markdown').map((b) => [b.id, b]));
+  assert.deepEqual([...fields.keys()], ['url', 'check', 'built-with', 'friction', 'listing']);
+  const required = (id) => fields.get(id).validations && fields.get(id).validations.required;
+  for (const id of ['url', 'check', 'built-with', 'listing']) assert.equal(required(id), true, `${id} is required`);
+  assert.equal(required('friction'), false, 'what was hard is optional');
+  assert.equal(fields.get('url').type, 'input');
+  assert.equal(fields.get('check').type, 'textarea');
+  // The checker line the form quotes is a command the Python package really has.
+  assert.match(fields.get('check').attributes.description, /agsc validate-wellknown <address> --level 0 --allow-network/u);
+  // Listing is a choice between exactly yes and no: an origin is named only with consent.
+  const listing = fields.get('listing');
+  assert.equal(listing.type, 'dropdown');
+  assert.equal(listing.attributes.options.length, 2);
+  assert.match(listing.attributes.options[0], /^Yes/u);
+  assert.match(listing.attributes.options[1], /^No/u);
+});
+
 test('the issue form asks for the five parts of a rule proposal, the PR template for the sign-off', () => {
   // CONTRIBUTING.md "Proposing a change to the standard" lists five numbered parts.
   const parts = section(read('CONTRIBUTING.md'), 'Proposing a change to the standard')
