@@ -10,7 +10,7 @@ metadata:
 
 # AgenticSystemCore for agents
 
-A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.0.0`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
+A **Bundle** is a folder holding `agsc.config.json` and `content/` with one Markdown file per item. The engine builds it into a **knowledge node**: a static site, a typed graph, a search index, `llms.txt`, `chunks.jsonl`, skill packs, boards and a discovery document, with the same bytes from any conforming implementation. People and agents read a node through web addresses and change it only by proposals a person merges. Specification `1.1.0`; where this skill and a rule disagree, the rule wins (https://agenticsystemcore.com/specs/).
 
 ## 1. What you never do
 
