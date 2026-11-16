@@ -160,6 +160,10 @@ describe('the tree states the version it releases, in every place that carries i
       const text = read(rel);
       assert.match(text, new RegExp(`version: "${PACKAGE.replace(/\./gu, '\\.')}"`, 'u'), rel);
       assert.doesNotMatch(text, CANDIDATE, rel);
+      // The sentence of the body that names the specification: the version the engine implements.
+      const named = /Specification `([^`]+)`/u.exec(text);
+      assert.ok(named, `${rel}: no sentence names the specification version`);
+      assert.equal(named[1], require('../../src/shared/spec-version.js').SPEC_VERSION, rel);
     }
   });
 
