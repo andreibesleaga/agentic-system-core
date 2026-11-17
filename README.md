@@ -30,6 +30,20 @@ through ordinary web addresses, change it only by proposals that a person ratifi
 compose its items into a starting harness — files an architect or an agent runtime
 starts from. Nodes find and cite each other with no server in between.
 
+## See it working
+
+- **A live node.** [agenticsystemcore.com](https://agenticsystemcore.com/) is built by this
+  engine from its own Bundle; a second node is
+  [patterns.agenticsystemcore.com](https://patterns.agenticsystemcore.com/).
+- **The graph, in a browser.** The [graph explorer](https://agenticsystemcore.com/graph/)
+  draws a node's published graph: search it, and read each item's summary and typed links.
+- **A browser assistant.** [WebAIAssist](https://agenticsystemcore.com/webaiassist/) is a
+  Chrome extension that chats in the side panel and uses the ten tools a node's pages
+  offer, asking before each call. Its model runs in the browser, or is Chrome's built-in
+  model, or a chat endpoint you choose. It is a separate project by the same author
+  ([Chrome Web Store](https://chromewebstore.google.com/detail/webaiassist/mekikidmpikblfalilhckiadncbjfppi),
+  [source](https://github.com/andreibesleaga/webaiassist)).
+
 ## What is different about it
 
 To the author's knowledge, no other system combines discovery through already-registered web
