@@ -124,8 +124,11 @@ jobs:
       - name: suite, measured (coverage of src/ at 99.9 % lines, 99 % functions, 93 % branches)
         if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
         run: npm run test:coverage
-      - name: dependency advisories (the release gate's npm audit)
-        run: npm audit --audit-level=low
+      # What ships has no advisory at any level. The development tools are held by
+      # the architecture lane below (AGSC_AUDIT=1): no advisory outside the dated
+      # list in tests/arch/audit-exceptions.json. The release workflow runs the same two steps.
+      - name: dependency advisories (npm audit of what ships)
+        run: npm audit --omit=dev --audit-level=low
       - name: rule coverage (no unverified rule, matrix current)
         run: node tools/rule-coverage --check
       - name: requirements matrix (no unmapped requirement)

@@ -75,7 +75,9 @@ jobs:
         run: npm test
       - if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
         run: npm run test:coverage
-      - run: npm audit --audit-level=low
+      # What ships has no advisory. The development tools are held by the architecture
+      # lane (AGSC_AUDIT=1) against the dated list in tests/arch/audit-exceptions.json.
+      - run: npm audit --omit=dev --audit-level=low
       - run: node tools/rule-coverage --check
       - run: node tools/requirements-matrix --check
       - run: node tools/count-artifacts --json
