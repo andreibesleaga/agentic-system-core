@@ -1,0 +1,9 @@
+[
+  {
+    "id": "GHSA-fc5q-39xc-vjpf",
+    "package": "picomatch",
+    "reason": "ReDoS in picomatch <= 4.0.7; no fixed version is published. Reached only through development tools (typescript-eslint, dependency-cruiser, @stylistic/eslint-plugin), which read this repository's own file names. The published package does not contain it.",
+    "recorded": "2026-11-18",
+    "expires": "2027-01-31"
+  }
+]

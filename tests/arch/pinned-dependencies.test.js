@@ -56,11 +56,50 @@ test('the lockfile pins every installed package to one exact version', () => {
 //   AGSC_AUDIT=1 node --test tests/arch/pinned-dependencies.test.js
 //
 // The result of the run this milestone recorded is 0 vulnerabilities.
-test('npm audit reports 0 vulnerabilities', { skip: process.env.AGSC_AUDIT === '1' ? false : 'the audit lane reaches the npm registry and runs only with AGSC_AUDIT=1' }, () => {
-  // Through a shell, so that Windows finds `npm.cmd`: a direct spawn of `npm`
-  // fails there with ENOENT (Node refuses to spawn a .cmd file without a shell).
-  const { execSync } = require('node:child_process');
-  const raw = execSync('npm audit --json', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  const total = JSON.parse(raw).metadata.vulnerabilities;
-  assert.strictEqual(Object.values(total).reduce((a, b) => a + b, 0), 0, JSON.stringify(total));
+//
+// An advisory with no fixed version cannot be removed by an update. Such an
+// advisory may be listed in `audit-exceptions.json`, each entry with a reason and
+// an expiry date, on two conditions the tests below hold: the dependencies that
+// ship (`--omit=dev`) have no advisory at all, and the entry has not expired.
+// An expired entry fails this lane on every push and at release.
+const AUDIT = { skip: process.env.AGSC_AUDIT === '1' ? false : 'the audit lane reaches the npm registry and runs only with AGSC_AUDIT=1' };
+const EXCEPTIONS = JSON.parse(fs.readFileSync(path.join(__dirname, 'audit-exceptions.json'), 'utf8'));
+
+/** `npm audit --json`, through a shell so that Windows finds `npm.cmd`; npm exits 1 when it finds an advisory. */
+function audit(flags) {
+  const { spawnSync } = require('node:child_process');
+  const run = spawnSync(`npm audit --json ${flags}`, { cwd: ROOT, encoding: 'utf8', shell: true, stdio: ['ignore', 'pipe', 'ignore'] });
+  return JSON.parse(run.stdout);
+}
+
+/** The advisory identifiers (GHSA-…) a report names. */
+function advisoryIds(report) {
+  const ids = new Set();
+  for (const entry of Object.values(report.vulnerabilities || {})) {
+    for (const via of entry.via) {
+      if (typeof via === 'object') ids.add(String(via.url).split('/').pop());
+    }
+  }
+  return [...ids].sort();
+}
+
+test('npm audit reports 0 vulnerabilities in what ships', AUDIT, () => {
+  const total = audit('--omit=dev').metadata.vulnerabilities.total;
+  assert.strictEqual(total, 0, `${total} advisories reach the published package`);
+});
+
+test('npm audit reports no advisory outside the dated exceptions', AUDIT, () => {
+  const allowed = new Set(EXCEPTIONS.map((e) => e.id));
+  const unexpected = advisoryIds(audit('')).filter((id) => !allowed.has(id));
+  assert.deepStrictEqual(unexpected, []);
+});
+
+test('every audit exception gives a reason and has not expired', AUDIT, () => {
+  const today = new Date().toISOString().slice(0, 10);
+  for (const e of EXCEPTIONS) {
+    assert.match(e.id, /^GHSA(-[0-9a-z]{4}){3}$/u);
+    assert.ok(e.package && e.reason, `${e.id} gives no package or reason`);
+    assert.match(e.recorded, /^\d{4}-\d{2}-\d{2}$/u);
+    assert.ok(e.expires > today, `${e.id} expired on ${e.expires}: update the dependency or review the exception`);
+  }
 });

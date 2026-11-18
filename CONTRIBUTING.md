@@ -43,7 +43,7 @@ Normal pull request. New to the code? [docs/CODE-ORIENTATION.md](https://github.
 npm ci                           # the exact pinned libraries of the lockfile
 npm test                         # the whole suite, node:test, offline
 npm run test:coverage            # coverage of src/: lines 99.9 %, functions 99 %, branches 93 %
-npm run audit                    # npm audit must report 0 vulnerabilities
+npm run audit                    # npm audit must report 0 vulnerabilities (a dated exception: tests/arch/audit-exceptions.json)
 node tools/count-artifacts --json   # the rule, code, vector and term counts
 node tools/validate-vectors --json  # every conformance vector is well formed
 node --test tests/arch/*.test.js    # the context boundaries and the purity rules
