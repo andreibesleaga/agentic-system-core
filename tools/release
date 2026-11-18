@@ -674,7 +674,7 @@ function checklist(version, bump = true, spec = null) {
     'npm ci                                          # the lockfile, exactly',
     'npm test                                        # 0 fail, twice, identical',
     'npm run test:coverage                           # src/ at or above 99.9 %',
-    'npm audit --audit-level=low                     # 0 vulnerabilities',
+    'npm run audit                                   # npm audit: 0 in what ships; development tools: dated exceptions only',
     'node tools/count-artifacts --json               # ok, findings []',
     'for t in tools/validate-*; do [ "$t" = tools/validate-wellknown ] || node "$t" --json || break; done',
     '    # every one blocks; validate-wellknown needs a document, so it runs on the next line',

@@ -62,7 +62,9 @@ test('the lockfile pins every installed package to one exact version', () => {
 // an expiry date, on two conditions the tests below hold: the dependencies that
 // ship (`--omit=dev`) have no advisory at all, and the entry has not expired.
 // An expired entry fails this lane on every push and at release.
-const AUDIT = { skip: process.env.AGSC_AUDIT === '1' ? false : 'the audit lane reaches the npm registry and runs only with AGSC_AUDIT=1' };
+// `npm run audit` is the same lane: npm names the running script in npm_lifecycle_event.
+const AUDIT_LANE = process.env.AGSC_AUDIT === '1' || process.env.npm_lifecycle_event === 'audit';
+const AUDIT = { skip: AUDIT_LANE ? false : 'the audit lane reaches the npm registry and runs only with AGSC_AUDIT=1 or as `npm run audit`' };
 const EXCEPTIONS = JSON.parse(fs.readFileSync(path.join(__dirname, 'audit-exceptions.json'), 'utf8'));
 
 /** `npm audit --json`, through a shell so that Windows finds `npm.cmd`; npm exits 1 when it finds an advisory. */
@@ -83,6 +85,13 @@ function advisoryIds(report) {
   return [...ids].sort();
 }
 
+/** True for a real calendar day written YYYY-MM-DD ("2027-02-30" and "9999" are not). */
+function isCalendarDay(text) {
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(String(text))) return false;
+  const date = new Date(`${text}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === text;
+}
+
 test('npm audit reports 0 vulnerabilities in what ships', AUDIT, () => {
   const total = audit('--omit=dev').metadata.vulnerabilities.total;
   assert.strictEqual(total, 0, `${total} advisories reach the published package`);
@@ -99,7 +108,10 @@ test('every audit exception gives a reason and has not expired', AUDIT, () => {
   for (const e of EXCEPTIONS) {
     assert.match(e.id, /^GHSA(-[0-9a-z]{4}){3}$/u);
     assert.ok(e.package && e.reason, `${e.id} gives no package or reason`);
-    assert.match(e.recorded, /^\d{4}-\d{2}-\d{2}$/u);
+    for (const day of [e.recorded, e.expires]) {
+      assert.ok(isCalendarDay(day), `${e.id}: "${day}" is not a calendar date written YYYY-MM-DD`);
+    }
+    assert.ok(e.recorded < e.expires, `${e.id} expires before it was recorded`);
     assert.ok(e.expires > today, `${e.id} expired on ${e.expires}: update the dependency or review the exception`);
   }
 });
