@@ -11,6 +11,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Continuous integration and the release gate: the dependency audit blocks on any advisory in what
+  ships, and on any advisory in the development tools that is not in the dated list
+  `tests/arch/audit-exceptions.json` (one entry: `picomatch`, GHSA-fc5q-39xc-vjpf, no fixed version
+  published; the entry expires on 31 January 2027).
+
 ## [1.1.0] - 2026-11-13
 
 A MINOR release of the specification and the packages. **Specification `1.1.0`** adds keys, values,

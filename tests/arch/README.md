@@ -8,7 +8,7 @@
 node --test "tests/arch/*.test.js"
 ```
 
-`AGSC_AUDIT=1` adds `npm audit`, the one check that needs the network.
+`AGSC_AUDIT=1` adds `npm audit`, the one check that needs the network. It allows no advisory in what ships, and in the development tools none but those listed, with a reason and an expiry date, in `audit-exceptions.json` (for an advisory that has no fixed version yet).
 
 Every test here fixes its own clock, reaches no network and writes only under the
 system temporary directory, removing what it wrote.
