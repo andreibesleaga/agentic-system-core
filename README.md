@@ -35,6 +35,9 @@ starts from. Nodes find and cite each other with no server in between.
 - **A live node.** [agenticsystemcore.com](https://agenticsystemcore.com/) is built by this
   engine from its own Bundle; a second node is
   [patterns.agenticsystemcore.com](https://patterns.agenticsystemcore.com/).
+- **A node made without this engine.** [agenticfeeder.com](https://agenticfeeder.com/), a daily
+  news site built in PHP, publishes a Level 0 node (discovery file, `graph.jsonld`, `llms.txt`
+  with digests) that this package's `validate-wellknown` tool accepts.
 - **The graph, in a browser.** The [graph explorer](https://agenticsystemcore.com/graph/)
   draws a node's published graph: search it, and read each item's summary and typed links.
 - **A browser assistant.** [WebAIAssist](https://agenticsystemcore.com/webaiassist/) is a
