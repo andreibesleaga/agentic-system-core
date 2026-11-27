@@ -38,8 +38,9 @@ starts from. Nodes find and cite each other with no server in between.
 - **A node made without this engine.** [agenticfeeder.com](https://agenticfeeder.com/), a daily
   news site built in PHP, publishes a Level 0 node (discovery file, `graph.jsonld`, `llms.txt`
   with digests) that this package's `validate-wellknown` tool accepts.
-- **Agents are welcome.** Agents and assistants are welcome to read, cite and check everything on
-  these nodes; only collection for model training is reserved.
+- **Agents are welcome.** Agents and assistants are welcome to read, search, cite and check everything
+  on these nodes, as each node's Content Use Terms allow; using the prose to train, fine-tune or evaluate
+  a machine-learning model stays reserved.
 - **The graph, in a browser.** The [graph explorer](https://agenticsystemcore.com/graph/)
   draws a node's published graph: search it, and read each item's summary and typed links.
 - **A browser assistant.** [WebAIAssist](https://agenticsystemcore.com/webaiassist/) is a
