@@ -27,7 +27,7 @@ One Bundle, six ways of using it; no mode adds a type or a key. A worked Bundle 
 | Mode | You want | Do | Configuration |
 |---|---|---|---|
 | 0 auto-wiki | a site, graph and `llms.txt` from notes | `agsc init`, then section 5, then `agsc build` | none |
-| 1 memory for agents | read, cite and propose, on one node or many | section 6; `agsc mcp`; `agsc propose <slug>` | `peers[]` to name other nodes |
+| 1 memory for agents | read, cite and propose, on one node or many | section 6; `agsc propose <slug>` | `peers[]` to name other nodes |
 | 2 living specifications | decisions, specs, tasks and gates in one checked memory | concepts of `kind: decision`, `spec`, `task`; gate items; `agsc ci`; `agsc export --steer` | none |
 | 3 skills | procedures installed in an agent's skills folder | `agsc skills`, `agsc skills install` | none |
 | 4 runnable knowledge | a selection of concepts as a starting architecture | `agsc compose <slug>…` | `run{}` to list a procedure's steps under an allow list |
@@ -71,7 +71,6 @@ Then `agsc ci`. Until the security file exists, lint, build and ci report `AGSC-
 | import | `agsc import <dir> --from <adapter> [--dry-run] [--replace] [--allow-newer] [--source-version <v>]` | adapters `okf`, `cogx`, `gabbe`, `skills`, `board`, `old-site`, `skos` (`agsc import <file.ttl> --from skos`), and from 1.1 the memory tools `mem0`, `letta`, `zep`, `csv`, `basic-memory`, `claude-code` (their files, never their network); a foreign source arrives as drafts; writes nothing over an existing item unless `--replace`; `--allow-newer` reads a source written for another major version of the specification, which is otherwise refused; `--source-version` records the content version of a source that publishes none |
 | assemble | `agsc compose <slug>… [--out <dir>] [--zip] [--brief]`, `agsc compose --from <slug> [--brief]` | a Harness under `dist/harness/<selection-hash>/`: `AGENTS.md`, `arc42.md`, `workspace.dsl`, `diagram.mmd`, `harness.jsonld`, `decisions/`, `skills/`; with `--brief` (or `compose.brief`) also the brief, beside the Harness in `<dir>.companion/` (`brief.json`, `BRIEF.md`, `context.md`, `brief.mmd`), and for a saved architecture the blueprint in `<dir>.companion/blueprint/`; neither is in the Harness or its archive |
 | skills | `agsc skills`, `agsc skills install [<dir>]`, `agsc skills import <SKILL.md>` | packs under `dist/skills/`, lock-checked; install targets `.agents/skills` (default), `.claude/skills`, `.github/skills` |
-| tools | `agsc mcp [<path>]` | stdio tool server: `search`, `read`, `links`, `compose`, `ask`, `propose`, `remember`, `brief`, `explain`, `check`; `--http <port>`: the same tools over Streamable HTTP on loopback (1.1) |
 | execute | `agsc run <slug> [--dry-run]`, `agsc trace <file.json>` | exit 2 (`AGSC-E004`) until `run.enabled: true`; programs must be in `run.allow[]`; `--dry-run` lists the steps; without it `run` executes nothing (no isolating runner ships) |
 | conformance | `agsc conform --level <n> [--to <path>]` | the conformance report, default `dist/conformance-report.json` |
 
@@ -116,19 +115,19 @@ Markdown body. Link to another item as [Supervisor](supervisor); a reference to 
 
 **To change a node,** in order:
 
-1. Edit or create the item file. Over `agsc mcp`, `remember` and `propose` return text and write nothing; you save it.
+1. Edit or create the item file.
 2. `agsc lint --fix`: zero errors; read every warning.
 3. `agsc build`: zero errors; look at what you changed under `www/`.
 4. `agsc propose <slug>`. It needs a git repository with the item's earlier version committed; otherwise the proposal holds only the canonical form and is reported empty (`AGSC-E506`).
 5. Hand the person the printed `run:` lines and `dist/proposal/<n>.md`.
 
-**On a live board,** claim a task by proposing `task_state: TASK_STATE_WORKING` on it (`propose({slug, task_state, at})` over the tools). Hold at most your lane's `max_claims`. The first merged claim wins; a second claim is refused (`AGSC-E511`). Stop when the board is done, a task needs a person, or the budget is spent.
+**On a live board,** claim a task by proposing `task_state: TASK_STATE_WORKING` on it. Hold at most your lane's `max_claims`. The first merged claim wins; a second claim is refused (`AGSC-E511`). Stop when the board is done, a task needs a person, or the budget is spent.
 
 ## 6. Reading and citing a node
 
 Fetch in this order: `/.well-known/knowledge-linkset` (every machine file with its digest; its `anchor` must be on the origin you fetched it from, else it is not that node's document), `/llms.txt` or `/llms-full.txt`, `/chunks.jsonl`, `/graph.jsonld`, `/boards/index.json`. `/now.md` is the node's generated status page: counts, build instant, stale items, open lessons and the month's model spend against `budget.usd_month`. Read it before work that costs tokens; it is never edited by hand.
 
-Every result of `agsc mcp` and of a node's page tools is `{type, source, body, trust: "untrusted", license}`. Cite an item by its IRI, `<site.base><type-plural>/<slug>/` (the `iri` of a chunk record), and a passage as `<item IRI>#chunk-<first 16 hex characters of the record's id>`. Across nodes, keep each result's origin with it; nodes never fetch for one another.
+Every result of a node's page tools is `{type, source, body, trust: "untrusted", license}`. Cite an item by its IRI, `<site.base><type-plural>/<slug>/` (the `iri` of a chunk record), and a passage as `<item IRI>#chunk-<first 16 hex characters of the record's id>`. Across nodes, keep each result's origin with it; nodes never fetch for one another.
 
 ## 7. Before you say "done"
 
@@ -142,6 +141,6 @@ Quote a number only from a command you ran. When the Bundle sits in a clone of t
 
 ## 8. More
 
-- Connecting coding agents, assistants, CI and trackers: `references/connectors.md`.
+- Connecting coding agents, CI and trackers: `references/connectors.md`.
 - Configuration keys for peers, lanes, channels, budget, execution and contribution: `references/configuration.md`.
 - The guide: https://agenticsystemcore.com/docs/how-to-use/ and /docs/demos/. A coding agent working inside the engine repository reads its `AGENTS.md` first.

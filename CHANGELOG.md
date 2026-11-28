@@ -17,6 +17,13 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ships, and on any advisory in the development tools that is not in the dated list
   `tests/arch/audit-exceptions.json` (one entry: `picomatch`, GHSA-fc5q-39xc-vjpf, no fixed version
   published; the entry expires on 31 January 2027).
+- The Claude Code plugin `plugins/agentic-system-core/`: its copy of the agent skill leaves out the
+  passages about the engine's tool server (the Mode 1 command, the `tools` row of the verb table,
+  the section of `references/connectors.md` that connects an assistant), and the keyword `mcp` is
+  gone from the plugin and the marketplace entry. Claude's plugin directory refuses a plugin whose
+  text tells anyone to add a server the plugin does not declare. The skill in
+  `skills/agentic-system-core/` is unchanged; `tests/docs/agent-skill.test.js` lists the passages
+  and keeps the rest of the two copies equal.
 
 ## [1.1.0] - 2026-11-13
 

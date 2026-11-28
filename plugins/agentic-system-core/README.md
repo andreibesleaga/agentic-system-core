@@ -7,6 +7,6 @@ claude plugin marketplace add andreibesleaga/agentic-system-core
 claude plugin install agentic-system-core@agentic-system-core
 ```
 
-The same skill, for any agent that reads Agent Skills, is in [`skills/agentic-system-core/`](../../skills/agentic-system-core/SKILL.md) at the root of this repository, and on the site at <https://agenticsystemcore.com/docs/agent-skill/>. The plugin does not start the engine's tool server (`agsc mcp`): that server serves the Bundle of the folder it starts in, so it is added per project, as the skill's `references/connectors.md` shows.
+The skill for any agent that reads Agent Skills is in [`skills/agentic-system-core/`](../../skills/agentic-system-core/SKILL.md) at the root of this repository, and on the site at <https://agenticsystemcore.com/docs/agent-skill/>. The plugin's copy is that text without the passages about the engine's tool server: the plugin declares no server, so its skill names none and sets none up.
 
 The skill text is CC0-1.0.

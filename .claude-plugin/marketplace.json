@@ -11,7 +11,7 @@
       "license": "CC0-1.0",
       "homepage": "https://agenticsystemcore.com/docs/agent-skill/",
       "repository": "https://github.com/andreibesleaga/agentic-system-core",
-      "keywords": ["knowledge", "agent-skills", "mcp", "llms-txt", "linkset"]
+      "keywords": ["knowledge", "agent-skills", "llms-txt", "linkset"]
     }
   ]
 }
