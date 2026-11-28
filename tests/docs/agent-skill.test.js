@@ -1,7 +1,10 @@
 'use strict';
 // tests/docs/agent-skill.test.js — the agent skill in skills/agentic-system-core/ stays
-// well-formed, names only real verbs, and is the same bytes as the copy the Claude Code
-// plugin in plugins/agentic-system-core/ carries; the marketplace file points at that plugin.
+// well-formed and names only real verbs; the copy the Claude Code plugin in
+// plugins/agentic-system-core/ carries is the same bytes without the passages about the
+// engine's tool server (LEFT_OUT), because the plugin declares no server and the plugin
+// directory refuses a plugin whose text tells anyone to add one; the marketplace file points
+// at that plugin.
 //
 // Deterministic: reads files only; no process, no clock, no network.
 
@@ -71,10 +74,45 @@ test('the security contact the skill teaches carries no date that expires (AGSC-
   assert.match(skill, /^\s*Contact: \S+$/mu, 'the skill shows the Contact line');
 });
 
-test('the plugin carries the same bytes as skills/agentic-system-core/', () => {
+/**
+ * What the plugin's copy of the skill leaves out or shortens: [file, the text of
+ * skills/agentic-system-core/, the text of the plugin's copy]. Every passage is about the
+ * engine's tool server. To update the copy after a change to the skill: copy the three
+ * files into the plugin, then make these replacements, each exactly once.
+ */
+const LEFT_OUT = [
+  ['SKILL.md', 'section 6; `agsc mcp`; `agsc propose <slug>`', 'section 6; `agsc propose <slug>`'],
+  ['SKILL.md', /^\| tools \| `agsc mcp [^\n]*\n/mu, ''],
+  ['SKILL.md', ' Over `agsc mcp`, `remember` and `propose` return text and write nothing; you save it.', ''],
+  ['SKILL.md', ' (`propose({slug, task_state, at})` over the tools)', ''],
+  ['SKILL.md', 'Every result of `agsc mcp` and of a node\'s page tools is', 'Every result of a node\'s page tools is'],
+  ['SKILL.md', 'Connecting coding agents, assistants, CI and trackers', 'Connecting coding agents, CI and trackers'],
+  ['references/connectors.md', /^## Assistants: the tool server\n\n[^\n]+\n\n/mu, ''],
+];
+
+/** The text the plugin carries for one file of the skill: the skill's text after LEFT_OUT. */
+function pluginText(file) {
+  let text = fs.readFileSync(path.join(SKILL, file), 'utf8');
+  for (const [f, from, to] of LEFT_OUT.filter((row) => row[0] === file)) {
+    const parts = text.split(from);
+    assert.equal(parts.length, 2, `${f}: the skill must hold this passage exactly once: ${from}`);
+    text = parts.join(to);
+  }
+  return text;
+}
+
+test('the plugin carries the skill of skills/agentic-system-core/ without the tool-server passages, and the same bytes otherwise', () => {
   const copy = path.join(PLUGIN, 'skills', 'agentic-system-core');
   assert.deepEqual(files(copy), files(SKILL));
-  for (const f of files(SKILL)) assert.ok(fs.readFileSync(path.join(SKILL, f)).equals(fs.readFileSync(path.join(copy, f))), `${f} differs`);
+  for (const f of files(SKILL)) assert.equal(fs.readFileSync(path.join(copy, f), 'utf8'), pluginText(f), `${f} differs`);
+});
+
+test('no text in the plugin names a tool server command or tells anyone to add one', () => {
+  // The plugin declares no server, so the plugin directory refuses text that sets one up
+  // (https://claude.com/docs/plugins/pre-submission-checklist, read on 2026-11-28).
+  for (const f of files(PLUGIN).filter((name) => !name.endsWith('.png'))) {
+    assert.doesNotMatch(fs.readFileSync(path.join(PLUGIN, f), 'utf8'), /mcp/iu, `${f} names a tool server`);
+  }
 });
 
 test('the plugin is content only: no hooks, no MCP server, no scripts, no executables', () => {
@@ -88,6 +126,7 @@ test('the marketplace names the plugin by the same name and points at its folder
   const plugin = JSON.parse(fs.readFileSync(path.join(PLUGIN, '.claude-plugin', 'plugin.json'), 'utf8'));
   assert.equal(market.plugins.length, 1);
   assert.equal(market.plugins[0].name, plugin.name);
+  assert.deepEqual(market.plugins[0].keywords, plugin.keywords);
   assert.equal(path.resolve(ROOT, market.plugins[0].source), PLUGIN);
   assert.equal(plugin.name, 'agentic-system-core');
 });

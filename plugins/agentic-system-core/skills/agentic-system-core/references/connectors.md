@@ -22,10 +22,6 @@ Run each of these only when the person asks for that connection.
 
 A steering file is context, not enforcement. A `CLAUDE.md` can keep the node's file separate with one line, `@.agsc/CLAUDE.md`.
 
-## Assistants: the tool server
-
-Run in the Bundle. Claude Code: `claude mcp add --transport stdio my-knowledge -- npx -y agsc-cli mcp`. Codex CLI: `codex mcp add my-knowledge -- npx -y agsc-cli mcp`. Cursor (`.cursor/mcp.json`) and Claude Desktop use `{"mcpServers":{"my-knowledge":{"command":"npx","args":["-y","agsc-cli","mcp"]}}}`; VS Code (`.vscode/mcp.json`) uses the top-level key `servers` with `"type": "stdio"`. The server reads the Bundle once at start; restart it after edits. From 1.1, `agsc mcp --http <port>` serves the same tools over Streamable HTTP (MCP 2026-07-28 only) at `http://127.0.0.1:<port>/mcp`, loopback only.
-
 ## Skills
 
 `agsc skills` then `agsc skills install .claude/skills` (or `.agents/skills`, `.github/skills`). From a cloned collection: `agsc import <clone> --from skills --list`, then `--dry-run`, then the import. To a collection: `agsc export --to skills --layout agentskills|claude-plugin|marketplace|cursor|windsurf`. Imported skills lose scripts, hooks and tool allow-lists, and every one arrives as a draft until a person publishes it. A SKOS thesaurus: `agsc import thesaurus.ttl --from skos` (drafts; every dropped statement is a warning). `agsc export --okf --manifest` adds a manifest of file digests that `import` checks.
