@@ -79,7 +79,7 @@ SOURCE_DATE_EPOCH=1767225600 node bench/measure.js --layer determinism --scratch
 
 The 61 files are the build output (`www/`) of the reference fixture.
 
-`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; `agsc run-vectors tests/vectors` gives 115 pass and 0 fail — the other 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer, which only the engine checks in 1.1, and are not run, and 7 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
+`agsc verify` exits 0. **What this does not establish:** the cross-implementation byte identity of AGSC-04-24, which needs a second engine — the Python package runs seven of the twenty populated areas (`build`, `discovery`, `frontmatter`, `graph`, `jcs`, `links`, `slug`; the Python package's own `agsc run-vectors tests/vectors` (a verb of the Python program, not of the Node engine's `agsc`; install it with `pip install agentic-system-core`) gives 115 pass and 0 fail — the other 34 vectors of those areas need a whole build, a writer it does not carry or the domain layer, which only the engine checks in 1.1, and are not run, and 7 are withdrawn) and agrees with the engine on the vectors both run, but it does not build a whole node, so byte identity of the emitted files between two engines is not measured. **Not run here:** the same builds on macOS and Windows, which the CI matrix runs on every push.
 
 ---
 
@@ -330,7 +330,45 @@ The page tools of an item page (AGSC-09-16) read their corpus — the discovery 
 | `ask` | 569 (627) | 8.01 (0.99) |
 | `propose` | 3,845 (1,020) | 0.94 (1.45) |
 
-A served Bundle is loaded once and never changes, so the search tokens and the resolved edges are computed on their initial use and kept. On the 5,000-item Bundle the query `bench` occurs in every item and the `search` answer is 592 KB, because no rule bounds a tool's answer (recorded as a specification item). Starting the server costs one in-memory build — 1.2 s on the reference fixture, 34.5 s on the 5,000-item Bundle, until it answers `initialize` — because the resource catalogue serves the built routes.
+A served Bundle is loaded once and never changes, so the search tokens and the resolved edges are computed on their initial use and kept. On the 5,000-item Bundle the query `bench` occurs in every item and the `search` answer is 592 KB, because no rule bounds a tool's answer (recorded as a specification item). *(Added at 1.1.1: that is the 1.0.0 answer. From 1.1.0 AGSC-09-13 bounds `search` at 100 hits, and the same call answers 11,994 bytes; see the next table. The other rows of this table are the 1.0.0 run; the next table is a new run of the call named below. For `read`, from 1.1.0 the answer carries the citation record of each chunk (AGSC-09-13), so the same tool answers more bytes than the 1,022 shown here for the fixture: 3,281 in the next table.)* Starting the server costs one in-memory build — 1.2 s on the reference fixture, 34.5 s on the 5,000-item Bundle, until it answers `initialize` — because the resource catalogue serves the built routes.
+
+**What the ten tools cost an agent, measured at 1.1.1.** *1.1.1 run; not in the record: every figure of this block was measured on 2026-11-28 by the command below, and `docs/measurements.json` holds none of them. `bench/tool-cost.js` is in the repository, not in the npm package: run it from a clone.*
+
+```
+SOURCE_DATE_EPOCH=1767225600 node bench/tool-cost.js --bundle tests/fixtures/minimal --bundle <5,000-item Bundle> --deps <folder with node_modules/gpt-tokenizer>
+node bench/gen-bundle.js --items 5000 --out <dir>      # the 5,000-item Bundle
+```
+
+How it is counted. Bytes are UTF-8 bytes of the compact JSON text; the definition of a tool is the entry of `tools/list` (the manifest with the MCP annotations), and an answer is the envelope of AGSC-08-18. Tokens are `o200k_base`, counted with `gpt-tokenizer` as the benchmarks repository counts them; the package is not a dependency of this repository, and without `--deps` the script prints characters / 4. No count is Claude's (see the limits above). The call on each Bundle is the one `bench/tool-cost.js` prints: the opening word of the title of the item at the head of the sorted list for `search` and `ask`, the item half-way down the sorted list for the others.
+
+The ten definitions (the same at 1.1.0 and 1.1.1, which changes no tool text):
+
+| | bytes | characters | tokens |
+|---|---|---|---|
+| `tools/list`, all ten | 3,796 | 3,790 | 901 |
+| page registration, all ten | 3,528 | 3,522 | 829 |
+| the page script that carries the registration | 5,993 | 5,987 | 1,430 |
+| the three-tool core (`search`, `read`, `propose`), `tools/list` | 976 | 974 | 231 |
+
+The descriptions are 885 characters of the 3,790, less than a quarter. The rest is the annotations and the argument schemas, which the specification fixes (AGSC-09-13, AGSC-11-18).
+
+One answer of each tool (envelope bytes / tokens):
+
+| tool | reference fixture (3 items) | 5,001 items |
+|---|---|---|
+| `search` | 450 / 119 | 11,994 / 3,602 (100 hits of 5,001 matching) |
+| `read` | 3,281 / 1,103 | 6,637 / 1,694 |
+| `links` | 297 / 80 | 508 / 142 |
+| `compose` | 212 / 58 | 220 / 61 |
+| `propose` | 1,020 / 266 | 3,870 / 670 |
+| `ask` | 627 / 141 | 569 / 129 |
+| `remember` | 704 / 189 | 704 / 189 |
+| `brief` | 1,374 / 423 | 2,836 / 828 |
+| `explain` | 269 / 75 | 300 / 87 |
+| `check`, no selection | 190 / 51 | 89,059 / 29,046 |
+
+Two facts the table shows. A `search` hit is `{iri, score, slug, title}` and holds no item text: 11,994 bytes for 100 hits is about 120 bytes a hit, and the 592 KB of the 1.0.0 run was 5,000 such hits before the bound existed. And `check` with no selection returns no finding on this Bundle but answers 89 KB, because its member `selection` repeats every slug checked (AGSC-09-13); it is the largest answer of the ten. The MCP result that carries an envelope holds it twice, as text and as `structuredContent`, so the bytes a client receives are about 2.1 times the envelope's (`search` on 5,001 items: 25,486 bytes, 7,425 tokens).
+
 
 **Hosting, by the host's published limits.** Cloudflare Pages is the reference profile. Its limits page (`https://developers.cloudflare.com/pages/platform/limits/`, read 2026-09-25, "Last updated Sep 5, 2026") says: "Cloudflare Pages sites can contain up to 20,000 files on the Free plan." and "Paid plans (such as Pro, Business, and Enterprise plans) can have up to 100,000 files per site."; "The maximum file size for a single Cloudflare Pages site asset is 25 MiB."; "A `_headers` file can have a maximum of 100 header rules."; "A `_redirects` file can have a maximum of 2,000 static redirects and 100 dynamic redirects, for a combined total of 2,100 redirects." Its Functions pricing page (`https://developers.cloudflare.com/pages/functions/pricing/`, read 2026-09-25) says: "On both free and paid plans, requests to static assets are free and unlimited."
 

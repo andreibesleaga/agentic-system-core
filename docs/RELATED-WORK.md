@@ -1,6 +1,6 @@
 # Relationship to other work
 
-**Who this is for:** a reviewer or a reader comparing this work with other systems. **Read after:** [README.md](../README.md), "What is different about it".
+**Who this is for:** a reviewer or a reader comparing this work with other systems. **Read after:** [README.md](../README.md), "What it does".
 
 *Informative. Every date is the date the cited document carried when it was checked; every "checked" note is the day it was read. Nothing here claims adoption, review or approval by any body. The IANA Well-Known URIs and Link Relation Types registries were read live on 2026-09-16: `knowledge-linkset` is not registered and is requested by the Internet-Draft; the discovery link uses the registered relation `describedby` and no relation is requested. The IANA Profile URIs registry, read on 2026-10-07, lists the profile URI `https://w3id.org/agentic-system-core/profile/agentic-knowledge`.*
 

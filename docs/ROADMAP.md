@@ -88,11 +88,52 @@ still passes.
   ([CITING-A-CHUNK.md](CITING-A-CHUNK.md)). The home page sends FAIR Signposting
   links and a fuller Dataset block; a node may opt in to a DCAT catalogue block, the
   `ard.json` and `ai-catalog.json` files and, with a responder, an A2A agent card.
-  `export --manifest` adds file digests that `import` checks.
+  `export --manifest` adds file digests that `import --from okf` checks; from package 1.1.1 the importers of the direct memory adapters check the file digests too (not the item count or the items digest).
 - **Capabilities of this distribution**, not format parts: direct memory adapters for
   Mem0, Letta, Zep, CSV, Basic Memory and Claude Code's memory files
   ([CONNECTORS.md](CONNECTORS.md)); the benchmark kit ([BENCHMARKS.md](BENCHMARKS.md));
-  and the Python checker at the parity of the 1.1 engine, except the domain layer.
+  and the Python checker, which runs 115 of the 376 current vectors (7 of 20 areas) and fails none; it does not run the domain layer and builds no node.
+
+## What 1.1.1 does
+
+*Written 28 November 2026.* 1.1.1 is a patch. It fixes `agsc import`: `--from okf` writes a time
+in the UTC form `…Z` and repairs a link between pages that the move to the node's folders
+broke; the six memory-tool importers
+check the digest of each file that `export-manifest.json` lists.
+It adds `bench/tool-cost.js`, which measures what the ten tools cost an agent in tokens;
+it does not make them cheaper (shortening the tool descriptions would change built
+files, so it waits for the next feature version). It gives the front page of the README
+and of [START-HERE.md](START-HERE.md) one promise (publish knowledge an agent can cite
+and anyone can check), a result in three steps, and the measured results with their
+limits, including the two in which keyword search or the pages did as well or better.
+A patch adds no rule and changes no built file; the [change log](../CHANGELOG.md) names
+each change to what `import` writes.
+
+## What comes next
+
+*Written 28 November 2026.* The next feature version is planned for the first quarter of
+2027. None of this is promised, and an item becomes work only when a release names it in
+AGSC-00-20. The aims:
+
+- A small core profile that others can implement, with test vectors for the rules that
+  have none.
+- A second-language implementation of that core that passes its vectors.
+- An optional signature on the discovery file.
+- Bounded tools for the route "search, then read".
+- The relation tools return titles and clusters beside identifiers, so an agent need not read
+  each linked item to learn what it is.
+- A reader library.
+- Left from 1.1.1, each needing a rule first: checking the item count and the items digest
+  on the import of the six memory tools (AGSC-09-17); a stricter test of when a foreign
+  source counts as the node's own; matching the prompt-injection phrases across extra white
+  space; keeping the header of a foreign page that holds an inline map (today the header is
+  dropped and the page loses its title and tags; keeping it safely needs a check of the whole
+  Bundle before anything is written); link forms the import does not repair (reference-style
+  links, links with a title, encoded addresses, links in an indented list paragraph).
+- A "works with" table in which every row has a recorded run.
+- Benchmarks on a corpus that is not the project's own.
+- A few low-cost standards: FAIR Signposting (the 1.1 home page already sends part of
+  it), an API catalogue as in RFC 9727, an MCP server card, and Croissant.
 
 ## Ideas after 1.1
 

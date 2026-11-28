@@ -58,8 +58,9 @@ only under the system temporary directory. Keep them that way.
   it); the pure contexts never touch a file, a process, a clock or the network.
 - **Public wording**: no superlatives, no performance claims against other systems,
   nothing called "registered" before the registry has acted, and no personal contact
-  details in public files. A claim of novelty uses only the sentence in
-  [README.md](README.md) "What is different about it".
+  details in public files. A statement of what the system does uses only the wording of
+  [README.md](README.md) "What it does"; comparisons with other systems stay in
+  [docs/RELATED-WORK.md](docs/RELATED-WORK.md).
 - **Never** commit, tag, push or publish on your own; a person does that.
 - Cite rules by id (`AGSC-nn-nn`); every id you cite must exist in `spec/`.
 

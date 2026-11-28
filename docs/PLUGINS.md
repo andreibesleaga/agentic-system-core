@@ -22,7 +22,7 @@ are `examples/plugins/`, one per kind, each with tests.
 
 ## 1. The eight kinds
 
-| kind | what it is | how the engine finds one | owning rules |
+| kind | what it is | where the specification places the selector | owning rules |
 |---|---|---|---|
 | `memory-adapter` | reads or writes a foreign corpus | `export --to <name>` / `import --from <name>` | AGSC-01-26a, AGSC-01-22 |
 | `channel-adapter` | carries a Proposal to a review lane | `channels[].adapter` in `agsc.config.json` | AGSC-01-30, AGSC-08-30 |
@@ -33,12 +33,12 @@ are `examples/plugins/`, one per kind, each with tests.
 | `composition-emitter` | renders a Harness for one runtime | `compose --emit <target>` | AGSC-07-18 |
 | `checker` | validates one normative artefact, standalone | one of the eleven of AGSC-09-90 | AGSC-09-90…92 |
 
-At 1.0 this engine loads a plugin you write for **three** of the kinds —
-the memory adapter (`export --to <path>` / `import --from <path>`), the composition
-emitter (`compose --emit <path>`) and the deployment profile (`agsc-host emit <path>`).
+At 1.0, 1.1.0 and 1.1.1 this engine loads a plugin you write for **three** of the kinds,
+and only from a command-line flag: the memory adapter (`export --to <path>` / `import --from <path>`),
+the composition emitter (`compose --emit <path>`) and the deployment profile (`agsc-host emit <path>`).
 The other five have their registry, their sample under `examples/plugins/` and their
-tests, and the selector column names where the specification places them; loading
-one of those five from a Bundle's configuration is a 1.1 engine item.
+tests, and the selector column names where the specification places them. This engine
+loads none of those five, and `agsc.config.json` has no key that loads a plugin.
 
 **The channel adapter at 1.0.** AGSC-01-30 describes a channel in two directions:
 ingest, where an adapter pulls messages from an outside system and renders each as an
@@ -164,7 +164,7 @@ plugin's own directory, lands inside the Harness or inside `content/` is
 kept when they carry a registered code. `--replace` is admitted for a plugin named
 by a path; a plugin declares no flags of its own at plugin API 1.0. A deployment
 profile is loaded the same way by `agsc-host emit <path>`. The other five kinds are
-selected where §1 says, and none of them is loaded from the command line at 1.0.
+selected where §1 says, and none of them is loaded from the command line at 1.0, 1.1.0 or 1.1.1.
 
 ## 5. The stability promise
 

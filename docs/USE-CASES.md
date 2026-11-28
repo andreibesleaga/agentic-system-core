@@ -28,7 +28,8 @@ Bundle's own folder.
 
 - **Who:** one person, their assistant, one local server.
 - **Data flow:** files on disk → the local MCP server → the assistant's context.
-  Nothing leaves the machine and no key exists.
+  The server opens no network connection and no key exists; a hosted model receives
+  every answer, drafts included.
 - **Surfaces:** the ten MCP tools and the item resources.
 - **Mode:** 1, used locally.
 - **Commands:** `agsc mcp` (configured in the assistant as in

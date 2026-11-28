@@ -1037,7 +1037,7 @@ determinism: 61 files compared, 0 different
 | 0 — drop-in user | `agsc init` on a folder of notes | Mode 0 | `init`, a security contact, one commit, `ci` and `build` take bare notes to a full local site |
 | A — human reader | opens the built pages, `llms.txt`, the search index | Mode 0 | the site is static, readable without JavaScript, with every item's Markdown view |
 | B — human contributor | edits a page, `lint --fix`, `propose` | Mode 0 | the patch carries the edit and a person runs the git commands |
-| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | ten tools, every answer untrusted and licensed, nothing leaves the machine |
+| C — agent reader | `search`, `read`, `links` over `agsc mcp` | An agent on the same wiki | ten tools, every answer untrusted and licensed, no network connection from the server |
 | D — agent proposer | `propose`, `remember` | An agent on the same wiki; Mode 5 | the tools hand back text and write nothing |
 | E — architect | `compose … --zip` | Mode 4 | a selection becomes seven file kinds, the same verdict from the tool server |
 | F — integrator | `skills install` | Mode 3 | packs are content only, lock-verified, idempotent, and come back as procedures |

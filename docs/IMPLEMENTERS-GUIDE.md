@@ -28,8 +28,13 @@ A **Bundle** is a folder of Markdown files with YAML frontmatter, plus one
 `agsc.config.json` (AGSC-01-01…04). An implementation reads a Bundle and emits a
 fixed set of files: HTML pages, four RDF views, a search index, a discovery
 document, two text dialects for agents, and a few more (AGSC-06-01). The whole point
-is that two implementations given the same Bundle emit the same bytes
-(AGSC-04-01/02), so a reader can check any node's output against any other's.
+is that a conforming implementation emits, for a given Bundle, the bytes the vectors
+expect (AGSC-04-01/02), so a reader can check any node's files against the same rules. Today one
+engine builds a whole node. A second program, the Python package (a checker, not an
+engine), runs 115 of the 376 current vectors (7 of 20 areas) with its own `agsc run-vectors`
+verb, which the Node engine's `agsc` does not have, and fails none; so the files of two
+engines have not been compared. The rules and the vectors are normative; these counts are
+informative and change with each release.
 
 There are four Levels (AGSC-10-01…06). Each is a set of obligations and a set of
 vector areas. You pick one and claim it.

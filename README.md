@@ -1,11 +1,53 @@
 # Agentic System Core
 
+**Publish knowledge an agent can cite and anyone can check.**
+
+**In short.** Write what you know as Markdown files (a *Bundle*). `agsc build` turns a Bundle into a *node*: a static website, plus files for agents (a graph, a search index, `llms.txt`, a discovery document). An agent cites a passage by its address and its SHA-256 digest, and anyone can check both against the published `chunks.jsonl` ([how a citation is checked](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CITING-A-CHUNK.md)). A digest shows that a copy was changed or damaged. It is not a signature: the publisher can change the text and the digest together. The build calls no model, so building and indexing cost no tokens. The same input gives the same bytes (`agsc verify` builds twice and compares). Byte-stable files are the kind of input a prompt cache can reuse; no cache saving has been measured here.
+
+**What was measured.** One study, November 2026: 60 questions about two small nodes (50 of them answerable), answered by the hosted model `anthropic/claude-haiku-5.5`. Share of the answerable questions answered correctly, and median tokens per answer:
+
+- Through the node's tools: 98.0% at 12,983 tokens. From the node's own HTML pages, read by the model: 67.3% at 29,559.
+- The study's harness ran one search and five reads and put the results in one prompt (the model made no call; each text cut to 1,400 characters): 91.0% at 3,137.
+- Two results do not favour the tools. Keyword ranking (BM25) over the same files: 97.3% at 1,311. The whole corpus pasted into the prompt: 98.7% at 19,856.
+- Questions about relations, from a separate study (43 questions with an answer, three sites, four models): the graph tools scored 58% with every model and the pages 70% to 77%, because the tools return identifiers without titles.
+
+The limits: one study and two small nodes. An AI model wrote the questions from the nodes' own texts, which favours keyword matching, and that model (`anthropic/claude-sonnet-5.5`) is one of those tested. The hosted-model runs stopped at their token caps, so those rows are incomplete. A 7-billion-parameter local model could not drive the tools (1.0% correct). Every number, with its interval and the script that recomputes it, is in the [benchmarks repository](https://github.com/andreibesleaga/agentic-system-core-benchmarks).
+
+**Who changes a node.** Agents change a node only through proposals (a change submitted as a pull request). By default a person approves each one. Automatic publishing is the operator's explicit choice, recorded in the configuration and revocable by editing one key; the ledger (a hash-chained log of merges, derived from git history) marks every merge made that way. A declared agent lane (the configuration entry that names one agent and what it may do) may create at most 20 new items per proposal by default and has a monthly budget in US dollars, which is required only for a lane of kind `llm`. These limits are a design aim, meant to keep each proposal small enough for a person to read; they have not been measured, and they do not limit how many proposals arrive or how many existing items one proposal edits. The node's own continuous-integration check (the gate) and its forge enforce them. The engine does not stop someone who has write access to the repository.
+
+**What it connects to.** Ten tools for assistants over MCP (the Model Context Protocol) and WebMCP (the same tools inside a web page); thirteen adapters that import or export other tools' files (Mem0, Letta, Zep, SKOS, CSV and others; some run one way); RDF files and an OWL 2 RL vocabulary for graph tools; and optional ARD and AI Catalog files (both are still draft specifications, and the build writes them only when switched on).
+
+## Three steps to a result
+
+From a clone of this repository, with Node 22.13 or later:
+
+```bash
+npm ci                                                   # 1. install the pinned libraries
+REPO=$PWD; D=$(mktemp -d); cp -r tests/fixtures/minimal "$D/node"; cd "$D/node"   # a fresh copy each time
+export SOURCE_DATE_EPOCH=1767225600                      # the build time (see below)
+node "$REPO/bin/agsc.js" build                           # 2. build the example
+node "$REPO/bin/agsc.js" verify                          # 3. check it: build twice, compare the bytes
+```
+
+Step 2 lists some lines that begin `skipped:` (optional files this small example leaves out) and ends with `build: pass (0 error, 0 warn)`. Step 3 prints `verify: pass (0 error, 0 warn)`. The site is in `www/`: open `www/index.html`, read `www/llms.txt`, and look at `www/chunks.jsonl`, where each line is one passage with its digest. `SOURCE_DATE_EPOCH` fixes the build time, so the result is the same on every machine; in your own folder one git commit does the same.
+
+**On your own folder.** Run `agsc init` first (it gives each note a header and moves it to `content/concepts/`). Then `agsc build` and `agsc ci` need two things: a git commit or `SOURCE_DATE_EPOCH`, and a `.well-known/security.txt` with a `Contact:` line. If you installed from npm, you have no clone and no `$REPO`: type `agsc` in place of `node "$REPO/bin/agsc.js"`, once `node_modules/.bin` is on your `PATH` (see "Quick start" below).
+
+**Routes in**, starting with the one that needs no engine.
+
+- **Without the engine.** Write the files of Level 0 (the smallest conformance level: static files, no digests) from any CMS, or by hand for a small node (ten steps: [docs/IMPLEMENTERS-GUIDE.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/IMPLEMENTERS-GUIDE.md) section 1a). Check any published node with the standalone checker, `node tools/validate-wellknown <file or URL> --level 0` from a clone (`node node_modules/agentic-system-core/tools/validate-wellknown` from an install), which imports nothing from `src/`. [agenticfeeder.com](https://agenticfeeder.com/) is a node made this way, without this engine.
+- **A folder of notes.** `agsc init`, `agsc ci`, `agsc build`: "Quick start" below and the [Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md).
+- **An assistant.** `agsc mcp` gives it ten tools over your folder: [docs/USING-WITH-ASSISTANTS.md](docs/USING-WITH-ASSISTANTS.md).
+- **Teams, skills, harnesses (starting files for an agent runtime) and live boards.** The other modes: [docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), below.
+
+## What this repository holds
+
 A specification for publishing machine-discoverable knowledge bundles — the Agentic Knowledge Web.
 
 What this repository holds is the specification itself — numbered normative rules, three JSON Schemas, an OWL 2 RL ontology and a suite of conformance test vectors — together with the reference engine that implements it, its command line `agsc`, and the eleven independent checkers of AGSC-09-90 — seven validators and four generators — that anyone can run against any distribution of the format (the repository also holds the maintainer's own tools, which do not ship).
 
 ## Status
-**Released.** This tree states specification `1.1.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.1.0` (see "Versions" below) and are published from the package tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core` (the Python checkers and reading API; the other verbs still run on the Node engine). The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
+**Released.** This tree states specification `1.1.0`. `spec/00-overview.md` is authoritative, and it is the file to read rather than this line. The packages — `agentic-system-core` and its short alias `agsc-cli` on npm, and `agentic-system-core` on PyPI — carry version `1.1.1` (see "Versions" below) and are published from the package tag; the name-reservation placeholders that preceded them shipped no runtime and are marked deprecated on npm and yanked on PyPI. Install with `npm install agentic-system-core`, or `pip install agentic-system-core` (the Python checkers and reading API; the other verbs still run on the Node engine). The reference engine claims Level 3 ([its claim](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim)).
 
 **Versions.** Two numbers, stated apart. The *specification version* (`spec_version`,
 declared in `spec/00-overview.md`) names the rules, schemas, vocabulary and conformance
@@ -13,8 +55,13 @@ vectors; a Bundle declares it in `agsc.config.json`. The *package version* (`pac
 `agentic-system-core` and `agsc-cli` on npm, `agentic-system-core` on PyPI) names the
 implementation; it moves alone for a patch that changes no rule and no emitted byte —
 a dependency fix, a defect in a check — and a package-only release carries the package
-tag `v<version>` and no specification tag. `agsc --version` prints the package version;
-the conformance claim names both ("agentic-system-core 1.1.0 conforms to
+tag `v<version>` and no specification tag. A package-only patch may also correct an
+import that lost data from a foreign source or wrote an item that the engine's own lint
+refuses, and may make the check of an import more tolerant of damaged input or add a warning
+to it; the change log names each such case. Built files never change in a patch, and a
+correction to an import is applied only when it adds no fault to the item's own check (the
+strict reader and the item schema). `agsc --version` prints the package version;
+the conformance claim names both ("agentic-system-core 1.1.1 conforms to
 AgenticSystemCore 1.1.0, Level 3"); the change log says for every release whether the
 specification moved.
 
@@ -25,8 +72,8 @@ The specification's own site is [AgenticSystemCore.com](https://agenticsystemcor
 A **Bundle** is a folder of Markdown files with a small block of typed fields at the
 top of each; the specification says how that folder becomes a **knowledge node** — a
 static website plus a graph, a search index, text files for agents and a discovery
-document — with the same bytes from any implementation. People and agents read a node
-through ordinary web addresses, change it only by proposals that a person ratifies, and
+document — with bytes fixed by the specification and its vectors. People and agents read a node
+through ordinary web addresses, change it only by proposals that a person ratifies (each one, or by a standing choice the operator records), and
 compose its items into a starting harness — files an architect or an agent runtime
 starts from. Nodes find and cite each other with no server in between.
 
@@ -50,17 +97,17 @@ starts from. Nodes find and cite each other with no server in between.
   ([Chrome Web Store](https://chromewebstore.google.com/detail/webaiassist/mekikidmpikblfalilhckiadncbjfppi),
   [source](https://github.com/andreibesleaga/webaiassist)).
 
-## What is different about it
+## What it does
 
-To the author's knowledge, no other system combines discovery through already-registered web
-mechanisms with an integrity digest on every artefact link of its discovery document, a typed graph with a
-published ontology, machine artefacts whose bytes are fixed by expected-byte
-conformance vectors, governance in which every change — human or agent — arrives as a
+A node publishes its content with discovery through already-registered web
+mechanisms; an integrity digest on every artefact link of its discovery document; a typed
+graph with a published ontology; machine files whose expected bytes are fixed by
+conformance vectors; governance in which every change, human or agent, arrives as a
 proposal carrying its provenance and a person ratifies it (directly, or by a standing
-rule a person recorded in the node's configuration), and composition of the same files
-into a starting harness, with no server required at any point.
+rule a person recorded in the node's configuration); and composition of the same files
+into a starting harness. No server is required at any point.
 
-This is a claim about the specification's text and its vectors, not a performance
+This is a statement about the specification's text and its vectors, not a performance
 claim. Other systems have some of these properties; the dated comparison is in
 [docs/RELATED-WORK.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/RELATED-WORK.md).
 
@@ -69,12 +116,12 @@ claim. Other systems have some of these properties; the dated comparison is in
 | Discovery through registered mechanisms | one link set at a well-known address, found through the registered relation `describedby` | [AGSC-06-07](spec/06-surfaces.md), [AGSC-06-25](spec/06-surfaces.md); `tools/validate-wellknown` |
 | A digest on every artefact link | at Level 2, each link of the discovery document to a file the node builds (the graph files, `llms.txt`, NOW, the skills and boards indexes, the ledger, the vocabulary files) carries the SHA-256 of that file; links to surfaces, the licence page, peers and contribution targets carry none | [AGSC-06-08](spec/06-surfaces.md); the `discovery` vectors |
 | A typed graph with an ontology | fourteen typed links, four RDF views, a published OWL 2 RL vocabulary | [spec/05-graph.md](spec/05-graph.md), [ontology/agsc.ttl](ontology/agsc.ttl) |
-| Bytes fixed by vectors | two implementations given one Bundle emit the same machine files | [AGSC-04-24](spec/04-canonicalization.md); [tests/vectors/](tests/vectors/README.md) |
-| Governance with provenance | every change is a proposal with its provenance; a person ratifies; a ledger is derived from the history | [spec/08-governance.md](spec/08-governance.md) (AGSC-08-08, AGSC-08-20) |
+| Bytes fixed by vectors | the vectors give the expected bytes of the machine files. The engine passes all 376 current vectors; the Python checker runs 115 of them (7 of 20 areas) and fails none. No second engine builds a whole node, so the files of two engines have not been compared (the counts are informative; the vectors are normative) | [AGSC-04-24](spec/04-canonicalization.md); [tests/vectors/](tests/vectors/README.md) |
+| Governance with provenance | every change is a proposal with its provenance; a person ratifies each one, or records a standing choice for a declared agent lane; a ledger is derived from the history | [spec/08-governance.md](spec/08-governance.md) (AGSC-08-08, AGSC-08-20) |
 | Composition into a harness | selected items close over their links and become seven kinds of file an architect or an agent runtime can start from | [AGSC-07-12](spec/07-composition.md); `agsc compose` |
 | No server | a file format and static files; no protocol, server, database or reasoner is defined | [AGSC-00-02](spec/00-overview.md) |
 
-Beside that combination, and each available elsewhere on its own: **six modes** of use
+Also in the specification and the engine: **six modes** of use
 ([docs/plain/modes.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md)); **ten tools on every item page and on `/compose/`** for a
 browser's own agent, identical to the local tool server ([AGSC-09-16](spec/09-conformance.md));
 **eight plugin kinds** with a forward-compatibility promise ([docs/PLUGINS.md](docs/PLUGINS.md),
@@ -87,11 +134,12 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 **For agents**
 
 - **Memory for one agent.** `agsc mcp` in a Bundle gives an assistant ten tools to
-  search, read, follow links and cite items by address; nothing leaves the machine
+  search, read, follow links and cite items by address; the server opens no network connection, but a hosted model
+  receives every answer, drafts included
   (from 1.1 also over Streamable HTTP on the loopback address, `agsc mcp --http <port>`)
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [use case L1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/USE-CASES.md#l1--the-assistant-that-answers-from-one-folder)).
 - **Shared memory for many agents.** Every agent reads the same published files and
-  writes only by proposals a person ratifies
+  writes only by proposals a person ratifies, each one or by a recorded standing choice
   ([Mode 1](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/plain/modes.md), [docs/CONNECTORS.md](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/CONNECTORS.md)).
 - **A source of skills.** Each cluster becomes one skill pack holding its published
   items — the procedures are the part an agent follows — with a lockfile of their
@@ -125,12 +173,12 @@ never by a node ([AGSC-11-06](spec/11-boundary.md)).
 
 ## Quick start
 
-From a clone of this repository (Node 22.13 or later):
+The three steps above, with the test suite added. From a clone of this repository (Node 22.13 or later):
 
 ```bash
 npm ci                                   # the exact pinned libraries
 npm test                                 # the whole suite, offline
-REPO=$PWD; cp -r tests/fixtures/minimal /tmp/agsc-try && cd /tmp/agsc-try
+REPO=$PWD; D=$(mktemp -d); cp -r tests/fixtures/minimal "$D/node" && cd "$D/node"   # a fresh copy each time
 SOURCE_DATE_EPOCH=1767225600 node "$REPO/bin/agsc.js" ci   # lint, build twice, compare, verify: "ci: pass"
 ```
 
@@ -146,8 +194,8 @@ agsc ci                                                  # ci: pass (warnings ar
 agsc build                                               # the site, the graph and the agent files in www/
 ```
 
-Without the security contact `ci` stops with `AGSC-E901`; without a commit (or
-`SOURCE_DATE_EPOCH`) it stops with `AGSC-E204`. The
+Without the security contact `ci` and `build` stop with `AGSC-E901`; without a commit (or
+`SOURCE_DATE_EPOCH`) they stop with `AGSC-E204`. The
 [Mode 0 guide](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/mode-0.md)
 walks through this with the lines each command prints, and five more
 [guides](https://github.com/andreibesleaga/agentic-system-core/blob/main/docs/guides/README.md)
@@ -204,10 +252,10 @@ under `src/`. It claims **Level 3**, the full engine. A claim of any Level exist
 only after a green run of that Level's vector set and is published in the form of
 AGSC-09-01 (AGSC-10-05); the engine's claim is kept in
 [docs/CONFORMANCE-STATEMENTS.md](docs/CONFORMANCE-STATEMENTS.md#the-reference-engines-claim),
-with what each part of it rests on, and reads:
+with what each part of it rests on (the run is `agsc conform --level 3`), and reads:
 
-> agentic-system-core 1.1.0 conforms to AgenticSystemCore 1.1.0, Level 3.
-> Verified against the published conformance vectors on 2026-11-12: 376 of 376
+> agentic-system-core 1.1.1 conforms to AgenticSystemCore 1.1.0, Level 3.
+> Verified against the published conformance vectors on 2026-11-28: 376 of 376
 > passed in the 20 populated areas (adopt, boards, boundary, build, bundle,
 > chunks, cli, compose, conform, discovery, export, frontmatter, graph, import,
 > jcs, ledger, links, lint, prov, slug), 374 required and 2 optional, the 23
@@ -236,7 +284,7 @@ build the publisher adds `.well-known/security.txt` with a `Contact:` line (RFC
 * `docs/PLUGINS.md` is the plugin contract: the eight kinds this format admits
   (AGSC-00-24), what a plugin of each may read, emit and never do, how the engine
   finds one, and what is promised not to break within 1.x. `examples/plugins/`
-  holds one minimal sample per kind; at 1.0 a command loads three of the kinds (a
+  holds one minimal sample per kind; at 1.0 and 1.1 a command flag loads three of the kinds (a
   memory adapter, a composition emitter and a deployment profile), and the other
   five samples are proved by the plugin-contract test only.
 * `examples/blueprints/` holds three worked blueprints from 1.1: the engine itself, two
@@ -285,7 +333,7 @@ with their commands.
 **Check a Bundle on every push (GitHub Actions).** `action.yml` at the root of this
 repository is a composite action that runs `agsc ci` with the engine at the same
 commit as the action, so the ref you write pins the engine version. Pin it to the
-package tag, `v1.1.0` (not a specification tag: a package may be patched while the specification stays at `1.1.0`), or to that tag's full commit
+package tag, `v1.1.1` (not a specification tag: a package may be patched while the specification stays at `1.1.0`), or to that tag's full commit
 SHA, give the job read access only, and fetch the history the ledger reads:
 
 ```yaml
@@ -298,7 +346,7 @@ jobs:
       - uses: actions/checkout@<commit-sha>
         with:
           fetch-depth: 0
-      - uses: andreibesleaga/agentic-system-core@v1.1.0
+      - uses: andreibesleaga/agentic-system-core@v1.1.1
 ```
 
 **Lint before every commit (pre-commit).** `.pre-commit-hooks.yaml` offers one hook,
@@ -310,7 +358,7 @@ system Node is older, set `language_version` for the hook to a newer version:
 ```yaml
 repos:
   - repo: https://github.com/andreibesleaga/agentic-system-core
-    rev: v1.1.0
+    rev: v1.1.1
     hooks:
       - id: agsc-lint
 ```
