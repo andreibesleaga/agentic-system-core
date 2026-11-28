@@ -11,6 +11,69 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-29
+
+A package-only patch. **Specification `1.1.0` is unchanged**: no rule changes, and a Bundle that is
+valid at 1.1.0 builds and exports to the same files as with package 1.1.0. The patch corrects
+`agsc import`. Compared with 1.1.0, `--from okf` writes each item to the same path, with the same
+type, slug, status and links. Its header can differ only by a time respelled in UTC; its body can
+differ only by a link that resolved nowhere in 1.1.0. A correction is applied only when it adds no
+fault to the item's own check (the strict reader, the item schema, the nesting and size limits);
+otherwise the item is written as 1.1.0 wrote it and one warning says what was not applied.
+
+**If you import the same foreign source again after upgrading:** an item that 1.1.1 now writes
+differently no longer equals the copy that 1.1.0 wrote, and the import reports `AGSC-E206` for it,
+writes nothing and exits 1. Look first with `agsc import … --dry-run`, then import with `--replace`.
+
+### Fixed
+
+`agsc import --from okf`:
+
+- **A time is written in the UTC form `…Z`.** A real instant at `generated.at`, `stale_after` or
+  `verified[].at` (and `started`, `ended` on an episode) that is written with `+00:00`, `-00:00`,
+  `+0000`, `-0000`, with another offset of at most 14:00, or with fractions of a second, is
+  converted to UTC; fractions are dropped; a warning names each key. `24:00:00`, a leap second and
+  an impossible date are left as written, and `lint` names them.
+- **A link that the import broke is repaired.** Items are written to `content/<type>/<slug>.md`, so
+  a link between two pages of the source can stop resolving. Such a link, written as an inline
+  Markdown link to a `.md` file (with or without a `#heading`), is rewritten to the place the
+  linked item is written to. A link that resolves from the item's new place, to a file of the
+  import or to a file already in the Bundle, is never touched. Left as written: a link in code or
+  on a line indented by four spaces or a tab, reference-style links, links with a title, encoded
+  addresses and links that start at the root of a site. An adapter plugin's import repairs no link.
+- **A `type` named `constructor`, `__proto__` or `toString`** is imported like any unknown type: as
+  a concept, with the type kept in `x-okf-type`. 1.1.0 wrote such a page into an oddly named folder.
+
+`agsc import --from mem0|letta|zep|csv|basic-memory|claude-code`:
+
+- **The export manifest is checked.** When the folder holds an `export-manifest.json`, the digest of
+  each file it lists is compared, and a difference is a warning, as in the OKF import. The item
+  count and the items digest are not compared, because a memory tool's records are not the export's
+  items. `mem0`, `letta` and `zep` no longer report the manifest as a record they could not read. A
+  file of that name that is not a manifest is read as records, as before.
+
+The manifest check, for every importer that makes it:
+
+- A manifest that cannot be read (a directory, larger than 1 MiB, not UTF-8) gives one warning and
+  the import goes on. **This changes an exit code in three cases:** `--from okf` ended with exit 1
+  and wrote nothing; `--from mem0|letta|zep` ended with exit 1 for an oversize or non-UTF-8 file of
+  that name; a listed path that held a lone surrogate ended `--from okf` with exit 2 after writing.
+  All three now end with exit 0 and a warning.
+- Each listed path is read once; at most 5,000 listed paths and 256 MiB of listed files are
+  checked, and a warning says so beyond that; a listed path that is not a regular file (a directory, a named pipe) is reported and
+  never opened; a listed path that is not in normal form (a `..` segment, a leading `/`) is counted
+  and not read. 1.1.0 reported each such path as absent.
+- A listed path is printed with control characters shown as escapes and cut at 200 characters. An
+  ordinary path prints as before.
+
+### Added
+
+- `bench/tool-cost.js` (in the repository, not in the npm package) measures what the ten tools cost an
+  agent: the size of each tool definition as the tool server lists it and as a page registers it, and
+  of one answer of each tool, in bytes, characters and tokens. `docs/MEASUREMENTS.md` records the
+  figures. No tool changes in this patch: a change to a tool's text or answer changes built files,
+  so it waits for the next feature version.
+
 ### Changed
 
 - Continuous integration and the release gate: the dependency audit blocks on any advisory in what
@@ -24,6 +87,23 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   text tells anyone to add a server the plugin does not declare. The skill in
   `skills/agentic-system-core/` is unchanged; `tests/docs/agent-skill.test.js` lists the passages
   and keeps the rest of the two copies equal.
+- The README and `docs/START-HERE.md` open with one promise (publish knowledge an agent can cite and
+  anyone can check), a summary of what was measured with its limits, a result in three steps, and the
+  routes in, the one that needs no engine first. The section "What is different about it" is now
+  "What it does", and the comparison with other systems is in `docs/RELATED-WORK.md`.
+- The statements that two implementations emit the same bytes now say what is proved: the engine
+  passes all current vectors, and the Python package is a checker that runs 115 of them (7 of 20 areas)
+  and fails none.
+- `docs/USING-WITH-ASSISTANTS.md` names search, then read, as the default way to answer a question, with
+  the measured cost against a tool loop that the model drives, and names the three tools (`search`,
+  `read`, `propose`) a client can switch on when it wants a short tool list. It also says correctly which
+  tools of the local server read the folder on disk, drafts included, and which answer from the listed
+  items.
+- `docs/MEASUREMENTS.md`: the 592 KB `search` answer is the 1.0.0 figure; at 1.1.0 the bound of 100 hits
+  holds the same call to 11,994 bytes.
+- `docs/PLUGINS.md` and `docs/CONNECTORS.md` say what the engine does: three plugin kinds load, from
+  command-line flags only, and which importers check `export-manifest.json`.
+- `docs/ROADMAP.md` has a section on this patch and one on what is planned next.
 
 ## [1.1.0] - 2026-11-13
 

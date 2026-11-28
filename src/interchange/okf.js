@@ -47,7 +47,8 @@
  * (AGSC-02-02 rejects anchors, aliases, tags, merge keys and flow mappings, none of
  * which OKF forbids) is NOT refused: it is imported with a synthesized frontmatter
  * and its body intact, and the reason is reported. Refusing a foreign file for
- * being foreign is the one thing AGSC-01-22 forbids.
+ * being foreign is the one thing AGSC-01-22 forbids. Reading such a header's keys
+ * is not done: it would need `lint` run over the whole planned Bundle.
  *
  * DETERMINISM (AGSC-01-23). Input is sorted by path, code-point; colliding slugs
  * take `-2`, `-3`, … in that order; nothing reads a clock or a directory listing.
@@ -65,6 +66,7 @@ const { serialize, titleFor } = require('../knowledge/adopt.js');
 const { compareCodePoint, nfc } = require('../knowledge/unicode.js');
 const { neutraliseSingleLine } = require('./mapping.js');
 const { finding } = require('../knowledge/validate.js');
+const { compile: compileSchema } = require('../knowledge/schema.js');
 const { withoutTrailingSlashes } = require('../shared/trailing.js');
 
 /** The name this adapter answers to on `import --from <name>`. */
@@ -104,6 +106,93 @@ const FOREIGN_LINK_NAMES = Object.freeze({
   'traces-to': 'covers',
 });
 
+/**
+ * AGSC-02-06: an instant is `YYYY-MM-DDTHH:MM:SSZ`. A foreign one may spell UTC as `+00:00`,
+ * `-00:00`, `+0000` or `-0000`, carry fractions of a second (dropped), or name another offset
+ * (`±HH:MM` or `±HHMM`, hours 00 to 13 with any minutes, or exactly 14:00), which is converted to UTC. Only a real instant is
+ * respelled (a valid calendar date, hour 0-23, minute and second 0-59); `24:00:00`, `23:59:60`,
+ * an impossible date and a result outside the years 0001-9999 are left as written, for the lint
+ * to name. The arithmetic is integer arithmetic: this module reads no clock.
+ */
+const FOREIGN_INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(?:Z|([+-])(\d{2}):?(\d{2}))$/u;
+
+/** The instant keys of an item, as paths into its frontmatter (`[]` is every entry of a list). */
+const INSTANT_PATHS = Object.freeze([['generated', 'at'], ['stale_after'], ['started'], ['ended'], ['verified', '[]', 'at']]);
+
+/** The days of a month of the proleptic Gregorian calendar. */
+function daysIn(year, month) {
+  if (month === 2) return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28;
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+/** Days since 1970-01-01 of a civil date (the algorithm of H. Hinnant; integers only). */
+function daysFromCivil(year, month, day) {
+  const y = month <= 2 ? year - 1 : year;
+  const era = Math.floor(y / 400);
+  const yoe = y - era * 400;
+  const doy = Math.floor((153 * (month + (month > 2 ? -3 : 9)) + 2) / 5) + day - 1;
+  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+  return era * 146097 + doe - 719468;
+}
+
+/** The civil date of a count of days since 1970-01-01. */
+function civilFromDays(count) {
+  const z = count + 719468;
+  const era = Math.floor(z / 146097);
+  const doe = z - era * 146097;
+  const yoe = Math.floor((doe - Math.floor(doe / 1460) + Math.floor(doe / 36524) - Math.floor(doe / 146096)) / 365);
+  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+  const mp = Math.floor((5 * doy + 2) / 153);
+  const day = doy - Math.floor((153 * mp + 2) / 5) + 1;
+  const month = mp < 10 ? mp + 3 : mp - 9;
+  return { day, month, year: yoe + era * 400 + (month <= 2 ? 1 : 0) };
+}
+
+/**
+ * One foreign time as UTC at seconds precision, or `null` when it is already in that form,
+ * is no real instant, or falls outside the years 0001-9999.
+ *
+ * @param {*} value anything; only a string is read.
+ * @returns {{text:string, dropped:boolean}|null}
+ */
+function toUtcInstant(value) {
+  if (typeof value !== 'string') return null;
+  const m = FOREIGN_INSTANT.exec(value);
+  if (m === null) return null;
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number);
+  const sign = m[8] === undefined ? 0 : (m[8] === '-' ? -1 : 1);
+  const offset = sign === 0 ? 0 : sign * (Number(m[9]) * 60 + Number(m[10]));
+  const real = month >= 1 && month <= 12 && day >= 1 && day <= daysIn(year, month)
+    && hour <= 23 && minute <= 59 && second <= 59
+    && (m[8] === undefined || (Number(m[10]) <= 59 && (Number(m[9]) <= 13 || (Number(m[9]) === 14 && Number(m[10]) === 0))));
+  if (!real) return null;
+  const seconds = daysFromCivil(year, month, day) * 86400 + hour * 3600 + minute * 60 + second - offset * 60;
+  const date = civilFromDays(Math.floor(seconds / 86400));
+  if (date.year < 1 || date.year > 9999) return null;
+  const rest = seconds - Math.floor(seconds / 86400) * 86400;
+  const two = (n) => String(n).padStart(2, '0');
+  const text = `${String(date.year).padStart(4, '0')}-${two(date.month)}-${two(date.day)}T${two(Math.floor(rest / 3600))}:`
+    + `${two(Math.floor(rest / 60) % 60)}:${two(rest % 60)}Z`;
+  return text === value ? null : { dropped: m[7] !== undefined, text };
+}
+
+/** AGSC-02-06: rewrite every string instant at `steps` in place; `changed` collects each key once and whether fractions were dropped. */
+function normaliseInstants(node, steps, trail, changed) {
+  if (node === null || typeof node !== 'object' || steps.length === 0) return;
+  const [head, ...rest] = steps;
+  if (head === '[]') {
+    if (Array.isArray(node)) node.forEach((entry) => normaliseInstants(entry, rest, trail, changed));
+    return;
+  }
+  if (Array.isArray(node) || node[head] === undefined) return;
+  if (rest.length > 0) { normaliseInstants(node[head], rest, trail, changed); return; }
+  const utc = toUtcInstant(node[head]);
+  if (utc === null) return;
+  node[head] = utc.text;
+  if (!changed.keys.includes(trail)) changed.keys.push(trail);
+  if (utc.dropped) changed.dropped = true;
+}
+
 /** Is this path one of the format's reserved documents? */
 function isReserved(path) {
   const name = String(path).split('/').pop();
@@ -111,7 +200,8 @@ function isReserved(path) {
 }
 
 /**
- * The frontmatter of one foreign document, tolerantly.
+ * The frontmatter of one foreign document, read strictly (the reader of AGSC-02-02), tolerantly:
+ * a header the reader refuses is an empty one with the reason, as the previous version imported it.
  *
  * @param {string} text the file's bytes.
  * @returns {{body:string, frontmatter:object, reason:(string|null)}}
@@ -177,7 +267,7 @@ function mapFrontmatter(raw, options) {
   for (const [key, value] of Object.entries(raw)) out[key] = value;
 
   const declared = out.type === undefined ? '' : String(out.type);
-  if (TYPE_PLURAL[declared] === undefined) {
+  if (!Object.hasOwn(TYPE_PLURAL, declared)) {
     if (declared !== '' && out[TYPE_KEEP_KEY] === undefined) out[TYPE_KEEP_KEY] = declared;
     out.type = 'concept';
     findings.push(finding('AGSC-E506',
@@ -218,7 +308,7 @@ function mapFrontmatter(raw, options) {
   // AGSC-02-12 with AGSC-01-22: a concept carries `kind`; a document MAPPED to
   // `concept` (its own type unknown or absent) that declares none gets
   // the adoption default of AGSC-02-90, so the import passes this node's own lint.
-  const mapped = TYPE_PLURAL[declared] === undefined;
+  const mapped = !Object.hasOwn(TYPE_PLURAL, declared);
   if (mapped && (out.kind === undefined || out.kind === null || String(out.kind) === '')) {
     out.kind = 'explainer';
     findings.push(finding('AGSC-E506',
@@ -240,6 +330,24 @@ function mapFrontmatter(raw, options) {
   if (foreign || (!allowed && given !== 'draft')) {
     out.status = 'draft';
     findings.push(draftWarning(options.path, { foreign, given, license: out.license }));
+  }
+
+  // AGSC-02-06 (an improvement of the import, not of the previous one): a foreign time in
+  // another spelling of UTC, or with an offset, is written as UTC, and each change is reported.
+  const instants = { dropped: false, keys: [] };
+  if (options.improve === true) {
+    for (const steps of INSTANT_PATHS) {
+      // `started` and `ended` are instants of an episode only; on any other type they are unknown keys.
+      if ((steps[0] === 'started' || steps[0] === 'ended') && out.type !== 'episode') continue;
+      // The values are the freshly parsed header of this document, so changing them in place is safe.
+      normaliseInstants(out, steps, steps.join('.').replace('.[]', '[]'), instants);
+    }
+  }
+  if (instants.keys.length > 0) {
+    findings.push(finding('AGSC-E506',
+      `${options.path}: the time(s) in ${instants.keys.join(', ')} were written in the UTC form AGSC-02-06 asks for`
+      + `${instants.dropped ? ' (fractions of a second dropped)' : ''} (AGSC-01-22)`,
+      { file: options.path, severity: 'warn' }));
   }
 
   if (out.prov === undefined) {
@@ -280,7 +388,7 @@ function mapFrontmatter(raw, options) {
       + ' and the imported file must pass this node\'s own lint (AGSC-01-22)',
       { file: options.path, severity: 'warn' }));
   }
-  return { findings, frontmatter: clean.frontmatter };
+  return { findings, frontmatter: clean.frontmatter, times: instants.keys.length > 0 };
 }
 
 // ------------------------------------------- AGSC-01-22
@@ -423,8 +531,142 @@ function versionWarnings(entries, options) {
   return out;
 }
 
+// ------------------------------------------- the two results of a document
+
+/** The compiled item schema of a raw one, once per raw schema object. */
+const COMPILED = new WeakMap();
+function schemasOf(rawItemSchema) {
+  if (rawItemSchema === null || typeof rawItemSchema !== 'object') return undefined; // no schema given: the reader's faults only
+  if (!COMPILED.has(rawItemSchema)) COMPILED.set(rawItemSchema, { item: compileSchema(rawItemSchema) });
+  return COMPILED.get(rawItemSchema);
+}
+
+/**
+ * The faults an item file has, as keys `<code> <instance path>`, found by the reader and the
+ * item schema `lint` uses (`frontmatter.parseItem`): an error, or a header nested deeper than
+ * AGSC-02-02 bounds (`nesting`). A file over the input cap is `AGSC-E904`.
+ *
+ * @param {{path:string, text:string}} result an item file as it would be written.
+ * @param {object|function|undefined} schemas `{item}` compiled, or a function that returns it; none: the reader's faults only.
+ * @returns {Set<string>}
+ */
+function problemsOf(result, schemas) {
+  const out = new Set();
+  const compiled = typeof schemas === 'function' ? schemas() : schemas;
+  for (const one of frontmatter.parseItem(result.text, { path: result.path, schemas: compiled }).findings) {
+    const at = /^(\/[^:\s]*):/u.exec(String(one.message));
+    if (one.severity === 'error') out.add(`${one.code} ${at === null ? '' : at[1]}`.trim());
+    else if (one.code === 'AGSC-E105' && /is nested \d+ levels deep/u.test(String(one.message))) out.add('nesting');
+  }
+  return out;
+}
+
+/** The faults of each base result, found once. */
+const KNOWN = new WeakMap();
+
+/**
+ * THE INVARIANT of the import (AGSC-01-22): the import may write the improved result of a
+ * document only when that result has no fault the base result does not also have. The base
+ * result is exactly what the previous version wrote. A fault is an error that the strict
+ * reader or the item schema reports, a header nested deeper than AGSC-02-02 bounds, or a
+ * file over the input cap. Otherwise the base result is written, byte for byte.
+ *
+ * @param {{path:string, text:string}} base
+ * @param {{path:string, text:string}} improved
+ * @param {object} schemas `{item}` compiled.
+ * @returns {{applied:boolean, result:object, why:(string|null)}}
+ */
+function chooseResult(base, improved, schemas) {
+  if (improved.text === base.text && improved.path === base.path) return { applied: true, result: improved, why: null };
+  if (!KNOWN.has(base)) KNOWN.set(base, problemsOf(base, schemas));
+  const known = KNOWN.get(base);
+  const added = [...problemsOf(improved, schemas)].filter((key) => !known.has(key));
+  if (added.length === 0) return { applied: true, result: improved, why: null };
+  const first = added[0];
+  return {
+    applied: false,
+    result: base,
+    why: first === 'nesting'
+      ? `the item would nest its header deeper than ${yaml.NESTING_BOUND} levels`
+      : `the item would have the fault ${first} that the previous version's item does not have`,
+  };
+}
+
+// ------------------------------------------- links, narrowly
+
+/** An inline link to a Markdown file, with no title: `](dir/name.md)` or `](dir/name.md#anchor)`. */
+const MD_FILE_LINK = /\]\(([^()\s[\]#%\\:<>"']+\.md)(#[^()\s]*)?\)/gu;
+
+/** The path a relative `target` names from the folder of `from`, or `null` when it leaves the tree. */
+function resolveFrom(from, target) {
+  const parts = from.split('/').slice(0, -1);
+  for (const part of target.split('/')) {
+    if (part === '..') {
+      if (parts.length === 0) return null;
+      parts.pop();
+    } else if (part !== '.' && part !== '') parts.push(part);
+  }
+  return parts.join('/');
+}
+
+/**
+ * A relative Markdown link of a foreign document names another document by its place in the
+ * foreign tree. A link is rewritten to the place the linked item is written to only when it
+ * names a document of this import from its place in the SOURCE tree and names no file this
+ * import writes from the item's NEW place. Nothing else is touched: a link that resolves at
+ * the new place stays as written, even when it now names another item. One linear pass, outside
+ * fenced code, code spans and any line indented four spaces or a tab: such a line is left as written
+ * also when it is a list continuation and not code, because only a Markdown reader can tell the two.
+ *
+ * @param {string} body the document's body.
+ * @param {string} from the document's path in the foreign tree.
+ * @param {string} home where the item is written (`content/<plural>/<slug>.md`).
+ * @param {Map<string,string>} landing foreign document path to where its item is written.
+ * @param {Set<string>} written every path this import writes.
+ * @param {function(string):boolean} exists whether a path is a file already in the target Bundle.
+ * @returns {{body:string, rewritten:number}}
+ */
+function rewriteLinks(body, from, home, landing, written, exists) {
+  const text = String(body);
+  if (!text.includes('](')) return { body: text, rewritten: 0 };
+  const spans = fix.codeSpans(text);
+  let span = 0;
+  let lineStart = 0;
+  let lineEnd = text.indexOf('\n');
+  let rewritten = 0;
+  let out = '';
+  let cursor = 0;
+  MD_FILE_LINK.lastIndex = 0;
+  for (let m = MD_FILE_LINK.exec(text); m !== null; m = MD_FILE_LINK.exec(text)) {
+    const at = m.index;
+    while (span < spans.length && spans[span][1] <= at) span += 1;
+    if (span < spans.length && spans[span][0] <= at) continue;
+    while (lineEnd !== -1 && lineEnd < at) {
+      lineStart = lineEnd + 1;
+      lineEnd = text.indexOf('\n', lineStart);
+    }
+    if (text.startsWith('    ', lineStart) || text[lineStart] === '\t') continue;
+    const target = m[1];
+    const place = landing.get(resolveFrom(from, target));
+    if (place === undefined || target.startsWith('/')) continue;
+    const there = resolveFrom(home, target);
+    if (written.has(there) || (there !== null && exists(there))) continue;
+    const anchor = m[2] === undefined ? '' : m[2];
+    out += `${text.slice(cursor, at)}](../${place.slice('content/'.length)}${anchor})`;
+    cursor = at + m[0].length;
+    rewritten += 1;
+  }
+  return { body: rewritten === 0 ? text : out + text.slice(cursor), rewritten };
+}
+
 /**
  * The import plan: what would be written, in code-point path order.
+ *
+ * Each document has two results (AGSC-01-22). The BASE result is what the previous version
+ * wrote: a strict read of the header, no time respelled, no link touched. The IMPROVED result
+ * adds two things: times written as UTC, and links that cross folders rewritten to where their
+ * item is written. A header the strict reader refuses is never read further. `chooseResult` writes the improved result only when it has no fault the base result
+ * does not have; otherwise the base result is written and one warning says what was not applied.
  *
  * @param {Array<{path:string, text:string}>} files every file of the foreign tree.
  * @param {object} options
@@ -436,6 +678,8 @@ function versionWarnings(entries, options) {
  *   onto every item as `prov.source_version` (AGSC-01-22, AGSC-08-01).
  * @param {string|null} [options.sourceHash] the source's bundle hash, written onto
  *   every item as `prov.source_hash`.
+ * @param {Set<string>|function():Set<string>} [options.existingPaths] the paths under `content/` already
+ *   in the target Bundle (or a function that lists them, called at most once and only when needed).
  * @param {string} [options.base] `site.base` of the TARGET Bundle: a source whose root
  *   document carries it is this node's own (AGSC-01-22), and keeps the 1.0 draft rule.
  * @returns {{findings:Array<object>, totals:object, writes:Array<{path:string, text:string}>}}
@@ -446,60 +690,151 @@ function plan(files, options) {
     .filter((file) => String(file.path).endsWith('.md') && !isReserved(file.path))
     .sort((a, b) => compareCodePoint(String(a.path), String(b.path)));
 
-  const findings = [];
-  const writes = [];
   const taken = new Set();
-  const totals = { items: 0, unreadable_frontmatter: 0 };
   const sourceLicence = sourceLicenceOf(files, opts.licenceFiles);
   const owned = sourceOwned(files, opts.base);
-
-  for (const file of documents) {
-    const path = String(file.path);
-    const read = readDocument(file.text);
-    if (read.reason !== null) {
-      totals.unreadable_frontmatter += 1;
-      findings.push(finding('AGSC-E506',
-        `${path}: ${read.reason}; the body was imported and the frontmatter synthesized (AGSC-01-22)`,
-        { file: path, severity: 'warn' }));
+  // The item schema is compiled only when a document's improved result differs from its base result.
+  const schemas = () => schemasOf(opts.itemSchema);
+  // The files already in the target Bundle: a Set, or a function that answers one (called only
+  // when a link would otherwise be rewritten, and once). None given: no file exists.
+  let existing = null;
+  const exists = (path) => {
+    if (existing === null) {
+      const given = typeof opts.existingPaths === 'function' ? opts.existingPaths() : opts.existingPaths;
+      existing = given instanceof Set ? given : new Set();
     }
+    return existing.has(path);
+  };
 
-    const base = path.split('/').pop().replace(/\.md$/u, '');
+  const entries = documents.map((file) => {
+    const path = String(file.path);
+    const stem = path.split('/').pop().replace(/\.md$/u, '');
     // AGSC-02-91's slugifier is TOTAL — it answers `note` for a file name that
     // carries nothing usable — so a foreign document can never be dropped for its
     // name, which is what AGSC-01-22's tolerance requires.
-    const candidate = slugs.isValid(base) ? base : slugs.slugify(base);
+    const candidate = slugs.isValid(stem) ? stem : slugs.slugify(stem);
     const slug = slugs.dedupe(candidate, taken);
     taken.add(slug);
+    const entry = { baseFile: null, path, slug, stem, strict: readDocument(file.text), text: file.text };
+    entry.base = renderDocument(entry, false, { opts, owned, sourceLicence });
+    entry.improved = renderDocument(entry, true, { opts, owned, sourceLicence });
+    return entry;
+  });
 
-    const mapped = mapFrontmatter(read.frontmatter, {
-      body: read.body,
-      operator: opts.operator === undefined ? 'human:unknown' : opts.operator,
-      owned,
-      path,
-      slug,
-      sourceHash: opts.sourceHash,
-      sourceLicence,
-      sourceVersion: opts.sourceVersion,
-      stem: base,
-    });
-    findings.push(...mapped.findings);
+  // Links are rewritten only where the files already in the Bundle are known (`existingPaths` given):
+  // a caller that gives none (the conformance handler, the plugin lane) gets the links as written.
+  // An item lands where the previous version put it (the improved header never carries a type), so the
+  // places of the base results are the places links are checked against.
+  const landing = opts.existingPaths === undefined || opts.existingPaths === null
+    ? null
+    : new Map(entries.map((entry) => [entry.path, entry.base.path]));
+  const chosen = entries.map((entry) => decide(entry, landing, schemas, exists));
 
-    const target = `content/${TYPE_PLURAL[String(mapped.frontmatter.type)]}/${slug}.md`;
-    const ordered = fix.orderKeys(mapped.frontmatter,
-      fix.declaredOrder(opts.itemSchema, String(mapped.frontmatter.type)),
-      opts.itemSchema, String(mapped.frontmatter.type), null);
-    const text = fix.normaliseText(`${serialize(fix.quoteTemporal(ordered), path)}${nfc(read.body)}`);
-    writes.push({ path: target, text });
+  const findings = [];
+  const writes = [];
+  const totals = { items: 0, unreadable_frontmatter: 0 };
+  chosen.forEach((one) => {
+    findings.push(...one.findings);
+    if (one.unreadable) totals.unreadable_frontmatter += 1;
+    writes.push({ path: one.result.path, text: one.result.text });
     totals.items += 1;
-  }
-
+  });
   writes.sort((a, b) => compareCodePoint(a.path, b.path));
   return { findings, totals, writes };
+}
+
+/**
+ * One document as one version writes it: the item file, the findings, the improvements it
+ * carries and what its header needs.
+ *
+ * @param {object} entry `{path, slug, stem, text}`.
+ * @param {boolean} improve false for the base result, true for the improved one.
+ * @param {object} shared `{opts, owned, sourceLicence}`.
+ * @returns {object} the result.
+ */
+function renderDocument(entry, improve, shared) {
+  const { opts } = shared;
+  const { strict } = entry;
+  // The improved result is the base header with its times respelled (a clone, so the base stays whole).
+  const frontmatterOf = improve ? structuredClone(strict.frontmatter) : strict.frontmatter;
+  const mapped = mapFrontmatter(frontmatterOf, {
+    body: strict.body,
+    improve,
+    operator: opts.operator === undefined ? 'human:unknown' : opts.operator,
+    owned: shared.owned,
+    path: entry.path,
+    slug: entry.slug,
+    sourceHash: opts.sourceHash,
+    sourceLicence: shared.sourceLicence,
+    sourceVersion: opts.sourceVersion,
+    stem: entry.stem,
+  });
+  const type = String(mapped.frontmatter.type);
+  const ordered = fix.orderKeys(mapped.frontmatter, fix.declaredOrder(opts.itemSchema, type), opts.itemSchema, type, null);
+  const header = serialize(fix.quoteTemporal(ordered), entry.path);
+  const findings = [];
+  if (strict.reason !== null) {
+    findings.push(finding('AGSC-E506',
+      `${entry.path}: ${strict.reason}; the body was imported and the frontmatter synthesized (AGSC-01-22)`,
+      { file: entry.path, severity: 'warn' }));
+  }
+  findings.push(...mapped.findings);
+  const kinds = [];
+  if (mapped.times) kinds.push('times written as UTC');
+  return {
+    body: strict.body,
+    findings,
+    header,
+    kinds,
+    path: `content/${TYPE_PLURAL[type]}/${entry.slug}.md`,
+    unreadable: strict.reason !== null,
+  };
+}
+
+/** The item file of a rendered document, with its body as given. */
+function fileOf(rendered, body) {
+  return { path: rendered.path, text: fix.normaliseText(`${rendered.header}${nfc(body)}`) };
+}
+
+/**
+ * Choose, for one document, between the base and the improved result (`chooseResult`), with
+ * the links of the improved result rewritten against `landing` (null: not rewritten yet).
+ */
+function decide(entry, landing, schemas, exists) {
+  const base = entry.base;
+  if (entry.baseFile === null) entry.baseFile = fileOf(base, base.body);
+  const baseFile = entry.baseFile;
+  const baseOut = { findings: base.findings, result: baseFile, unreadable: base.unreadable };
+  const refuse = (why, kinds) => ({
+    ...baseOut,
+    findings: [...base.findings, finding('AGSC-E506',
+      `${entry.path}: not applied: ${kinds.join(', ')}: ${why}; the item is written as the previous version wrote it (AGSC-01-22)`,
+      { file: entry.path, severity: 'warn' })],
+  });
+  const improved = entry.improved;
+  let body = improved.body;
+  const kinds = [...improved.kinds];
+  const findings = [...improved.findings];
+  if (landing !== null && improved.path === base.path) {
+    const written = new Set(landing.values());
+    const linked = rewriteLinks(body, entry.path, improved.path, landing, written, exists);
+    if (linked.rewritten > 0) {
+      body = linked.body;
+      kinds.push('links rewritten');
+      findings.push(finding('AGSC-E506',
+        `${entry.path}: ${linked.rewritten} relative link(s) now name the place the linked item is written to`
+        + ' (AGSC-03-11, AGSC-01-22)',
+        { file: entry.path, severity: 'warn' }));
+    }
+  }
+  const chosen = chooseResult(baseFile, fileOf(improved, body), schemas);
+  if (!chosen.applied) return refuse(chosen.why, kinds);
+  return { findings, result: chosen.result, unreadable: improved.unreadable };
 }
 
 module.exports = {
   FOREIGN_LINK_NAMES,
   FORMAT, RESERVED, TYPE_PLURAL,
-  isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, sourceOwned, versionRefusal,
-  versionWarning, versionWarnings,
+  chooseResult, isReserved, majorMinor, mapFrontmatter, plan, readDocument, sourceFacts, sourceOwned,
+  toUtcInstant, versionRefusal, versionWarning, versionWarnings,
 };

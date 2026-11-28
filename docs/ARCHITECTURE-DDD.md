@@ -93,7 +93,7 @@ no bounded context may resolve a module (`tests/arch/context-boundaries.test.js`
 
 ## 6. Four wordings fixed here so that no document drifts
 
-- **Determinism scope** — machine artefacts are byte-identical *across* conforming implementations; HTML pages are byte-identical *within* one implementation and are not in the cross-implementation vector set (AGSC-04-24, PRD-060).
+- **Determinism scope** — the specification requires machine artefacts to be byte-identical *across* conforming implementations (proved today by the engine and, for seven of twenty vector areas, the Python checker; no second engine builds a whole node); HTML pages are byte-identical *within* one implementation and are not in the cross-implementation vector set (AGSC-04-24, PRD-060).
 - **The distinguishing property set is Level ≥ 2.** A Level-0 or Level-1 node is a discoverable, digest-checked publication; the properties that no neighbouring system offers together — deterministic graph exports, the chunk export, the plugin contract, federation — begin at Level 2 (AGSC-10-04).
 - **The Harness is keyed by the sorted selection.** Input order never reaches the verdict (AGSC-07-09; the retired AGSC-07-11 said so), and the seven file kinds are byte-identical for the same member set (AGSC-07-13) — a correction of the earlier "ordered selection" wording.
 - **"Registered" is written only after IANA acts.** The profile URI is registered in the IANA Profile URIs registry; the well-known suffix is written "not registered", with "asked for in the Internet-Draft" where that is said at all (AGSC-06-07, 06-25, 11-05).

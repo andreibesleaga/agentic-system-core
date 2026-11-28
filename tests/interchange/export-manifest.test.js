@@ -23,7 +23,7 @@ const FILES = [
 const IRIS = ['https://example.org/concepts/b/', 'https://example.org/concepts/a/'];
 const FACTS = { bundleHash: 'a'.repeat(64), bundleVersion: '1.2.3', itemIris: IRIS, specVersion: '1.1.0' };
 
-const observed = (files, itemIris = IRIS) => ({ files: new Map(files.map((f) => [f.path, f.text])), itemIris });
+const observed = (files, itemIris = IRIS) => ({ files: new Map(files.map((f) => [f.path, manifest.contentDigest(f.text)])), itemIris });
 
 test('AGSC-09-17: content_digest is the Content-Digest value of RFC 9530 over the bytes', () => {
   // RFC 9530 §5 writes the SHA-256 of "abc" as base64 with padding, between colons.
@@ -81,7 +81,7 @@ test('AGSC-09-17: a manifest that cannot be read is one warning, and an import w
     assert.strictEqual(found[0].severity, 'warn');
   }
   const text = manifest.build(FILES, FACTS);
-  const none = manifest.check(text, { files: new Map(FILES.map((f) => [f.path, f.text])), itemIris: null });
+  const none = manifest.check(text, { files: new Map(FILES.map((f) => [f.path, manifest.contentDigest(f.text)])), itemIris: null });
   assert.strictEqual(none.length, 1);
   assert.match(none[0].message, /item_count and items_digest/u);
 });

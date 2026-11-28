@@ -31,7 +31,7 @@ body:
     attributes:
       label: How it was built
       description: The engine and its version, another tool, or by hand.
-      placeholder: agsc 1.1.0
+      placeholder: agsc 1.1.1
     validations:
       required: true
   - type: textarea

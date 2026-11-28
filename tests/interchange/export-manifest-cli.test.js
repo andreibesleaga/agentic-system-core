@@ -125,7 +125,8 @@ test('AGSC-09-17: a manifest that lists a path outside the folder reads nothing 
   });
   const found = manifestWarnings(result);
   assert.strictEqual(found.length, 1, JSON.stringify(found));
-  assert.match(found[0].message, /etc\/passwd is listed and is absent/u);
+  assert.match(found[0].message, /1 listed path is not in normal form and was not checked/u);
+  assert.doesNotMatch(found[0].message, /passwd/u, 'the path is not even named');
 });
 
 test('AGSC-09-17 and AGSC-01-27: --jsonl --manifest puts the manifest beside items.jsonl and lists that file alone', () => {
@@ -167,4 +168,18 @@ test('AGSC-09-17 and AGSC-09-08: a build with no graph.nq has no hash to state, 
   const out = exportVerb.run(ctxFor(source, { verbFlags: { level: '0', manifest: true, okf: true } }));
   assert.deepStrictEqual(out.findings.filter((f) => f.severity === 'error').map((f) => f.code), ['AGSC-E001']);
   assert.ok(!nodeFs.existsSync(path.join(source, 'dist')), 'a refused run wrote something');
+});
+
+test('AGSC-09-17: an OKF folder whose manifest cannot be read is one warning, and the import goes on', () => {
+  const cases = {
+    'a directory': (file) => { nodeFs.rmSync(file); nodeFs.mkdirSync(file); },
+    'over 1 MiB': (file) => nodeFs.writeFileSync(file, `{"files":[],"pad":"${'x'.repeat(1048576)}"}`),
+    'not UTF-8': (file) => nodeFs.writeFileSync(file, Buffer.from([0x7b, 0xff, 0xfe, 0x7d])),
+    'not JSON': (file) => nodeFs.writeFileSync(file, 'this is not JSON'),
+  };
+  for (const [name, spoil] of Object.entries(cases)) {
+    const result = exportThenImport({ manifest: true, okf: true }, (folder) => spoil(path.join(folder, manifest.FILE)));
+    assert.strictEqual(manifestWarnings(result).length, 1, name);
+    assert.ok(!result.imported.findings.some((f) => f.severity === 'error'), name);
+  }
 });

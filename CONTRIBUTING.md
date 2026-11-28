@@ -172,6 +172,11 @@ annotated tags (`git tag -a`) on the same commit: the specification's own tag
 (`1.0.0`, which names the specification version) and the package tag (`v1.0.0`). The specification
 tag is pushed before the package tag. A package-only patch, whose version differs from
 the declared specification (README, "Versions"), carries the package tag alone;
+it may also correct an import that lost data from a foreign source or wrote an item that
+the engine's own lint refuses, and may make the check of an import more tolerant of damaged
+input or add a warning to it (the change log names each such case); built files never
+change in a patch, and a correction to an import is applied only when it adds no fault to
+the item's own check (the strict reader and the item schema);
 `node tools/release` prints which case applies. The package tag triggers the workflow in
 `.github/workflows/release.yml` that publishes the npm packages, and publishing waits
 for the maintainer's approval of the `release` and `pypi` environments (npm from this

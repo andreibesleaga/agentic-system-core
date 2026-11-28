@@ -525,6 +525,7 @@ function importOkf(ctx, source, identityOptions) {
 
   const planned = okf.plan(files, {
     base: identityOptions.base,
+    existingPaths: () => existingContent(ctx.ports.fs),
     licenceFiles,
     itemSchema: readSchemas(helpers.ENGINE_ROOT).item,
     operator: identityOptions.operator,
@@ -537,6 +538,15 @@ function importOkf(ctx, source, identityOptions) {
   return finish(ctx, all, planned);
 }
 
+/** The paths under `content/` the target Bundle already holds, from the port the import writes through. */
+function existingContent(fs) {
+  try {
+    return new Set(fs.exists('content') ? fs.walk('content').map((p) => String(p).replace(/^\.\//u, '').split('\\').join('/')) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
 /**
  * AGSC-09-17 (a): a source folder that holds the manifest of `export --manifest` is checked
  * against it — each listed file's digest, the item count and the items digest — and a
@@ -544,21 +554,57 @@ function importOkf(ctx, source, identityOptions) {
  *
  * @param {object} fs the read-only port rooted at the source.
  * @param {string|null} base the base the source's root document states.
- * @param {Array<{path:string}>} writes the plan's writes, which are the items the folder holds.
+ * @param {Array<{path:string}>|null} writes the plan's writes, which are the items the folder holds;
+ *   `null` for a memory tool's folder, where only the digests of the listed files are checked.
  * @returns {Array<object>} findings.
  */
 function checkManifest(fs, base, writes) {
   if (!fs.exists(exportManifest.FILE)) return [];
-  const text = String(fs.readFile(exportManifest.FILE, 'utf8'));
-  const files = new Map();
-  for (const listed of exportManifest.listedPaths(text)) {
-    try {
-      files.set(listed, fs.exists(listed) ? String(fs.readFile(listed, 'utf8')) : null);
-    } catch (e) {
-      files.set(listed, null);
-    }
+  const text = readRegular(fs, exportManifest.FILE);
+  if (typeof text !== 'string') return exportManifest.unreadable();
+  return checkManifestText(fs, text, base, writes);
+}
+
+/** The size of a file of the source, or 0 when it cannot be statted (it is then reported as absent). */
+function sizeOf(fs, name) {
+  try {
+    return fs.stat(name).size;
+  } catch (e) {
+    return 0;
   }
-  return exportManifest.check(text, { files, itemIris: exportManifest.irisOfWrites(writes, base) });
+}
+
+/** `checkManifest` over the manifest's text, already read. */
+function checkManifestText(fs, text, base, writes) {
+  const files = new Map();
+  let total = 0;
+  for (const listed of exportManifest.listedPaths(text)) {
+    const size = sizeOf(fs, listed);
+    if (total + size > exportManifest.MAX_CHECKED_BYTES) {
+      files.set(listed, exportManifest.NOT_CHECKED);
+      continue;
+    }
+    total += size;
+    const bytes = readRegular(fs, listed);
+    files.set(listed, typeof bytes === 'string' ? exportManifest.contentDigest(bytes) : bytes);
+  }
+  return exportManifest.check(text, {
+    files,
+    itemIris: writes === null ? undefined : exportManifest.irisOfWrites(writes, base),
+  });
+}
+
+/**
+ * One file of the source as text: `null` when it is absent or cannot be read, `NOT_A_FILE` when it
+ * is a directory, a pipe or a device (never opened, so a named pipe cannot hold the import).
+ */
+function readRegular(fs, name) {
+  try {
+    if (!fs.stat(name).isFile()) return exportManifest.NOT_A_FILE;
+    return String(fs.readFile(name, 'utf8'));
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -704,7 +750,13 @@ function importMemory(ctx, source, identityOptions, adapter) {
   const files = Object.create(null);
   // A folder that is not there, or a path that is not a folder, lists nothing, and the
   // E901 below says so.
-  readListed(fs, (listClone(fs) || []).filter(adapter.isSourceFile), files, findings);
+  // The manifest of `export --manifest` is checked below and is no record of the tool. A file of
+  // that name that is not a manifest is read as the adapter always read it.
+  const manifest = fs.exists(exportManifest.FILE) ? readRegular(fs, exportManifest.FILE) : undefined;
+  const isManifest = typeof manifest === 'string' && exportManifest.isManifest(manifest);
+  const keepsName = typeof manifest === 'string' && !isManifest && adapter.isSourceFile(exportManifest.FILE);
+  const listed = (listClone(fs) || []).filter((f) => adapter.isSourceFile(f) && (f !== exportManifest.FILE || keepsName));
+  readListed(fs, listed, files, findings);
   if (findings.some((f) => f.severity === 'error')) return { findings, status: 'fail' };
   if (Object.keys(files).length === 0) {
     return {
@@ -713,7 +765,10 @@ function importMemory(ctx, source, identityOptions, adapter) {
       status: 'fail',
     };
   }
-  return finishPlanned(ctx, findings, adapter.plan(files, planOptions(ctx, identityOptions, stated)));
+  const planned = adapter.plan(files, planOptions(ctx, identityOptions, stated));
+  const noted = manifest === undefined || keepsName ? []
+    : (typeof manifest === 'string' ? checkManifestText(fs, manifest, null, null) : exportManifest.unreadable());
+  return finishPlanned(ctx, [...findings, ...noted], planned);
 }
 
 /**

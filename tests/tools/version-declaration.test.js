@@ -27,7 +27,7 @@ const CANDIDATE = /1\.0\.0-rc\.\d+/gu;
 // and the packages built from it. They are equal on a release that moves the
 // specification and differ on a package-only patch.
 const SPEC = '1.1.0';
-const PACKAGE = '1.1.0';
+const PACKAGE = '1.1.1';
 
 /** Copy `rel` from the repository into `root`, replacing every candidate version in text files. */
 function copyAsRelease(root, rel) {

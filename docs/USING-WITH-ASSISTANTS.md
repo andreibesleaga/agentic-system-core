@@ -18,7 +18,9 @@ explains the whole of that, in order, and ends with the setup for five assistant
 ## 1. What is running, in plain words
 
 - It runs **on your own computer**, as a child process of your assistant. There is no
-  account, no key, no hosted service, and nothing leaves your machine.
+  account, no key, no hosted service, and it opens no network connection. What the
+  assistant does with the answers is up to the assistant: with a hosted model, the text of
+  every answer, drafts included, is sent to that model's provider.
 - It speaks the **Model Context Protocol** over standard input and output. That is the
   same protocol Claude Desktop, Claude Code, Cursor, VS Code and Codex CLI already speak,
   which is why the setup below is four lines of configuration in each of them.
@@ -37,7 +39,7 @@ in alphabetical order:
 |---|---|
 | `search` | finds items in this memory that match some words: at most 100, best first; when more match, the answer also says how many (`total`); for an item with a domain type, role, context or warrant, a hit also has a member `domain` with those parts |
 | `read` | returns one item: its frontmatter, its text, and one citation record per chunk of the published node (the chunk's `id`, its SHA-256 `digest`, the content version `bundle_version`, the item it cites, the section, the licence and the terms; AGSC-09-13 lists every member), so the assistant can cite a passage and check it before using it; for an item with a domain type, role, context or warrant, also a member `domain` with those parts |
-| `links` | returns the typed links authored on one item |
+| `links` | returns the typed links from one item, authored and computed, as ids: the answer gives no titles, which are in the item's `search` hit and in `read` |
 | `compose` | takes a selection of items and reports whether they fit together |
 | `ask` | returns the descriptions of the items that best match a question, with their addresses as citations — **from this memory only**; no model is called |
 | `propose` | returns the prepared text of a change to one existing item |
@@ -46,8 +48,60 @@ in alphabetical order:
 | `explain` | says whether one typed link holds between two items and why: written by the author, or the steps that make it hold (an inverse, a chain) |
 | `check` | lists the link warnings about a selection of items, or about every item when no selection is given: an item that links to itself, two links that cannot both hold, a target of the wrong kind, a superseded item still `stable` |
 
-`brief`, `explain` and `check` read the items the node publishes (no draft, no retired
-item), as the page tools do; the other tools read the whole folder, drafts included.
+The local server is the author's own tool, not a published surface: it reads the folder
+as it is on disk, drafts included (AGSC-09-13). Two cases use only the items the node
+publishes (no draft, no retired item), as a page tool does: `brief`, and `check` when it is
+given no selection. `explain`, and `check` with a selection, read the folder on disk like
+the other tools. The resources are the published items only.
+
+### Answering a question: search, then read
+
+For a question of fact, two calls are usually enough.
+
+1. Call `search` with the words of the question. A hit gives the item's address, score,
+   slug and title.
+2. Call `read` on the top few hits, and answer from their text. Cite the chunk `id` and
+   `digest` that `read` returns.
+
+For a question about how items relate, call `links` (and `explain` or `check`): the
+project's relation study (November 2026, 43 questions with an answer, three sites) scored
+the graph tools at 58% with each of the four models that answered all 43, against 39.5% to
+46.5% for the same tools without the relation tools on the three models that ran both routes
+(`graph/TABLE-G.md` in the benchmarks repository). Pages scored 70% to 77%, because the
+tools return identifiers without titles; use the `search` hit or `read` for the title.
+
+Calls after the first two are not free: each call adds an answer to the conversation,
+and, unless the client caches the earlier turns, the model pays for it again at each later
+step.
+
+How much that costs was measured in the project's answering study (17 and 18 November
+2026, questions of fact about two small public nodes; source: `answering/REPORT.md` in
+the `agentic-system-core-benchmarks` repository). Median tokens for one answer, prompt and
+completion together. The right-hand route is a harness that made the calls for the model in
+one prompt (the model made none); it is not an assistant that makes the two calls itself.
+
+| model | the model chooses each tool call | harness: `search`, then `read` of the top five hits, in one prompt | correct, same two routes |
+|---|---|---|---|
+| claude-haiku-5.5 | 12,983 | 3,137 | 98.0%, 91.0% |
+| claude-sonnet-5.5 (39 questions, one seed: its run stopped at its token cap) | 10,939 | 2,986 | 97.4%, 100.0% |
+| qwen2.5-coder:7b | 14,741 | 2,055 | 1.0%, 84.0% |
+
+The harness route is about 4 times cheaper on the two hosted models and 7 times on the
+local one. Accuracy was 7 points lower on one hosted model, 2.6 points higher on the other,
+and 83 points higher on the local model, which could not drive the loop. The study did not
+record which calls made the model-driven loop cost more. Three limits:
+
+- The harness made the `search` and the five `read` calls and cut each body to 1,400
+  characters.
+- The hosted-model runs stopped at their token caps, so those rows are incomplete.
+- Handing the model the best passages directly, with no tool at all, cost less again
+  (1,311, 1,205 and 770 tokens).
+
+If your client lets you choose tools, switch on three: `search`, `read` and `propose`.
+That covers finding, reading and preparing a change. The server still lists all ten,
+because AGSC-09-13 requires exactly ten, so the choice is made in the client. The three
+definitions are about a quarter of the size of all ten: 976 of 3,796 bytes in `tools/list`
+(see [MEASUREMENTS.md](MEASUREMENTS.md), section 11).
 
 Beside the tools it offers:
 

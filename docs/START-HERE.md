@@ -1,5 +1,45 @@
 # Start here
 
+**Publish knowledge an agent can cite and anyone can check.**
+
+**In short.** Write what you know as Markdown files (a *Bundle*). `agsc build` turns a Bundle into a *node*: a static website, plus files for agents (a graph, a search index, `llms.txt`, a discovery document). An agent cites a passage by its address and its SHA-256 digest, and anyone can check both against the published `chunks.jsonl` ([how a citation is checked](CITING-A-CHUNK.md)). A digest shows that a copy was changed or damaged. It is not a signature: the publisher can change the text and the digest together. The build calls no model, so building and indexing cost no tokens. The same input gives the same bytes (`agsc verify` builds twice and compares). Byte-stable files are the kind of input a prompt cache can reuse; no cache saving has been measured here.
+
+**What was measured.** One study, November 2026: 60 questions about two small nodes (50 of them answerable), answered by the hosted model `anthropic/claude-haiku-5.5`. Share of the answerable questions answered correctly, and median tokens per answer:
+
+- Through the node's tools: 98.0% at 12,983 tokens. From the node's own HTML pages, read by the model: 67.3% at 29,559.
+- The study's harness ran one search and five reads and put the results in one prompt (the model made no call; each text cut to 1,400 characters): 91.0% at 3,137.
+- Two results do not favour the tools. Keyword ranking (BM25) over the same files: 97.3% at 1,311. The whole corpus pasted into the prompt: 98.7% at 19,856.
+- Questions about relations, from a separate study (43 questions with an answer, three sites, four models): the graph tools scored 58% with every model and the pages 70% to 77%, because the tools return identifiers without titles.
+
+The limits: one study and two small nodes. An AI model wrote the questions from the nodes' own texts, which favours keyword matching, and that model (`anthropic/claude-sonnet-5.5`) is one of those tested. The hosted-model runs stopped at their token caps, so those rows are incomplete. A 7-billion-parameter local model could not drive the tools (1.0% correct). Every number, with its interval and the script that recomputes it, is in the [benchmarks repository](https://github.com/andreibesleaga/agentic-system-core-benchmarks).
+
+**Who changes a node.** Agents change a node only through proposals (a change submitted as a pull request). By default a person approves each one. Automatic publishing is the operator's explicit choice, recorded in the configuration and revocable by editing one key; the ledger (a hash-chained log of merges, derived from git history) marks every merge made that way. A declared agent lane (the configuration entry that names one agent and what it may do) may create at most 20 new items per proposal by default and has a monthly budget in US dollars, which is required only for a lane of kind `llm`. These limits are a design aim, meant to keep each proposal small enough for a person to read; they have not been measured, and they do not limit how many proposals arrive or how many existing items one proposal edits. The node's own continuous-integration check (the gate) and its forge enforce them. The engine does not stop someone who has write access to the repository.
+
+**What it connects to.** Ten tools for assistants over MCP (the Model Context Protocol) and WebMCP (the same tools inside a web page); thirteen adapters that import or export other tools' files (Mem0, Letta, Zep, SKOS, CSV and others; some run one way); RDF files and an OWL 2 RL vocabulary for graph tools; and optional ARD and AI Catalog files (both are still draft specifications, and the build writes them only when switched on).
+
+## Three steps to a result
+
+From a clone of this repository, with Node 22.13 or later:
+
+```bash
+npm ci                                                   # 1. install the pinned libraries
+REPO=$PWD; D=$(mktemp -d); cp -r tests/fixtures/minimal "$D/node"; cd "$D/node"   # a fresh copy each time
+export SOURCE_DATE_EPOCH=1767225600                      # the build time (see below)
+node "$REPO/bin/agsc.js" build                           # 2. build the example
+node "$REPO/bin/agsc.js" verify                          # 3. check it: build twice, compare the bytes
+```
+
+Step 2 lists some lines that begin `skipped:` (optional files this small example leaves out) and ends with `build: pass (0 error, 0 warn)`. Step 3 prints `verify: pass (0 error, 0 warn)`. The site is in `www/`: open `www/index.html`, read `www/llms.txt`, and look at `www/chunks.jsonl`, where each line is one passage with its digest. `SOURCE_DATE_EPOCH` fixes the build time, so the result is the same on every machine; in your own folder one git commit does the same.
+
+**On your own folder.** Run `agsc init` first (it gives each note a header and moves it to `content/concepts/`). Then `agsc build` and `agsc ci` need two things: a git commit or `SOURCE_DATE_EPOCH`, and a `.well-known/security.txt` with a `Contact:` line. If you installed from npm, you have no clone and no `$REPO`: type `agsc` in place of `node "$REPO/bin/agsc.js"`, once `node_modules/.bin` is on your `PATH`.
+
+**Routes in**, starting with the one that needs no engine.
+
+- **Without the engine.** Write the files of Level 0 (the smallest conformance level: static files, no digests) from any CMS, or by hand for a small node (ten steps: [IMPLEMENTERS-GUIDE.md](IMPLEMENTERS-GUIDE.md) section 1a). Check any published node with the standalone checker, `node tools/validate-wellknown <file or URL> --level 0` from a clone (`node node_modules/agentic-system-core/tools/validate-wellknown` from an install), which imports nothing from `src/`. [agenticfeeder.com](https://agenticfeeder.com/) is a node made this way, without this engine.
+- **A folder of notes.** `agsc init`, `agsc ci`, `agsc build`: "Quick start" in the [README](../README.md#quick-start) and the [Mode 0 guide](guides/mode-0.md).
+- **An assistant.** `agsc mcp` gives it ten tools over your folder: [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md).
+- **Teams, skills, harnesses (starting files for an agent runtime) and live boards.** The other modes: [plain/modes.md](plain/modes.md) and the table below.
+
 **Summary.** This repository holds the AgenticSystemCore specification — rules for
 turning a folder of Markdown files into a knowledge node that people and agents can
 find, verify, cite and build on — together with the reference engine, its command line
@@ -7,8 +47,7 @@ and the checkers. Different readers need different doors. Find yourself in the l
 below and follow that path; every step is one document, in the order given.
 
 **Who this is for:** everyone, on the first visit. **Read after:** the root
-[README.md](../README.md), which says in a screen what the project is and what is
-different about it.
+[README.md](../README.md), which says in a screen what the project is and what it does.
 
 ---
 
@@ -17,7 +56,7 @@ different about it.
 | Reader | What you get today | Try it |
 |---|---|---|
 | A person with a folder of notes | a static site of your notes with search, each page also as Markdown, a graph file and text files for assistants; no model, no server | [guides/mode-0.md](guides/mode-0.md) |
-| A developer | a local tool server: ten tools over your folder for an assistant; nothing leaves the machine | `agsc mcp`, set up as in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md); [guides/mode-1.md](guides/mode-1.md) |
+| A developer | a local tool server: ten tools over your folder for an assistant; the server opens no network connection, but a hosted model receives every answer, drafts included | `agsc mcp`, set up as in [USING-WITH-ASSISTANTS.md](USING-WITH-ASSISTANTS.md); [guides/mode-1.md](guides/mode-1.md) |
 | A team running an agent-assisted development process | decisions, specifications, tasks and gates as checked files; one steering file with the same bytes for every coding assistant; a gate compiled to one required CI check | [guides/mode-2.md](guides/mode-2.md); `agsc ci`, `agsc export --steer` |
 | A team that keeps its procedures as skills | each procedure as an installable skill pack, checked against a lockfile and holding no scripts; skills collections and rule folders imported as procedures, and the packs exported back for five tools | [guides/mode-3.md](guides/mode-3.md); `agsc skills install .claude/skills`; `agsc import --from skills --list <clone>`; [USE-CASES.md](USE-CASES.md), L4 and L7 |
 | An architect | a selection of items checked against their typed links and written as seven kinds of file (agent instructions, a C4 model, a diagram, an arc42 skeleton, decision records, skill files): a starting point, not a running system | [guides/mode-4.md](guides/mode-4.md); `agsc compose <slug>… --zip`, or the `/compose/` page of [a live node](https://patterns.agenticsystemcore.com/compose/) |

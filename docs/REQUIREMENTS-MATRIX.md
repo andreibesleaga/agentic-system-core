@@ -84,7 +84,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-023 | MAPPED | `AGSC-08-18`, `AGSC-09-13`, `AGSC-09-13a` +1 | 8 vectors, 24 tests, 6 scenarios, 0 checkers | — | — | `persona-c-agent-mcp.feature`, `persona-m-security-reviewer.feature` | `docs/PLAN.md` |
 | PRD-024 | MAPPED | `AGSC-00-10`, `AGSC-04-25`, `AGSC-06-07` +5 | 2 vectors, 22 tests, 4 scenarios, 1 checkers | `distribution/a2a-card.test.js` | — | `persona-c-agent-mcp.feature`, `persona-j-standards.feature`, `persona-n-researcher.feature` +1 | `docs/PLAN.md` |
 | PRD-025 | MAPPED | `AGSC-06-14` | 1 vectors, 2 tests, 1 scenarios, 0 checkers | — | — | `persona-a-reader.feature`, `persona-c-agent-mcp.feature`, `persona-j-standards.feature` | — |
-| PRD-026 | MAPPED | `AGSC-00-22`, `AGSC-01-26`, `AGSC-01-26a` +1 | 4 vectors, 20 tests, 2 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-h-memory.feature` | — |
+| PRD-026 | MAPPED | `AGSC-00-22`, `AGSC-01-26`, `AGSC-01-26a` +1 | 4 vectors, 21 tests, 2 scenarios, 0 checkers | — | — | `persona-g-team.feature`, `persona-h-memory.feature` | — |
 | PRD-027 | MAPPED | `AGSC-05-04`, `AGSC-05-04a`, `AGSC-05-04b` +1 | 2 vectors, 9 tests, 0 scenarios, 0 checkers | — | — | `persona-h-memory.feature` | `docs/PLAN.md` |
 | PRD-028 | MAPPED | `AGSC-02-12` | 0 vectors, 2 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
 | PRD-029 | MAPPED | `AGSC-01-28` | 0 vectors, 4 tests, 0 scenarios, 0 checkers | — | — | `persona-g-team.feature` | — |
@@ -154,7 +154,7 @@ At most three names are shown per cell; test files and scenario files are listed
 | PRD-080 | MAPPED | — | — | `distribution/mcp-core.test.js`, `distribution/tool-answers.test.js`, `distribution/tool-parity.test.js` | — | `persona-c-agent-mcp.feature` | `docs/PLAN.md` |
 | PRD-081 | MAPPED | — | — | `distribution/mcp-http.test.js` | — | `persona-c-agent-mcp.feature` | `docs/PLAN.md` |
 | PRD-082 | MAPPED | `AGSC-07-25`, `AGSC-07-26`, `AGSC-07-27` +2 | 9 vectors, 16 tests, 8 scenarios, 0 checkers | `arch/brief.test.js`, `composition/blueprint.test.js`, `composition/brief.test.js` +1 | — | `persona-e-architect.feature` | — |
-| PRD-083 | MAPPED | — | — | `interchange/export-manifest-cli.test.js`, `interchange/export-manifest.test.js` | — | `persona-h-memory.feature` | — |
+| PRD-083 | MAPPED | — | — | `interchange/export-manifest-cli.test.js`, `interchange/export-manifest.test.js`, `interchange/memory-manifest.test.js` | — | `persona-h-memory.feature` | — |
 | PRD-084 | MAPPED | — | — | `composition/skill-format.test.js`, `governance/portable-names.test.js` | — | `persona-i-maintainer.feature` | — |
 | PRD-085 | MAPPED | — | — | `tools/release.test.js` | — | — | — |
 | PRD-086 | MAPPED | — | — | `distribution/ai-catalog.test.js`, `distribution/page-links.test.js` | — | — | — |

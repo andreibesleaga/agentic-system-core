@@ -600,12 +600,26 @@ agsc import dist/export/okf --from okf   # recomputes what the manifest states
 other file of the export (written as the value of an HTTP `Content-Digest` field,
 [RFC 9530](https://www.rfc-editor.org/rfc/rfc9530.html), `sha-256=:<base64>:`), the number of published
 items, a digest of the list of their addresses, the content version, the bundle hash (the
-SHA-256 of the build's `graph.nq`) and the specification version. When you import a folder
-that holds the manifest, the import recomputes the file digests, the item count and the
-items digest and reports each difference as an `AGSC-E506` warning naming the file; it
-then imports as it would without a manifest. It finds a copy that was damaged or edited
-on the way. It is not a signature: the manifest travels with the files it describes, so
-whoever can change one can change the other.
+SHA-256 of the build's `graph.nq`) and the specification version.
+
+When you import a folder that holds the manifest with `--from okf`, the import recomputes
+the file digests, the item count and the items digest, reports each difference as an
+`AGSC-E506` warning naming the file, and then imports as it would without a manifest.
+The importers of the six memory tools (`mem0`, `letta`, `zep`, `csv`, `basic-memory`,
+`claude-code`) check only the digest of each listed file, from package 1.1.1 (a memory
+tool's records are not the export's items, so there is no count to compare). `cogx`,
+`gabbe`, `skills`, `board` and `skos` do not read the manifest, although `--manifest`
+writes it for every export of the run.
+
+The check reads each listed path once and checks at most 5,000 listed paths and 256 MiB of
+listed files; beyond that a warning says so. A listed path that is not a regular file (a directory, a named pipe) is
+reported and not opened. A listed path that is not in normal form (a `..` or `.` segment,
+a leading `/`, a backslash) is counted and not read. A manifest that cannot be read gives
+one warning, and the import goes on.
+
+The manifest check finds a copy that was damaged or edited on the way. It is not a
+signature: the manifest travels with the files it describes, so whoever can change one
+can change the other.
 
 ## Which route for which framework
 
@@ -634,7 +648,7 @@ test: they need the framework installed. The record shapes they read are produce
 
 ## Checking a node in CI and before a commit
 
-- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.1.0` (the package tag, or its full commit SHA)
+- **GitHub Actions:** `uses: andreibesleaga/agentic-system-core@v1.1.1` (the package tag, or its full commit SHA)
   runs `agsc ci` with the engine at that ref. Give the job `contents: read` and check
   out with `fetch-depth: 0`. See the root `action.yml`.
 - **pre-commit:** the hook `agsc-lint` from `.pre-commit-hooks.yaml` runs `agsc lint`
